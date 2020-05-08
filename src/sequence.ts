@@ -13,7 +13,7 @@ import {Blockchains,BlockchainHelper} from './utils/blockchain'
 
 const SequenceActions = RestBindings.SequenceActions;
 
-export class MySequence implements SequenceHandler {
+export class GatewaySequence implements SequenceHandler {
   constructor(
     @inject(SequenceActions.FIND_ROUTE) protected findRoute: FindRoute,
     @inject(SequenceActions.PARSE_PARAMS) protected parseParams: ParseParams,
@@ -26,16 +26,22 @@ export class MySequence implements SequenceHandler {
     try {
       const {request, response} = context;
       
-      // Pull the first split off of the request to determine which blockchain
+      // Pull the first split off of the request host to determine which blockchain
       const blockchain = (request.headers.host) ? BlockchainHelper.getChainFromHost(request.headers.host) : Blockchains['mainnet'];
       context.bind("blockchain").to(blockchain);
 
+      // Record the user-agent and origin for processing
+      context.bind("userAgent").to(request.headers['user-agent']);
+      context.bind("origin").to(request.headers['origin']);
+
       let secretKey: string = "";
       // SecretKey passed in via basic http auth
-      if (request.headers.authorization) { 
-        const base64Credentials =  request.headers.authorization.split(' ')[1];
+      if (request.headers['authorization']) { 
+        const base64Credentials =  request.headers['authorization'].split(' ')[1];
         const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii').split(':');
-        secretKey = credentials[1];
+        if (credentials[1]) {
+          secretKey = credentials[1];
+        }
       }
       context.bind("secretKey").to(secretKey);
 

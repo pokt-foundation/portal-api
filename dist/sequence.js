@@ -5,7 +5,7 @@ const context_1 = require("@loopback/context");
 const rest_1 = require("@loopback/rest");
 const blockchain_1 = require("./utils/blockchain");
 const SequenceActions = rest_1.RestBindings.SequenceActions;
-let MySequence = class MySequence {
+let GatewaySequence = class GatewaySequence {
     constructor(findRoute, parseParams, invoke, send, reject) {
         this.findRoute = findRoute;
         this.parseParams = parseParams;
@@ -16,15 +16,20 @@ let MySequence = class MySequence {
     async handle(context) {
         try {
             const { request, response } = context;
-            // Pull the first split off of the request to determine which blockchain
+            // Pull the first split off of the request host to determine which blockchain
             const blockchain = (request.headers.host) ? blockchain_1.BlockchainHelper.getChainFromHost(request.headers.host) : blockchain_1.Blockchains['mainnet'];
             context.bind("blockchain").to(blockchain);
+            // Record the user-agent and origin for processing
+            context.bind("userAgent").to(request.headers['user-agent']);
+            context.bind("origin").to(request.headers['origin']);
             let secretKey = "";
             // SecretKey passed in via basic http auth
-            if (request.headers.authorization) {
-                const base64Credentials = request.headers.authorization.split(' ')[1];
+            if (request.headers['authorization']) {
+                const base64Credentials = request.headers['authorization'].split(' ')[1];
                 const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii').split(':');
-                secretKey = credentials[1];
+                if (credentials[1]) {
+                    secretKey = credentials[1];
+                }
             }
             context.bind("secretKey").to(secretKey);
             const route = this.findRoute(request);
@@ -37,13 +42,13 @@ let MySequence = class MySequence {
         }
     }
 };
-MySequence = tslib_1.__decorate([
+GatewaySequence = tslib_1.__decorate([
     tslib_1.__param(0, context_1.inject(SequenceActions.FIND_ROUTE)),
     tslib_1.__param(1, context_1.inject(SequenceActions.PARSE_PARAMS)),
     tslib_1.__param(2, context_1.inject(SequenceActions.INVOKE_METHOD)),
     tslib_1.__param(3, context_1.inject(SequenceActions.SEND)),
     tslib_1.__param(4, context_1.inject(SequenceActions.REJECT)),
     tslib_1.__metadata("design:paramtypes", [Function, Function, Function, Function, Function])
-], MySequence);
-exports.MySequence = MySequence;
+], GatewaySequence);
+exports.GatewaySequence = GatewaySequence;
 //# sourceMappingURL=sequence.js.map

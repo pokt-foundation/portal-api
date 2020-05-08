@@ -7,10 +7,8 @@ export async function main(options: ApplicationConfig = {}) {
   const app = new PocketGatewayApplication(options);
   await app.boot();
   await app.start();
+  await app.loadPocket();
 
-  const url = app.restServer.url;
-  console.log(`Server is running at ${url}`);
-  console.log(`Try ${url}/ping`);
-
+  console.log(`Server is running at ${app.restServer.url}`);
   return app;
 }

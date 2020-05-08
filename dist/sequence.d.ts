@@ -1,5 +1,5 @@
 import { FindRoute, InvokeMethod, ParseParams, Reject, RequestContext, Send, SequenceHandler } from '@loopback/rest';
-export declare class MySequence implements SequenceHandler {
+export declare class GatewaySequence implements SequenceHandler {
     protected findRoute: FindRoute;
     protected parseParams: ParseParams;
     protected invoke: InvokeMethod;

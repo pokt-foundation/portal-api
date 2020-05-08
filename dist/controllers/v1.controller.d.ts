@@ -1,14 +1,19 @@
 import { Count, Filter, FilterExcludingWhere, Where } from '@loopback/repository';
-import { Aat } from '../models';
-import { AatRepository } from '../repositories';
+import { PocketApplication } from '../models';
+import { PocketApplicationRepository } from '../repositories';
+import { Pocket } from '@pokt-network/pocket-js';
 export declare class V1Controller {
     private secretKey;
     private blockchain;
-    aatRepository: AatRepository;
-    constructor(secretKey: string, blockchain: string, aatRepository: AatRepository);
-    create(aat: Aat): Promise<Aat>;
-    count(where?: Where<Aat>): Promise<Count>;
-    find(filter?: Filter<Aat>): Promise<Aat[]>;
-    findById(id: string, filter?: FilterExcludingWhere<Aat>): Promise<Aat>;
-    attemptRelay(id: string, data: any, filter?: FilterExcludingWhere<Aat>): Promise<string>;
+    private origin;
+    private userAgent;
+    private pocketInstance;
+    pocketApplicationRepository: PocketApplicationRepository;
+    constructor(secretKey: string, blockchain: string, origin: string, userAgent: string, pocketInstance: Pocket, pocketApplicationRepository: PocketApplicationRepository);
+    create(pocketApplication: PocketApplication): Promise<PocketApplication>;
+    count(where?: Where<PocketApplication>): Promise<Count>;
+    find(filter?: Filter<PocketApplication>): Promise<PocketApplication[]>;
+    findById(id: string, filter?: FilterExcludingWhere<PocketApplication>): Promise<PocketApplication>;
+    attemptRelay(id: string, data: any, filter?: FilterExcludingWhere<PocketApplication>): Promise<string>;
+    checkWhitelist(tests: string[], check: string, type: string): boolean;
 }

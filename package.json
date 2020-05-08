@@ -54,6 +54,7 @@
     "@loopback/rest-explorer": "^2.1.2",
     "@loopback/service-proxy": "^2.1.2",
     "@pokt-network/pocket-js": "^0.3.0-rc",
+    "log-timestamp": "^0.3.0",
     "loopback-connector-mongodb": "^5.2.3",
     "tslib": "^1.10.0"
   },

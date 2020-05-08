@@ -24,5 +24,6 @@ declare const PocketGatewayApplication_base: (new (...args: any[]) => {
 }) & typeof RestApplication;
 export declare class PocketGatewayApplication extends PocketGatewayApplication_base {
     constructor(options?: ApplicationConfig);
+    loadPocket(): Promise<void>;
 }
 export {};

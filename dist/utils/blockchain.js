@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Blockchains = {
-    mainnet: "0021",
-    ropsten: "0023",
-    rinkeby: "0022",
-    goerli: "0020",
-    kotti: "001F",
+    "mainnet": "0021",
+    "ropsten": "0023",
+    "rinkeby": "0022",
+    "goerli": "0020",
+    "kotti": "001F",
 };
 class BlockchainHelper {
     static getChainFromHost(host) {

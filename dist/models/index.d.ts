@@ -1,1 +1,1 @@
-export * from './aat.model';
+export * from './pocket-application.model';
