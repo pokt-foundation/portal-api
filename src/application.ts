@@ -1,20 +1,21 @@
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig} from '@loopback/core';
-import {
-  RestExplorerBindings,
-  RestExplorerComponent,
-} from '@loopback/rest-explorer';
 import {RepositoryMixin} from '@loopback/repository';
-import {RestApplication} from '@loopback/rest';
+import {
+  RestApplication,
+  HttpErrors
+} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
-import path from 'path';
 import {GatewaySequence} from './sequence';
+import {Account} from '@pokt-network/pocket-js/lib/src/keybase/models/account'
 
+import path from 'path';
 import {
   Pocket, 
   Configuration, 
   HttpRpcProvider
 } from '@pokt-network/pocket-js';
+var Redis = require('ioredis');
 
 require('log-timestamp');
 
@@ -23,24 +24,12 @@ export class PocketGatewayApplication extends BootMixin(
 ) {
   constructor(options: ApplicationConfig = {}) {
     super(options);
-
-    // Set up the custom sequence
     this.sequence(GatewaySequence);
-
-    // Set up default home page
     this.static('/', path.join(__dirname, '../public'));
 
-    // Customize @loopback/rest-explorer configuration here
-    this.configure(RestExplorerBindings.COMPONENT).to({
-      path: '/explorer',
-    });
-    this.component(RestExplorerComponent);
-
     this.projectRoot = __dirname;
-    // Customize @loopback/boot Booter Conventions here
     this.bootOptions = {
       controllers: {
-        // Customize ControllerBooter Conventions here
         dirs: ['controllers'],
         extensions: ['.controller.js'],
         nested: true,
@@ -49,18 +38,59 @@ export class PocketGatewayApplication extends BootMixin(
   }
 
   async loadPocket(): Promise<void> {
+    // Requirements; for Production these are stored in AWS Secrets Manager in the
+    // corresponding region of the container.
+    //
+    // For Dev, you need to pass them in via command line before npm start or 
+    // via docker run
+    //
+    // TODO: change to https when infra is finished
+    const dispatchURL: string = process.env.DISPATCH_URL || "";
+    const clientPrivateKey: string = process.env.CLIENT_PRIVATE_KEY || "";
+    const clientPassphrase: string = process.env.CLIENT_PASSPHRASE || "";
+
+    if (!dispatchURL) {
+      throw new HttpErrors.InternalServerError("DISPATCH_URL required in ENV");
+    }
+    if (!clientPrivateKey) {
+      throw new HttpErrors.InternalServerError("CLIENT_PRIVATE_KEY required in ENV");
+    }
+    if (!clientPassphrase) {
+      throw new HttpErrors.InternalServerError("CLIENT_PASSPHRASE required in ENV");
+    }
+
     // Create the Pocket instance
-    const dispatchers = new URL("http://localhost:8081");
+    const dispatchers = new URL(dispatchURL);
     const configuration = new Configuration(5, 1000, 5, 40000, true);
     const rpcProvider = new HttpRpcProvider(dispatchers)
     const pocket = new Pocket([dispatchers], rpcProvider, configuration);
  
-    // Unlock primary client account for relay signing
-    // TODO: move this junk data into ENV or some other way of secure deployment
-    const clientPrivKey = 'd561ca942e974c541d4999fe2c647f238c22eb42441a472989d2a18a5437a9cfc4553f77697e2dc51ae2b2a7460821dcde8ca876a1b602d13501d9d37584ddfc'
-    const importAcct = await pocket.keybase.importAccount(Buffer.from(clientPrivKey, 'hex'), 'pocket');
-    const unlockAcct =  await pocket.keybase.unlockAccount('d0092305fa8ebf9a97a61d007b878a7840f51900', 'pocket', 0);
-    
+    // Bind to application context for shared re-use
     this.bind("pocketInstance").to(pocket);
+
+    // Unlock primary client account for relay signing
+    try {
+      const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase);
+      if (importAccount instanceof Account) {
+        await pocket.keybase.unlockAccount(importAccount.addressHex, clientPassphrase, 0);
+      }
+    }
+    catch(e) {
+      console.log(e);
+      throw new HttpErrors.InternalServerError("Unable to import or unlock base client account");
+    }
+
+    // Load Redis for cache
+    const redisEndpoint: string = process.env.REDIS_ENDPOINT || "";
+    const redisPort: string = process.env.REDIS_PORT || "";
+
+    if (!redisEndpoint) {
+      throw new HttpErrors.InternalServerError("REDIS_ENDPOINT required in ENV");
+    }
+    if (!redisPort) {
+      throw new HttpErrors.InternalServerError("REDIS_PORT required in ENV");
+    }
+    const redis = new Redis(redisPort, redisEndpoint);
+    this.bind("redisInstance").to(redis);
   }
 }

@@ -2,31 +2,23 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
 const boot_1 = require("@loopback/boot");
-const rest_explorer_1 = require("@loopback/rest-explorer");
 const repository_1 = require("@loopback/repository");
 const rest_1 = require("@loopback/rest");
 const service_proxy_1 = require("@loopback/service-proxy");
-const path_1 = tslib_1.__importDefault(require("path"));
 const sequence_1 = require("./sequence");
+const account_1 = require("@pokt-network/pocket-js/lib/src/keybase/models/account");
+const path_1 = tslib_1.__importDefault(require("path"));
 const pocket_js_1 = require("@pokt-network/pocket-js");
+var Redis = require('ioredis');
 require('log-timestamp');
 class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceMixin(repository_1.RepositoryMixin(rest_1.RestApplication))) {
     constructor(options = {}) {
         super(options);
-        // Set up the custom sequence
         this.sequence(sequence_1.GatewaySequence);
-        // Set up default home page
         this.static('/', path_1.default.join(__dirname, '../public'));
-        // Customize @loopback/rest-explorer configuration here
-        this.configure(rest_explorer_1.RestExplorerBindings.COMPONENT).to({
-            path: '/explorer',
-        });
-        this.component(rest_explorer_1.RestExplorerComponent);
         this.projectRoot = __dirname;
-        // Customize @loopback/boot Booter Conventions here
         this.bootOptions = {
             controllers: {
-                // Customize ControllerBooter Conventions here
                 dirs: ['controllers'],
                 extensions: ['.controller.js'],
                 nested: true,
@@ -34,17 +26,54 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         };
     }
     async loadPocket() {
+        // Requirements; for Production these are stored in AWS Secrets Manager in the
+        // corresponding region of the container.
+        //
+        // For Dev, you need to pass them in via command line before npm start or 
+        // via docker run
+        //
+        // TODO: change to https when infra is finished
+        const dispatchURL = process.env.DISPATCH_URL || "";
+        const clientPrivateKey = process.env.CLIENT_PRIVATE_KEY || "";
+        const clientPassphrase = process.env.CLIENT_PASSPHRASE || "";
+        if (!dispatchURL) {
+            throw new rest_1.HttpErrors.InternalServerError("DISPATCH_URL required in ENV");
+        }
+        if (!clientPrivateKey) {
+            throw new rest_1.HttpErrors.InternalServerError("CLIENT_PRIVATE_KEY required in ENV");
+        }
+        if (!clientPassphrase) {
+            throw new rest_1.HttpErrors.InternalServerError("CLIENT_PASSPHRASE required in ENV");
+        }
         // Create the Pocket instance
-        const dispatchers = new URL("http://localhost:8081");
+        const dispatchers = new URL(dispatchURL);
         const configuration = new pocket_js_1.Configuration(5, 1000, 5, 40000, true);
         const rpcProvider = new pocket_js_1.HttpRpcProvider(dispatchers);
         const pocket = new pocket_js_1.Pocket([dispatchers], rpcProvider, configuration);
-        // Unlock primary client account for relay signing
-        // TODO: move this junk data into ENV or some other way of secure deployment
-        const clientPrivKey = 'd561ca942e974c541d4999fe2c647f238c22eb42441a472989d2a18a5437a9cfc4553f77697e2dc51ae2b2a7460821dcde8ca876a1b602d13501d9d37584ddfc';
-        const importAcct = await pocket.keybase.importAccount(Buffer.from(clientPrivKey, 'hex'), 'pocket');
-        const unlockAcct = await pocket.keybase.unlockAccount('d0092305fa8ebf9a97a61d007b878a7840f51900', 'pocket', 0);
+        // Bind to application context for shared re-use
         this.bind("pocketInstance").to(pocket);
+        // Unlock primary client account for relay signing
+        try {
+            const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase);
+            if (importAccount instanceof account_1.Account) {
+                await pocket.keybase.unlockAccount(importAccount.addressHex, clientPassphrase, 0);
+            }
+        }
+        catch (e) {
+            console.log(e);
+            throw new rest_1.HttpErrors.InternalServerError("Unable to import or unlock base client account");
+        }
+        // Load Redis for cache
+        const redisEndpoint = process.env.REDIS_ENDPOINT || "";
+        const redisPort = process.env.REDIS_PORT || "";
+        if (!redisEndpoint) {
+            throw new rest_1.HttpErrors.InternalServerError("REDIS_ENDPOINT required in ENV");
+        }
+        if (!redisPort) {
+            throw new rest_1.HttpErrors.InternalServerError("REDIS_PORT required in ENV");
+        }
+        const redis = new Redis(redisPort, redisEndpoint);
+        this.bind("redisInstance").to(redis);
     }
 }
 exports.PocketGatewayApplication = PocketGatewayApplication;

@@ -1,18 +1,13 @@
 import {inject} from '@loopback/context';
 import {
-  Count,
-  CountSchema,
-  Filter,
   FilterExcludingWhere,
   repository,
-  Where,
 } from '@loopback/repository';
 import {
   post,
   param,
-  get,
-  getModelSchemaRef,
   requestBody,
+  HttpErrors
 } from '@loopback/rest';
 import {PocketApplication} from '../models';
 import {PocketApplicationRepository} from '../repositories';
@@ -23,6 +18,7 @@ import {
   ConsensusNode, 
   RelayResponse
 } from '@pokt-network/pocket-js';
+import {Redis} from 'ioredis';
 
 export class V1Controller {
   constructor(
@@ -30,88 +26,10 @@ export class V1Controller {
     @inject('blockchain') private blockchain: string,
     @inject('origin') private origin: string,
     @inject('userAgent') private userAgent: string,
-    @inject('pocketInstance') private pocketInstance: Pocket,
+    @inject('pocketInstance') private pocket: Pocket,
+    @inject('redisInstance') private redis: Redis,
     @repository(PocketApplicationRepository) public pocketApplicationRepository : PocketApplicationRepository,
   ) {}
-
-  @post('/app', {
-    responses: {
-      '200': {
-        description: 'PocketApplication model instance',
-        content: {'application/json': {schema: getModelSchemaRef(PocketApplication)}},
-      },
-    },
-  })
-  async create(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(PocketApplication, {
-            title: 'NewPocketApplication',
-            
-          }),
-        },
-      },
-    })
-    pocketApplication: PocketApplication,
-  ): Promise<PocketApplication> {
-    console.log(getModelSchemaRef(PocketApplication));
-    return this.pocketApplicationRepository.create(PocketApplication);
-  }
-
-  @get('/apps/count', {
-    responses: {
-      '200': {
-        description: 'PocketApplication model count',
-        content: {'application/json': {schema: CountSchema}},
-      },
-    },
-  })
-  async count(
-    @param.where(PocketApplication) where?: Where<PocketApplication>,
-  ): Promise<Count> {
-    return this.pocketApplicationRepository.count(where);
-  }
-
-  @get('/apps', {
-    responses: {
-      '200': {
-        description: 'Array of PocketApplication model instances',
-        content: {
-          'application/json': {
-            schema: {
-              type: 'array',
-              items: getModelSchemaRef(PocketApplication, {includeRelations: true}),
-            },
-          },
-        },
-      },
-    },
-  })
-  async find(
-    @param.filter(PocketApplication) filter?: Filter<PocketApplication>,
-  ): Promise<PocketApplication[]> {
-    return this.pocketApplicationRepository.find(filter);
-  }
-
-  @get('/v1/{id}', {
-    responses: {
-      '200': {
-        description: 'PocketApplication model instance',
-        content: {
-          'application/json': {
-            schema: getModelSchemaRef(PocketApplication, {includeRelations: true}),
-          },
-        },
-      },
-    },
-  })
-  async findById(
-    @param.path.string('id') id: string,
-    @param.filter(PocketApplication, {exclude: 'where'}) filter?: FilterExcludingWhere<PocketApplication>
-  ): Promise<PocketApplication> {
-    return this.pocketApplicationRepository.findById(id, filter);
-  }
 
   @post('/v1/{id}', {
     responses: {
@@ -131,22 +49,31 @@ export class V1Controller {
   ): Promise<string> {
     console.log("PROCESSING " + id +  " chain: " + this.blockchain +" req: " + JSON.stringify(data))
 
-    // Construct Pocket AAT from the db record
-    const app = await this.pocketApplicationRepository.findById(id, filter);
+    // Construct Pocket AAT from cache; if not available, use the db
+    const cachedApp = await this.redis.get(id);
+    let app;
+
+    if (!cachedApp) {
+      app = await this.pocketApplicationRepository.findById(id, filter);
+      this.redis.set(id, JSON.stringify(app), "EX", 60);
+    }
+    else {
+      app = JSON.parse(cachedApp);
+    }
 
     // Check secretKey; is it required? does it pass?
     if (app.secretKeyRequired && this.secretKey !== app.secretKey) {
-      throw new Error("SecretKey does not match");
+      throw new HttpErrors.Forbidden("SecretKey does not match");
     }
 
     // Whitelist: origins -- explicit matches
     if (!this.checkWhitelist(app.whitelistOrigins, this.origin, "explicit")) {
-      throw new Error("Whitelist Origin check failed " + this.origin);
+      throw new HttpErrors.Forbidden("Whitelist Origin check failed: " + this.origin);
     }
 
     // Whitelist: userAgent -- substring matches
     if (!this.checkWhitelist(app.whitelistUserAgents, this.userAgent, "substring")) {
-      throw new Error("Whitelist User Agent check failed " + this.userAgent);
+      throw new HttpErrors.Forbidden("Whitelist User Agent check failed: " + this.userAgent);
     }
     
     // Whitelist: contracts
@@ -166,7 +93,7 @@ export class V1Controller {
     }
 
     // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
-    const relayResponse = await this.pocketInstance.sendRelay(JSON.stringify(data), this.blockchain, pocketAAT);
+    const relayResponse = await this.pocket.sendRelay(JSON.stringify(data), this.blockchain, pocketAAT);
     
     // Success
     if (relayResponse instanceof RelayResponse) {
@@ -176,12 +103,12 @@ export class V1Controller {
     // Error
     else if (relayResponse instanceof RpcError) {
       console.log("ERROR " + id +  " chain: " + this.blockchain +" req: " + JSON.stringify(data) + " res: " + relayResponse.message);
-      return relayResponse.message;
+      throw new HttpErrors.InternalServerError(relayResponse.message);
     } 
     // ConsensusNode
     else {
       // TODO: ConsensusNode is a possible return
-      throw new Error("relayResponse is undefined");
+      throw new HttpErrors.InternalServerError("relayResponse is undefined");
     }
   }
 

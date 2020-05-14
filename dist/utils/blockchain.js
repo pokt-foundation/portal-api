@@ -11,7 +11,7 @@ class BlockchainHelper {
     static getChainFromHost(host) {
         const hostSplit = host.split(".");
         if (!exports.Blockchains[hostSplit[0]]) {
-            throw new Error("Invalid blockchain request: " + hostSplit[0]);
+            return exports.Blockchains["mainnet"];
         }
         return exports.Blockchains[hostSplit[0]];
     }

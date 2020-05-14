@@ -3,15 +3,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
 const core_1 = require("@loopback/core");
 const repository_1 = require("@loopback/repository");
+const rest_1 = require("@loopback/rest");
+const mongoEndpoint = process.env.MONGO_ENDPOINT || "";
+if (!mongoEndpoint) {
+    throw new rest_1.HttpErrors.InternalServerError("MONGO_ENDPOINT required in ENV");
+}
 const config = {
     name: 'gateway',
     connector: 'mongodb',
-    url: '',
-    host: 'localhost',
-    port: 32768,
-    user: '',
-    password: '',
-    database: 'gateway',
+    url: mongoEndpoint,
     useNewUrlParser: true,
     useUnifiedTopology: true,
 };

@@ -6,11 +6,6 @@ export declare class GatewayDataSource extends juggler.DataSource implements Lif
         name: string;
         connector: string;
         url: string;
-        host: string;
-        port: number;
-        user: string;
-        password: string;
-        database: string;
         useNewUrlParser: boolean;
         useUnifiedTopology: boolean;
     };
