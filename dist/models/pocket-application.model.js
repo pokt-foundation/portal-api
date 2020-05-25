@@ -49,7 +49,7 @@ tslib_1.__decorate([
     repository_1.property({
         type: 'boolean',
         required: true,
-        default: false
+        default: true
     }),
     tslib_1.__metadata("design:type", Boolean)
 ], PocketApplication.prototype, "secretKeyRequired", void 0);

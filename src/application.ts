@@ -15,9 +15,17 @@ import {
   Configuration, 
   HttpRpcProvider
 } from '@pokt-network/pocket-js';
+
 var Redis = require('ioredis');
+var fs = require('fs'); 
+var crypto = require('crypto');
+var os = require('os');
+var process = require('process'); 
+var pg = require('pg');
+var got = require('got');
 
 require('log-timestamp');
+require('dotenv').config();
 
 export class PocketGatewayApplication extends BootMixin(
   ServiceMixin(RepositoryMixin(RestApplication)),
@@ -67,6 +75,7 @@ export class PocketGatewayApplication extends BootMixin(
  
     // Bind to application context for shared re-use
     this.bind("pocketInstance").to(pocket);
+    this.bind("pocketConfiguration").to(configuration);
 
     // Unlock primary client account for relay signing
     try {
@@ -92,5 +101,46 @@ export class PocketGatewayApplication extends BootMixin(
     }
     const redis = new Redis(redisPort, redisEndpoint);
     this.bind("redisInstance").to(redis);
+
+    // Load Postgres for TimescaleDB metrics
+    const pgConnection: string = process.env.PG_CONNECTION || "";
+    const pgCertificate: string = process.env.PG_CERTIFICATE || "";
+
+    if (!pgConnection) {
+      throw new HttpErrors.InternalServerError("PG_CONNECTION required in ENV");
+    }
+    if (!pgCertificate) {
+      throw new HttpErrors.InternalServerError("PG_CERTIFICATE required in ENV");
+    }
+
+    // Pull public certificate from Redis or s3 if not there
+    const cachedCertificate = await redis.get('timescaleDBCertificate');
+    let publicCertificate;
+
+    if (!cachedCertificate) {
+      try {
+        const s3Certificate = await got(pgCertificate);
+        publicCertificate = s3Certificate.body;
+      } catch(e) {
+        throw new HttpErrors.InternalServerError("Invalid Certificate");
+      }
+      redis.set('timescaleDBCertificate', publicCertificate, "EX", 600);
+    } else {
+      publicCertificate = cachedCertificate;
+    }
+
+    const pgPool = new pg.Pool({
+      connectionString: pgConnection,
+      ssl: {
+        rejectUnauthorized: false,
+        ca: publicCertificate,
+      }
+    });
+    this.bind("pgPool").to(pgPool);
+
+    // Create a UID for this process
+    const parts = [os.hostname(), process.pid, +(new Date)];
+    const hash = crypto.createHash('md5').update(parts.join(''));
+    this.bind("processUID").to(hash.digest('hex'));
   }
 }
