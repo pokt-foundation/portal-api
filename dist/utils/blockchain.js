@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+// TODO: move to DB
 exports.Blockchains = {
     "mainnet": "0021",
     "ropsten": "0023",

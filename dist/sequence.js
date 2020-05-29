@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
 const context_1 = require("@loopback/context");
 const rest_1 = require("@loopback/rest");
-const blockchain_1 = require("./utils/blockchain");
 const SequenceActions = rest_1.RestBindings.SequenceActions;
 let GatewaySequence = class GatewaySequence {
     constructor(findRoute, parseParams, invoke, send, reject) {
@@ -16,10 +15,8 @@ let GatewaySequence = class GatewaySequence {
     async handle(context) {
         try {
             const { request, response } = context;
-            // Pull the first split off of the request host to determine which blockchain
-            const blockchain = (request.headers.host) ? blockchain_1.BlockchainHelper.getChainFromHost(request.headers.host) : blockchain_1.Blockchains['mainnet'];
-            context.bind("blockchain").to(blockchain);
-            // Record the user-agent and origin for processing
+            // Record the host, user-agent, and origin for processing
+            context.bind("host").to(request.headers['host']);
             context.bind("userAgent").to(request.headers['user-agent']);
             context.bind("origin").to(request.headers['origin']);
             let secretKey = "";
