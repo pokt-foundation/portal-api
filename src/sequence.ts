@@ -9,7 +9,6 @@ import {
   Send,
   SequenceHandler,
 } from '@loopback/rest';
-import {Blockchains,BlockchainHelper} from './utils/blockchain'
 
 const SequenceActions = RestBindings.SequenceActions;
 
@@ -25,12 +24,9 @@ export class GatewaySequence implements SequenceHandler {
   async handle(context: RequestContext) {
     try {
       const {request, response} = context;
-      
-      // Pull the first split off of the request host to determine which blockchain
-      const blockchain = (request.headers.host) ? BlockchainHelper.getChainFromHost(request.headers.host) : Blockchains['mainnet'];
-      context.bind("blockchain").to(blockchain);
 
-      // Record the user-agent and origin for processing
+      // Record the host, user-agent, and origin for processing
+      context.bind("host").to(request.headers['host']);
       context.bind("userAgent").to(request.headers['user-agent']);
       context.bind("origin").to(request.headers['origin']);
 

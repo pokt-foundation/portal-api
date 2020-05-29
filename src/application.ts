@@ -7,17 +7,27 @@ import {
 } from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import {GatewaySequence} from './sequence';
-import {Account} from '@pokt-network/pocket-js/lib/src/keybase/models/account'
+import {Account} from '@pokt-network/pocket-js/dist/keybase/models/account'
 
 import path from 'path';
-import {
+
+const pocketJS = require('@pokt-network/pocket-js');
+
+const {
   Pocket, 
   Configuration, 
   HttpRpcProvider
-} from '@pokt-network/pocket-js';
+} = pocketJS;
+
 var Redis = require('ioredis');
+var crypto = require('crypto');
+var os = require('os');
+var process = require('process'); 
+var pg = require('pg');
+var got = require('got');
 
 require('log-timestamp');
+require('dotenv').config();
 
 export class PocketGatewayApplication extends BootMixin(
   ServiceMixin(RepositoryMixin(RestApplication)),
@@ -41,8 +51,7 @@ export class PocketGatewayApplication extends BootMixin(
     // Requirements; for Production these are stored in AWS Secrets Manager in the
     // corresponding region of the container.
     //
-    // For Dev, you need to pass them in via command line before npm start or 
-    // via docker run
+    // For Dev, you need to pass them in via .env file
     //
     // TODO: change to https when infra is finished
     const dispatchURL: string = process.env.DISPATCH_URL || "";
@@ -61,12 +70,13 @@ export class PocketGatewayApplication extends BootMixin(
 
     // Create the Pocket instance
     const dispatchers = new URL(dispatchURL);
-    const configuration = new Configuration(5, 1000, 5, 40000, true);
+    const configuration = new Configuration(5, 100000, 5, 20000, true);
     const rpcProvider = new HttpRpcProvider(dispatchers)
     const pocket = new Pocket([dispatchers], rpcProvider, configuration);
  
     // Bind to application context for shared re-use
     this.bind("pocketInstance").to(pocket);
+    this.bind("pocketConfiguration").to(configuration);
 
     // Unlock primary client account for relay signing
     try {
@@ -92,5 +102,46 @@ export class PocketGatewayApplication extends BootMixin(
     }
     const redis = new Redis(redisPort, redisEndpoint);
     this.bind("redisInstance").to(redis);
+
+    // Load Postgres for TimescaleDB metrics
+    const pgConnection: string = process.env.PG_CONNECTION || "";
+    const pgCertificate: string = process.env.PG_CERTIFICATE || "";
+
+    if (!pgConnection) {
+      throw new HttpErrors.InternalServerError("PG_CONNECTION required in ENV");
+    }
+    if (!pgCertificate) {
+      throw new HttpErrors.InternalServerError("PG_CERTIFICATE required in ENV");
+    }
+
+    // Pull public certificate from Redis or s3 if not there
+    const cachedCertificate = await redis.get('timescaleDBCertificate');
+    let publicCertificate;
+
+    if (!cachedCertificate) {
+      try {
+        const s3Certificate = await got(pgCertificate);
+        publicCertificate = s3Certificate.body;
+      } catch(e) {
+        throw new HttpErrors.InternalServerError("Invalid Certificate");
+      }
+      redis.set('timescaleDBCertificate', publicCertificate, "EX", 600);
+    } else {
+      publicCertificate = cachedCertificate;
+    }
+
+    const pgPool = new pg.Pool({
+      connectionString: pgConnection,
+      ssl: {
+        rejectUnauthorized: false,
+        ca: publicCertificate,
+      }
+    });
+    this.bind("pgPool").to(pgPool);
+
+    // Create a UID for this process
+    const parts = [os.hostname(), process.pid, +(new Date)];
+    const hash = crypto.createHash('md5').update(parts.join(''));
+    this.bind("processUID").to(hash.digest('hex'));
   }
 }
