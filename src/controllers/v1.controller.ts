@@ -6,6 +6,7 @@ import {
   PocketApplicationRepository,
   BlockchainRepository,
 } from "../repositories";
+
 import {
   Pocket,
   PocketAAT,
@@ -16,8 +17,10 @@ import {
   ConsensusNode,
   RelayResponse,
 } from "@pokt-network/pocket-js";
+
 import { Redis } from "ioredis";
 import { Pool as PGPool } from "pg";
+
 var pgFormat = require("pg-format");
 
 export class V1Controller {
@@ -111,33 +114,26 @@ export class V1Controller {
       );
     }
 
-    // Checks pass; create AAT from db record
+    // Checks pass; create AAT
     const pocketAAT = new PocketAAT(
       app.version,
       app.clientPubKey,
       app.appPubKey,
       app.signature
     );
-
-    // Pull a specific node for this relay
+    
     let node;
+    // Pull a random node for this relay
+    // TODO: weighted pulls; status/ time to relay
     const pocketSession = await this.pocket.sessionManager.getCurrentSession(
       pocketAAT,
       blockchain,
       this.pocketConfiguration
     );
     if (pocketSession instanceof Session) {
-      /*
-      pocketSession.sessionNodes.forEach(function (node, index) {
-        console.log(node.publicKey + " - " + node.serviceURL.hostname);
-      });
-      */
-      node =
-        pocketSession.sessionNodes[
-          Math.floor(Math.random() * pocketSession.sessionNodes.length)
-        ];
-      // console.log("CHOSEN: " + node.publicKey);
+      node = await this.cherryPickNode(pocketSession, blockchain);
     }
+
     // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
     const relayResponse = await this.pocket.sendRelay(
       JSON.stringify(data),
@@ -149,7 +145,6 @@ export class V1Controller {
       undefined,
       node
     );
-
     // Success
     if (relayResponse instanceof RelayResponse) {
       console.log("SUCCESS " + id + " chain: " + blockchain + " req: " + JSON.stringify(data) + " res: " + relayResponse.payload);
@@ -158,7 +153,7 @@ export class V1Controller {
       this.recordMetric({
         appPubKey: app.appPubKey,
         blockchain,
-        serviceNode: relayResponse.proof.servicePubKey,
+        serviceNode: relayResponse.proof.servicerPubKey,
         elapsedStart,
         result: 200,
         bytes,
@@ -168,7 +163,6 @@ export class V1Controller {
     // Error
     else if (relayResponse instanceof RpcError) {
       console.log("ERROR " + id + " chain: " + blockchain + " req: " + JSON.stringify(data) + " res: " + relayResponse.message);
-      console.log(relayResponse);
       const bytes = Buffer.byteLength(relayResponse.message, 'utf8');
 
       this.recordMetric({
@@ -186,6 +180,30 @@ export class V1Controller {
       // TODO: ConsensusNode is a possible return
       throw new HttpErrors.InternalServerError("relayResponse is undefined");
     }
+  }
+
+  // Check passed in string against an array of whitelisted items
+  // Type can be "explicit" or substring match
+  checkWhitelist(tests: string[], check: string, type: string): boolean {
+    if (tests.length === 0) {
+      return true;
+    }
+    if (!check) {
+      return false;
+    }
+
+    for (var test of tests) {
+      if (type === "explicit") {
+        if (test.toLowerCase() === check.toLowerCase()) {
+          return true;
+        }
+      } else {
+        if (check.toLowerCase().includes(test.toLowerCase())) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   // Record relay metrics in redis then push to timescaleDB for analytics
@@ -222,56 +240,206 @@ export class V1Controller {
       const redisMetricsKey = "metrics-" + this.processUID;
       const redisListAge = await this.redis.get("age-" + redisMetricsKey);
       const redisListSize = await this.redis.llen(redisMetricsKey);
-      const redisTimestamp = Math.floor(new Date().getTime() / 1000);
+      const currentTimestamp = Math.floor(new Date().getTime() / 1000);
 
       // List has been started in redis and needs to be pushed as timestamp is > 10 seconds old
       if (
         redisListAge &&
         redisListSize > 0 &&
-        redisTimestamp > parseInt(redisListAge) + 10
+        currentTimestamp > parseInt(redisListAge) + 10
       ) {
-        let bulkData = [];
+        this.redis.set("age-" + redisMetricsKey, currentTimestamp);
+        
+        let bulkData = [metricsValues];
         for (let count = 0; count < redisListSize; count++) {
           const redisRecord = await this.redis.lpop(redisMetricsKey);
           bulkData.push(JSON.parse(redisRecord));
         }
-
         const metricsQuery = pgFormat(
-          "INSERT INTO relay VALUES %L RETURNING *",
+          "INSERT INTO relay VALUES %L",
           bulkData
         );
         this.pgPool.query(metricsQuery);
-
-        await this.redis.unlink("age-" + redisMetricsKey);
-      } else if (!redisListAge) {
-        await this.redis.set("age-" + redisMetricsKey, redisTimestamp);
+      } else {
+        this.redis.rpush(redisMetricsKey, JSON.stringify(metricsValues));
+      }
+      
+      if (!redisListAge) {
+        this.redis.set("age-" + redisMetricsKey, currentTimestamp);
       }
 
-      this.redis.rpush(redisMetricsKey, JSON.stringify(metricsValues));
+      if (serviceNode) {
+        this.updateServiceNodeQuality(blockchain, serviceNode, elapsedTime, result);
+      }
+
     } catch (err) {
       console.log(err.stack);
     }
   }
 
-  checkWhitelist(tests: string[], check: string, type: string): boolean {
-    if (tests.length === 0) {
-      return true;
-    }
-    if (!check) {
-      return false;
+  // Record node service quality in redis for future node selection weight
+  // { serviceNode: { results: { 200: x, 500: y, ... }, averageSuccessLatency: z }
+  async updateServiceNodeQuality(blockchain: string, serviceNode: string, elapsedTime: number, result: number): Promise<void> {
+  
+    const serviceLog = await this.fetchServiceLog(blockchain, serviceNode);
+    
+    let serviceNodeQuality;
+    // Update service quality log for this hour
+    if (serviceLog) {
+      serviceNodeQuality = JSON.parse(serviceLog);
+
+      let totalResults = 0;
+      for (const logResult of Object.keys(serviceNodeQuality.results)) {
+        // Add the current result into the total results
+        if (parseInt(logResult) === result) {
+          serviceNodeQuality.results[logResult]++;
+        }
+        totalResults = totalResults + serviceNodeQuality.results[logResult];
+      }
+      // Success; add this result's latency to the average latency of all success requests
+      if (result === 200) {
+        serviceNodeQuality.averageSuccessLatency = (
+          (((totalResults - 1) * serviceNodeQuality.averageSuccessLatency) + elapsedTime) // All previous results plus current
+              / totalResults // divided by total results
+          ).toFixed(5); // to 5 decimal points
+      }
+    } else {
+      // No current logs found for this hour
+      const results = { [result]: 1 };
+      if (result !== 200) {
+        elapsedTime = 0;
+      }
+      serviceNodeQuality = {
+        results: results,
+        averageSuccessLatency: elapsedTime.toFixed(5)
+      };
     }
 
-    for (var test of tests) {
-      if (type === "explicit") {
-        if (test.toLowerCase() === check.toLowerCase()) {
-          return true;
-        }
+    this.redis.set(blockchain + "-" + serviceNode + "-"  + new Date().getHours(), JSON.stringify(serviceNodeQuality), "EX", 3600);
+    console.log(serviceNodeQuality);
+  }
+  
+  // Fetch node's hourly service log from redis
+  async fetchServiceLog(blockchain: string, serviceNode: string): Promise<string | null> {
+    const serviceLog = await this.redis.get(blockchain + "-" + serviceNode + "-"  + new Date().getHours());
+    return serviceLog;
+  }
+
+  // Per hour, record the latency and success rate of each node
+  // When selecting a node, pull the stats for each node in the session
+  // Rank and weight them for node choice
+  async cherryPickNode(pocketSession: Session, blockchain: string): Promise<Node> {
+    var rawNodes = {} as { [nodePublicKey: string]: Node};
+    var sortedLogs = [] as {nodePublicKey: string, attempts: number, successRate: number, averageSuccessLatency: number}[];
+
+    for (const node of pocketSession.sessionNodes) {
+      rawNodes[node.publicKey] = node;
+      const serviceLog = await this.fetchServiceLog(blockchain, node.publicKey);
+      console.log(serviceLog);
+
+      let attempts = 0;
+      let successRate = 0;
+      let averageSuccessLatency = 0;
+
+      if (!serviceLog) {
+        // Node hasn't had a relay in the past hour
+        // Success rate of 1 boosts this node into the primary group so it gets tested
+        successRate = 1;
+        averageSuccessLatency = 0;
       } else {
-        if (check.toLowerCase().includes(test.toLowerCase())) {
-          return true;
+        const parsedLog = JSON.parse(serviceLog);
+
+        // Count total relay atttempts with any result
+        for (const result of Object.keys(parsedLog.results)) {
+          attempts = attempts + parsedLog.results[result];
+        }
+
+        // Has the node had any success in the past hour?
+        if (parsedLog.results["200"] > 0) {
+          successRate = (parsedLog.results["200"] / attempts);
+          averageSuccessLatency = parseFloat(parseFloat(parsedLog.averageSuccessLatency).toFixed(5));
+        }
+      }
+      sortedLogs.push({
+        nodePublicKey: node.publicKey,
+        attempts: attempts,
+        successRate: successRate,
+        averageSuccessLatency: averageSuccessLatency,
+      });
+    };
+
+    // Sort node logs by highest success rate, then by lowest latency
+    sortedLogs.sort((a, b) => {
+      if (a.successRate < b.successRate) { 
+        return 1;
+      } else if (a.successRate > b.successRate) {
+        return -1;
+      }
+      if (a.successRate === b.successRate) {
+        if (a.averageSuccessLatency > b.averageSuccessLatency) { 
+          return 1;
+        } else if (a.averageSuccessLatency < b.averageSuccessLatency) {
+          return -1;
+        }
+        return 0;
+      }
+      return 0;
+    });
+    console.log(sortedLogs);
+
+    // Iterate through sorted logs and form in to a weighted list of nodes
+    var rankedNodes = [] as Node[];
+
+    // weightFactor pushes the fastest nodes with the highest success rates 
+    // to be called on more often for relays.
+    // 
+    // The node with the highest success rate and the lowest average latency will
+    // be 10 times more likely to be selected than a node that has had failures.
+    var weightFactor = 10;
+
+    // The number of failures tolerated per hour before being removed from rotation
+    var maxFailuresPerHour = 10;
+
+    for (const sortedLog of sortedLogs) {
+      if (sortedLog.successRate === 1) {
+        // For untested nodes and nodes with 100% success rates, weight their selection
+        for (var x=1; x <= weightFactor; x++) {
+          rankedNodes.push(rawNodes[sortedLog.nodePublicKey]);
+        }
+        weightFactor = weightFactor - 2;
+      }
+      else if (sortedLog.successRate > 0.95) {
+        // For all nodes with reasonable success rate, weight their selection less
+        for (var x=1; x <= weightFactor; x++) {
+          rankedNodes.push(rawNodes[sortedLog.nodePublicKey]);
+        }
+        weightFactor = weightFactor - 3;
+        if (weightFactor <= 0) {
+          weightFactor = 1;
+        }
+      }
+      else if (sortedLog.successRate > 0) {
+        // For all nodes with limited success rate, do not weight
+        rankedNodes.push(rawNodes[sortedLog.nodePublicKey]);
+      }
+      else if (sortedLog.successRate === 0) {
+        // If a node has a 0% success rate and < max failures, keep them in rotation
+        // If a node has a 0% success rate and > max failures shelve them until next hour
+        if (sortedLog.attempts < maxFailuresPerHour) {
+          rankedNodes.push(rawNodes[sortedLog.nodePublicKey]);
         }
       }
     }
-    return false;
+    
+    // If we have no nodes left because all 5 are failures, ¯\_(ツ)_/¯
+    if (rankedNodes.length === 0) {
+      rankedNodes = pocketSession.sessionNodes;
+    }
+
+    console.log("Number of weighted nodes for selection: " + rankedNodes.length);
+    const selectedNode = Math.floor(Math.random() * (rankedNodes.length));
+    const node = rankedNodes[selectedNode];
+    console.log("Selected "+ selectedNode + " : " + node.publicKey);
+    return node;
   }
 }

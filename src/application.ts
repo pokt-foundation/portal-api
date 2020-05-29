@@ -7,17 +7,19 @@ import {
 } from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import {GatewaySequence} from './sequence';
-import {Account} from '@pokt-network/pocket-js/lib/src/keybase/models/account'
+import {Account} from '@pokt-network/pocket-js/dist/keybase/models/account'
 
 import path from 'path';
-import {
+
+const pocketJS = require('@pokt-network/pocket-js');
+
+const {
   Pocket, 
   Configuration, 
   HttpRpcProvider
-} from '@pokt-network/pocket-js';
+} = pocketJS;
 
 var Redis = require('ioredis');
-var fs = require('fs'); 
 var crypto = require('crypto');
 var os = require('os');
 var process = require('process'); 
@@ -49,8 +51,7 @@ export class PocketGatewayApplication extends BootMixin(
     // Requirements; for Production these are stored in AWS Secrets Manager in the
     // corresponding region of the container.
     //
-    // For Dev, you need to pass them in via command line before npm start or 
-    // via docker run
+    // For Dev, you need to pass them in via .env file
     //
     // TODO: change to https when infra is finished
     const dispatchURL: string = process.env.DISPATCH_URL || "";
@@ -69,7 +70,7 @@ export class PocketGatewayApplication extends BootMixin(
 
     // Create the Pocket instance
     const dispatchers = new URL(dispatchURL);
-    const configuration = new Configuration(5, 1000, 5, 40000, true);
+    const configuration = new Configuration(5, 100000, 5, 20000, true);
     const rpcProvider = new HttpRpcProvider(dispatchers)
     const pocket = new Pocket([dispatchers], rpcProvider, configuration);
  
