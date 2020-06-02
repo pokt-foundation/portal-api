@@ -1318,7 +1318,7 @@
         "signature": "a15b48b01a590689bbbf03aac6a5291a8dddf77477a46d9e0037adfcc07942b8"
       },
       "./src/sequence.ts": {
-        "version": "23cd4f1c29dcbf6e59e52f6513984ffd189e1aa3fffeda32cd219e92d143c820",
+        "version": "d5f66c1740f37226d72e914347b7422bf28c8244976373afe6ceb47b9c02ccbe",
         "signature": "8721cf11eb4936ffee74356179ce18d3cc7ff99cbc861af322c1a9cfb31c4609"
       },
       "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts": {
@@ -1326,7 +1326,7 @@
         "signature": "e0209f76544838f42150bccec0103aee3bc26edd64feb1c2dce0176018012ef4"
       },
       "./src/application.ts": {
-        "version": "570296d4764dd402971d24951f5b8af0e0c53701613ea7170f93cbc0667e0916",
+        "version": "68ecc497ca8533035f3b2ba96f092a28a60ff2a06be8e5a7ce869de8b4e191f9",
         "signature": "2cdd80304137658cb827fafb28467727d58a5446ef233bbae8bbdd05a0b5e88b"
       },
       "./src/index.ts": {
@@ -1442,7 +1442,7 @@
         "signature": "ec6c8d664daf0fb105fce0a45586ec1fe395e64a2e39a19a303be1f316dce9ca"
       },
       "./src/datasources/gateway.datasource.ts": {
-        "version": "90138ea33c3edfb80675fa9bd1083c46239e4a63cac37b336fe684de1df765ab",
+        "version": "c5a7df63f32821b10dd6fe87409f677885729a8c4ed90d9a0c2d0147c551a2f5",
         "signature": "882e92e6dfb6b1a3a70784e86c6bd8cbe243b830f938fef2a00568c71e08ca00"
       },
       "./src/datasources/index.ts": {
@@ -1486,8 +1486,8 @@
         "signature": "4bf783e0ddf0cb0a1b48594e941635ab342a0bfabc48c4a6267126e599629ba2"
       },
       "./node_modules/@pokt-network/pocket-js/dist/keybase/keybase.d.ts": {
-        "version": "bd37db3c0a2042e94ed0b6a5d59479066d22c227145744434778828d38b494e7",
-        "signature": "bd37db3c0a2042e94ed0b6a5d59479066d22c227145744434778828d38b494e7"
+        "version": "d8d550a4ff9184b90c6762cc64b0ea4309fcd41fd2681d75f9aab32131a231f1",
+        "signature": "d8d550a4ff9184b90c6762cc64b0ea4309fcd41fd2681d75f9aab32131a231f1"
       },
       "./node_modules/@pokt-network/pocket-js/dist/keybase/index.d.ts": {
         "version": "3dadf272254d849a773e309f4ca4b32c51f0ba584c8e4d9f84b30fceb7411064",
@@ -1538,8 +1538,16 @@
         "signature": "5d3bd5d6d10be7d61b9715353dfd3a6604c7c86ec8946b68420032287a76661f"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/dispatch-response.d.ts": {
-        "version": "838ced28be7fd3da7e7aecd37b317e774072c9806f8ca3e9834ffca75c919028",
-        "signature": "838ced28be7fd3da7e7aecd37b317e774072c9806f8ca3e9834ffca75c919028"
+        "version": "4ce59a3b547399b700408dd1ff832aae3a619b61d519c156f22e5b52a09b0815",
+        "signature": "4ce59a3b547399b700408dd1ff832aae3a619b61d519c156f22e5b52a09b0815"
+      },
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/evidence-type.d.ts": {
+        "version": "eab56338809e266f1ab887f2ea98ffebe1ac87c8507549cb75783135f6d6c471",
+        "signature": "eab56338809e266f1ab887f2ea98ffebe1ac87c8507549cb75783135f6d6c471"
+      },
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/msg-claim.d.ts": {
+        "version": "efa147adf26d5d4a03dc8a936a251145501e8af386bf88e03b47a95ba5549851",
+        "signature": "efa147adf26d5d4a03dc8a936a251145501e8af386bf88e03b47a95ba5549851"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-account-response.d.ts": {
         "version": "8bbe3ed2dea3022ae44dd92d36883726d9bda59cd39fe800b89872ad01b03993",
@@ -1550,12 +1558,16 @@
         "signature": "40c05a96317ed2be2bd3ff39f377a55f3f4e470f13f98a79f9c25d7a45a42910"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/result-tx.d.ts": {
-        "version": "3895511a424d37a4e38c93921767c380da804fd73b3aaf4f1ba13d0de9efc8f5",
-        "signature": "3895511a424d37a4e38c93921767c380da804fd73b3aaf4f1ba13d0de9efc8f5"
+        "version": "948fc41e845f22430e0ebe4c7b8928d1cd9ccca9c4365e00aadd7485b8508534",
+        "signature": "948fc41e845f22430e0ebe4c7b8928d1cd9ccca9c4365e00aadd7485b8508534"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-account-txs-response.d.ts": {
-        "version": "eb83850dcafc67c7d67d4e0bbb66c92ddae95eabdc045c7e66fc9c1c14e47a43",
-        "signature": "eb83850dcafc67c7d67d4e0bbb66c92ddae95eabdc045c7e66fc9c1c14e47a43"
+        "version": "d26d7b72f2be7e1fd368c141809ab8c783aa3365356fd2b7fbe40d9a2a9553c0",
+        "signature": "d26d7b72f2be7e1fd368c141809ab8c783aa3365356fd2b7fbe40d9a2a9553c0"
+      },
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-all-params-response.d.ts": {
+        "version": "cc2438fce64894d4d5e3992eae0bd3f1cf616d961c4f2d1c3a75f083b329bae2",
+        "signature": "cc2438fce64894d4d5e3992eae0bd3f1cf616d961c4f2d1c3a75f083b329bae2"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/application-params.d.ts": {
         "version": "c9b3e5a645de0a66da3d3b8b4759cdbdd52f59e52667b51ddd88dc30961aa3ee",
@@ -1614,12 +1626,20 @@
         "signature": "9cadd6c8b344eab53ac3f5c703d55e02015fff4f95ebf3611563f9d636974ece"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-block-txs-response.d.ts": {
-        "version": "42fae88f67db8ab2f7ff306ed1183e9d754e5f455fa17808e5799868e4ca45e7",
-        "signature": "42fae88f67db8ab2f7ff306ed1183e9d754e5f455fa17808e5799868e4ca45e7"
+        "version": "061820bdc108e1e4a415d2ed30e60842f681149dfe5052dd5fc7f30df0e6183a",
+        "signature": "061820bdc108e1e4a415d2ed30e60842f681149dfe5052dd5fc7f30df0e6183a"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-height-response.d.ts": {
         "version": "e162443a92d093055b760a9e9bb6bc5d9fa9c39edb45987861e109bd0168a045",
         "signature": "e162443a92d093055b760a9e9bb6bc5d9fa9c39edb45987861e109bd0168a045"
+      },
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-claim-response.d.ts": {
+        "version": "800067c28292d87054582da97fc89b9d23870916b50682123142bf341c1367a9",
+        "signature": "800067c28292d87054582da97fc89b9d23870916b50682123142bf341c1367a9"
+      },
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-claims-response.d.ts": {
+        "version": "3fe62e4cc4e36a78e59b8b734a8997192770dbbde6880f08e251ce8eedacbdd6",
+        "signature": "3fe62e4cc4e36a78e59b8b734a8997192770dbbde6880f08e251ce8eedacbdd6"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/node-params.d.ts": {
         "version": "5826d5739e507a30a0a2331c81d1d3915914c456e5b37c19c727bcdce87700f4",
@@ -1629,21 +1649,21 @@
         "version": "4fb032cad900e7f1b3cc84b3d1b184f1f9927e028953d1fc54876eb675985c2e",
         "signature": "4fb032cad900e7f1b3cc84b3d1b184f1f9927e028953d1fc54876eb675985c2e"
       },
-      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-receipt-response.d.ts": {
-        "version": "27a8901167a456c340bfcf19fb0587b0e6f718dd2997188e9d8b08b9903a2d01",
-        "signature": "27a8901167a456c340bfcf19fb0587b0e6f718dd2997188e9d8b08b9903a2d01"
-      },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/input/session-header.d.ts": {
         "version": "bdb6bcc8ba5d9d771728cb8f1be1dd9a08967352cf695580aa9200f0720a13e1",
         "signature": "bdb6bcc8ba5d9d771728cb8f1be1dd9a08967352cf695580aa9200f0720a13e1"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/stored-receipt.d.ts": {
-        "version": "6931b66aca5c7ec5975d525cee1c57c4d52a1edbbd059b2d0cb8ab4b9457db1e",
-        "signature": "6931b66aca5c7ec5975d525cee1c57c4d52a1edbbd059b2d0cb8ab4b9457db1e"
+        "version": "1297bed63eb75f586b85b8aec7125bb03e48a8a5d7e87571d705642896caadf9",
+        "signature": "1297bed63eb75f586b85b8aec7125bb03e48a8a5d7e87571d705642896caadf9"
+      },
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-receipt-response.d.ts": {
+        "version": "aec0f0c44b0f5be6292404a2509cd96778793ef4394f0477fc5c6d03d246bc6c",
+        "signature": "aec0f0c44b0f5be6292404a2509cd96778793ef4394f0477fc5c6d03d246bc6c"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-receipts-response.d.ts": {
-        "version": "7d75c41da1b6b02a0772993076bfb0f87c2a1afd9cb537190529a8be7ea4af66",
-        "signature": "7d75c41da1b6b02a0772993076bfb0f87c2a1afd9cb537190529a8be7ea4af66"
+        "version": "46519198412fe79459fa566ecc04c8b8f050a7a6a55d33953835a7fa434a58a0",
+        "signature": "46519198412fe79459fa566ecc04c8b8f050a7a6a55d33953835a7fa434a58a0"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-response.d.ts": {
         "version": "dceb0f3167caa90d3ba8e53d88828cd809699185f82d5331fc919b0551f0c14a",
@@ -1710,8 +1730,8 @@
         "signature": "ca5dca0e470a633aeda00d92ab7748c5f6c5b3bf86f5029074ee2e62e7e52df6"
       },
       "./node_modules/@pokt-network/aat-js/lib/src/pocket-aat.d.ts": {
-        "version": "b02425ce2d664db4230f8a4afed91b3fa26c75fe7cb6640ae1c543eba161c973",
-        "signature": "b02425ce2d664db4230f8a4afed91b3fa26c75fe7cb6640ae1c543eba161c973"
+        "version": "20dd740513f6d567c83481bd083ad545bb05b3512f1e66c07e062a2f7f6f60a1",
+        "signature": "20dd740513f6d567c83481bd083ad545bb05b3512f1e66c07e062a2f7f6f60a1"
       },
       "./node_modules/@pokt-network/aat-js/lib/src/index.d.ts": {
         "version": "53b8c979e7ade14602821b6984a0610a9429dc0b1d822b5fd6ef6f569b1b1a9c",
@@ -1730,8 +1750,8 @@
         "signature": "21573576217ebabb4cf7cd15137e3c302d3d6ff76dacdf3203218c92c5550ac3"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/index.d.ts": {
-        "version": "8fb20217b319758438cbeab1aaf316be965f530f5ea6c510d674f2e46625506d",
-        "signature": "8fb20217b319758438cbeab1aaf316be965f530f5ea6c510d674f2e46625506d"
+        "version": "b45c19ffd60d5b6c6a26c2dc0b1c24d2a7906349c18fda67b68acbba77334ea7",
+        "signature": "b45c19ffd60d5b6c6a26c2dc0b1c24d2a7906349c18fda67b68acbba77334ea7"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/input/majority-response.d.ts": {
         "version": "3f84b895cbc9fbb7c79600bccdde2f1be3d95486aa922430f236626d7deed1e3",
@@ -1746,8 +1766,8 @@
         "signature": "30dfa44897a8e9cbc2c441988aea861a760c5e6b9ef35e96a6e424fe83adcf01"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/input/node-receipt.d.ts": {
-        "version": "2cd23b0c847e715f14ea60fa580197111ab6768bc093706dec51055bfa69371c",
-        "signature": "2cd23b0c847e715f14ea60fa580197111ab6768bc093706dec51055bfa69371c"
+        "version": "f6c4f2005cf99327aaaa25d364ad9dbb1a4af5e2657b2fc43a6545e24dc223ba",
+        "signature": "f6c4f2005cf99327aaaa25d364ad9dbb1a4af5e2657b2fc43a6545e24dc223ba"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/input/raw-tx-request.d.ts": {
         "version": "3d85c55617f46ac92e9e67054c871a0ac8536cbfb89eb057d2493d5f8f10790e",
@@ -1790,12 +1810,12 @@
         "signature": "a191e51b398c656551a806ea7c471d26f0710ed2cfdb8794ae12f47cc3dd9b56"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/routes.d.ts": {
-        "version": "e78b777fa0f63ce43049453b90a00be59d9c222c5cd06ee3b9a2b5f9228388be",
-        "signature": "e78b777fa0f63ce43049453b90a00be59d9c222c5cd06ee3b9a2b5f9228388be"
+        "version": "86b3e70e6645628d229150fff6459dd2f7f00cafb3a1698c515aaada313e9fea",
+        "signature": "86b3e70e6645628d229150fff6459dd2f7f00cafb3a1698c515aaada313e9fea"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/index.d.ts": {
-        "version": "a65df269039d3ab4af7b765c19e6134873a25bbd49b103126744c0c39fb7d4fd",
-        "signature": "a65df269039d3ab4af7b765c19e6134873a25bbd49b103126744c0c39fb7d4fd"
+        "version": "210f2a02c670d38cb0f7d3bf26221be5aab1aa547f9e8c6c47c2e2e60266e3c6",
+        "signature": "210f2a02c670d38cb0f7d3bf26221be5aab1aa547f9e8c6c47c2e2e60266e3c6"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/providers/i-rpc-provider.d.ts": {
         "version": "d3b737c460294455e7f38daf8b88785624497e10dfa8895b91a4103c252d658b",
@@ -1826,8 +1846,8 @@
         "signature": "d048cb9b8ea96ba5498fcc5121f7933c1c20e40c91171d1b1a8f7dab47b0f856"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/namespaces/query.d.ts": {
-        "version": "75a4695f9308d6d44ab64c97d7499787ef5a9eda39081dd469938ce475c5789d",
-        "signature": "75a4695f9308d6d44ab64c97d7499787ef5a9eda39081dd469938ce475c5789d"
+        "version": "0369064138395bf8cb30e301c9bdd6cef2ef2ce937efaea0728f4ce50671cdf3",
+        "signature": "0369064138395bf8cb30e301c9bdd6cef2ef2ce937efaea0728f4ce50671cdf3"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/namespaces/index.d.ts": {
         "version": "8eadca0f7422acb3244d747f597cd15b8f4c681ec7f21d5e0b22d6530669325a",
@@ -1902,20 +1922,20 @@
         "signature": "5981f89ad7e587ea922ae51813f8429c70a2e57270be2892c189f0fa6db9c5f1"
       },
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/std-sign-doc.d.ts": {
-        "version": "0c5527598b7e2e392b9097a7c1f0ff0dde3c82f9616c8b35ba1ed92b00071fd6",
-        "signature": "0c5527598b7e2e392b9097a7c1f0ff0dde3c82f9616c8b35ba1ed92b00071fd6"
+        "version": "bc78d822342c2862b3f88b10ebc060ac945b002cc5e6eee10e3a356a597154e5",
+        "signature": "bc78d822342c2862b3f88b10ebc060ac945b002cc5e6eee10e3a356a597154e5"
       },
       "./node_modules/@pokt-network/amino-js/types/src/types/pocket.d.ts": {
-        "version": "e0efd5d61a342503d43124148c4393c43c7fb1e1d7467d2b32c48b0a18e80fc1",
-        "signature": "e0efd5d61a342503d43124148c4393c43c7fb1e1d7467d2b32c48b0a18e80fc1"
+        "version": "e6d544ca0d1a54d21b8e0ee1057eaaed9083b2977ceafb1855cef877620c1346",
+        "signature": "e6d544ca0d1a54d21b8e0ee1057eaaed9083b2977ceafb1855cef877620c1346"
       },
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/tx-signature.d.ts": {
         "version": "1408e26705c963c4ef49246c5f4374b137be52ffe47e7e93b059b9250576ee16",
         "signature": "1408e26705c963c4ef49246c5f4374b137be52ffe47e7e93b059b9250576ee16"
       },
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/std-tx.d.ts": {
-        "version": "248bed6431d57ce019dff9cfdd61a603a574ddd7866e4664ac80e0e18b54acdc",
-        "signature": "248bed6431d57ce019dff9cfdd61a603a574ddd7866e4664ac80e0e18b54acdc"
+        "version": "fa7d3e15a644e89bf7df034f1824e3cb4c95744a172de3354ee5e2c937007994",
+        "signature": "fa7d3e15a644e89bf7df034f1824e3cb4c95744a172de3354ee5e2c937007994"
       },
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/transaction-signature.d.ts": {
         "version": "597cb36db72c2e146b151e496cdc8577fc0b6c2fc97d21311f5233ad977f6d2f",
@@ -1930,8 +1950,8 @@
         "signature": "49c39636a19f6afef0bf26c438908d3e11c2c7c12fb381a75a323973ff0380fb"
       },
       "./node_modules/@pokt-network/pocket-js/dist/transactions/transaction-sender.d.ts": {
-        "version": "1885d7d096ad5578dcfc84157426e8861c1b223fd22b7d237ac100e868307ff4",
-        "signature": "1885d7d096ad5578dcfc84157426e8861c1b223fd22b7d237ac100e868307ff4"
+        "version": "4940c78999531bdd1e97794a80ac9a4156359942b85afde8ecc32579f6ce1c17",
+        "signature": "4940c78999531bdd1e97794a80ac9a4156359942b85afde8ecc32579f6ce1c17"
       },
       "./node_modules/@pokt-network/pocket-js/dist/transactions/transaction-signer.d.ts": {
         "version": "95bd370db669f63cd1c852dbf60a11aa243c04cf864f9a1a96fd4b31c5618392",
@@ -1978,8 +1998,8 @@
         "signature": "9254d4c0167849336266fe01ca33566208ac7a2930d314cf79bfc40bdbcf42de"
       },
       "./src/controllers/v1.controller.ts": {
-        "version": "2c1d2df83aee848dcc407d6dd3c6d8a96f695d2b085ad148d064d9e064eb23f8",
-        "signature": "74f749bd8bde7ac3a60fb6074953339f0a4d1d01a1d5735bd2ccbcaf07b256b0"
+        "version": "23e401d45b18dbdaa9b6d8f032b58dd312b0d3dd1c696097300d1ef6bf5f4874",
+        "signature": "e69cc58ab55a85cccf6fe38cdb36e0468e1398d1ad248a48a746a297ce675203"
       },
       "./src/controllers/index.ts": {
         "version": "195b1d74ef9710f93c31b42521fae80a6a6ee4c00b7d8573a65d62d8a82bbb2c",
@@ -2040,6 +2060,10 @@
       "./node_modules/@types/pg-types/index.d.ts": {
         "version": "060937b9e71c39c855e3572260800c74f248947c5781ddd8db1f3e0a08696c13",
         "signature": "060937b9e71c39c855e3572260800c74f248947c5781ddd8db1f3e0a08696c13"
+      },
+      "./node_modules/@types/scrypt-js/index.d.ts": {
+        "version": "e772961267ab8e53ae53d6925120571d0af508251db3513f3a3ec41fc3e0eb7c",
+        "signature": "e772961267ab8e53ae53d6925120571d0af508251db3513f3a3ec41fc3e0eb7c"
       },
       "./node_modules/@types/type-is/index.d.ts": {
         "version": "37e4c904fc4eede08a541021c074c160cf27f6a756e4459197c2711fb8b2a648",
@@ -4618,6 +4642,16 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/evidence-type.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/msg-claim.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/input/index.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/evidence-type.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-account-response.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
@@ -4636,6 +4670,10 @@
       ],
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-account-txs-response.d.ts": [
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/result-tx.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-all-params-response.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -4720,6 +4758,17 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-claim-response.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/msg-claim.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-claims-response.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/msg-claim.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/node-params.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
@@ -4729,17 +4778,17 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
-      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-receipt-response.d.ts": [
-        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/input/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/input/session-header.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/stored-receipt.d.ts": [
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/input/session-header.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-receipt-response.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/stored-receipt.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -4857,8 +4906,10 @@
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/challenge-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/consensus-relay-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/dispatch-response.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/msg-claim.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-account-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-account-txs-response.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-all-params-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-app-params-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-app-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-apps-response.d.ts",
@@ -4866,6 +4917,8 @@
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-block-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-block-txs-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-height-response.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-claim-response.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-claims-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-params-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-receipt-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-receipts-response.d.ts",
@@ -4982,6 +5035,7 @@
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/consensus-node.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/consensus.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/event.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/evidence-type.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/jailed-status.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/node-params.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/node.d.ts",
@@ -5066,6 +5120,8 @@
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/jailed-status.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/index.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-block-txs-response.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-claim-response.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-claims-response.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -5400,6 +5456,11 @@
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
       "./node_modules/@types/pg-types/index.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@types/scrypt-js/index.d.ts": [
+        "./node_modules/@types/node/ts3.2/index.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -7908,6 +7969,16 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/evidence-type.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/msg-claim.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/input/index.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/evidence-type.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-account-response.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
@@ -7926,6 +7997,10 @@
       ],
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-account-txs-response.d.ts": [
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/result-tx.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-all-params-response.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -8010,6 +8085,17 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-claim-response.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/msg-claim.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-claims-response.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/msg-claim.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/node-params.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
@@ -8019,17 +8105,17 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
-      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-receipt-response.d.ts": [
-        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/input/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/input/session-header.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/stored-receipt.d.ts": [
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/input/session-header.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-receipt-response.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/stored-receipt.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -8147,8 +8233,10 @@
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/challenge-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/consensus-relay-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/dispatch-response.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/msg-claim.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-account-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-account-txs-response.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-all-params-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-app-params-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-app-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-apps-response.d.ts",
@@ -8156,6 +8244,8 @@
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-block-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-block-txs-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-height-response.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-claim-response.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-claims-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-params-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-receipt-response.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-receipts-response.d.ts",
@@ -8272,6 +8362,7 @@
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/consensus-node.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/consensus.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/event.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/evidence-type.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/jailed-status.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/node-params.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/node.d.ts",
@@ -8356,6 +8447,8 @@
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/jailed-status.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/index.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-block-txs-response.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-claim-response.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-claims-response.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -8684,6 +8777,11 @@
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
       "./node_modules/@types/pg-types/index.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@types/scrypt-js/index.d.ts": [
+        "./node_modules/@types/node/ts3.2/index.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -9048,7 +9146,6 @@
       "./node_modules/@loopback/rest/dist/validation/request-body.validator.d.ts",
       "./node_modules/@loopback/rest/dist/index.d.ts",
       "./node_modules/@loopback/rest/index.d.ts",
-      "./src/sequence.ts",
       "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts",
       "./src/application.ts",
       "./src/index.ts",
@@ -9079,7 +9176,6 @@
       "./src/models/pocket-application.model.ts",
       "./src/models/blockchain.model.ts",
       "./src/models/index.ts",
-      "./src/datasources/gateway.datasource.ts",
       "./src/datasources/index.ts",
       "./src/repositories/pocket-application.repository.ts",
       "./src/repositories/blockchain.repository.ts",
@@ -9104,10 +9200,13 @@
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/input/minority-response.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/consensus-relay-response.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/dispatch-response.d.ts",
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/evidence-type.d.ts",
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/msg-claim.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-account-response.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/response-deliver-tx.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/result-tx.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-account-txs-response.d.ts",
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-all-params-response.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/application-params.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-app-params-response.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/application.d.ts",
@@ -9124,11 +9223,13 @@
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-block-response.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-block-txs-response.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-height-response.d.ts",
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-claim-response.d.ts",
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-claims-response.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/node-params.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-params-response.d.ts",
-      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-receipt-response.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/input/session-header.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/stored-receipt.d.ts",
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-receipt-response.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-receipts-response.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-node-response.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/pocket-params.d.ts",
@@ -9228,12 +9329,15 @@
       "./node_modules/@types/mocha/index.d.ts",
       "./node_modules/@types/on-finished/index.d.ts",
       "./node_modules/@types/pg-types/index.d.ts",
+      "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
       "../../../node_modules/@types/bn.js/index.d.ts",
       "../../../node_modules/@types/prop-types/index.d.ts",
       "../../../node_modules/@types/react/global.d.ts",
       "../../../node_modules/csstype/index.d.ts",
       "../../../node_modules/@types/react/index.d.ts",
+      "./src/sequence.ts",
+      "./src/datasources/gateway.datasource.ts",
       "./src/controllers/v1.controller.ts"
     ]
   },
