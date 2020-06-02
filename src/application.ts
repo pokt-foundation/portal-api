@@ -19,12 +19,12 @@ const {
   HttpRpcProvider
 } = pocketJS;
 
-var Redis = require('ioredis');
-var crypto = require('crypto');
-var os = require('os');
-var process = require('process'); 
-var pg = require('pg');
-var got = require('got');
+const Redis = require('ioredis');
+const crypto = require('crypto');
+const os = require('os');
+const process = require('process'); 
+const pg = require('pg');
+const got = require('got');
 
 require('log-timestamp');
 require('dotenv').config();

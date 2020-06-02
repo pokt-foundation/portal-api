@@ -14,14 +14,14 @@ import {
   Configuration,
   Session,
   Node,
-  ConsensusNode,
+  // ConsensusNode,
   RelayResponse,
 } from "@pokt-network/pocket-js";
 
 import { Redis } from "ioredis";
 import { Pool as PGPool } from "pg";
 
-var pgFormat = require("pg-format");
+const pgFormat = require("pg-format");
 
 export class V1Controller {
   constructor(
@@ -29,6 +29,7 @@ export class V1Controller {
     @inject("host") private host: string,
     @inject("origin") private origin: string,
     @inject("userAgent") private userAgent: string,
+    @inject("contentType") private contentType: string,
     @inject("pocketInstance") private pocket: Pocket,
     @inject("pocketConfiguration") private pocketConfiguration: Configuration,
     @inject("redisInstance") private redis: Redis,
@@ -52,11 +53,20 @@ export class V1Controller {
   })
   async attemptRelay(
     @param.path.string("id") id: string,
-    @requestBody() data: any,
+    @requestBody({
+      description: 'request object value',
+      required: true,
+      content: {
+        'application/json': {}
+      }
+    }) rawData: object,
     @param.filter(PocketApplication, { exclude: "where" })
     filter?: FilterExcludingWhere<PocketApplication>
   ): Promise<string> {
-    console.log("PROCESSING " + id + " host: " + this.host + " req: " + JSON.stringify(data));
+    // Temporarily only taking in JSON objects
+    const data = JSON.stringify(rawData);
+
+    console.log("PROCESSING " + id + " host: " + this.host + " req: " + data);
     const elapsedStart = process.hrtime();
 
     // Load the requested blockchain
@@ -65,7 +75,7 @@ export class V1Controller {
 
     if (!cachedBlockchains) {
       blockchains = await this.blockchainRepository.find();
-      this.redis.set("blockchains", JSON.stringify(blockchains), "EX", 1);
+      await this.redis.set("blockchains", JSON.stringify(blockchains), "EX", 1);
     } else {
       blockchains = JSON.parse(cachedBlockchains);
     }
@@ -73,7 +83,7 @@ export class V1Controller {
     // Split off the first part of the request's host and check for matches
     const blockchainRequest = this.host.split(".")[0];
     const blockchainFilter = blockchains.filter(
-      (b: any) => b.blockchain.toLowerCase() === blockchainRequest.toLowerCase()
+      (b: {'blockchain': string}) => b.blockchain.toLowerCase() === blockchainRequest.toLowerCase()
     );
 
     if (blockchainFilter[0]) {
@@ -88,7 +98,7 @@ export class V1Controller {
 
     if (!cachedApp) {
       app = await this.pocketApplicationRepository.findById(id, filter);
-      this.redis.set(id, JSON.stringify(app), "EX", 60);
+      await this.redis.set(id, JSON.stringify(app), "EX", 60);
     } else {
       app = JSON.parse(cachedApp);
     }
@@ -136,7 +146,7 @@ export class V1Controller {
 
     // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
     const relayResponse = await this.pocket.sendRelay(
-      JSON.stringify(data),
+      data,
       blockchain,
       pocketAAT,
       this.pocketConfiguration,
@@ -150,7 +160,7 @@ export class V1Controller {
       console.log("SUCCESS " + id + " chain: " + blockchain + " req: " + JSON.stringify(data) + " res: " + relayResponse.payload);
       const bytes = Buffer.byteLength(relayResponse.payload, 'utf8');
 
-      this.recordMetric({
+      await this.recordMetric({
         appPubKey: app.appPubKey,
         blockchain,
         serviceNode: relayResponse.proof.servicerPubKey,
@@ -165,7 +175,7 @@ export class V1Controller {
       console.log("ERROR " + id + " chain: " + blockchain + " req: " + JSON.stringify(data) + " res: " + relayResponse.message);
       const bytes = Buffer.byteLength(relayResponse.message, 'utf8');
 
-      this.recordMetric({
+      await this.recordMetric({
         appPubKey: app.appPubKey,
         blockchain,
         serviceNode: node?.publicKey,
@@ -192,7 +202,7 @@ export class V1Controller {
       return false;
     }
 
-    for (var test of tests) {
+    for (const test of tests) {
       if (type === "explicit") {
         if (test.toLowerCase() === check.toLowerCase()) {
           return true;
@@ -202,6 +212,17 @@ export class V1Controller {
           return true;
         }
       }
+    }
+    return false;
+  }
+
+  // Debug log for testing based on user agent
+  checkDebug(): boolean {
+    if (
+      this.userAgent &&
+      this.userAgent.toLowerCase().includes('pocket-debug')
+      ) {
+      return true;
     }
     return false;
   }
@@ -248,9 +269,9 @@ export class V1Controller {
         redisListSize > 0 &&
         currentTimestamp > parseInt(redisListAge) + 10
       ) {
-        this.redis.set("age-" + redisMetricsKey, currentTimestamp);
+        await this.redis.set("age-" + redisMetricsKey, currentTimestamp);
         
-        let bulkData = [metricsValues];
+        const bulkData = [metricsValues];
         for (let count = 0; count < redisListSize; count++) {
           const redisRecord = await this.redis.lpop(redisMetricsKey);
           bulkData.push(JSON.parse(redisRecord));
@@ -261,15 +282,15 @@ export class V1Controller {
         );
         this.pgPool.query(metricsQuery);
       } else {
-        this.redis.rpush(redisMetricsKey, JSON.stringify(metricsValues));
+        await this.redis.rpush(redisMetricsKey, JSON.stringify(metricsValues));
       }
       
       if (!redisListAge) {
-        this.redis.set("age-" + redisMetricsKey, currentTimestamp);
+        await this.redis.set("age-" + redisMetricsKey, currentTimestamp);
       }
 
       if (serviceNode) {
-        this.updateServiceNodeQuality(blockchain, serviceNode, elapsedTime, result);
+        await this.updateServiceNodeQuality(blockchain, serviceNode, elapsedTime, result);
       }
 
     } catch (err) {
@@ -315,7 +336,7 @@ export class V1Controller {
       };
     }
 
-    this.redis.set(blockchain + "-" + serviceNode + "-"  + new Date().getHours(), JSON.stringify(serviceNodeQuality), "EX", 3600);
+    await this.redis.set(blockchain + "-" + serviceNode + "-"  + new Date().getHours(), JSON.stringify(serviceNodeQuality), "EX", 3600);
     console.log(serviceNodeQuality);
   }
   
@@ -329,13 +350,15 @@ export class V1Controller {
   // When selecting a node, pull the stats for each node in the session
   // Rank and weight them for node choice
   async cherryPickNode(pocketSession: Session, blockchain: string): Promise<Node> {
-    var rawNodes = {} as { [nodePublicKey: string]: Node};
-    var sortedLogs = [] as {nodePublicKey: string, attempts: number, successRate: number, averageSuccessLatency: number}[];
+    const rawNodes = {} as { [nodePublicKey: string]: Node};
+    const sortedLogs = [] as {nodePublicKey: string, attempts: number, successRate: number, averageSuccessLatency: number}[];
 
     for (const node of pocketSession.sessionNodes) {
       rawNodes[node.publicKey] = node;
       const serviceLog = await this.fetchServiceLog(blockchain, node.publicKey);
-      console.log(serviceLog);
+      if (this.checkDebug()) {
+        console.log(serviceLog);
+      }
 
       let attempts = 0;
       let successRate = 0;
@@ -385,32 +408,34 @@ export class V1Controller {
       }
       return 0;
     });
-    console.log(sortedLogs);
+    if (this.checkDebug()) {
+      console.log(sortedLogs);
+    }
 
     // Iterate through sorted logs and form in to a weighted list of nodes
-    var rankedNodes = [] as Node[];
+    let rankedNodes = [] as Node[];
 
     // weightFactor pushes the fastest nodes with the highest success rates 
     // to be called on more often for relays.
     // 
     // The node with the highest success rate and the lowest average latency will
     // be 10 times more likely to be selected than a node that has had failures.
-    var weightFactor = 10;
+    let weightFactor = 10;
 
     // The number of failures tolerated per hour before being removed from rotation
-    var maxFailuresPerHour = 10;
+    const maxFailuresPerHour = 10;
 
     for (const sortedLog of sortedLogs) {
       if (sortedLog.successRate === 1) {
         // For untested nodes and nodes with 100% success rates, weight their selection
-        for (var x=1; x <= weightFactor; x++) {
+        for (let x=1; x <= weightFactor; x++) {
           rankedNodes.push(rawNodes[sortedLog.nodePublicKey]);
         }
         weightFactor = weightFactor - 2;
       }
       else if (sortedLog.successRate > 0.95) {
         // For all nodes with reasonable success rate, weight their selection less
-        for (var x=1; x <= weightFactor; x++) {
+        for (let x=1; x <= weightFactor; x++) {
           rankedNodes.push(rawNodes[sortedLog.nodePublicKey]);
         }
         weightFactor = weightFactor - 3;
@@ -436,10 +461,12 @@ export class V1Controller {
       rankedNodes = pocketSession.sessionNodes;
     }
 
-    console.log("Number of weighted nodes for selection: " + rankedNodes.length);
     const selectedNode = Math.floor(Math.random() * (rankedNodes.length));
     const node = rankedNodes[selectedNode];
-    console.log("Selected "+ selectedNode + " : " + node.publicKey);
+    if (this.checkDebug()) {
+      console.log("Number of weighted nodes for selection: " + rankedNodes.length);
+      console.log("Selected "+ selectedNode + " : " + node.publicKey);
+    }
     return node;
   }
 }

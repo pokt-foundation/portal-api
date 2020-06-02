@@ -1,3 +1,4 @@
+/* eslint-disable */
 const application = require('./dist');
 
 module.exports = application;
@@ -18,6 +19,9 @@ if (require.main === module) {
         // useful when used with OpenAPI-to-GraphQL to locate your application
         setServersFromRequest: true,
       },
+    },
+    json: {
+      strict: false
     },
   };
   application.main(config).catch(err => {

@@ -29,8 +29,9 @@ export class GatewaySequence implements SequenceHandler {
       context.bind("host").to(request.headers['host']);
       context.bind("userAgent").to(request.headers['user-agent']);
       context.bind("origin").to(request.headers['origin']);
+      context.bind("contentType").to(request.headers['content-type']);
 
-      let secretKey: string = "";
+      let secretKey = "";
       // SecretKey passed in via basic http auth
       if (request.headers['authorization']) { 
         const base64Credentials =  request.headers['authorization'].split(' ')[1];
