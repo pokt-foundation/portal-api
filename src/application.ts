@@ -70,7 +70,18 @@ export class PocketGatewayApplication extends BootMixin(
 
     // Create the Pocket instance
     const dispatchers = new URL(dispatchURL);
-    const configuration = new Configuration(5, 100000, 5, 20000, true);
+    const configuration = new Configuration(
+      5, 
+      100000, 
+      5, 
+      20000, 
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      false
+      );
     const rpcProvider = new HttpRpcProvider(dispatchers)
     const pocket = new Pocket([dispatchers], rpcProvider, configuration);
  

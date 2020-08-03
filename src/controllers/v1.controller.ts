@@ -30,6 +30,7 @@ export class V1Controller {
     @inject("origin") private origin: string,
     @inject("userAgent") private userAgent: string,
     @inject("contentType") private contentType: string,
+    @inject("relayPath") private relayPath: string,
     @inject("pocketInstance") private pocket: Pocket,
     @inject("pocketConfiguration") private pocketConfiguration: Configuration,
     @inject("redisInstance") private redis: Redis,
@@ -152,7 +153,7 @@ export class V1Controller {
       this.pocketConfiguration,
       undefined,
       undefined,
-      undefined,
+      this.relayPath,
       node
     );
     // Success
