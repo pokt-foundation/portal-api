@@ -10,6 +10,7 @@ export declare class V1Controller {
     private origin;
     private userAgent;
     private contentType;
+    private relayPath;
     private pocket;
     private pocketConfiguration;
     private redis;
@@ -17,7 +18,7 @@ export declare class V1Controller {
     private processUID;
     pocketApplicationRepository: PocketApplicationRepository;
     private blockchainRepository;
-    constructor(secretKey: string, host: string, origin: string, userAgent: string, contentType: string, pocket: Pocket, pocketConfiguration: Configuration, redis: Redis, pgPool: PGPool, processUID: string, pocketApplicationRepository: PocketApplicationRepository, blockchainRepository: BlockchainRepository);
+    constructor(secretKey: string, host: string, origin: string, userAgent: string, contentType: string, relayPath: string, pocket: Pocket, pocketConfiguration: Configuration, redis: Redis, pgPool: PGPool, processUID: string, pocketApplicationRepository: PocketApplicationRepository, blockchainRepository: BlockchainRepository);
     attemptRelay(id: string, rawData: object, filter?: FilterExcludingWhere<PocketApplication>): Promise<string>;
     checkWhitelist(tests: string[], check: string, type: string): boolean;
     checkDebug(): boolean;
