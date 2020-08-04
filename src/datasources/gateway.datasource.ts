@@ -2,6 +2,7 @@ import {inject, lifeCycleObserver, LifeCycleObserver} from '@loopback/core';
 import {juggler} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 
+console.log(process.env);
 const mongoEndpoint: string = process.env.MONGO_ENDPOINT ?? "";
 if (!mongoEndpoint) {
   throw new HttpErrors.InternalServerError("MONGO_ENDPOINT required in ENV");
