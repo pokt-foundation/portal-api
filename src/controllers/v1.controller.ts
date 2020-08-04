@@ -1,10 +1,10 @@
 import { inject } from "@loopback/context";
 import { FilterExcludingWhere, repository } from "@loopback/repository";
 import { post, param, requestBody, HttpErrors } from "@loopback/rest";
-import { PocketApplication } from "../models";
+import { Applications } from "../models";
 import {
-  PocketApplicationRepository,
-  BlockchainRepository,
+  ApplicationsRepository,
+  BlockchainsRepository,
 } from "../repositories";
 
 import {
@@ -36,10 +36,10 @@ export class V1Controller {
     @inject("redisInstance") private redis: Redis,
     @inject("pgPool") private pgPool: PGPool,
     @inject("processUID") private processUID: string,
-    @repository(PocketApplicationRepository)
-    public pocketApplicationRepository: PocketApplicationRepository,
-    @repository(BlockchainRepository)
-    private blockchainRepository: BlockchainRepository
+    @repository(ApplicationsRepository)
+    public applicationsRepository: ApplicationsRepository,
+    @repository(BlockchainsRepository)
+    private blockchainsRepository: BlockchainsRepository
   ) {}
 
   @post("/v1/{id}", {
@@ -61,8 +61,8 @@ export class V1Controller {
         'application/json': {}
       }
     }) rawData: object,
-    @param.filter(PocketApplication, { exclude: "where" })
-    filter?: FilterExcludingWhere<PocketApplication>
+    @param.filter(Applications, { exclude: "where" })
+    filter?: FilterExcludingWhere<Applications>
   ): Promise<string> {
     // Temporarily only taking in JSON objects
     const data = JSON.stringify(rawData);
@@ -75,7 +75,7 @@ export class V1Controller {
     let blockchains, blockchain;
 
     if (!cachedBlockchains) {
-      blockchains = await this.blockchainRepository.find();
+      blockchains = await this.blockchainsRepository.find();
       await this.redis.set("blockchains", JSON.stringify(blockchains), "EX", 1);
     } else {
       blockchains = JSON.parse(cachedBlockchains);
@@ -98,7 +98,7 @@ export class V1Controller {
     let app;
 
     if (!cachedApp) {
-      app = await this.pocketApplicationRepository.findById(id, filter);
+      app = await this.applicationsRepository.findById(id, filter);
       await this.redis.set(id, JSON.stringify(app), "EX", 60);
     } else {
       app = JSON.parse(cachedApp);
@@ -124,13 +124,13 @@ export class V1Controller {
         "Whitelist User Agent check failed: " + this.userAgent
       );
     }
-
+    
     // Checks pass; create AAT
     const pocketAAT = new PocketAAT(
-      app.version,
-      app.clientPubKey,
-      app.appPubKey,
-      app.signature
+      app.aat.version,
+      app.aat.clientPublicKey,
+      app.aat.applicationPublicKey,
+      app.aat.applicationSignature
     );
     
     let node;
@@ -196,7 +196,7 @@ export class V1Controller {
   // Check passed in string against an array of whitelisted items
   // Type can be "explicit" or substring match
   checkWhitelist(tests: string[], check: string, type: string): boolean {
-    if (tests.length === 0) {
+    if (!tests || tests.length === 0) {
       return true;
     }
     if (!check) {
