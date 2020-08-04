@@ -1,0 +1,66 @@
+name: Testnet Deployment
+
+on:
+  push:
+    branches: [ staging ]
+
+jobs:
+  deploy:
+    name: Gateway
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+    
+    - name: Make envfile
+      uses: SpicyPizza/create-envfile@v1
+      with:
+        envkey_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_TESTNET_CLIENT_PRIVATE_KEY }}
+        envkey_CLIENT_PASSPHRASE: ${{ secrets.POCKET_NETWORK_TESTNET_CLIENT_PASSPHRASE }}
+        envkey_MONGO_ENDPOINT: ${{ secrets.MONGO_TESTNET_ENDPOINT }}
+        envkey_PG_CONNECTION: ${{ secrets.PG_TESTNET_CONNECTION }}
+        envkey_PG_CERTIFICATE: ${{ secrets.PG_TESTNET_CERTIFICATE }}
+        envkey_DISPATCH_URL: https://node1.testnet.pokt.network:443
+        envkey_REDIS_ENDPOINT: dashboard-testnet.js6zbp.ng.0001.usw2.cache.amazonaws.com
+        envkey_REDIS_PORT: 6379
+        file_name: .env
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: gateway-testnet
+        IMAGE_TAG: latest
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+    - name: Fill in the new image ID in the Amazon ECS task definition
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: pocket-gateway/ecs-task-definition-testnet.json
+        container-name: gateway-testnet
+        image: ${{ steps.build-image.outputs.image }}
+
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        service: gateway-service
+        cluster: gateway-testnet
+        wait-for-service-stability: true
+
