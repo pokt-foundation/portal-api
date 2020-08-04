@@ -60,7 +60,7 @@ jobs:
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
         task-definition: ${{ steps.task-def.outputs.task-definition }}
-        service: gateway-service
+        service: gateway-testnet-service
         cluster: gateway-testnet
         wait-for-service-stability: true
 
