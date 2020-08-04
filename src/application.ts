@@ -48,12 +48,9 @@ export class PocketGatewayApplication extends BootMixin(
   }
 
   async loadPocket(): Promise<void> {
-    // Requirements; for Production these are stored in AWS Secrets Manager in the
-    // corresponding region of the container.
+    // Requirements; for Production these are stored in GitHub repo secrets
     //
     // For Dev, you need to pass them in via .env file
-    //
-    // TODO: change to https when infra is finished
     const dispatchURL: string = process.env.DISPATCH_URL || "";
     const clientPrivateKey: string = process.env.CLIENT_PRIVATE_KEY || "";
     const clientPassphrase: string = process.env.CLIENT_PASSPHRASE || "";

@@ -5,14 +5,14 @@ const repository_1 = require("@loopback/repository");
 const models_1 = require("../models");
 const datasources_1 = require("../datasources");
 const core_1 = require("@loopback/core");
-let PocketApplicationRepository = class PocketApplicationRepository extends repository_1.DefaultCrudRepository {
+let ApplicationsRepository = class ApplicationsRepository extends repository_1.DefaultCrudRepository {
     constructor(dataSource) {
-        super(models_1.PocketApplication, dataSource);
+        super(models_1.Applications, dataSource);
     }
 };
-PocketApplicationRepository = tslib_1.__decorate([
+ApplicationsRepository = tslib_1.__decorate([
     tslib_1.__param(0, core_1.inject('datasources.gateway')),
     tslib_1.__metadata("design:paramtypes", [datasources_1.GatewayDataSource])
-], PocketApplicationRepository);
-exports.PocketApplicationRepository = PocketApplicationRepository;
-//# sourceMappingURL=pocket-application.repository.js.map
+], ApplicationsRepository);
+exports.ApplicationsRepository = ApplicationsRepository;
+//# sourceMappingURL=applications.repository.js.map

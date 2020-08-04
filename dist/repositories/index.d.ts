@@ -1,2 +1,2 @@
-export * from './pocket-application.repository';
-export * from './blockchain.repository';
+export * from './blockchains.repository';
+export * from './applications.repository';

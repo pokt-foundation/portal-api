@@ -1,16 +1,16 @@
 import {DefaultCrudRepository} from '@loopback/repository';
-import {Blockchain, BlockchainRelations} from '../models';
+import {Applications, ApplicationsRelations} from '../models';
 import {GatewayDataSource} from '../datasources';
 import {inject} from '@loopback/core';
 
-export class BlockchainRepository extends DefaultCrudRepository<
-  Blockchain,
-  typeof Blockchain.prototype.hash,
-  BlockchainRelations
+export class ApplicationsRepository extends DefaultCrudRepository<
+  Applications,
+  typeof Applications.prototype.id,
+  ApplicationsRelations
 > {
   constructor(
     @inject('datasources.gateway') dataSource: GatewayDataSource,
   ) {
-    super(Blockchain, dataSource);
+    super(Applications, dataSource);
   }
 }

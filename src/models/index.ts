@@ -1,1 +1,2 @@
-export * from './pocket-application.model';export * from './blockchain.model';
+export * from './blockchains.model';
+export * from './applications.model';
