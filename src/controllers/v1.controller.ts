@@ -165,7 +165,7 @@ export class V1Controller {
       const bytes = Buffer.byteLength(relayResponse.payload, 'utf8');
 
       await this.recordMetric({
-        appPubKey: app.appPubKey,
+        appPubKey: app.aat.applicationPublicKey,
         blockchain,
         serviceNode: relayResponse.proof.servicerPubKey,
         elapsedStart,
@@ -180,7 +180,7 @@ export class V1Controller {
       const bytes = Buffer.byteLength(relayResponse.message, 'utf8');
 
       await this.recordMetric({
-        appPubKey: app.appPubKey,
+        appPubKey: app.aat.applicationPublicKey,
         blockchain,
         serviceNode: node?.publicKey,
         elapsedStart,
