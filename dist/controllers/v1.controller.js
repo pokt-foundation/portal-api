@@ -60,15 +60,15 @@ let V1Controller = class V1Controller {
             app = JSON.parse(cachedApp);
         }
         // Check secretKey; is it required? does it pass?
-        if (app.secretKeyRequired && this.secretKey !== app.secretKey) {
+        if (app.gatewaySettings.secretKeyRequired && this.secretKey !== app.gatewaySettings.secretKey) {
             throw new rest_1.HttpErrors.Forbidden("SecretKey does not match");
         }
         // Whitelist: origins -- explicit matches
-        if (!this.checkWhitelist(app.whitelistOrigins, this.origin, "explicit")) {
+        if (!this.checkWhitelist(app.gatewaySettings.whitelistOrigins, this.origin, "explicit")) {
             throw new rest_1.HttpErrors.Forbidden("Whitelist Origin check failed: " + this.origin);
         }
         // Whitelist: userAgent -- substring matches
-        if (!this.checkWhitelist(app.whitelistUserAgents, this.userAgent, "substring")) {
+        if (!this.checkWhitelist(app.gatewaySettings.whitelistUserAgents, this.userAgent, "substring")) {
             throw new rest_1.HttpErrors.Forbidden("Whitelist User Agent check failed: " + this.userAgent);
         }
         // Checks pass; create AAT
