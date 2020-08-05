@@ -144,6 +144,10 @@ export class V1Controller {
     if (pocketSession instanceof Session) {
       node = await this.cherryPickNode(pocketSession, blockchain);
     }
+    
+    if (this.checkDebug()) {
+      console.log(pocketSession);
+    }
 
     // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
     const relayResponse = await this.pocket.sendRelay(
@@ -156,9 +160,11 @@ export class V1Controller {
       this.relayPath,
       node
     );
+    
     if (this.checkDebug()) {
       console.log(relayResponse);
     }
+
     // Success
     if (relayResponse instanceof RelayResponse) {
       console.log("SUCCESS " + id + " chain: " + blockchain + " req: " + JSON.stringify(data) + " res: " + relayResponse.payload);
