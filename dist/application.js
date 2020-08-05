@@ -39,6 +39,8 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         const dispatchURL = process.env.DISPATCH_URL || "";
         const clientPrivateKey = process.env.CLIENT_PRIVATE_KEY || "";
         const clientPassphrase = process.env.CLIENT_PASSPHRASE || "";
+        const pocketSessionBlockFrequency = parseInt(process.env.POCKET_SESSION_BLOCK_FREQUENCY) || 0;
+        const pocketBlockTime = parseInt(process.env.POCKET_BLOCK_TIME) || 0;
         if (!dispatchURL) {
             throw new rest_1.HttpErrors.InternalServerError("DISPATCH_URL required in ENV");
         }
@@ -48,9 +50,15 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         if (!clientPassphrase) {
             throw new rest_1.HttpErrors.InternalServerError("CLIENT_PASSPHRASE required in ENV");
         }
+        if (!pocketSessionBlockFrequency || pocketSessionBlockFrequency === 0) {
+            throw new rest_1.HttpErrors.InternalServerError("POCKET_SESSION_BLOCK_FREQUENCY required in ENV");
+        }
+        if (!pocketBlockTime || pocketBlockTime === 0) {
+            throw new rest_1.HttpErrors.InternalServerError("POCKET_BLOCK_TIME required in ENV");
+        }
         // Create the Pocket instance
         const dispatchers = new URL(dispatchURL);
-        const configuration = new Configuration(5, 100000, 5, 20000, false, undefined, undefined, undefined, undefined, false);
+        const configuration = new Configuration(5, 100000, 5, 20000, false, pocketSessionBlockFrequency, pocketBlockTime, undefined, undefined, false);
         const rpcProvider = new HttpRpcProvider(dispatchers);
         const pocket = new Pocket([dispatchers], rpcProvider, configuration);
         // Bind to application context for shared re-use

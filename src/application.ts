@@ -54,6 +54,8 @@ export class PocketGatewayApplication extends BootMixin(
     const dispatchURL: string = process.env.DISPATCH_URL || "";
     const clientPrivateKey: string = process.env.CLIENT_PRIVATE_KEY || "";
     const clientPassphrase: string = process.env.CLIENT_PASSPHRASE || "";
+    const pocketSessionBlockFrequency: number = parseInt(process.env.POCKET_SESSION_BLOCK_FREQUENCY) || 0;
+    const pocketBlockTime: number = parseInt(process.env.POCKET_BLOCK_TIME) || 0;
 
     if (!dispatchURL) {
       throw new HttpErrors.InternalServerError("DISPATCH_URL required in ENV");
@@ -64,6 +66,12 @@ export class PocketGatewayApplication extends BootMixin(
     if (!clientPassphrase) {
       throw new HttpErrors.InternalServerError("CLIENT_PASSPHRASE required in ENV");
     }
+    if (!pocketSessionBlockFrequency || pocketSessionBlockFrequency === 0) {
+      throw new HttpErrors.InternalServerError("POCKET_SESSION_BLOCK_FREQUENCY required in ENV");
+    }
+    if (!pocketBlockTime || pocketBlockTime === 0) {
+      throw new HttpErrors.InternalServerError("POCKET_BLOCK_TIME required in ENV");
+    }
 
     // Create the Pocket instance
     const dispatchers = new URL(dispatchURL);
@@ -73,8 +81,8 @@ export class PocketGatewayApplication extends BootMixin(
       5, 
       20000, 
       false,
-      undefined,
-      undefined,
+      pocketSessionBlockFrequency,
+      pocketBlockTime,
       undefined,
       undefined,
       false
