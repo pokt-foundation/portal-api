@@ -156,6 +156,9 @@ export class V1Controller {
       this.relayPath,
       node
     );
+    if (this.checkDebug()) {
+      console.log(relayResponse);
+    }
     // Success
     if (relayResponse instanceof RelayResponse) {
       console.log("SUCCESS " + id + " chain: " + blockchain + " req: " + JSON.stringify(data) + " res: " + relayResponse.payload);
