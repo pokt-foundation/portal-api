@@ -35,7 +35,7 @@ jobs:
         envkey_DISPATCH_URL: https://node1.mainnet.pokt.network
         envkey_REDIS_ENDPOINT: dashboard.js6zbp.ng.0001.usw2.cache.amazonaws.com
         envkey_REDIS_PORT: 6379
-        envkey_POCKET_SESSION_BLOCK_FREQUENCY: 2
+        envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
         envkey_POCKET_BLOCK_TIME: 900000
         file_name: .env
 
