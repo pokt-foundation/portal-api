@@ -2,11 +2,18 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
 const repository_1 = require("@loopback/repository");
-let Aat = class Aat extends repository_1.Entity {
+let Blockchains = class Blockchains extends repository_1.Entity {
     constructor(data) {
         super(data);
     }
 };
+tslib_1.__decorate([
+    repository_1.property({
+        type: 'string',
+        required: true,
+    }),
+    tslib_1.__metadata("design:type", String)
+], Blockchains.prototype, "ticker", void 0);
 tslib_1.__decorate([
     repository_1.property({
         type: 'string',
@@ -15,39 +22,52 @@ tslib_1.__decorate([
         required: true,
     }),
     tslib_1.__metadata("design:type", String)
-], Aat.prototype, "appPubKey", void 0);
-tslib_1.__decorate([
-    repository_1.property({
-        type: 'string',
-        required: true,
-        default: '0.0.1',
-    }),
-    tslib_1.__metadata("design:type", String)
-], Aat.prototype, "version", void 0);
+], Blockchains.prototype, "hash", void 0);
 tslib_1.__decorate([
     repository_1.property({
         type: 'string',
         required: true,
     }),
     tslib_1.__metadata("design:type", String)
-], Aat.prototype, "clientPubKey", void 0);
+], Blockchains.prototype, "networkID", void 0);
 tslib_1.__decorate([
     repository_1.property({
         type: 'string',
         required: true,
     }),
     tslib_1.__metadata("design:type", String)
-], Aat.prototype, "signature", void 0);
+], Blockchains.prototype, "network", void 0);
+tslib_1.__decorate([
+    repository_1.property({
+        type: 'string',
+    }),
+    tslib_1.__metadata("design:type", String)
+], Blockchains.prototype, "description", void 0);
+tslib_1.__decorate([
+    repository_1.property({
+        type: 'number',
+        required: true,
+    }),
+    tslib_1.__metadata("design:type", Number)
+], Blockchains.prototype, "index", void 0);
 tslib_1.__decorate([
     repository_1.property({
         type: 'string',
         required: true,
     }),
     tslib_1.__metadata("design:type", String)
-], Aat.prototype, "secretKey", void 0);
-Aat = tslib_1.__decorate([
+], Blockchains.prototype, "blockchain", void 0);
+tslib_1.__decorate([
+    repository_1.property({
+        type: 'boolean',
+        required: true,
+        default: true,
+    }),
+    tslib_1.__metadata("design:type", Boolean)
+], Blockchains.prototype, "active", void 0);
+Blockchains = tslib_1.__decorate([
     repository_1.model({ settings: { strict: false } }),
     tslib_1.__metadata("design:paramtypes", [Object])
-], Aat);
-exports.Aat = Aat;
-//# sourceMappingURL=aat.model.js.map
+], Blockchains);
+exports.Blockchains = Blockchains;
+//# sourceMappingURL=blockchains.model.js.map

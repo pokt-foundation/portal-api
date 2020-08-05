@@ -22,9 +22,7 @@ RUN npm install
 # Bundle app source code
 COPY --chown=node . .
 
-# Remove .env so it doesn't conflict with passed in vars
-RUN rm .env
-
+# NPM build
 RUN npm run build
 
 # Bind to all network interfaces so that it can be mapped to the host OS

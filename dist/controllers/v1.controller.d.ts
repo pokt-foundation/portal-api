@@ -1,6 +1,6 @@
 import { FilterExcludingWhere } from "@loopback/repository";
-import { PocketApplication } from "../models";
-import { PocketApplicationRepository, BlockchainRepository } from "../repositories";
+import { Applications } from "../models";
+import { ApplicationsRepository, BlockchainsRepository } from "../repositories";
 import { Pocket, Configuration, Session, Node } from "@pokt-network/pocket-js";
 import { Redis } from "ioredis";
 import { Pool as PGPool } from "pg";
@@ -10,15 +10,16 @@ export declare class V1Controller {
     private origin;
     private userAgent;
     private contentType;
+    private relayPath;
     private pocket;
     private pocketConfiguration;
     private redis;
     private pgPool;
     private processUID;
-    pocketApplicationRepository: PocketApplicationRepository;
-    private blockchainRepository;
-    constructor(secretKey: string, host: string, origin: string, userAgent: string, contentType: string, pocket: Pocket, pocketConfiguration: Configuration, redis: Redis, pgPool: PGPool, processUID: string, pocketApplicationRepository: PocketApplicationRepository, blockchainRepository: BlockchainRepository);
-    attemptRelay(id: string, rawData: object, filter?: FilterExcludingWhere<PocketApplication>): Promise<string>;
+    applicationsRepository: ApplicationsRepository;
+    private blockchainsRepository;
+    constructor(secretKey: string, host: string, origin: string, userAgent: string, contentType: string, relayPath: string, pocket: Pocket, pocketConfiguration: Configuration, redis: Redis, pgPool: PGPool, processUID: string, applicationsRepository: ApplicationsRepository, blockchainsRepository: BlockchainsRepository);
+    attemptRelay(id: string, rawData: object, filter?: FilterExcludingWhere<Applications>): Promise<string>;
     checkWhitelist(tests: string[], check: string, type: string): boolean;
     checkDebug(): boolean;
     recordMetric({ appPubKey, blockchain, serviceNode, elapsedStart, result, bytes, }: {

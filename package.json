@@ -1,6 +1,6 @@
 {
-  "name": "pocket-gateway",
-  "version": "1.0.0",
+  "name": "@pokt-network/pocket-gateway",
+  "version": "1.0.4",
   "description": "The Pocket Network Gateway is a single endpoint that will offer access to the full range of supported blockchains through one URL.",
   "license": "MIT",
   "keywords": [
@@ -62,7 +62,7 @@
     "@loopback/rest": "^3.3.2",
     "@loopback/rest-explorer": "^2.1.2",
     "@loopback/service-proxy": "^2.1.2",
-    "@pokt-network/pocket-js": "^0.5.0-rc",
+    "@pokt-network/pocket-js": "0.5.7-rc",
     "@types/ioredis": "^4.16.2",
     "@types/pg": "^7.14.3",
     "dotenv": "^8.2.0",

@@ -10,19 +10,20 @@ const pocket_js_1 = require("@pokt-network/pocket-js");
 const pg_1 = require("pg");
 const pgFormat = require("pg-format");
 let V1Controller = class V1Controller {
-    constructor(secretKey, host, origin, userAgent, contentType, pocket, pocketConfiguration, redis, pgPool, processUID, pocketApplicationRepository, blockchainRepository) {
+    constructor(secretKey, host, origin, userAgent, contentType, relayPath, pocket, pocketConfiguration, redis, pgPool, processUID, applicationsRepository, blockchainsRepository) {
         this.secretKey = secretKey;
         this.host = host;
         this.origin = origin;
         this.userAgent = userAgent;
         this.contentType = contentType;
+        this.relayPath = relayPath;
         this.pocket = pocket;
         this.pocketConfiguration = pocketConfiguration;
         this.redis = redis;
         this.pgPool = pgPool;
         this.processUID = processUID;
-        this.pocketApplicationRepository = pocketApplicationRepository;
-        this.blockchainRepository = blockchainRepository;
+        this.applicationsRepository = applicationsRepository;
+        this.blockchainsRepository = blockchainsRepository;
     }
     async attemptRelay(id, rawData, filter) {
         // Temporarily only taking in JSON objects
@@ -33,7 +34,7 @@ let V1Controller = class V1Controller {
         const cachedBlockchains = await this.redis.get("blockchains");
         let blockchains, blockchain;
         if (!cachedBlockchains) {
-            blockchains = await this.blockchainRepository.find();
+            blockchains = await this.blockchainsRepository.find();
             await this.redis.set("blockchains", JSON.stringify(blockchains), "EX", 1);
         }
         else {
@@ -52,26 +53,26 @@ let V1Controller = class V1Controller {
         const cachedApp = await this.redis.get(id);
         let app;
         if (!cachedApp) {
-            app = await this.pocketApplicationRepository.findById(id, filter);
+            app = await this.applicationsRepository.findById(id, filter);
             await this.redis.set(id, JSON.stringify(app), "EX", 60);
         }
         else {
             app = JSON.parse(cachedApp);
         }
         // Check secretKey; is it required? does it pass?
-        if (app.secretKeyRequired && this.secretKey !== app.secretKey) {
+        if (app.gatewaySettings.secretKeyRequired && this.secretKey !== app.gatewaySettings.secretKey) {
             throw new rest_1.HttpErrors.Forbidden("SecretKey does not match");
         }
         // Whitelist: origins -- explicit matches
-        if (!this.checkWhitelist(app.whitelistOrigins, this.origin, "explicit")) {
+        if (!this.checkWhitelist(app.gatewaySettings.whitelistOrigins, this.origin, "explicit")) {
             throw new rest_1.HttpErrors.Forbidden("Whitelist Origin check failed: " + this.origin);
         }
         // Whitelist: userAgent -- substring matches
-        if (!this.checkWhitelist(app.whitelistUserAgents, this.userAgent, "substring")) {
+        if (!this.checkWhitelist(app.gatewaySettings.whitelistUserAgents, this.userAgent, "substring")) {
             throw new rest_1.HttpErrors.Forbidden("Whitelist User Agent check failed: " + this.userAgent);
         }
         // Checks pass; create AAT
-        const pocketAAT = new pocket_js_1.PocketAAT(app.version, app.clientPubKey, app.appPubKey, app.signature);
+        const pocketAAT = new pocket_js_1.PocketAAT(app.aat.version, app.aat.clientPublicKey, app.aat.applicationPublicKey, app.aat.applicationSignature);
         let node;
         // Pull a random node for this relay
         // TODO: weighted pulls; status/ time to relay
@@ -80,7 +81,7 @@ let V1Controller = class V1Controller {
             node = await this.cherryPickNode(pocketSession, blockchain);
         }
         // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
-        const relayResponse = await this.pocket.sendRelay(data, blockchain, pocketAAT, this.pocketConfiguration, undefined, undefined, undefined, node);
+        const relayResponse = await this.pocket.sendRelay(data, blockchain, pocketAAT, this.pocketConfiguration, undefined, undefined, this.relayPath, node);
         // Success
         if (relayResponse instanceof pocket_js_1.RelayResponse) {
             console.log("SUCCESS " + id + " chain: " + blockchain + " req: " + JSON.stringify(data) + " res: " + relayResponse.payload);
@@ -118,7 +119,7 @@ let V1Controller = class V1Controller {
     // Check passed in string against an array of whitelisted items
     // Type can be "explicit" or substring match
     checkWhitelist(tests, check, type) {
-        if (tests.length === 0) {
+        if (!tests || tests.length === 0) {
             return true;
         }
         if (!check) {
@@ -369,7 +370,7 @@ tslib_1.__decorate([
             'application/json': {}
         }
     })),
-    tslib_1.__param(2, rest_1.param.filter(models_1.PocketApplication, { exclude: "where" })),
+    tslib_1.__param(2, rest_1.param.filter(models_1.Applications, { exclude: "where" })),
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", [String, Object, Object]),
     tslib_1.__metadata("design:returntype", Promise)
@@ -380,16 +381,17 @@ V1Controller = tslib_1.__decorate([
     tslib_1.__param(2, context_1.inject("origin")),
     tslib_1.__param(3, context_1.inject("userAgent")),
     tslib_1.__param(4, context_1.inject("contentType")),
-    tslib_1.__param(5, context_1.inject("pocketInstance")),
-    tslib_1.__param(6, context_1.inject("pocketConfiguration")),
-    tslib_1.__param(7, context_1.inject("redisInstance")),
-    tslib_1.__param(8, context_1.inject("pgPool")),
-    tslib_1.__param(9, context_1.inject("processUID")),
-    tslib_1.__param(10, repository_1.repository(repositories_1.PocketApplicationRepository)),
-    tslib_1.__param(11, repository_1.repository(repositories_1.BlockchainRepository)),
-    tslib_1.__metadata("design:paramtypes", [String, String, String, String, String, pocket_js_1.Pocket,
-        pocket_js_1.Configuration, Object, pg_1.Pool, String, repositories_1.PocketApplicationRepository,
-        repositories_1.BlockchainRepository])
+    tslib_1.__param(5, context_1.inject("relayPath")),
+    tslib_1.__param(6, context_1.inject("pocketInstance")),
+    tslib_1.__param(7, context_1.inject("pocketConfiguration")),
+    tslib_1.__param(8, context_1.inject("redisInstance")),
+    tslib_1.__param(9, context_1.inject("pgPool")),
+    tslib_1.__param(10, context_1.inject("processUID")),
+    tslib_1.__param(11, repository_1.repository(repositories_1.ApplicationsRepository)),
+    tslib_1.__param(12, repository_1.repository(repositories_1.BlockchainsRepository)),
+    tslib_1.__metadata("design:paramtypes", [String, String, String, String, String, String, pocket_js_1.Pocket,
+        pocket_js_1.Configuration, Object, pg_1.Pool, String, repositories_1.ApplicationsRepository,
+        repositories_1.BlockchainsRepository])
 ], V1Controller);
 exports.V1Controller = V1Controller;
 //# sourceMappingURL=v1.controller.js.map

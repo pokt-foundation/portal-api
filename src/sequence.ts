@@ -30,6 +30,7 @@ export class GatewaySequence implements SequenceHandler {
       context.bind("userAgent").to(request.headers['user-agent']);
       context.bind("origin").to(request.headers['origin']);
       context.bind("contentType").to(request.headers['content-type']);
+      context.bind("relayPath").to(request.headers['relay-path']);
 
       let secretKey = "";
       // SecretKey passed in via basic http auth
