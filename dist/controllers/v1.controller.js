@@ -82,6 +82,9 @@ let V1Controller = class V1Controller {
         }
         // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
         const relayResponse = await this.pocket.sendRelay(data, blockchain, pocketAAT, this.pocketConfiguration, undefined, undefined, this.relayPath, node);
+        if (this.checkDebug()) {
+            console.log(relayResponse);
+        }
         // Success
         if (relayResponse instanceof pocket_js_1.RelayResponse) {
             console.log("SUCCESS " + id + " chain: " + blockchain + " req: " + JSON.stringify(data) + " res: " + relayResponse.payload);
