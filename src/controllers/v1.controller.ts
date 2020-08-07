@@ -127,10 +127,10 @@ export class V1Controller {
 
     // Checks pass; create AAT
     const pocketAAT = new PocketAAT(
-      app.aat.version,
-      app.aat.clientPublicKey,
-      app.aat.applicationPublicKey,
-      app.aat.applicationSignature
+      app.gatewayAAT.version,
+      app.gatewayAAT.clientPublicKey,
+      app.gatewayAAT.applicationPublicKey,
+      app.gatewayAAT.applicationSignature
     );
     
     let node;
@@ -171,7 +171,7 @@ export class V1Controller {
       const bytes = Buffer.byteLength(relayResponse.payload, 'utf8');
 
       await this.recordMetric({
-        appPubKey: app.aat.applicationPublicKey,
+        appPubKey: app.gatewayAAT.applicationPublicKey,
         blockchain,
         serviceNode: relayResponse.proof.servicerPubKey,
         elapsedStart,
@@ -186,7 +186,7 @@ export class V1Controller {
       const bytes = Buffer.byteLength(relayResponse.message, 'utf8');
 
       await this.recordMetric({
-        appPubKey: app.aat.applicationPublicKey,
+        appPubKey: app.gatewayAAT.applicationPublicKey,
         blockchain,
         serviceNode: node?.publicKey,
         elapsedStart,
