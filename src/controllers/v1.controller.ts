@@ -111,7 +111,7 @@ export class V1Controller {
     if (
         app.gatewaySettings.secretKeyRequired // If the secret key is required by app's settings
         &&                                    // and 
-        app.gatewaSettings.secretKey          // the app's secret key is set
+        app.gatewaySettings.secretKey         // the app's secret key is set
         &&                                    // and
         (
           !(this.secretKey)                   // the request doesn't contain a secret key
