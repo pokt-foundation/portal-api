@@ -124,7 +124,7 @@ export class V1Controller {
               &&
               this.secretKey !== app.gatewaySettings.secretKey  // the secret key does not match plaintext
             )
-            &&                                                  // and 
+            ||                                                  // or
             (
               this.secretKey.length > 32
               &&
