@@ -132,7 +132,6 @@ export class V1Controller {
             )
           )
         )
-        
       ) {
       throw new HttpErrors.Forbidden("SecretKey does not match");
     }
