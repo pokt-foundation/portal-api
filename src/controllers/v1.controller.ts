@@ -20,6 +20,7 @@ import {
 
 import { Redis } from "ioredis";
 import { Pool as PGPool } from "pg";
+import {Encryptor, Decryptor} from "strong-cryptor";
 
 const pgFormat = require("pg-format");
 
@@ -35,6 +36,7 @@ export class V1Controller {
     @inject("pocketConfiguration") private pocketConfiguration: Configuration,
     @inject("redisInstance") private redis: Redis,
     @inject("pgPool") private pgPool: PGPool,
+    @inject("databaseEncryptionKey") private databaseEncryptionKey: string,
     @inject("processUID") private processUID: string,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
@@ -104,8 +106,9 @@ export class V1Controller {
       app = JSON.parse(cachedApp);
     }
 
-    // Check secretKey; is it required? does it pass?
-    if (app.gatewaySettings.secretKeyRequired && this.secretKey !== app.gatewaySettings.secretKey) {
+    // Check secretKey; is it required? does it pass? -- temp allowance for unencrypted keys
+    const decryptor = new Decryptor({key: this.databaseEncryptionKey});
+    if (app.gatewaySettings.secretKeyRequired && this.secretKey !== app.gatewaySettings.secretKey && this.secretKey !== decryptor.decrypt(app.gatewaySettings.secretKey)) {
       throw new HttpErrors.Forbidden("SecretKey does not match");
     }
 
@@ -134,8 +137,7 @@ export class V1Controller {
     );
     
     let node;
-    // Pull a random node for this relay
-    // TODO: weighted pulls; status/ time to relay
+    // Pull the session so we can get a list of nodes and cherry pick which one to use
     const pocketSession = await this.pocket.sessionManager.getCurrentSession(
       pocketAAT,
       blockchain,
