@@ -56,6 +56,7 @@ export class PocketGatewayApplication extends BootMixin(
     const clientPassphrase: string = process.env.CLIENT_PASSPHRASE || "";
     const pocketSessionBlockFrequency: number = parseInt(process.env.POCKET_SESSION_BLOCK_FREQUENCY) || 0;
     const pocketBlockTime: number = parseInt(process.env.POCKET_BLOCK_TIME) || 0;
+    const databaseEncryptionKey: string = process.env.DATABASE_ENCRYPTION_KEY ?? "";
 
     if (!dispatchURL) {
       throw new HttpErrors.InternalServerError("DISPATCH_URL required in ENV");
@@ -72,6 +73,10 @@ export class PocketGatewayApplication extends BootMixin(
     if (!pocketBlockTime || pocketBlockTime === 0) {
       throw new HttpErrors.InternalServerError("POCKET_BLOCK_TIME required in ENV");
     }
+    if (!databaseEncryptionKey) {
+      throw new HttpErrors.InternalServerError("DATABASE_ENCRYPTION_KEY required in ENV");
+    }
+    
 
     // Create the Pocket instance
     const dispatchers = new URL(dispatchURL);
@@ -154,6 +159,7 @@ export class PocketGatewayApplication extends BootMixin(
       }
     });
     this.bind("pgPool").to(pgPool);
+    this.bind("databaseEncryptionKey").to(databaseEncryptionKey);
 
     // Create a UID for this process
     const parts = [os.hostname(), process.pid, +(new Date)];
