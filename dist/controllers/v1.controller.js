@@ -8,9 +8,10 @@ const models_1 = require("../models");
 const repositories_1 = require("../repositories");
 const pocket_js_1 = require("@pokt-network/pocket-js");
 const pg_1 = require("pg");
+const strong_cryptor_1 = require("strong-cryptor");
 const pgFormat = require("pg-format");
 let V1Controller = class V1Controller {
-    constructor(secretKey, host, origin, userAgent, contentType, relayPath, pocket, pocketConfiguration, redis, pgPool, processUID, applicationsRepository, blockchainsRepository) {
+    constructor(secretKey, host, origin, userAgent, contentType, relayPath, pocket, pocketConfiguration, redis, pgPool, databaseEncryptionKey, processUID, applicationsRepository, blockchainsRepository) {
         this.secretKey = secretKey;
         this.host = host;
         this.origin = origin;
@@ -21,6 +22,7 @@ let V1Controller = class V1Controller {
         this.pocketConfiguration = pocketConfiguration;
         this.redis = redis;
         this.pgPool = pgPool;
+        this.databaseEncryptionKey = databaseEncryptionKey;
         this.processUID = processUID;
         this.applicationsRepository = applicationsRepository;
         this.blockchainsRepository = blockchainsRepository;
@@ -59,8 +61,9 @@ let V1Controller = class V1Controller {
         else {
             app = JSON.parse(cachedApp);
         }
-        // Check secretKey; is it required? does it pass?
-        if (app.gatewaySettings.secretKeyRequired && this.secretKey !== app.gatewaySettings.secretKey) {
+        // Check secretKey; is it required? does it pass? -- temp allowance for unencrypted keys
+        const decryptor = new strong_cryptor_1.Decryptor({ key: this.databaseEncryptionKey });
+        if (app.gatewaySettings.secretKeyRequired && this.secretKey !== app.gatewaySettings.secretKey && this.secretKey !== decryptor.decrypt(app.gatewaySettings.secretKey)) {
             throw new rest_1.HttpErrors.Forbidden("SecretKey does not match");
         }
         // Whitelist: origins -- explicit matches
@@ -72,13 +75,15 @@ let V1Controller = class V1Controller {
             throw new rest_1.HttpErrors.Forbidden("Whitelist User Agent check failed: " + this.userAgent);
         }
         // Checks pass; create AAT
-        const pocketAAT = new pocket_js_1.PocketAAT(app.aat.version, app.aat.clientPublicKey, app.aat.applicationPublicKey, app.aat.applicationSignature);
+        const pocketAAT = new pocket_js_1.PocketAAT(app.gatewayAAT.version, app.gatewayAAT.clientPublicKey, app.gatewayAAT.applicationPublicKey, app.gatewayAAT.applicationSignature);
         let node;
-        // Pull a random node for this relay
-        // TODO: weighted pulls; status/ time to relay
+        // Pull the session so we can get a list of nodes and cherry pick which one to use
         const pocketSession = await this.pocket.sessionManager.getCurrentSession(pocketAAT, blockchain, this.pocketConfiguration);
         if (pocketSession instanceof pocket_js_1.Session) {
             node = await this.cherryPickNode(pocketSession, blockchain);
+        }
+        if (this.checkDebug()) {
+            console.log(pocketSession);
         }
         // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
         const relayResponse = await this.pocket.sendRelay(data, blockchain, pocketAAT, this.pocketConfiguration, undefined, undefined, this.relayPath, node);
@@ -90,7 +95,7 @@ let V1Controller = class V1Controller {
             console.log("SUCCESS " + id + " chain: " + blockchain + " req: " + JSON.stringify(data) + " res: " + relayResponse.payload);
             const bytes = Buffer.byteLength(relayResponse.payload, 'utf8');
             await this.recordMetric({
-                appPubKey: app.appPubKey,
+                appPubKey: app.gatewayAAT.applicationPublicKey,
                 blockchain,
                 serviceNode: relayResponse.proof.servicerPubKey,
                 elapsedStart,
@@ -104,7 +109,7 @@ let V1Controller = class V1Controller {
             console.log("ERROR " + id + " chain: " + blockchain + " req: " + JSON.stringify(data) + " res: " + relayResponse.message);
             const bytes = Buffer.byteLength(relayResponse.message, 'utf8');
             await this.recordMetric({
-                appPubKey: app.appPubKey,
+                appPubKey: app.gatewayAAT.applicationPublicKey,
                 blockchain,
                 serviceNode: node === null || node === void 0 ? void 0 : node.publicKey,
                 elapsedStart,
@@ -389,11 +394,12 @@ V1Controller = tslib_1.__decorate([
     tslib_1.__param(7, context_1.inject("pocketConfiguration")),
     tslib_1.__param(8, context_1.inject("redisInstance")),
     tslib_1.__param(9, context_1.inject("pgPool")),
-    tslib_1.__param(10, context_1.inject("processUID")),
-    tslib_1.__param(11, repository_1.repository(repositories_1.ApplicationsRepository)),
-    tslib_1.__param(12, repository_1.repository(repositories_1.BlockchainsRepository)),
+    tslib_1.__param(10, context_1.inject("databaseEncryptionKey")),
+    tslib_1.__param(11, context_1.inject("processUID")),
+    tslib_1.__param(12, repository_1.repository(repositories_1.ApplicationsRepository)),
+    tslib_1.__param(13, repository_1.repository(repositories_1.BlockchainsRepository)),
     tslib_1.__metadata("design:paramtypes", [String, String, String, String, String, String, pocket_js_1.Pocket,
-        pocket_js_1.Configuration, Object, pg_1.Pool, String, repositories_1.ApplicationsRepository,
+        pocket_js_1.Configuration, Object, pg_1.Pool, String, String, repositories_1.ApplicationsRepository,
         repositories_1.BlockchainsRepository])
 ], V1Controller);
 exports.V1Controller = V1Controller;

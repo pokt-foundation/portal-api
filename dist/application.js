@@ -33,6 +33,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         };
     }
     async loadPocket() {
+        var _a;
         // Requirements; for Production these are stored in GitHub repo secrets
         //
         // For Dev, you need to pass them in via .env file
@@ -41,6 +42,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         const clientPassphrase = process.env.CLIENT_PASSPHRASE || "";
         const pocketSessionBlockFrequency = parseInt(process.env.POCKET_SESSION_BLOCK_FREQUENCY) || 0;
         const pocketBlockTime = parseInt(process.env.POCKET_BLOCK_TIME) || 0;
+        const databaseEncryptionKey = (_a = process.env.DATABASE_ENCRYPTION_KEY) !== null && _a !== void 0 ? _a : "";
         if (!dispatchURL) {
             throw new rest_1.HttpErrors.InternalServerError("DISPATCH_URL required in ENV");
         }
@@ -55,6 +57,9 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         }
         if (!pocketBlockTime || pocketBlockTime === 0) {
             throw new rest_1.HttpErrors.InternalServerError("POCKET_BLOCK_TIME required in ENV");
+        }
+        if (!databaseEncryptionKey) {
+            throw new rest_1.HttpErrors.InternalServerError("DATABASE_ENCRYPTION_KEY required in ENV");
         }
         // Create the Pocket instance
         const dispatchers = new URL(dispatchURL);
@@ -119,6 +124,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
             }
         });
         this.bind("pgPool").to(pgPool);
+        this.bind("databaseEncryptionKey").to(databaseEncryptionKey);
         // Create a UID for this process
         const parts = [os.hostname(), process.pid, +(new Date)];
         const hash = crypto.createHash('md5').update(parts.join(''));

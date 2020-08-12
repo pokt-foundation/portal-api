@@ -72,6 +72,7 @@
     "loopback-connector-mongodb": "^5.2.3",
     "pg": "^8.2.1",
     "pg-format": "^1.0.4",
+    "strong-cryptor": "^2.2.0",
     "tslib": "^1.10.0"
   },
   "devDependencies": {
