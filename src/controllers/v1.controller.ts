@@ -108,7 +108,31 @@ export class V1Controller {
 
     // Check secretKey; is it required? does it pass? -- temp allowance for unencrypted keys
     const decryptor = new Decryptor({key: this.databaseEncryptionKey});
-    if (app.gatewaySettings.secretKeyRequired && this.secretKey !== app.gatewaySettings.secretKey && this.secretKey !== decryptor.decrypt(app.gatewaySettings.secretKey)) {
+    if (
+        app.gatewaySettings.secretKeyRequired // If the secret key is required by app's settings
+        &&                                    // and 
+        app.gatewaSettings.secretKey          // the app's secret key is set
+        &&                                    // and
+        (
+          !(this.secretKey)                   // the request doesn't contain a secret key
+          ||                                  // or
+          this.secretKey.length < 32          // the secret key is invalid
+          ||                                  // or
+          (
+            (
+              this.secretKey.length === 32
+              &&
+              this.secretKey !== app.gatewaySettings.secretKey  // the secret key does not match plaintext
+            )
+            &&                                                  // and 
+            (
+              this.secretKey.length > 32
+              &&
+              this.secretKey !== decryptor.decrypt(app.gatewaySettings.secretKey) // does not match encrypted
+            )
+          )
+        )
+      ) {
       throw new HttpErrors.Forbidden("SecretKey does not match");
     }
 
