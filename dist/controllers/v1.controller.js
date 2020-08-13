@@ -121,7 +121,7 @@ let V1Controller = class V1Controller {
                 && // and
                     (blockchainEnforceResult.toLowerCase() === "json" // the check is for JSON
                         && // and
-                            !this.checkEnforcementJSON(relayResponse.payload) // the relay response is not valid JSON
+                            !this.checkEnforcementJSON("BUG") // the relay response is not valid JSON
                     )) { // then this result is invalid
                 // Invalid
                 console.log("INVALID " + id + " chain: " + blockchain + " req: " + JSON.stringify(data) + " res: " + relayResponse.payload + " node: " + relayResponse.proof.servicerPubKey);
@@ -274,6 +274,11 @@ let V1Controller = class V1Controller {
                     serviceNodeQuality.results[logResult]++;
                 }
                 totalResults = totalResults + serviceNodeQuality.results[logResult];
+            }
+            // Does this result not yet exist in the set?
+            if (!serviceNodeQuality.results[result] || serviceNodeQuality.results[result] === 0) {
+                totalResults++;
+                serviceNodeQuality.results[result] = 1;
             }
             // Success; add this result's latency to the average latency of all success requests
             if (result === 200) {

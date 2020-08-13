@@ -396,6 +396,11 @@ export class V1Controller {
         }
         totalResults = totalResults + serviceNodeQuality.results[logResult];
       }
+      // Does this result not yet exist in the set?
+      if (!serviceNodeQuality.results[result] || serviceNodeQuality.results[result] === 0){
+        totalResults++;
+        serviceNodeQuality.results[result] = 1;
+      }
       // Success; add this result's latency to the average latency of all success requests
       if (result === 200) {
         serviceNodeQuality.averageSuccessLatency = (
