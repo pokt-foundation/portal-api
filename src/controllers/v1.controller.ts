@@ -74,7 +74,7 @@ export class V1Controller {
 
     // Load the requested blockchain
     const cachedBlockchains = await this.redis.get("blockchains");
-    let blockchains, blockchain;
+    let blockchains, blockchain, blockchainEnforceResult;
 
     if (!cachedBlockchains) {
       blockchains = await this.blockchainsRepository.find();
@@ -91,6 +91,10 @@ export class V1Controller {
 
     if (blockchainFilter[0]) {
       blockchain = blockchainFilter[0].hash;
+      // Record the necessary format for the result; example: JSON
+      if (blockchainFilter[0].enforceResult) {
+        blockchainEnforceResult = blockchainFilter[0].enforceResult;
+      }
     } else {
       throw new HttpErrors.BadRequest("Incorrect blockchain: " + this.host);
     }
@@ -144,9 +148,7 @@ export class V1Controller {
     }
 
     // Whitelist: userAgent -- substring matches
-    if (
-      !this.checkWhitelist(app.gatewaySettings.whitelistUserAgents, this.userAgent, "substring")
-    ) {
+    if (!this.checkWhitelist(app.gatewaySettings.whitelistUserAgents, this.userAgent, "substring")) {
       throw new HttpErrors.Forbidden(
         "Whitelist User Agent check failed: " + this.userAgent
       );
@@ -193,23 +195,50 @@ export class V1Controller {
 
     // Success
     if (relayResponse instanceof RelayResponse) {
-      console.log("SUCCESS " + id + " chain: " + blockchain + " req: " + JSON.stringify(data) + " res: " + relayResponse.payload);
-      const bytes = Buffer.byteLength(relayResponse.payload, 'utf8');
+      // First, check for the format of the result; Pocket Nodes will return relays that include
+      // erroneous results like "invalid host specified" when the node is configured incorrectly.
+      // Those results are still marked as 200:success. 
+      // To filter them out, we will enforce result formats on certain blockchains. If the 
+      // relay result is not in the correct format, this was not a successful relay.
+      if (
+        (blockchainEnforceResult)                             // Is this blockchain marked for result enforcement
+        &&                                                    // and
+        ( 
+          blockchainEnforceResult.toLowerCase() === "json"    // the check is for JSON
+          &&                                                  // and
+          !this.checkEnforcementJSON(relayResponse.payload)   // the relay response is not valid JSON
+        )
+      ) {                                                     // then this result is invalid
+        // Invalid
+        console.log("INVALID " + id + " chain: " + blockchain + " req: " + JSON.stringify(data) + " res: " + relayResponse.payload + " node: " + relayResponse.proof.servicerPubKey);
 
-      await this.recordMetric({
-        appPubKey: app.gatewayAAT.applicationPublicKey,
-        blockchain,
-        serviceNode: relayResponse.proof.servicerPubKey,
-        elapsedStart,
-        result: 200,
-        bytes,
-      });
-      return relayResponse.payload;
+        await this.recordMetric({
+          appPubKey: app.gatewayAAT.applicationPublicKey,
+          blockchain,
+          serviceNode: relayResponse.proof.servicerPubKey,
+          elapsedStart,
+          result: 503,
+          bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
+        });
+        throw new HttpErrors.ServiceUnavailable(relayResponse.payload);
+      } else {
+        // Success
+        console.log("SUCCESS " + id + " chain: " + blockchain + " req: " + JSON.stringify(data) + " res: " + relayResponse.payload + " node: " + relayResponse.proof.servicerPubKey);
+
+        await this.recordMetric({
+          appPubKey: app.gatewayAAT.applicationPublicKey,
+          blockchain,
+          serviceNode: relayResponse.proof.servicerPubKey,
+          elapsedStart,
+          result: 200,
+          bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
+        });
+        return relayResponse.payload;
+      }
     }
     // Error
     else if (relayResponse instanceof RpcError) {
       console.log("ERROR " + id + " chain: " + blockchain + " req: " + JSON.stringify(data) + " res: " + relayResponse.message);
-      const bytes = Buffer.byteLength(relayResponse.message, 'utf8');
 
       await this.recordMetric({
         appPubKey: app.gatewayAAT.applicationPublicKey,
@@ -217,7 +246,7 @@ export class V1Controller {
         serviceNode: node?.publicKey,
         elapsedStart,
         result: 500,
-        bytes,
+        bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
       });
       throw new HttpErrors.InternalServerError(relayResponse.message);
     }
@@ -226,6 +255,20 @@ export class V1Controller {
       // TODO: ConsensusNode is a possible return
       throw new HttpErrors.InternalServerError("relayResponse is undefined");
     }
+  }
+  
+  // Check relay result: JSON
+  checkEnforcementJSON(test: string): boolean {
+    if (!test || test.length === 0) {
+      return false;
+    }
+    // Code from: https://github.com/prototypejs/prototype/blob/560bb59414fc9343ce85429b91b1e1b82fdc6812/src/prototype/lang/string.js#L699
+    // Prototype lib
+    if ( /^\s*$/.test(test) ) return false;
+    test = test.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, '@');
+    test = test.replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']');
+    test = test.replace(/(?:^|:|,)(?:\s*\[)+/g, '');
+    return (/^[\],:{}\s]*$/).test(test);
   }
 
   // Check passed in string against an array of whitelisted items
@@ -373,7 +416,7 @@ export class V1Controller {
     }
 
     await this.redis.set(blockchain + "-" + serviceNode + "-"  + new Date().getHours(), JSON.stringify(serviceNodeQuality), "EX", 3600);
-    console.log(serviceNodeQuality);
+    console.log(serviceNode + ": " + JSON.stringify(serviceNodeQuality));
   }
   
   // Fetch node's hourly service log from redis

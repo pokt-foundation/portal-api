@@ -2034,8 +2034,8 @@
         "signature": "75b8b059a00b6b8f090be39f69fbf84018c53ef865cd8146173a6f5eeec058f0"
       },
       "./src/controllers/v1.controller.ts": {
-        "version": "96664a77223a366acb666fab71d77fb0098134a0d98ce15a994593e97fad6961",
-        "signature": "710832b7515cc1608361abea1c85e446b53f268f595c23b089331726ef436edd"
+        "version": "91b5bf697594f7d062e9ba65fce013199fb596d61238f2d3b54d7c45100a78c1",
+        "signature": "b92ac83a7115ee87e8744a5bc43df70b4250737e910b4389db3bf835263af745"
       },
       "./src/controllers/index.ts": {
         "version": "c27d67de5b5b7aecde13ca899c3197d3c1538b964251fa91a055cb19fb0b6ce7",
