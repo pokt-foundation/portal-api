@@ -21,6 +21,7 @@ export declare class V1Controller {
     private blockchainsRepository;
     constructor(secretKey: string, host: string, origin: string, userAgent: string, contentType: string, relayPath: string, pocket: Pocket, pocketConfiguration: Configuration, redis: Redis, pgPool: PGPool, databaseEncryptionKey: string, processUID: string, applicationsRepository: ApplicationsRepository, blockchainsRepository: BlockchainsRepository);
     attemptRelay(id: string, rawData: object, filter?: FilterExcludingWhere<Applications>): Promise<string>;
+    checkEnforcementJSON(test: string): boolean;
     checkWhitelist(tests: string[], check: string, type: string): boolean;
     checkDebug(): boolean;
     recordMetric({ appPubKey, blockchain, serviceNode, elapsedStart, result, bytes, }: {
