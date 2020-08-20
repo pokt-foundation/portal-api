@@ -121,7 +121,7 @@ let V1Controller = class V1Controller {
                 && // and
                     (blockchainEnforceResult.toLowerCase() === "json" // the check is for JSON
                         && // and
-                            !this.checkEnforcementJSON("BUG") // the relay response is not valid JSON
+                            !this.checkEnforcementJSON(relayResponse.payload) // the relay response is not valid JSON
                     )) { // then this result is invalid
                 // Invalid
                 console.log("INVALID " + id + " chain: " + blockchain + " req: " + JSON.stringify(data) + " res: " + relayResponse.payload + " node: " + relayResponse.proof.servicerPubKey);
