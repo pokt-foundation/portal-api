@@ -233,6 +233,16 @@ export class V1Controller {
           result: 200,
           bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
         });
+
+        // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
+        if (
+          (blockchainEnforceResult)                             // Is this blockchain marked for result enforcement
+          &&                                                    // and
+          blockchainEnforceResult.toLowerCase() === "json"      // the check is for JSON
+        )
+        {
+          return JSON.parse(relayResponse.payload);
+        }
         return relayResponse.payload;
       }
     }
