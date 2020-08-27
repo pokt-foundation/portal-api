@@ -20,7 +20,7 @@ import {
 
 import { Redis } from "ioredis";
 import { Pool as PGPool } from "pg";
-import {Encryptor, Decryptor} from "strong-cryptor";
+import { Decryptor } from "strong-cryptor";
 
 const pgFormat = require("pg-format");
 
@@ -57,17 +57,23 @@ export class V1Controller {
   async attemptRelay(
     @param.path.string("id") id: string,
     @requestBody({
-      description: 'request object value',
+      description: 'Relay request',
       required: true,
       content: {
-        'application/json': {}
-      }
+        'application/json': {
+          // Skip body parsing
+          'x-parser': 'raw',
+        },
+      },
     }) rawData: object,
     @param.filter(Applications, { exclude: "where" })
     filter?: FilterExcludingWhere<Applications>
   ): Promise<string> {
-    // Temporarily only taking in JSON objects
-    const data = JSON.stringify(rawData);
+    // This converts the raw data into formatted JSON then back to a string for relaying. 
+    // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
+    // extraneous characters like newlines and tabs from the rawData.
+    // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
+    const data = JSON.stringify(JSON.parse(rawData.toString()));
 
     console.log("PROCESSING " + id + " host: " + this.host + " req: " + data);
     const elapsedStart = process.hrtime();
@@ -153,7 +159,7 @@ export class V1Controller {
         "Whitelist User Agent check failed: " + this.userAgent
       );
     }
-
+    
     // Checks pass; create AAT
     const pocketAAT = new PocketAAT(
       app.gatewayAAT.version,
