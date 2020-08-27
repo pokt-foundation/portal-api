@@ -1318,7 +1318,7 @@
         "signature": "e0209f76544838f42150bccec0103aee3bc26edd64feb1c2dce0176018012ef4"
       },
       "./src/application.ts": {
-        "version": "62df9dae9320d03eaeec9c541975ed38d7f067066271a930a5ff2d98aefe0689",
+        "version": "65cfadae44296ca9314e93a916d674456a78a6de058fe48eca98e17dcfa81b8f",
         "signature": "f4b295f6c43ea9ebb0fb3113c36874d56119f89d425fcf1f49e6be31cd2dd130"
       },
       "./src/index.ts": {
@@ -2022,7 +2022,7 @@
         "signature": "75b8b059a00b6b8f090be39f69fbf84018c53ef865cd8146173a6f5eeec058f0"
       },
       "./src/controllers/v1.controller.ts": {
-        "version": "400216898582356c3d4833e005cfaf0825f8eb1394f05ae761abd978c4cf61bb",
+        "version": "83da2d89f2659efdb7d6bacebd7eeb6dcda6507b5c8dafee828c70081ae39603",
         "signature": "b92ac83a7115ee87e8744a5bc43df70b4250737e910b4389db3bf835263af745"
       },
       "./src/controllers/index.ts": {
@@ -5452,6 +5452,7 @@
         "./node_modules/@types/ioredis/index.d.ts",
         "./node_modules/@types/pg/index.d.ts",
         "./node_modules/strong-cryptor/dist/index.d.ts",
+        "./node_modules/@types/node/http.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -8828,7 +8829,7 @@
         "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
         "./node_modules/@types/ioredis/index.d.ts",
         "./node_modules/@types/pg/index.d.ts",
-        "./node_modules/@loopback/repository/index.d.ts",
+        "./node_modules/@loopback/repository/dist/index.d.ts",
         "./src/models/index.ts"
       ],
       "./src/controllers/index.ts": [

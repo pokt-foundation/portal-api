@@ -28,8 +28,10 @@ let V1Controller = class V1Controller {
         this.blockchainsRepository = blockchainsRepository;
     }
     async attemptRelay(id, rawData, filter) {
+        console.log("Starting controller");
+        console.log(rawData.toString());
         // Temporarily only taking in JSON objects
-        const data = JSON.stringify(rawData);
+        const data = JSON.stringify(JSON.parse(rawData.toString()));
         console.log("PROCESSING " + id + " host: " + this.host + " req: " + data);
         const elapsedStart = process.hrtime();
         // Load the requested blockchain
@@ -442,11 +444,14 @@ tslib_1.__decorate([
     }),
     tslib_1.__param(0, rest_1.param.path.string("id")),
     tslib_1.__param(1, rest_1.requestBody({
-        description: 'request object value',
+        description: 'Relay request',
         required: true,
         content: {
-            'application/json': {}
-        }
+            'application/json': {
+                // Skip body parsing
+                'x-parser': 'raw',
+            },
+        },
     })),
     tslib_1.__param(2, rest_1.param.filter(models_1.Applications, { exclude: "where" })),
     tslib_1.__metadata("design:type", Function),

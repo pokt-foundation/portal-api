@@ -63,7 +63,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         }
         // Create the Pocket instance
         const dispatchers = new URL(dispatchURL);
-        const configuration = new Configuration(5, 100000, 5, 20000, false, pocketSessionBlockFrequency, pocketBlockTime, undefined, undefined, false);
+        const configuration = new Configuration(5, 100000, 5, 60000, false, pocketSessionBlockFrequency, pocketBlockTime, undefined, undefined, false);
         const rpcProvider = new HttpRpcProvider(dispatchers);
         const pocket = new Pocket([dispatchers], rpcProvider, configuration);
         // Bind to application context for shared re-use
