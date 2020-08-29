@@ -28,9 +28,10 @@ let V1Controller = class V1Controller {
         this.blockchainsRepository = blockchainsRepository;
     }
     async attemptRelay(id, rawData, filter) {
-        console.log("Starting controller");
-        console.log(rawData.toString());
-        // Temporarily only taking in JSON objects
+        // This converts the raw data into formatted JSON then back to a string for relaying. 
+        // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
+        // extraneous characters like newlines and tabs from the rawData.
+        // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
         const data = JSON.stringify(JSON.parse(rawData.toString()));
         console.log("PROCESSING " + id + " host: " + this.host + " req: " + data);
         const elapsedStart = process.hrtime();
