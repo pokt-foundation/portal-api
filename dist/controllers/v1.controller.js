@@ -388,7 +388,7 @@ let V1Controller = class V1Controller {
         // be 10 times more likely to be selected than a node that has had failures.
         let weightFactor = 10;
         // The number of failures tolerated per hour before being removed from rotation
-        const maxFailuresPerHour = 10;
+        const maxFailuresPerHour = 3;
         for (const sortedLog of sortedLogs) {
             if (sortedLog.successRate === 1) {
                 // For untested nodes and nodes with 100% success rates, weight their selection

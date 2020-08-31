@@ -523,7 +523,7 @@ export class V1Controller {
     let weightFactor = 10;
 
     // The number of failures tolerated per hour before being removed from rotation
-    const maxFailuresPerHour = 10;
+    const maxFailuresPerHour = 3;
 
     for (const sortedLog of sortedLogs) {
       if (sortedLog.successRate === 1) {
