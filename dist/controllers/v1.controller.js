@@ -32,7 +32,8 @@ let V1Controller = class V1Controller {
         // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
         // extraneous characters like newlines and tabs from the rawData.
         // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
-        const data = JSON.stringify(JSON.parse(rawData.toString()));
+        const parsedRawData = JSON.parse(rawData.toString());
+        const data = JSON.stringify(parsedRawData);
         console.log("PROCESSING " + id + " host: " + this.host + " req: " + data);
         const elapsedStart = process.hrtime();
         // Load the requested blockchain
@@ -99,7 +100,7 @@ let V1Controller = class V1Controller {
         }
         // Checks pass; create AAT
         const pocketAAT = new pocket_js_1.PocketAAT(app.gatewayAAT.version, app.gatewayAAT.clientPublicKey, app.gatewayAAT.applicationPublicKey, app.gatewayAAT.applicationSignature);
-        let node;
+        let node, method = "";
         // Pull the session so we can get a list of nodes and cherry pick which one to use
         const pocketSession = await this.pocket.sessionManager.getCurrentSession(pocketAAT, blockchain, this.pocketConfiguration);
         if (pocketSession instanceof pocket_js_1.Session) {
@@ -112,6 +113,21 @@ let V1Controller = class V1Controller {
         const relayResponse = await this.pocket.sendRelay(data, blockchain, pocketAAT, this.pocketConfiguration, undefined, undefined, this.relayPath, node);
         if (this.checkDebug()) {
             console.log(relayResponse);
+        }
+        // Method recording for metrics
+        if (parsedRawData instanceof Array) {
+            // Join the methods of calls in an array for chains that can join multiple calls in one
+            for (const key in parsedRawData) {
+                if (parsedRawData[key].method) {
+                    if (method) {
+                        method += ",";
+                    }
+                    method += parsedRawData[key].method;
+                }
+            }
+        }
+        else if (parsedRawData.method) {
+            method = parsedRawData.method;
         }
         // Success
         if (relayResponse instanceof pocket_js_1.RelayResponse) {
@@ -135,6 +151,7 @@ let V1Controller = class V1Controller {
                     elapsedStart,
                     result: 503,
                     bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
+                    method: method,
                 });
                 throw new rest_1.HttpErrors.ServiceUnavailable(relayResponse.payload);
             }
@@ -148,6 +165,7 @@ let V1Controller = class V1Controller {
                     elapsedStart,
                     result: 200,
                     bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
+                    method: method,
                 });
                 // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
                 if ((blockchainEnforceResult) // Is this blockchain marked for result enforcement
@@ -169,6 +187,7 @@ let V1Controller = class V1Controller {
                 elapsedStart,
                 result: 500,
                 bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
+                method: method,
             });
             throw new rest_1.HttpErrors.InternalServerError(relayResponse.message);
         }
@@ -224,7 +243,7 @@ let V1Controller = class V1Controller {
         return false;
     }
     // Record relay metrics in redis then push to timescaleDB for analytics
-    async recordMetric({ appPubKey, blockchain, serviceNode, elapsedStart, result, bytes, }) {
+    async recordMetric({ appPubKey, blockchain, serviceNode, elapsedStart, result, bytes, method, }) {
         try {
             const elapsedEnd = process.hrtime(elapsedStart);
             const elapsedTime = (elapsedEnd[0] * 1e9 + elapsedEnd[1]) / 1e9;
@@ -236,6 +255,7 @@ let V1Controller = class V1Controller {
                 elapsedTime,
                 result,
                 bytes,
+                method,
             ];
             // Store metrics in redis and every 10 seconds, push to postgres
             const redisMetricsKey = "metrics-" + this.processUID;
