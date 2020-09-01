@@ -2022,8 +2022,8 @@
         "signature": "75b8b059a00b6b8f090be39f69fbf84018c53ef865cd8146173a6f5eeec058f0"
       },
       "./src/controllers/v1.controller.ts": {
-        "version": "e7b81c1647f9f8207541be034743d9a306b96d435c527372c8855b9db5018f1e",
-        "signature": "b92ac83a7115ee87e8744a5bc43df70b4250737e910b4389db3bf835263af745"
+        "version": "4e5a05ca8f14c88882a33c4d2561961f6299e689f193394ae4a9a792d315acf9",
+        "signature": "554fd279e72b01546170ba56b361f3fff3febe90cab844b18f00d4b65cf00675"
       },
       "./src/controllers/index.ts": {
         "version": "c27d67de5b5b7aecde13ca899c3197d3c1538b964251fa91a055cb19fb0b6ce7",
@@ -9456,7 +9456,6 @@
       "./node_modules/strong-cryptor/dist/encryptor.d.ts",
       "./node_modules/strong-cryptor/dist/decryptor.d.ts",
       "./node_modules/strong-cryptor/dist/index.d.ts",
-      "./src/controllers/index.ts",
       "./src/models/pocket-application.model.ts",
       "./node_modules/@types/aes-js/index.d.ts",
       "./node_modules/@types/keyv/index.d.ts",
@@ -9479,7 +9478,8 @@
       "../../../node_modules/@types/react/global.d.ts",
       "../../../node_modules/csstype/index.d.ts",
       "../../../node_modules/@types/react/index.d.ts",
-      "./src/controllers/v1.controller.ts"
+      "./src/controllers/v1.controller.ts",
+      "./src/controllers/index.ts"
     ]
   },
   "version": "3.8.3"

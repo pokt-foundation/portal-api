@@ -73,7 +73,8 @@ export class V1Controller {
     // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
     // extraneous characters like newlines and tabs from the rawData.
     // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
-    const data = JSON.stringify(JSON.parse(rawData.toString()));
+    const parsedRawData = JSON.parse(rawData.toString());
+    const data = JSON.stringify(parsedRawData);
 
     console.log("PROCESSING " + id + " host: " + this.host + " req: " + data);
     const elapsedStart = process.hrtime();
@@ -168,7 +169,8 @@ export class V1Controller {
       app.gatewayAAT.applicationSignature
     );
     
-    let node;
+    let node, method: string = "";
+
     // Pull the session so we can get a list of nodes and cherry pick which one to use
     const pocketSession = await this.pocket.sessionManager.getCurrentSession(
       pocketAAT,
@@ -199,6 +201,21 @@ export class V1Controller {
       console.log(relayResponse);
     }
 
+    // Method recording for metrics
+    if (parsedRawData instanceof Array) {
+      // Join the methods of calls in an array for chains that can join multiple calls in one
+      for (const key in parsedRawData) {
+        if (parsedRawData[key].method) {
+          if (method) {
+            method += ",";
+          }
+          method += parsedRawData[key].method;
+        }
+      }
+    } else if (parsedRawData.method) {
+      method = parsedRawData.method;
+    }
+
     // Success
     if (relayResponse instanceof RelayResponse) {
       // First, check for the format of the result; Pocket Nodes will return relays that include
@@ -225,6 +242,7 @@ export class V1Controller {
           elapsedStart,
           result: 503,
           bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
+          method: method,
         });
         throw new HttpErrors.ServiceUnavailable(relayResponse.payload);
       } else {
@@ -238,6 +256,7 @@ export class V1Controller {
           elapsedStart,
           result: 200,
           bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
+          method: method,
         });
 
         // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
@@ -263,6 +282,7 @@ export class V1Controller {
         elapsedStart,
         result: 500,
         bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
+        method: method,
       });
       throw new HttpErrors.InternalServerError(relayResponse.message);
     }
@@ -330,6 +350,7 @@ export class V1Controller {
     elapsedStart,
     result,
     bytes,
+    method,
   }: {
     appPubKey: string;
     blockchain: string;
@@ -337,6 +358,7 @@ export class V1Controller {
     elapsedStart: [number, number];
     result: number;
     bytes: number;
+    method: string | undefined;
   }): Promise<void> {
     try {
       const elapsedEnd = process.hrtime(elapsedStart);
@@ -350,6 +372,7 @@ export class V1Controller {
         elapsedTime,
         result,
         bytes,
+        method,
       ];
 
       // Store metrics in redis and every 10 seconds, push to postgres
@@ -522,7 +545,7 @@ export class V1Controller {
     // be 10 times more likely to be selected than a node that has had failures.
     let weightFactor = 10;
 
-    // The number of failures tolerated per hour before being removed from rotation
+    // The number of failures tolerated per hour (with zero success) before being removed
     const maxFailuresPerHour = 3;
 
     for (const sortedLog of sortedLogs) {
