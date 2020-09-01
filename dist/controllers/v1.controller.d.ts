@@ -24,13 +24,14 @@ export declare class V1Controller {
     checkEnforcementJSON(test: string): boolean;
     checkWhitelist(tests: string[], check: string, type: string): boolean;
     checkDebug(): boolean;
-    recordMetric({ appPubKey, blockchain, serviceNode, elapsedStart, result, bytes, }: {
+    recordMetric({ appPubKey, blockchain, serviceNode, elapsedStart, result, bytes, method, }: {
         appPubKey: string;
         blockchain: string;
         serviceNode: string | undefined;
         elapsedStart: [number, number];
         result: number;
         bytes: number;
+        method: string | undefined;
     }): Promise<void>;
     updateServiceNodeQuality(blockchain: string, serviceNode: string, elapsedTime: number, result: number): Promise<void>;
     fetchServiceLog(blockchain: string, serviceNode: string): Promise<string | null>;
