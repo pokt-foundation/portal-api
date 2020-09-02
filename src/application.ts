@@ -84,7 +84,7 @@ export class PocketGatewayApplication extends BootMixin(
       5, 
       100000, 
       5, 
-      60000, 
+      120000, 
       false,
       pocketSessionBlockFrequency,
       pocketBlockTime,
