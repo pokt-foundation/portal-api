@@ -123,7 +123,7 @@ export class PocketGatewayApplication extends BootMixin(
     }
     const redis = new Redis(redisPort, redisEndpoint);
     this.bind("redisInstance").to(redis);
-
+    
     // Load Postgres for TimescaleDB metrics
     const pgConnection: string = process.env.PG_CONNECTION || "";
     const pgCertificate: string = process.env.PG_CERTIFICATE || "";
