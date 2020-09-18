@@ -53,8 +53,8 @@ export class PocketGatewayApplication extends BootMixin(
     //
     // For Dev, you need to pass them in via .env file
     const dispatchURL: string = process.env.DISPATCH_URL || "";
-    const clientPrivateKey: string = process.env.CLIENT_PRIVATE_KEY || "";
-    const clientPassphrase: string = process.env.CLIENT_PASSPHRASE || "";
+    const clientPrivateKey: string = process.env.GATEWAY_CLIENT_PRIVATE_KEY || "";
+    const clientPassphrase: string = process.env.GATEWAY_CLIENT_PASSPHRASE || "";
     const pocketSessionBlockFrequency: number = parseInt(process.env.POCKET_SESSION_BLOCK_FREQUENCY) || 0;
     const pocketBlockTime: number = parseInt(process.env.POCKET_BLOCK_TIME) || 0;
     const databaseEncryptionKey: string = process.env.DATABASE_ENCRYPTION_KEY ?? "";
@@ -63,10 +63,10 @@ export class PocketGatewayApplication extends BootMixin(
       throw new HttpErrors.InternalServerError("DISPATCH_URL required in ENV");
     }
     if (!clientPrivateKey) {
-      throw new HttpErrors.InternalServerError("CLIENT_PRIVATE_KEY required in ENV");
+      throw new HttpErrors.InternalServerError("GATEWAY_CLIENT_PRIVATE_KEY required in ENV");
     }
     if (!clientPassphrase) {
-      throw new HttpErrors.InternalServerError("CLIENT_PASSPHRASE required in ENV");
+      throw new HttpErrors.InternalServerError("GATEWAY_CLIENT_PASSPHRASE required in ENV");
     }
     if (!pocketSessionBlockFrequency || pocketSessionBlockFrequency === 0) {
       throw new HttpErrors.InternalServerError("POCKET_SESSION_BLOCK_FREQUENCY required in ENV");
