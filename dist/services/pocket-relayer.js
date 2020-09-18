@@ -4,7 +4,7 @@ const strong_cryptor_1 = require("strong-cryptor");
 const rest_1 = require("@loopback/rest");
 const pocket_js_1 = require("@pokt-network/pocket-js");
 class PocketRelayer {
-    constructor(host, origin, userAgent, pocket, pocketConfiguration, cherryPicker, metricsRecorder, redis, databaseEncryptionKey, secretKey, relayPath, blockchainsRepository, checkDebug) {
+    constructor(host, origin, userAgent, pocket, pocketConfiguration, cherryPicker, metricsRecorder, redis, databaseEncryptionKey, secretKey, relayPath, relayRetries, blockchainsRepository, checkDebug) {
         this.host = host;
         this.origin = origin;
         this.userAgent = userAgent;
@@ -16,10 +16,24 @@ class PocketRelayer {
         this.databaseEncryptionKey = databaseEncryptionKey;
         this.secretKey = secretKey;
         this.relayPath = relayPath;
+        this.relayRetries = relayRetries;
         this.checkDebug = checkDebug;
         this.blockchainsRepository = blockchainsRepository;
     }
     async sendRelay(rawData, application) {
+        for (let x = 1; x <= this.relayRetries; x++) {
+            if (x > 1) {
+                console.log("Relay Attempt " + x);
+            }
+            const result = await this._sendRelay(rawData, application);
+            if (!(result instanceof Error)) {
+                return result;
+            }
+        }
+        return new rest_1.HttpErrors.InternalServerError("Relay attempts exhausted");
+    }
+    // Private function to allow relay retries
+    async _sendRelay(rawData, application) {
         // This converts the raw data into formatted JSON then back to a string for relaying. 
         // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
         // extraneous characters like newlines and tabs from the rawData.
@@ -96,7 +110,7 @@ class PocketRelayer {
                     bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
                     method: method,
                 });
-                throw new rest_1.HttpErrors.ServiceUnavailable(relayResponse.payload);
+                return new Error(relayResponse.payload);
             }
             else {
                 // Success
@@ -132,12 +146,12 @@ class PocketRelayer {
                 bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
                 method: method,
             });
-            throw new rest_1.HttpErrors.InternalServerError(relayResponse.message);
+            return new Error(relayResponse.message);
         }
         // ConsensusNode
         else {
             // TODO: ConsensusNode is a possible return
-            throw new rest_1.HttpErrors.InternalServerError("relayResponse is undefined");
+            return new Error("relayResponse is undefined");
         }
     }
     // Load requested blockchain by parsing the URL

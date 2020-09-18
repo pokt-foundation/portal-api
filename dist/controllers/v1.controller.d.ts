@@ -1,5 +1,5 @@
 import { FilterExcludingWhere } from "@loopback/repository";
-import { Applications } from "../models";
+import { Applications, LoadBalancers } from "../models";
 import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from "../repositories";
 import { Pocket, Configuration } from "@pokt-network/pocket-js";
 import { Redis } from "ioredis";
@@ -14,6 +14,7 @@ export declare class V1Controller {
     private userAgent;
     private contentType;
     private relayPath;
+    private relayRetries;
     private pocket;
     private pocketConfiguration;
     private redis;
@@ -26,7 +27,7 @@ export declare class V1Controller {
     cherryPicker: CherryPicker;
     metricsRecorder: MetricsRecorder;
     pocketRelayer: PocketRelayer;
-    constructor(secretKey: string, host: string, origin: string, userAgent: string, contentType: string, relayPath: string, pocket: Pocket, pocketConfiguration: Configuration, redis: Redis, pgPool: PGPool, databaseEncryptionKey: string, processUID: string, applicationsRepository: ApplicationsRepository, blockchainsRepository: BlockchainsRepository, loadBalancersRepository: LoadBalancersRepository);
+    constructor(secretKey: string, host: string, origin: string, userAgent: string, contentType: string, relayPath: string, relayRetries: number, pocket: Pocket, pocketConfiguration: Configuration, redis: Redis, pgPool: PGPool, databaseEncryptionKey: string, processUID: string, applicationsRepository: ApplicationsRepository, blockchainsRepository: BlockchainsRepository, loadBalancersRepository: LoadBalancersRepository);
     /**
      * Load Balancer Relay
      *
@@ -34,7 +35,7 @@ export declare class V1Controller {
      *
      * @param id Load Balancer ID
      */
-    loadBalancerRelay(id: string, rawData: object, filter?: FilterExcludingWhere<Applications>): Promise<string>;
+    loadBalancerRelay(id: string, rawData: object, filter?: FilterExcludingWhere<Applications>): Promise<string | Error>;
     /**
      * Application Relay
      *
@@ -42,8 +43,9 @@ export declare class V1Controller {
      *
      * @param id Application ID
      */
-    applicationRelay(id: string, rawData: object, filter?: FilterExcludingWhere<Applications>): Promise<string>;
-    fetchRandomLoadBalancerApplication(id: string, applicationIDs: string[], filter: FilterExcludingWhere | undefined): Promise<Applications>;
-    fetchApp(id: string, filter: FilterExcludingWhere | undefined): Promise<Applications>;
+    applicationRelay(id: string, rawData: object, filter?: FilterExcludingWhere<Applications>): Promise<string | Error>;
+    fetchLoadBalancer(id: string, filter: FilterExcludingWhere | undefined): Promise<LoadBalancers | undefined>;
+    fetchApplication(id: string, filter: FilterExcludingWhere | undefined): Promise<Applications | undefined>;
+    fetchRandomLoadBalancerApplication(id: string, applicationIDs: string[], filter: FilterExcludingWhere | undefined): Promise<Applications | undefined>;
     checkDebug(): boolean;
 }
