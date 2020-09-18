@@ -1318,7 +1318,7 @@
         "signature": "e0209f76544838f42150bccec0103aee3bc26edd64feb1c2dce0176018012ef4"
       },
       "./src/application.ts": {
-        "version": "f1b68c1c64d80b407401763d1fb71530658524b75dec1d4d538a2077d5649031",
+        "version": "807875c9c80fa79692408fcb6330fb21643c3c16fad8c001b4d81e380b33a21a",
         "signature": "f4b295f6c43ea9ebb0fb3113c36874d56119f89d425fcf1f49e6be31cd2dd130"
       },
       "./src/index.ts": {
@@ -4373,6 +4373,7 @@
         "./src/sequence.ts",
         "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts",
         "./node_modules/@types/node/path.d.ts",
+        "./node_modules/@types/node/fs.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],

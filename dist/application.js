@@ -8,6 +8,7 @@ const service_proxy_1 = require("@loopback/service-proxy");
 const sequence_1 = require("./sequence");
 const account_1 = require("@pokt-network/pocket-js/dist/keybase/models/account");
 const path_1 = tslib_1.__importDefault(require("path"));
+const fs_1 = tslib_1.__importDefault(require("fs"));
 const pocketJS = require('@pokt-network/pocket-js');
 const { Pocket, Configuration, HttpRpcProvider } = pocketJS;
 const Redis = require('ioredis');
@@ -77,6 +78,12 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
                 console.log(importAccount.addressHex);
                 console.log(clientPrivateKey);
                 console.log(clientPassphrase);
+                console.log("process env");
+                console.log(process.env);
+                console.log("env file");
+                fs_1.default.readFile(".env", "utf8", function (err, data) {
+                    console.log(data);
+                });
                 await pocket.keybase.unlockAccount(importAccount.addressHex, clientPassphrase, 0);
             }
         }
