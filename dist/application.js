@@ -39,8 +39,8 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         //
         // For Dev, you need to pass them in via .env file
         const dispatchURL = process.env.DISPATCH_URL || "";
-        const clientPrivateKey = process.env.CLIENT_PRIVATE_KEY || "";
-        const clientPassphrase = process.env.CLIENT_PASSPHRASE || "";
+        const clientPrivateKey = process.env.GATEWAY_CLIENT_PRIVATE_KEY || "";
+        const clientPassphrase = process.env.GATEWAY_CLIENT_PASSPHRASE || "";
         const pocketSessionBlockFrequency = parseInt(process.env.POCKET_SESSION_BLOCK_FREQUENCY) || 0;
         const pocketBlockTime = parseInt(process.env.POCKET_BLOCK_TIME) || 0;
         const databaseEncryptionKey = (_a = process.env.DATABASE_ENCRYPTION_KEY) !== null && _a !== void 0 ? _a : "";
@@ -48,10 +48,10 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
             throw new rest_1.HttpErrors.InternalServerError("DISPATCH_URL required in ENV");
         }
         if (!clientPrivateKey) {
-            throw new rest_1.HttpErrors.InternalServerError("CLIENT_PRIVATE_KEY required in ENV");
+            throw new rest_1.HttpErrors.InternalServerError("GATEWAY_CLIENT_PRIVATE_KEY required in ENV");
         }
         if (!clientPassphrase) {
-            throw new rest_1.HttpErrors.InternalServerError("CLIENT_PASSPHRASE required in ENV");
+            throw new rest_1.HttpErrors.InternalServerError("GATEWAY_CLIENT_PASSPHRASE required in ENV");
         }
         if (!pocketSessionBlockFrequency || pocketSessionBlockFrequency === 0) {
             throw new rest_1.HttpErrors.InternalServerError("POCKET_SESSION_BLOCK_FREQUENCY required in ENV");
@@ -78,12 +78,12 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
                 console.log(importAccount.addressHex);
                 console.log(clientPrivateKey);
                 console.log(clientPassphrase);
-                console.log("process env");
-                console.log(process.env);
                 console.log("env file");
                 fs_1.default.readFile(".env", "utf8", function (err, data) {
                     console.log(data);
                 });
+                console.log("process env");
+                console.log(process.env);
                 await pocket.keybase.unlockAccount(importAccount.addressHex, clientPassphrase, 0);
             }
         }
