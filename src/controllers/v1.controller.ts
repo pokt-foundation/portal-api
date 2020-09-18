@@ -1,7 +1,7 @@
 import { inject } from "@loopback/context";
 import { FilterExcludingWhere, repository } from "@loopback/repository";
 import { post, param, requestBody, HttpErrors } from "@loopback/rest";
-import { Applications } from "../models";
+import { Applications, LoadBalancers } from "../models";
 import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from "../repositories";
 import { Pocket, Configuration } from "@pokt-network/pocket-js";
 import { Redis } from "ioredis";
@@ -22,6 +22,7 @@ export class V1Controller {
     @inject("userAgent") private userAgent: string,
     @inject("contentType") private contentType: string,
     @inject("relayPath") private relayPath: string,
+    @inject("relayRetries") private relayRetries: number,
     @inject("pocketInstance") private pocket: Pocket,
     @inject("pocketConfiguration") private pocketConfiguration: Configuration,
     @inject("redisInstance") private redis: Redis,
@@ -57,6 +58,7 @@ export class V1Controller {
       this.databaseEncryptionKey,
       this.secretKey,
       this.relayPath,
+      this.relayRetries,
       this.blockchainsRepository,
       this.checkDebug()
     );
@@ -93,23 +95,21 @@ export class V1Controller {
     }) rawData: object,
     @param.filter(Applications, { exclude: "where" })
     filter?: FilterExcludingWhere<Applications>
-  ): Promise<string> {
+  ): Promise<string | Error> {
     console.log("PROCESSING LB " + id);
 
-    const cachedLoadBalancer = await this.redis.get(id);
-    let loadBalancer;
-
-    if (!cachedLoadBalancer) {
-      loadBalancer = await this.loadBalancersRepository.findById(id, filter);
-      await this.redis.set(id, JSON.stringify(loadBalancer), "EX", 60);
-    } else {
-      loadBalancer = JSON.parse(cachedLoadBalancer);
+    const loadBalancer = await this.fetchLoadBalancer(id, filter);
+    if (loadBalancer?.id) {
+      // Fetch applications contained in this Load Balancer. Verify they exist and choose
+      // one randomly for the relay.
+      const application = await this.fetchRandomLoadBalancerApplication(loadBalancer.id, loadBalancer.applicationIDs, filter);
+      if (application?.id) {
+        return this.pocketRelayer.sendRelay(rawData, application);
+      }
     }
-    
-    // Fetch applications contained in this Load Balancer. Verify they exist and choose
-    // one randomly for the relay.
-    const application = await this.fetchRandomLoadBalancerApplication(loadBalancer.id, loadBalancer.applicationIDs, filter);
-    return this.pocketRelayer.sendRelay(rawData, application);
+    throw new HttpErrors.InternalServerError(
+      "Load Balancer configuration error"
+    );
   }
 
   /**
@@ -143,22 +143,57 @@ export class V1Controller {
     }) rawData: object,
     @param.filter(Applications, { exclude: "where" })
     filter?: FilterExcludingWhere<Applications>
-  ): Promise<string> {
+  ): Promise<string | Error> {
     console.log("PROCESSING APP " + id);
     
-    const app = await this.fetchApp(id, filter);
-    return this.pocketRelayer.sendRelay(rawData, app);
+    const application = await this.fetchApplication(id, filter);
+    if (application?.id) {
+      return this.pocketRelayer.sendRelay(rawData, application);
+    }
+    throw new HttpErrors.InternalServerError(
+     "Application not found"
+    );
   }
 
-  // Pull Load Balancer Applications from redis then DB
-  async fetchRandomLoadBalancerApplication(id: string, applicationIDs: string[], filter: FilterExcludingWhere | undefined): Promise<Applications> {
+  // Pull LoadBalancer records from redis then DB
+  async fetchLoadBalancer(id: string, filter: FilterExcludingWhere | undefined): Promise<LoadBalancers | undefined> {
+    const cachedLoadBalancer = await this.redis.get(id);
+
+    if (!cachedLoadBalancer) {
+      const loadBalancer = await this.loadBalancersRepository.findById(id, filter);
+      if (loadBalancer?.id) {
+        await this.redis.set(id, JSON.stringify(loadBalancer), "EX", 60);
+        return new LoadBalancers(loadBalancer);
+      }
+      return undefined;
+    }
+    return new LoadBalancers(JSON.parse(cachedLoadBalancer));
+  }
+  
+  // Pull Application records from redis then DB
+  async fetchApplication(id: string, filter: FilterExcludingWhere | undefined): Promise<Applications | undefined> {
+    const cachedApplication = await this.redis.get(id);
+
+    if (!cachedApplication) {
+      const application = await this.applicationsRepository.findById(id, filter);
+      if (application?.id) {
+        await this.redis.set(id, JSON.stringify(application), "EX", 60);
+        return new Applications(application);
+      }
+      return undefined;
+    }
+    return new Applications(JSON.parse(cachedApplication))
+  }
+
+  // Pull a random Load Balancer Application from redis then DB
+  async fetchRandomLoadBalancerApplication(id: string, applicationIDs: string[], filter: FilterExcludingWhere | undefined): Promise<Applications | undefined> {
     let verifiedIDs:string[] = [];
     const cachedLoadBalancerApplicationIDs = await this.redis.get("applicationIDs-" + id);
 
     // Fetch from DB if not found in redis
     if (!cachedLoadBalancerApplicationIDs) {
       for (const applicationID of applicationIDs) {
-        const application = await this.fetchApp(applicationID, filter);
+        const application = await this.fetchApplication(applicationID, filter);
         if (application?.id) {
             verifiedIDs.push(application.id);
         }
@@ -175,20 +210,8 @@ export class V1Controller {
         "Load Balancer configuration invalid"
       );
     }
-    return this.fetchApp(verifiedIDs[Math.floor(Math.random() * verifiedIDs.length)], filter);
+    return this.fetchApplication(verifiedIDs[Math.floor(Math.random() * verifiedIDs.length)], filter);
   } 
-  
-  // Pull Application records from redis then DB
-  async fetchApp(id: string, filter: FilterExcludingWhere | undefined): Promise<Applications> {
-    const cachedApplication = await this.redis.get(id);
-
-    if (!cachedApplication) {
-      const application = await this.applicationsRepository.findById(id, filter);
-      await this.redis.set(id, JSON.stringify(application), "EX", 60);
-      return application;
-    }
-    return new Applications(JSON.parse(cachedApplication))
-  }
 
   // Debug log for testing based on user agent
   checkDebug(): boolean {

@@ -56,6 +56,7 @@ export class PocketGatewayApplication extends BootMixin(
     const clientPassphrase: string = process.env.GATEWAY_CLIENT_PASSPHRASE || "";
     const pocketSessionBlockFrequency: number = parseInt(process.env.POCKET_SESSION_BLOCK_FREQUENCY) || 0;
     const pocketBlockTime: number = parseInt(process.env.POCKET_BLOCK_TIME) || 0;
+    const relayRetries: number = parseInt(process.env.POCKET_RELAY_RETRIES) || 0;
     const databaseEncryptionKey: string = process.env.DATABASE_ENCRYPTION_KEY ?? "";
 
     if (!dispatchURL) {
@@ -98,6 +99,7 @@ export class PocketGatewayApplication extends BootMixin(
     // Bind to application context for shared re-use
     this.bind("pocketInstance").to(pocket);
     this.bind("pocketConfiguration").to(configuration);
+    this.bind("relayRetries").to(relayRetries);
 
     // Unlock primary client account for relay signing
     try {

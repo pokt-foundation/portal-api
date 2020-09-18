@@ -42,6 +42,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         const clientPassphrase = process.env.GATEWAY_CLIENT_PASSPHRASE || "";
         const pocketSessionBlockFrequency = parseInt(process.env.POCKET_SESSION_BLOCK_FREQUENCY) || 0;
         const pocketBlockTime = parseInt(process.env.POCKET_BLOCK_TIME) || 0;
+        const relayRetries = parseInt(process.env.POCKET_RELAY_RETRIES) || 0;
         const databaseEncryptionKey = (_a = process.env.DATABASE_ENCRYPTION_KEY) !== null && _a !== void 0 ? _a : "";
         if (!dispatchURL) {
             throw new rest_1.HttpErrors.InternalServerError("DISPATCH_URL required in ENV");
@@ -69,6 +70,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         // Bind to application context for shared re-use
         this.bind("pocketInstance").to(pocket);
         this.bind("pocketConfiguration").to(configuration);
+        this.bind("relayRetries").to(relayRetries);
         // Unlock primary client account for relay signing
         try {
             const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase);
