@@ -1,9 +1,12 @@
 import { FilterExcludingWhere } from "@loopback/repository";
 import { Applications } from "../models";
-import { ApplicationsRepository, BlockchainsRepository } from "../repositories";
-import { Pocket, Configuration, Session, Node } from "@pokt-network/pocket-js";
+import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from "../repositories";
+import { PocketRelayer } from "../services/pocket-relayer";
+import { Pocket, Configuration } from "@pokt-network/pocket-js";
 import { Redis } from "ioredis";
 import { Pool as PGPool } from "pg";
+import { CherryPicker } from '../services/cherry-picker';
+import { MetricsRecorder } from '../services/metrics-recorder';
 export declare class V1Controller {
     private secretKey;
     private host;
@@ -19,21 +22,28 @@ export declare class V1Controller {
     private processUID;
     applicationsRepository: ApplicationsRepository;
     private blockchainsRepository;
-    constructor(secretKey: string, host: string, origin: string, userAgent: string, contentType: string, relayPath: string, pocket: Pocket, pocketConfiguration: Configuration, redis: Redis, pgPool: PGPool, databaseEncryptionKey: string, processUID: string, applicationsRepository: ApplicationsRepository, blockchainsRepository: BlockchainsRepository);
-    attemptRelay(id: string, rawData: object, filter?: FilterExcludingWhere<Applications>): Promise<string>;
-    checkEnforcementJSON(test: string): boolean;
-    checkWhitelist(tests: string[], check: string, type: string): boolean;
+    private loadBalancersRepository;
+    cherryPicker: CherryPicker;
+    metricsRecorder: MetricsRecorder;
+    pocketRelayer: PocketRelayer;
+    constructor(secretKey: string, host: string, origin: string, userAgent: string, contentType: string, relayPath: string, pocket: Pocket, pocketConfiguration: Configuration, redis: Redis, pgPool: PGPool, databaseEncryptionKey: string, processUID: string, applicationsRepository: ApplicationsRepository, blockchainsRepository: BlockchainsRepository, loadBalancersRepository: LoadBalancersRepository);
+    /**
+     * Load Balancer Relay
+     *
+     * Send a Pocket Relay using a Gateway Load Balancer ID
+     *
+     * @param id Load Balancer ID
+     */
+    loadBalancerRelay(id: string, rawData: object, filter?: FilterExcludingWhere<Applications>): Promise<string>;
+    /**
+     * Application Relay
+     *
+     * Send a Pocket Relay using a specific Application's ID
+     *
+     * @param id Application ID
+     */
+    applicationRelay(id: string, rawData: object, filter?: FilterExcludingWhere<Applications>): Promise<string>;
+    fetchRandomLoadBalancerApplication(id: string, applicationIDs: string[], filter: FilterExcludingWhere | undefined): Promise<Applications>;
+    fetchApp(id: string, filter: FilterExcludingWhere | undefined): Promise<Applications>;
     checkDebug(): boolean;
-    recordMetric({ appPubKey, blockchain, serviceNode, elapsedStart, result, bytes, method, }: {
-        appPubKey: string;
-        blockchain: string;
-        serviceNode: string | undefined;
-        elapsedStart: [number, number];
-        result: number;
-        bytes: number;
-        method: string | undefined;
-    }): Promise<void>;
-    updateServiceNodeQuality(blockchain: string, serviceNode: string, elapsedTime: number, result: number): Promise<void>;
-    fetchServiceLog(blockchain: string, serviceNode: string): Promise<string | null>;
-    cherryPickNode(pocketSession: Session, blockchain: string): Promise<Node>;
 }
