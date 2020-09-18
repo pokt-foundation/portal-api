@@ -2,22 +2,13 @@ import { inject } from "@loopback/context";
 import { FilterExcludingWhere, repository } from "@loopback/repository";
 import { post, param, requestBody, HttpErrors } from "@loopback/rest";
 import { Applications } from "../models";
-import {
-  ApplicationsRepository,
-  BlockchainsRepository,
-  LoadBalancersRepository,
-} from "../repositories";
-import { PocketRelayer } from "../services/pocket-relayer";
-
-import {
-  Pocket,
-  Configuration,
-} from "@pokt-network/pocket-js";
-
+import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from "../repositories";
+import { Pocket, Configuration } from "@pokt-network/pocket-js";
 import { Redis } from "ioredis";
 import { Pool as PGPool } from "pg";
 import { CherryPicker } from '../services/cherry-picker';
 import { MetricsRecorder } from '../services/metrics-recorder';
+import { PocketRelayer } from "../services/pocket-relayer";
 
 export class V1Controller {
   cherryPicker: CherryPicker;

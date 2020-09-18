@@ -73,6 +73,10 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         try {
             const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase);
             if (importAccount instanceof account_1.Account) {
+                console.log("unlocking account");
+                console.log(importAccount.addressHex);
+                console.log(clientPrivateKey);
+                console.log(clientPassphrase);
                 await pocket.keybase.unlockAccount(importAccount.addressHex, clientPassphrase, 0);
             }
         }
