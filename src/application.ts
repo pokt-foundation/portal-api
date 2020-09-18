@@ -10,7 +10,6 @@ import {GatewaySequence} from './sequence';
 import {Account} from '@pokt-network/pocket-js/dist/keybase/models/account'
 
 import path from 'path';
-import fs from 'fs';
 
 const pocketJS = require('@pokt-network/pocket-js');
 
@@ -104,16 +103,6 @@ export class PocketGatewayApplication extends BootMixin(
     try {
       const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase);
       if (importAccount instanceof Account) {
-        console.log("unlocking account");
-        console.log(importAccount.addressHex);
-        console.log(clientPrivateKey);
-        console.log(clientPassphrase);
-        console.log("env file");
-        fs.readFile(".env", "utf8", function(err, data) {
-          console.log(data);
-        });
-        console.log("process env");
-        console.log(process.env);
         await pocket.keybase.unlockAccount(importAccount.addressHex, clientPassphrase, 0);
       }
     }
