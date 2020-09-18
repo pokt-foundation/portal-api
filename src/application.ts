@@ -103,6 +103,10 @@ export class PocketGatewayApplication extends BootMixin(
     try {
       const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase);
       if (importAccount instanceof Account) {
+        console.log("unlocking account");
+        console.log(importAccount.addressHex);
+        console.log(clientPrivateKey);
+        console.log(clientPassphrase);
         await pocket.keybase.unlockAccount(importAccount.addressHex, clientPassphrase, 0);
       }
     }

@@ -6,11 +6,11 @@ const repository_1 = require("@loopback/repository");
 const rest_1 = require("@loopback/rest");
 const models_1 = require("../models");
 const repositories_1 = require("../repositories");
-const pocket_relayer_1 = require("../services/pocket-relayer");
 const pocket_js_1 = require("@pokt-network/pocket-js");
 const pg_1 = require("pg");
 const cherry_picker_1 = require("../services/cherry-picker");
 const metrics_recorder_1 = require("../services/metrics-recorder");
+const pocket_relayer_1 = require("../services/pocket-relayer");
 let V1Controller = class V1Controller {
     constructor(secretKey, host, origin, userAgent, contentType, relayPath, pocket, pocketConfiguration, redis, pgPool, databaseEncryptionKey, processUID, applicationsRepository, blockchainsRepository, loadBalancersRepository) {
         this.secretKey = secretKey;
