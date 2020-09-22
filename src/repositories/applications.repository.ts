@@ -8,9 +8,7 @@ export class ApplicationsRepository extends DefaultCrudRepository<
   typeof Applications.prototype.id,
   ApplicationsRelations
 > {
-  constructor(
-    @inject('datasources.gateway') dataSource: GatewayDataSource,
-  ) {
+  constructor(@inject('datasources.gateway') dataSource: GatewayDataSource) {
     super(Applications, dataSource);
   }
 }

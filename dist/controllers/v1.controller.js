@@ -29,9 +29,32 @@ let V1Controller = class V1Controller {
         this.applicationsRepository = applicationsRepository;
         this.blockchainsRepository = blockchainsRepository;
         this.loadBalancersRepository = loadBalancersRepository;
-        this.cherryPicker = new cherry_picker_1.CherryPicker(this.redis, this.checkDebug());
-        this.metricsRecorder = new metrics_recorder_1.MetricsRecorder(this.redis, this.pgPool, this.cherryPicker, this.processUID);
-        this.pocketRelayer = new pocket_relayer_1.PocketRelayer(this.host, this.origin, this.userAgent, this.pocket, this.pocketConfiguration, this.cherryPicker, this.metricsRecorder, this.redis, this.databaseEncryptionKey, this.secretKey, this.relayPath, this.relayRetries, this.blockchainsRepository, this.checkDebug());
+        this.cherryPicker = new cherry_picker_1.CherryPicker({
+            redis: this.redis,
+            checkDebug: this.checkDebug(),
+        });
+        this.metricsRecorder = new metrics_recorder_1.MetricsRecorder({
+            redis: this.redis,
+            pgPool: this.pgPool,
+            cherryPicker: this.cherryPicker,
+            processUID: this.processUID,
+        });
+        this.pocketRelayer = new pocket_relayer_1.PocketRelayer({
+            host: this.host,
+            origin: this.origin,
+            userAgent: this.userAgent,
+            pocket: this.pocket,
+            pocketConfiguration: this.pocketConfiguration,
+            cherryPicker: this.cherryPicker,
+            metricsRecorder: this.metricsRecorder,
+            redis: this.redis,
+            databaseEncryptionKey: this.databaseEncryptionKey,
+            secretKey: this.secretKey,
+            relayPath: this.relayPath,
+            relayRetries: this.relayRetries,
+            blockchainsRepository: this.blockchainsRepository,
+            checkDebug: this.checkDebug(),
+        });
     }
     /**
      * Load Balancer Relay
@@ -41,7 +64,7 @@ let V1Controller = class V1Controller {
      * @param id Load Balancer ID
      */
     async loadBalancerRelay(id, rawData, filter) {
-        console.log("PROCESSING LB " + id);
+        console.log('PROCESSING LB ' + id);
         const loadBalancer = await this.fetchLoadBalancer(id, filter);
         if (loadBalancer === null || loadBalancer === void 0 ? void 0 : loadBalancer.id) {
             // Fetch applications contained in this Load Balancer. Verify they exist and choose
@@ -51,7 +74,7 @@ let V1Controller = class V1Controller {
                 return this.pocketRelayer.sendRelay(rawData, application);
             }
         }
-        throw new rest_1.HttpErrors.InternalServerError("Load Balancer configuration error");
+        throw new rest_1.HttpErrors.InternalServerError('Load Balancer configuration error');
     }
     /**
      * Application Relay
@@ -61,12 +84,12 @@ let V1Controller = class V1Controller {
      * @param id Application ID
      */
     async applicationRelay(id, rawData, filter) {
-        console.log("PROCESSING APP " + id);
+        console.log('PROCESSING APP ' + id);
         const application = await this.fetchApplication(id, filter);
         if (application === null || application === void 0 ? void 0 : application.id) {
             return this.pocketRelayer.sendRelay(rawData, application);
         }
-        throw new rest_1.HttpErrors.InternalServerError("Application not found");
+        throw new rest_1.HttpErrors.InternalServerError('Application not found');
     }
     // Pull LoadBalancer records from redis then DB
     async fetchLoadBalancer(id, filter) {
@@ -74,7 +97,7 @@ let V1Controller = class V1Controller {
         if (!cachedLoadBalancer) {
             const loadBalancer = await this.loadBalancersRepository.findById(id, filter);
             if (loadBalancer === null || loadBalancer === void 0 ? void 0 : loadBalancer.id) {
-                await this.redis.set(id, JSON.stringify(loadBalancer), "EX", 60);
+                await this.redis.set(id, JSON.stringify(loadBalancer), 'EX', 60);
                 return new models_1.LoadBalancers(loadBalancer);
             }
             return undefined;
@@ -87,7 +110,7 @@ let V1Controller = class V1Controller {
         if (!cachedApplication) {
             const application = await this.applicationsRepository.findById(id, filter);
             if (application === null || application === void 0 ? void 0 : application.id) {
-                await this.redis.set(id, JSON.stringify(application), "EX", 60);
+                await this.redis.set(id, JSON.stringify(application), 'EX', 60);
                 return new models_1.Applications(application);
             }
             return undefined;
@@ -97,7 +120,7 @@ let V1Controller = class V1Controller {
     // Pull a random Load Balancer Application from redis then DB
     async fetchRandomLoadBalancerApplication(id, applicationIDs, filter) {
         let verifiedIDs = [];
-        const cachedLoadBalancerApplicationIDs = await this.redis.get("applicationIDs-" + id);
+        const cachedLoadBalancerApplicationIDs = await this.redis.get('applicationIDs-' + id);
         // Fetch from DB if not found in redis
         if (!cachedLoadBalancerApplicationIDs) {
             for (const applicationID of applicationIDs) {
@@ -106,14 +129,14 @@ let V1Controller = class V1Controller {
                     verifiedIDs.push(application.id);
                 }
             }
-            await this.redis.set("applicationIDs-" + id, JSON.stringify(verifiedIDs), "EX", 60);
+            await this.redis.set('applicationIDs-' + id, JSON.stringify(verifiedIDs), 'EX', 60);
         }
         else {
             verifiedIDs = JSON.parse(cachedLoadBalancerApplicationIDs);
         }
         // Sanity check; make sure applications are configured for this LB
         if (verifiedIDs.length < 1) {
-            throw new rest_1.HttpErrors.Forbidden("Load Balancer configuration invalid");
+            throw new rest_1.HttpErrors.Forbidden('Load Balancer configuration invalid');
         }
         return this.fetchApplication(verifiedIDs[Math.floor(Math.random() * verifiedIDs.length)], filter);
     }
@@ -127,17 +150,17 @@ let V1Controller = class V1Controller {
     }
 };
 tslib_1.__decorate([
-    rest_1.post("/v1/lb/{id}", {
+    rest_1.post('/v1/lb/{id}', {
         responses: {
-            "200": {
-                description: "Relay Response",
+            '200': {
+                description: 'Relay Response',
                 content: {
-                    "application/json": {},
+                    'application/json': {},
                 },
             },
         },
     }),
-    tslib_1.__param(0, rest_1.param.path.string("id")),
+    tslib_1.__param(0, rest_1.param.path.string('id')),
     tslib_1.__param(1, rest_1.requestBody({
         description: 'Relay Request',
         required: true,
@@ -148,23 +171,23 @@ tslib_1.__decorate([
             },
         },
     })),
-    tslib_1.__param(2, rest_1.param.filter(models_1.Applications, { exclude: "where" })),
+    tslib_1.__param(2, rest_1.param.filter(models_1.Applications, { exclude: 'where' })),
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", [String, Object, Object]),
     tslib_1.__metadata("design:returntype", Promise)
 ], V1Controller.prototype, "loadBalancerRelay", null);
 tslib_1.__decorate([
-    rest_1.post("/v1/{id}", {
+    rest_1.post('/v1/{id}', {
         responses: {
-            "200": {
-                description: "Relay Response",
+            '200': {
+                description: 'Relay Response',
                 content: {
-                    "application/json": {},
+                    'application/json': {},
                 },
             },
         },
     }),
-    tslib_1.__param(0, rest_1.param.path.string("id")),
+    tslib_1.__param(0, rest_1.param.path.string('id')),
     tslib_1.__param(1, rest_1.requestBody({
         description: 'Relay Request',
         required: true,
@@ -175,25 +198,25 @@ tslib_1.__decorate([
             },
         },
     })),
-    tslib_1.__param(2, rest_1.param.filter(models_1.Applications, { exclude: "where" })),
+    tslib_1.__param(2, rest_1.param.filter(models_1.Applications, { exclude: 'where' })),
     tslib_1.__metadata("design:type", Function),
     tslib_1.__metadata("design:paramtypes", [String, Object, Object]),
     tslib_1.__metadata("design:returntype", Promise)
 ], V1Controller.prototype, "applicationRelay", null);
 V1Controller = tslib_1.__decorate([
-    tslib_1.__param(0, context_1.inject("secretKey")),
-    tslib_1.__param(1, context_1.inject("host")),
-    tslib_1.__param(2, context_1.inject("origin")),
-    tslib_1.__param(3, context_1.inject("userAgent")),
-    tslib_1.__param(4, context_1.inject("contentType")),
-    tslib_1.__param(5, context_1.inject("relayPath")),
-    tslib_1.__param(6, context_1.inject("relayRetries")),
-    tslib_1.__param(7, context_1.inject("pocketInstance")),
-    tslib_1.__param(8, context_1.inject("pocketConfiguration")),
-    tslib_1.__param(9, context_1.inject("redisInstance")),
-    tslib_1.__param(10, context_1.inject("pgPool")),
-    tslib_1.__param(11, context_1.inject("databaseEncryptionKey")),
-    tslib_1.__param(12, context_1.inject("processUID")),
+    tslib_1.__param(0, context_1.inject('secretKey')),
+    tslib_1.__param(1, context_1.inject('host')),
+    tslib_1.__param(2, context_1.inject('origin')),
+    tslib_1.__param(3, context_1.inject('userAgent')),
+    tslib_1.__param(4, context_1.inject('contentType')),
+    tslib_1.__param(5, context_1.inject('relayPath')),
+    tslib_1.__param(6, context_1.inject('relayRetries')),
+    tslib_1.__param(7, context_1.inject('pocketInstance')),
+    tslib_1.__param(8, context_1.inject('pocketConfiguration')),
+    tslib_1.__param(9, context_1.inject('redisInstance')),
+    tslib_1.__param(10, context_1.inject('pgPool')),
+    tslib_1.__param(11, context_1.inject('databaseEncryptionKey')),
+    tslib_1.__param(12, context_1.inject('processUID')),
     tslib_1.__param(13, repository_1.repository(repositories_1.ApplicationsRepository)),
     tslib_1.__param(14, repository_1.repository(repositories_1.BlockchainsRepository)),
     tslib_1.__param(15, repository_1.repository(repositories_1.LoadBalancersRepository)),

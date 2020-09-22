@@ -37,30 +37,30 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         // Requirements; for Production these are stored in GitHub repo secrets
         //
         // For Dev, you need to pass them in via .env file
-        const dispatchURL = process.env.DISPATCH_URL || "";
-        const clientPrivateKey = process.env.GATEWAY_CLIENT_PRIVATE_KEY || "";
-        const clientPassphrase = process.env.GATEWAY_CLIENT_PASSPHRASE || "";
+        const dispatchURL = process.env.DISPATCH_URL || '';
+        const clientPrivateKey = process.env.GATEWAY_CLIENT_PRIVATE_KEY || '';
+        const clientPassphrase = process.env.GATEWAY_CLIENT_PASSPHRASE || '';
         const pocketSessionBlockFrequency = parseInt(process.env.POCKET_SESSION_BLOCK_FREQUENCY) || 0;
         const pocketBlockTime = parseInt(process.env.POCKET_BLOCK_TIME) || 0;
         const relayRetries = parseInt(process.env.POCKET_RELAY_RETRIES) || 0;
-        const databaseEncryptionKey = (_a = process.env.DATABASE_ENCRYPTION_KEY) !== null && _a !== void 0 ? _a : "";
+        const databaseEncryptionKey = (_a = process.env.DATABASE_ENCRYPTION_KEY) !== null && _a !== void 0 ? _a : '';
         if (!dispatchURL) {
-            throw new rest_1.HttpErrors.InternalServerError("DISPATCH_URL required in ENV");
+            throw new rest_1.HttpErrors.InternalServerError('DISPATCH_URL required in ENV');
         }
         if (!clientPrivateKey) {
-            throw new rest_1.HttpErrors.InternalServerError("GATEWAY_CLIENT_PRIVATE_KEY required in ENV");
+            throw new rest_1.HttpErrors.InternalServerError('GATEWAY_CLIENT_PRIVATE_KEY required in ENV');
         }
         if (!clientPassphrase) {
-            throw new rest_1.HttpErrors.InternalServerError("GATEWAY_CLIENT_PASSPHRASE required in ENV");
+            throw new rest_1.HttpErrors.InternalServerError('GATEWAY_CLIENT_PASSPHRASE required in ENV');
         }
         if (!pocketSessionBlockFrequency || pocketSessionBlockFrequency === 0) {
-            throw new rest_1.HttpErrors.InternalServerError("POCKET_SESSION_BLOCK_FREQUENCY required in ENV");
+            throw new rest_1.HttpErrors.InternalServerError('POCKET_SESSION_BLOCK_FREQUENCY required in ENV');
         }
         if (!pocketBlockTime || pocketBlockTime === 0) {
-            throw new rest_1.HttpErrors.InternalServerError("POCKET_BLOCK_TIME required in ENV");
+            throw new rest_1.HttpErrors.InternalServerError('POCKET_BLOCK_TIME required in ENV');
         }
         if (!databaseEncryptionKey) {
-            throw new rest_1.HttpErrors.InternalServerError("DATABASE_ENCRYPTION_KEY required in ENV");
+            throw new rest_1.HttpErrors.InternalServerError('DATABASE_ENCRYPTION_KEY required in ENV');
         }
         // Create the Pocket instance
         const dispatchers = new URL(dispatchURL);
@@ -68,9 +68,9 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         const rpcProvider = new HttpRpcProvider(dispatchers);
         const pocket = new Pocket([dispatchers], rpcProvider, configuration);
         // Bind to application context for shared re-use
-        this.bind("pocketInstance").to(pocket);
-        this.bind("pocketConfiguration").to(configuration);
-        this.bind("relayRetries").to(relayRetries);
+        this.bind('pocketInstance').to(pocket);
+        this.bind('pocketConfiguration').to(configuration);
+        this.bind('relayRetries').to(relayRetries);
         // Unlock primary client account for relay signing
         try {
             const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase);
@@ -80,27 +80,27 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         }
         catch (e) {
             console.log(e);
-            throw new rest_1.HttpErrors.InternalServerError("Unable to import or unlock base client account");
+            throw new rest_1.HttpErrors.InternalServerError('Unable to import or unlock base client account');
         }
         // Load Redis for cache
-        const redisEndpoint = process.env.REDIS_ENDPOINT || "";
-        const redisPort = process.env.REDIS_PORT || "";
+        const redisEndpoint = process.env.REDIS_ENDPOINT || '';
+        const redisPort = process.env.REDIS_PORT || '';
         if (!redisEndpoint) {
-            throw new rest_1.HttpErrors.InternalServerError("REDIS_ENDPOINT required in ENV");
+            throw new rest_1.HttpErrors.InternalServerError('REDIS_ENDPOINT required in ENV');
         }
         if (!redisPort) {
-            throw new rest_1.HttpErrors.InternalServerError("REDIS_PORT required in ENV");
+            throw new rest_1.HttpErrors.InternalServerError('REDIS_PORT required in ENV');
         }
         const redis = new Redis(redisPort, redisEndpoint);
-        this.bind("redisInstance").to(redis);
+        this.bind('redisInstance').to(redis);
         // Load Postgres for TimescaleDB metrics
-        const pgConnection = process.env.PG_CONNECTION || "";
-        const pgCertificate = process.env.PG_CERTIFICATE || "";
+        const pgConnection = process.env.PG_CONNECTION || '';
+        const pgCertificate = process.env.PG_CERTIFICATE || '';
         if (!pgConnection) {
-            throw new rest_1.HttpErrors.InternalServerError("PG_CONNECTION required in ENV");
+            throw new rest_1.HttpErrors.InternalServerError('PG_CONNECTION required in ENV');
         }
         if (!pgCertificate) {
-            throw new rest_1.HttpErrors.InternalServerError("PG_CERTIFICATE required in ENV");
+            throw new rest_1.HttpErrors.InternalServerError('PG_CERTIFICATE required in ENV');
         }
         // Pull public certificate from Redis or s3 if not there
         const cachedCertificate = await redis.get('timescaleDBCertificate');
@@ -111,9 +111,9 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
                 publicCertificate = s3Certificate.body;
             }
             catch (e) {
-                throw new rest_1.HttpErrors.InternalServerError("Invalid Certificate");
+                throw new rest_1.HttpErrors.InternalServerError('Invalid Certificate');
             }
-            redis.set('timescaleDBCertificate', publicCertificate, "EX", 600);
+            redis.set('timescaleDBCertificate', publicCertificate, 'EX', 600);
         }
         else {
             publicCertificate = cachedCertificate;
@@ -123,14 +123,14 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
             ssl: {
                 rejectUnauthorized: false,
                 ca: publicCertificate,
-            }
+            },
         });
-        this.bind("pgPool").to(pgPool);
-        this.bind("databaseEncryptionKey").to(databaseEncryptionKey);
+        this.bind('pgPool').to(pgPool);
+        this.bind('databaseEncryptionKey').to(databaseEncryptionKey);
         // Create a UID for this process
-        const parts = [os.hostname(), process.pid, +(new Date)];
+        const parts = [os.hostname(), process.pid, +new Date()];
         const hash = crypto.createHash('md5').update(parts.join(''));
-        this.bind("processUID").to(hash.digest('hex'));
+        this.bind('processUID').to(hash.digest('hex'));
     }
 }
 exports.PocketGatewayApplication = PocketGatewayApplication;

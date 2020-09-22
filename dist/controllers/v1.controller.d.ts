@@ -1,12 +1,12 @@
-import { FilterExcludingWhere } from "@loopback/repository";
-import { Applications, LoadBalancers } from "../models";
-import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from "../repositories";
-import { Pocket, Configuration } from "@pokt-network/pocket-js";
-import { Redis } from "ioredis";
-import { Pool as PGPool } from "pg";
+import { FilterExcludingWhere } from '@loopback/repository';
+import { Applications, LoadBalancers } from '../models';
+import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from '../repositories';
+import { Pocket, Configuration } from '@pokt-network/pocket-js';
+import { Redis } from 'ioredis';
+import { Pool as PGPool } from 'pg';
 import { CherryPicker } from '../services/cherry-picker';
 import { MetricsRecorder } from '../services/metrics-recorder';
-import { PocketRelayer } from "../services/pocket-relayer";
+import { PocketRelayer } from '../services/pocket-relayer';
 export declare class V1Controller {
     private secretKey;
     private host;
