@@ -1310,7 +1310,7 @@
         "signature": "a15b48b01a590689bbbf03aac6a5291a8dddf77477a46d9e0037adfcc07942b8"
       },
       "./src/sequence.ts": {
-        "version": "b16799af1481882bec8b704da8a1e1a3d754072bb118e54d3209930dbff94a03",
+        "version": "986f6dd0e5aa611caec979e2cb93efa1e287c5970d609ea76492ba1cf2bb7c53",
         "signature": "8721cf11eb4936ffee74356179ce18d3cc7ff99cbc861af322c1a9cfb31c4609"
       },
       "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts": {
@@ -1318,7 +1318,7 @@
         "signature": "e0209f76544838f42150bccec0103aee3bc26edd64feb1c2dce0176018012ef4"
       },
       "./src/application.ts": {
-        "version": "df5ed0d5ea551a4cfccff43731950886844a0c615a0a6869da67ea0d95127ea0",
+        "version": "de6c0636ba4447f5f16209eb124f4593c2cf6dc24538d6d8a3e36d7e6942b349",
         "signature": "f4b295f6c43ea9ebb0fb3113c36874d56119f89d425fcf1f49e6be31cd2dd130"
       },
       "./src/index.ts": {
@@ -1425,12 +1425,16 @@
         "version": "d1d171f171249635e6824f7706ff24eaac03bd21cb1919e37beb99b620d7278b",
         "signature": "f5e9dc9cfd915cd6fd04c98a89c2723decc7d494a8fc77d746b5d045d2e590d6"
       },
+      "./src/models/load-balancers.model.ts": {
+        "version": "b1ef99664eb1e1f41698cf16390fa5ea4389fa157440bd7e984d2854728519ee",
+        "signature": "f107aa4ee84bda9d207e7c1b5539e4820e56d0bf1e822373aeb52ce5b21fd796"
+      },
       "./src/models/index.ts": {
-        "version": "988ac60b2e155f6027e29cb920c0e083f2f330fa5c24151bede83d65397966b7",
-        "signature": "988ac60b2e155f6027e29cb920c0e083f2f330fa5c24151bede83d65397966b7"
+        "version": "8909c266b77c849e7e2e301f040db97c94dd318c51e088948f51e2c94fbb5bbb",
+        "signature": "8909c266b77c849e7e2e301f040db97c94dd318c51e088948f51e2c94fbb5bbb"
       },
       "./src/datasources/gateway.datasource.ts": {
-        "version": "c5a7df63f32821b10dd6fe87409f677885729a8c4ed90d9a0c2d0147c551a2f5",
+        "version": "cd1a466df78094f34036be8ef842dd6fc917bf4e7c2522e53a8ea09dffe2a2b7",
         "signature": "882e92e6dfb6b1a3a70784e86c6bd8cbe243b830f938fef2a00568c71e08ca00"
       },
       "./src/datasources/index.ts": {
@@ -1438,19 +1442,23 @@
         "signature": "c3c7f74b332c3817aba95cabb9f62f36af691e13d9c6f8d92974607924242919"
       },
       "./src/repositories/blockchains.repository.ts": {
-        "version": "0bab87134e493edaeb26067b081ebc9e419a65746628685a8511263c91cefa51",
+        "version": "7798d189e59654d84d9015f4679bcf388ce48eb66b16f916aafd1f76149206a3",
         "signature": "3bca2a5251f65752e3a623ece542271502ee1b029cc00cf8d0cda32f7ab153a6"
       },
       "./src/repositories/applications.repository.ts": {
-        "version": "669cb89c9e6e01b37e941a3e47b968332e809e603234e6011b1eda2a11ffcef1",
+        "version": "e97935421d5e3aee066dcca59e95e046b96c59398a90188a12f63afff0334d81",
         "signature": "1ce0a430b6a96a61e2c9ade7e10aff905447a76feeb7c2ad0608ebc4dafefcd2"
       },
+      "./src/repositories/load-balancers.repository.ts": {
+        "version": "d0dbe23ea46a76eabc76276430735cdf99390570a46d87290eaba6435865cb2c",
+        "signature": "5d43f55098f511dd85c449bbad77e5d23e39d99cf43a2b0901c9d19a1a32aa3f"
+      },
       "./src/repositories/index.ts": {
-        "version": "2d5ee24ecac4744f63603876edfbb4a839236624cd57435b10d8697213da53cc",
-        "signature": "2d5ee24ecac4744f63603876edfbb4a839236624cd57435b10d8697213da53cc"
+        "version": "2b96d3bc206857eebcddc961a4a3da8f3f1af0eb2d5593b2f27bea109f718ee3",
+        "signature": "2b96d3bc206857eebcddc961a4a3da8f3f1af0eb2d5593b2f27bea109f718ee3"
       },
       "./src/controllers/blockchains.controller.ts": {
-        "version": "e08f5b57b5232640218ad83cb59382aea33798e9ba783734b3d4753ef991f467",
+        "version": "4aada272511d1a2def3d464a805ace8d6368a39585d07a8a7e83c2566982e9ff",
         "signature": "976543577429681f8edd3c39e1ea422806c2cdeb5201ca186b69c4b33007ad6e"
       },
       "./src/controllers/ping.controller.ts": {
@@ -1985,6 +1993,14 @@
         "version": "ce3c16bd239d4345a1ffabff3dcbb5025d281292742f4cfa5a29398b815bbb60",
         "signature": "ce3c16bd239d4345a1ffabff3dcbb5025d281292742f4cfa5a29398b815bbb60"
       },
+      "./src/services/cherry-picker.ts": {
+        "version": "e03eadbac3a044c49d30020dc4ab8abcaa0e218805929a81ff32a64d8216aade",
+        "signature": "60461ee3c5f382b6bac36a59cb35b66721f2349b66b66109936fed40cd9e01d4"
+      },
+      "./src/services/metrics-recorder.ts": {
+        "version": "5610c53b89e89e5d938f1360573ba9752043d2c2549db3e06aa16cd013fe0962",
+        "signature": "460346d626d40c7026585657e90670280fe70b148ccd2c687a7a1fc5670d7ddf"
+      },
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": {
         "version": "26c75550bc4cbb1bd5663346ce36097ba9ac7b7a5f8e78c4f3997df6ce664d05",
         "signature": "26c75550bc4cbb1bd5663346ce36097ba9ac7b7a5f8e78c4f3997df6ce664d05"
@@ -2021,17 +2037,17 @@
         "version": "75b8b059a00b6b8f090be39f69fbf84018c53ef865cd8146173a6f5eeec058f0",
         "signature": "75b8b059a00b6b8f090be39f69fbf84018c53ef865cd8146173a6f5eeec058f0"
       },
+      "./src/services/pocket-relayer.ts": {
+        "version": "db60212d182c7cc27f20e3673040ce0f492b98bedc07a5238860d3ce3d8ca579",
+        "signature": "48ce4d823ac9f02cc5ccd061f0b03cc08c229f7c2f0790b5ea91858ff4e40b5e"
+      },
       "./src/controllers/v1.controller.ts": {
-        "version": "4e5a05ca8f14c88882a33c4d2561961f6299e689f193394ae4a9a792d315acf9",
-        "signature": "554fd279e72b01546170ba56b361f3fff3febe90cab844b18f00d4b65cf00675"
+        "version": "a76d7cb6936a047809d2338a1ef130ae2b0697f182bd34e0835bbcd47827b062",
+        "signature": "8bb767c0ba3279ad89d881881f29b5064113a17468e0265985153aabb7a63173"
       },
       "./src/controllers/index.ts": {
         "version": "c27d67de5b5b7aecde13ca899c3197d3c1538b964251fa91a055cb19fb0b6ce7",
         "signature": "c27d67de5b5b7aecde13ca899c3197d3c1538b964251fa91a055cb19fb0b6ce7"
-      },
-      "./src/models/pocket-application.model.ts": {
-        "version": "5bb9ad633df5aceedab56389fd9a81d0f8080f55ae0c37395abb601244ed396e",
-        "signature": "7dd7ce3c4e131860dc15a710c7fb28edf0b38c6456320df4638a1573dd0ce80e"
       },
       "./node_modules/@types/aes-js/index.d.ts": {
         "version": "50d9aefed172801431b1d5ef3d87fe1eec9c0f1ec1b4b13911cb797e83848230",
@@ -2072,6 +2088,10 @@
       "./node_modules/@types/glob/index.d.ts": {
         "version": "393137c76bd922ba70a2f8bf1ade4f59a16171a02fb25918c168d48875b0cfb0",
         "signature": "393137c76bd922ba70a2f8bf1ade4f59a16171a02fb25918c168d48875b0cfb0"
+      },
+      "./node_modules/@types/json5/index.d.ts": {
+        "version": "96d14f21b7652903852eef49379d04dbda28c16ed36468f8c9fa08f7c14c9538",
+        "signature": "96d14f21b7652903852eef49379d04dbda28c16ed36468f8c9fa08f7c14c9538"
       },
       "./node_modules/@types/libsodium-wrappers/index.d.ts": {
         "version": "b3b779656d1d39daf89b4f963e31cf296d83791b200fdd8107b4bdde8dc1c7c2",
@@ -4514,9 +4534,15 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./src/models/load-balancers.model.ts": [
+        "./node_modules/@loopback/repository/dist/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./src/models/index.ts": [
         "./src/models/blockchains.model.ts",
         "./src/models/applications.model.ts",
+        "./src/models/load-balancers.model.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -4548,9 +4574,18 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./src/repositories/load-balancers.repository.ts": [
+        "./node_modules/@loopback/repository/dist/index.d.ts",
+        "./src/models/index.ts",
+        "./src/datasources/index.ts",
+        "./node_modules/@loopback/core/dist/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./src/repositories/index.ts": [
         "./src/repositories/blockchains.repository.ts",
         "./src/repositories/applications.repository.ts",
+        "./src/repositories/load-balancers.repository.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -5390,6 +5425,19 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./src/services/cherry-picker.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
+        "./node_modules/@types/ioredis/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/services/metrics-recorder.ts": [
+        "./node_modules/@types/ioredis/index.d.ts",
+        "./node_modules/@types/pg/index.d.ts",
+        "./src/services/cherry-picker.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": [
         "./node_modules/strong-cryptor/dist/typings/index.d.ts",
         "./node_modules/@types/node/util.d.ts",
@@ -5442,6 +5490,18 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./src/services/pocket-relayer.ts": [
+        "./src/services/cherry-picker.ts",
+        "./src/services/metrics-recorder.ts",
+        "./node_modules/strong-cryptor/dist/index.d.ts",
+        "./node_modules/@loopback/rest/index.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
+        "./node_modules/@types/ioredis/index.d.ts",
+        "./src/repositories/index.ts",
+        "./src/models/index.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./src/controllers/v1.controller.ts": [
         "./node_modules/@loopback/context/dist/index.d.ts",
         "./node_modules/@loopback/repository/dist/index.d.ts",
@@ -5451,7 +5511,9 @@
         "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
         "./node_modules/@types/ioredis/index.d.ts",
         "./node_modules/@types/pg/index.d.ts",
-        "./node_modules/strong-cryptor/dist/index.d.ts",
+        "./src/services/cherry-picker.ts",
+        "./src/services/metrics-recorder.ts",
+        "./src/services/pocket-relayer.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -5459,11 +5521,6 @@
         "./src/controllers/ping.controller.ts",
         "./src/controllers/v1.controller.ts",
         "./src/controllers/blockchains.controller.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/models/pocket-application.model.ts": [
-        "./node_modules/@loopback/repository/dist/index.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -5521,6 +5578,10 @@
         "./node_modules/@types/node/events.d.ts",
         "./node_modules/@types/minimatch/index.d.ts",
         "./node_modules/@types/node/ts3.7/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@types/json5/index.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -7916,9 +7977,13 @@
       "./src/models/applications.model.ts": [
         "./node_modules/@loopback/repository/index.d.ts"
       ],
+      "./src/models/load-balancers.model.ts": [
+        "./node_modules/@loopback/repository/dist/index.d.ts"
+      ],
       "./src/models/index.ts": [
         "./src/models/blockchains.model.ts",
-        "./src/models/applications.model.ts"
+        "./src/models/applications.model.ts",
+        "./src/models/load-balancers.model.ts"
       ],
       "./src/datasources/gateway.datasource.ts": [
         "./node_modules/@loopback/repository/index.d.ts",
@@ -7937,9 +8002,15 @@
         "./node_modules/@loopback/repository/index.d.ts",
         "./src/models/index.ts"
       ],
+      "./src/repositories/load-balancers.repository.ts": [
+        "./src/datasources/index.ts",
+        "./node_modules/@loopback/repository/dist/index.d.ts",
+        "./src/models/index.ts"
+      ],
       "./src/repositories/index.ts": [
         "./src/repositories/blockchains.repository.ts",
-        "./src/repositories/applications.repository.ts"
+        "./src/repositories/applications.repository.ts",
+        "./src/repositories/load-balancers.repository.ts"
       ],
       "./src/controllers/blockchains.controller.ts": [
         "./src/repositories/index.ts",
@@ -8771,6 +8842,15 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./src/services/cherry-picker.ts": [
+        "./node_modules/@types/ioredis/index.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/index.d.ts"
+      ],
+      "./src/services/metrics-recorder.ts": [
+        "./node_modules/@types/ioredis/index.d.ts",
+        "./node_modules/@types/pg/index.d.ts",
+        "./src/services/cherry-picker.ts"
+      ],
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": [
         "./node_modules/strong-cryptor/dist/typings/index.d.ts",
         "./node_modules/@types/node/util.d.ts",
@@ -8823,8 +8903,19 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./src/services/pocket-relayer.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
+        "./src/services/cherry-picker.ts",
+        "./src/services/metrics-recorder.ts",
+        "./node_modules/@types/ioredis/index.d.ts",
+        "./src/repositories/index.ts",
+        "./src/models/index.ts"
+      ],
       "./src/controllers/v1.controller.ts": [
         "./src/repositories/index.ts",
+        "./src/services/cherry-picker.ts",
+        "./src/services/metrics-recorder.ts",
+        "./src/services/pocket-relayer.ts",
         "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
         "./node_modules/@types/ioredis/index.d.ts",
         "./node_modules/@types/pg/index.d.ts",
@@ -8835,9 +8926,6 @@
         "./src/controllers/ping.controller.ts",
         "./src/controllers/v1.controller.ts",
         "./src/controllers/blockchains.controller.ts"
-      ],
-      "./src/models/pocket-application.model.ts": [
-        "./node_modules/@loopback/repository/index.d.ts"
       ],
       "./node_modules/@types/aes-js/index.d.ts": [
         "./node_modules/@types/node/util.d.ts",
@@ -8946,6 +9034,10 @@
         "../../../node_modules/csstype/index.d.ts",
         "../../../node_modules/@types/prop-types/index.d.ts",
         "../../../node_modules/@types/react/global.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@types/json5/index.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ]
@@ -9278,7 +9370,6 @@
       "./node_modules/@loopback/rest/dist/validation/request-body.validator.d.ts",
       "./node_modules/@loopback/rest/dist/index.d.ts",
       "./node_modules/@loopback/rest/index.d.ts",
-      "./src/sequence.ts",
       "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts",
       "./src/index.ts",
       "./src/migrate.ts",
@@ -9306,13 +9397,10 @@
       "./src/__tests__/acceptance/ping.controller.acceptance.ts",
       "./src/models/blockchains.model.ts",
       "./src/models/applications.model.ts",
+      "./src/models/load-balancers.model.ts",
       "./src/models/index.ts",
-      "./src/datasources/gateway.datasource.ts",
       "./src/datasources/index.ts",
-      "./src/repositories/blockchains.repository.ts",
-      "./src/repositories/applications.repository.ts",
       "./src/repositories/index.ts",
-      "./src/controllers/blockchains.controller.ts",
       "./src/controllers/ping.controller.ts",
       "./node_modules/@pokt-network/pocket-js/dist/config/configuration.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/config/index.d.ts",
@@ -9455,6 +9543,38 @@
       "./node_modules/strong-cryptor/dist/encryptor.d.ts",
       "./node_modules/strong-cryptor/dist/decryptor.d.ts",
       "./node_modules/strong-cryptor/dist/index.d.ts",
+      "./node_modules/@types/aes-js/index.d.ts",
+      "./node_modules/@types/keyv/index.d.ts",
+      "./node_modules/@types/http-cache-semantics/index.d.ts",
+      "./node_modules/@types/responselike/index.d.ts",
+      "./node_modules/@types/cacheable-request/index.d.ts",
+      "./node_modules/@types/color-name/index.d.ts",
+      "./node_modules/@types/eslint-visitor-keys/index.d.ts",
+      "./node_modules/@types/fs-extra/index.d.ts",
+      "./node_modules/@types/minimatch/index.d.ts",
+      "./node_modules/@types/glob/index.d.ts",
+      "./node_modules/@types/libsodium-wrappers/index.d.ts",
+      "./node_modules/@types/mocha/index.d.ts",
+      "./node_modules/@types/on-finished/index.d.ts",
+      "./node_modules/@types/pg-types/index.d.ts",
+      "./node_modules/@types/scrypt-js/index.d.ts",
+      "./node_modules/@types/type-is/index.d.ts",
+      "../../../node_modules/@types/bn.js/index.d.ts",
+      "../../../node_modules/@types/prop-types/index.d.ts",
+      "../../../node_modules/@types/react/global.d.ts",
+      "../../../node_modules/csstype/index.d.ts",
+      "../../../node_modules/@types/react/index.d.ts",
+      "./src/sequence.ts",
+      "./src/application.ts",
+      "./src/datasources/gateway.datasource.ts",
+      "./src/repositories/blockchains.repository.ts",
+      "./src/repositories/applications.repository.ts",
+      "./src/repositories/load-balancers.repository.ts",
+      "./src/controllers/blockchains.controller.ts",
+      "./src/services/cherry-picker.ts",
+      "./src/services/pocket-relayer.ts",
+      "./src/services/metrics-recorder.ts",
+      "./node_modules/@types/json5/index.d.ts",
       "./src/controllers/v1.controller.ts",
       "./src/controllers/index.ts",
       "./src/models/pocket-application.model.ts",

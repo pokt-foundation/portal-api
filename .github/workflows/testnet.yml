@@ -27,8 +27,8 @@ jobs:
     - name: Make envfile
       uses: SpicyPizza/create-envfile@v1
       with:
-        envkey_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_TESTNET_CLIENT_PRIVATE_KEY }}
-        envkey_CLIENT_PASSPHRASE: ${{ secrets.POCKET_NETWORK_TESTNET_CLIENT_PASSPHRASE }}
+        envkey_GATEWAY_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_TESTNET_CLIENT_PRIVATE_KEY }}
+        envkey_GATEWAY_CLIENT_PASSPHRASE: ${{ secrets.POCKET_NETWORK_TESTNET_CLIENT_PASSPHRASE }}
         envkey_MONGO_ENDPOINT: ${{ secrets.MONGO_TESTNET_ENDPOINT }}
         envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_TESTNET_ENCRYPTION_KEY }}
         envkey_PG_CONNECTION: ${{ secrets.PG_TESTNET_CONNECTION }}
@@ -38,6 +38,7 @@ jobs:
         envkey_REDIS_PORT: 6379
         envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
         envkey_POCKET_BLOCK_TIME: 900000
+        envkey_POCKET_RELAY_RETRIES: 5
         file_name: .env
 
     - name: Build, tag, and push image to Amazon ECR
