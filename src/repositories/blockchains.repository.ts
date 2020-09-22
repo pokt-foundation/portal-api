@@ -8,9 +8,7 @@ export class BlockchainsRepository extends DefaultCrudRepository<
   typeof Blockchains.prototype.hash,
   BlockchainsRelations
 > {
-  constructor(
-    @inject('datasources.gateway') dataSource: GatewayDataSource,
-  ) {
+  constructor(@inject('datasources.gateway') dataSource: GatewayDataSource) {
     super(Blockchains, dataSource);
   }
 }
