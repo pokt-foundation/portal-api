@@ -22,7 +22,7 @@ import {BlockchainsRepository} from '../repositories';
 export class BlockchainsController {
   constructor(
     @repository(BlockchainsRepository)
-    public blockchainsRepository : BlockchainsRepository,
+    public blockchainsRepository: BlockchainsRepository,
   ) {}
 
   @post('/blockchains', {
@@ -39,7 +39,6 @@ export class BlockchainsController {
         'application/json': {
           schema: getModelSchemaRef(Blockchains, {
             title: 'NewBlockchains',
-            
           }),
         },
       },
@@ -120,7 +119,8 @@ export class BlockchainsController {
   })
   async findById(
     @param.path.string('id') id: string,
-    @param.filter(Blockchains, {exclude: 'where'}) filter?: FilterExcludingWhere<Blockchains>
+    @param.filter(Blockchains, {exclude: 'where'})
+    filter?: FilterExcludingWhere<Blockchains>,
   ): Promise<Blockchains> {
     return this.blockchainsRepository.findById(id, filter);
   }

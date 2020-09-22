@@ -1,8 +1,8 @@
-import { Redis } from 'ioredis';
-import { Pool as PGPool } from "pg";
-import { CherryPicker } from './cherry-picker';
+import {Redis} from 'ioredis';
+import {Pool as PGPool} from 'pg';
+import {CherryPicker} from './cherry-picker';
 
-const pgFormat = require("pg-format");
+const pgFormat = require('pg-format');
 
 export class MetricsRecorder {
   redis: Redis;
@@ -10,12 +10,17 @@ export class MetricsRecorder {
   cherryPicker: CherryPicker;
   processUID: string;
 
-  constructor(
-    redis: Redis,
-    pgPool: PGPool,
-    cherryPicker: CherryPicker,
-    processUID: string
-  ) {
+  constructor({
+    redis,
+    pgPool,
+    cherryPicker,
+    processUID,
+  }: {
+    redis: Redis;
+    pgPool: PGPool;
+    cherryPicker: CherryPicker;
+    processUID: string;
+  }) {
     this.redis = redis;
     this.pgPool = pgPool;
     this.cherryPicker = cherryPicker;
@@ -56,8 +61,8 @@ export class MetricsRecorder {
       ];
 
       // Store metrics in redis and every 10 seconds, push to postgres
-      const redisMetricsKey = "metrics-" + this.processUID;
-      const redisListAge = await this.redis.get("age-" + redisMetricsKey);
+      const redisMetricsKey = 'metrics-' + this.processUID;
+      const redisListAge = await this.redis.get('age-' + redisMetricsKey);
       const redisListSize = await this.redis.llen(redisMetricsKey);
       const currentTimestamp = Math.floor(new Date().getTime() / 1000);
 
@@ -67,30 +72,31 @@ export class MetricsRecorder {
         redisListSize > 0 &&
         currentTimestamp > parseInt(redisListAge) + 10
       ) {
-        await this.redis.set("age-" + redisMetricsKey, currentTimestamp);
-        
+        await this.redis.set('age-' + redisMetricsKey, currentTimestamp);
+
         const bulkData = [metricsValues];
         for (let count = 0; count < redisListSize; count++) {
           const redisRecord = await this.redis.lpop(redisMetricsKey);
           bulkData.push(JSON.parse(redisRecord));
         }
-        const metricsQuery = pgFormat(
-          "INSERT INTO relay VALUES %L",
-          bulkData
-        );
+        const metricsQuery = pgFormat('INSERT INTO relay VALUES %L', bulkData);
         this.pgPool.query(metricsQuery);
       } else {
         await this.redis.rpush(redisMetricsKey, JSON.stringify(metricsValues));
       }
-      
+
       if (!redisListAge) {
-        await this.redis.set("age-" + redisMetricsKey, currentTimestamp);
+        await this.redis.set('age-' + redisMetricsKey, currentTimestamp);
       }
 
       if (serviceNode) {
-        await this.cherryPicker.updateServiceNodeQuality(blockchain, serviceNode, elapsedTime, result);
+        await this.cherryPicker.updateServiceNodeQuality(
+          blockchain,
+          serviceNode,
+          elapsedTime,
+          result,
+        );
       }
-
     } catch (err) {
       console.log(err.stack);
     }

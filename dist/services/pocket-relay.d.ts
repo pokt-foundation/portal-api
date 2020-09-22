@@ -1,4 +1,4 @@
 export declare class PocketRelay {
-    constructor();
-    sendRelay(rawData: object): Promise<string>;
+  constructor();
+  sendRelay(rawData: object): Promise<string>;
 }

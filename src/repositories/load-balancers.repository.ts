@@ -8,9 +8,7 @@ export class LoadBalancersRepository extends DefaultCrudRepository<
   typeof LoadBalancers.prototype.id,
   LoadBalancersRelations
 > {
-  constructor(
-    @inject('datasources.gateway') dataSource: GatewayDataSource,
-  ) {
+  constructor(@inject('datasources.gateway') dataSource: GatewayDataSource) {
     super(LoadBalancers, dataSource);
   }
 }

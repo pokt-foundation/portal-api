@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class CherryPicker {
-    constructor(redis, checkDebug) {
+    constructor({ redis, checkDebug }) {
         this.redis = redis;
         this.checkDebug = checkDebug;
     }
     // Fetch node's hourly service log from redis
     async fetchServiceLog(blockchain, serviceNode) {
-        const serviceLog = await this.redis.get(blockchain + "-" + serviceNode + "-" + new Date().getHours());
+        const serviceLog = await this.redis.get(blockchain + '-' + serviceNode + '-' + new Date().getHours());
         return serviceLog;
     }
     // Record node service quality in redis for future node selection weight
@@ -27,15 +27,17 @@ class CherryPicker {
                 totalResults = totalResults + serviceNodeQuality.results[logResult];
             }
             // Does this result not yet exist in the set?
-            if (!serviceNodeQuality.results[result] || serviceNodeQuality.results[result] === 0) {
+            if (!serviceNodeQuality.results[result] ||
+                serviceNodeQuality.results[result] === 0) {
                 totalResults++;
                 serviceNodeQuality.results[result] = 1;
             }
             // Success; add this result's latency to the average latency of all success requests
             if (result === 200) {
-                serviceNodeQuality.averageSuccessLatency = ((((totalResults - 1) * serviceNodeQuality.averageSuccessLatency) + elapsedTime) // All previous results plus current
-                    / totalResults // divided by total results
-                ).toFixed(5); // to 5 decimal points
+                serviceNodeQuality.averageSuccessLatency = (((totalResults - 1) * serviceNodeQuality.averageSuccessLatency +
+                    elapsedTime) / // All previous results plus current
+                    totalResults) // divided by total results
+                    .toFixed(5); // to 5 decimal points
             }
         }
         else {
@@ -46,11 +48,11 @@ class CherryPicker {
             }
             serviceNodeQuality = {
                 results: results,
-                averageSuccessLatency: elapsedTime.toFixed(5)
+                averageSuccessLatency: elapsedTime.toFixed(5),
             };
         }
-        await this.redis.set(blockchain + "-" + serviceNode + "-" + new Date().getHours(), JSON.stringify(serviceNodeQuality), "EX", 3600);
-        console.log(serviceNode + ": " + JSON.stringify(serviceNodeQuality));
+        await this.redis.set(blockchain + '-' + serviceNode + '-' + new Date().getHours(), JSON.stringify(serviceNodeQuality), 'EX', 3600);
+        console.log(serviceNode + ': ' + JSON.stringify(serviceNodeQuality));
     }
     // Per hour, record the latency and success rate of each node
     // When selecting a node, pull the stats for each node in the session
@@ -80,8 +82,8 @@ class CherryPicker {
                     attempts = attempts + parsedLog.results[result];
                 }
                 // Has the node had any success in the past hour?
-                if (parsedLog.results["200"] > 0) {
-                    successRate = (parsedLog.results["200"] / attempts);
+                if (parsedLog.results['200'] > 0) {
+                    successRate = parsedLog.results['200'] / attempts;
                     averageSuccessLatency = parseFloat(parseFloat(parsedLog.averageSuccessLatency).toFixed(5));
                 }
             }
@@ -92,7 +94,6 @@ class CherryPicker {
                 averageSuccessLatency: averageSuccessLatency,
             });
         }
-        ;
         // Sort node logs by highest success rate, then by lowest latency
         sortedLogs.sort((a, b) => {
             if (a.successRate < b.successRate) {
@@ -117,9 +118,9 @@ class CherryPicker {
         }
         // Iterate through sorted logs and form in to a weighted list of nodes
         let rankedNodes = [];
-        // weightFactor pushes the fastest nodes with the highest success rates 
+        // weightFactor pushes the fastest nodes with the highest success rates
         // to be called on more often for relays.
-        // 
+        //
         // The node with the highest success rate and the lowest average latency will
         // be 10 times more likely to be selected than a node that has had failures.
         let weightFactor = 10;
@@ -159,11 +160,11 @@ class CherryPicker {
         if (rankedNodes.length === 0) {
             rankedNodes = pocketSession.sessionNodes;
         }
-        const selectedNode = Math.floor(Math.random() * (rankedNodes.length));
+        const selectedNode = Math.floor(Math.random() * rankedNodes.length);
         const node = rankedNodes[selectedNode];
         if (this.checkDebug) {
-            console.log("Number of weighted nodes for selection: " + rankedNodes.length);
-            console.log("Selected " + selectedNode + " : " + node.publicKey);
+            console.log('Number of weighted nodes for selection: ' + rankedNodes.length);
+            console.log('Selected ' + selectedNode + ' : ' + node.publicKey);
         }
         return node;
     }

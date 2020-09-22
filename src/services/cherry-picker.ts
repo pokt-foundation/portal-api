@@ -1,33 +1,36 @@
-import { 
-  Node,
-  Session 
-} from '@pokt-network/pocket-js';
-import { Redis } from 'ioredis';
+import {Node, Session} from '@pokt-network/pocket-js';
+import {Redis} from 'ioredis';
 
 export class CherryPicker {
   checkDebug: boolean;
   redis: Redis;
 
-  constructor(
-    redis: Redis, 
-    checkDebug: boolean
-  ) {
+  constructor({redis, checkDebug}: {redis: Redis; checkDebug: boolean}) {
     this.redis = redis;
     this.checkDebug = checkDebug;
   }
 
   // Fetch node's hourly service log from redis
-  async fetchServiceLog(blockchain: string, serviceNode: string): Promise<string | null> {
-    const serviceLog = await this.redis.get(blockchain + "-" + serviceNode + "-"  + new Date().getHours());
+  async fetchServiceLog(
+    blockchain: string,
+    serviceNode: string,
+  ): Promise<string | null> {
+    const serviceLog = await this.redis.get(
+      blockchain + '-' + serviceNode + '-' + new Date().getHours(),
+    );
     return serviceLog;
   }
 
   // Record node service quality in redis for future node selection weight
   // { serviceNode: { results: { 200: x, 500: y, ... }, averageSuccessLatency: z }
-  async updateServiceNodeQuality(blockchain: string, serviceNode: string, elapsedTime: number, result: number): Promise<void> {
-  
+  async updateServiceNodeQuality(
+    blockchain: string,
+    serviceNode: string,
+    elapsedTime: number,
+    result: number,
+  ): Promise<void> {
     const serviceLog = await this.fetchServiceLog(blockchain, serviceNode);
-    
+
     let serviceNodeQuality;
     // Update service quality log for this hour
     if (serviceLog) {
@@ -42,39 +45,57 @@ export class CherryPicker {
         totalResults = totalResults + serviceNodeQuality.results[logResult];
       }
       // Does this result not yet exist in the set?
-      if (!serviceNodeQuality.results[result] || serviceNodeQuality.results[result] === 0){
+      if (
+        !serviceNodeQuality.results[result] ||
+        serviceNodeQuality.results[result] === 0
+      ) {
         totalResults++;
         serviceNodeQuality.results[result] = 1;
       }
       // Success; add this result's latency to the average latency of all success requests
       if (result === 200) {
         serviceNodeQuality.averageSuccessLatency = (
-          (((totalResults - 1) * serviceNodeQuality.averageSuccessLatency) + elapsedTime) // All previous results plus current
-              / totalResults // divided by total results
-          ).toFixed(5); // to 5 decimal points
+          ((totalResults - 1) * serviceNodeQuality.averageSuccessLatency +
+            elapsedTime) / // All previous results plus current
+          totalResults
+        ) // divided by total results
+          .toFixed(5); // to 5 decimal points
       }
     } else {
       // No current logs found for this hour
-      const results = { [result]: 1 };
+      const results = {[result]: 1};
       if (result !== 200) {
         elapsedTime = 0;
       }
       serviceNodeQuality = {
         results: results,
-        averageSuccessLatency: elapsedTime.toFixed(5)
+        averageSuccessLatency: elapsedTime.toFixed(5),
       };
     }
 
-    await this.redis.set(blockchain + "-" + serviceNode + "-"  + new Date().getHours(), JSON.stringify(serviceNodeQuality), "EX", 3600);
-    console.log(serviceNode + ": " + JSON.stringify(serviceNodeQuality));
+    await this.redis.set(
+      blockchain + '-' + serviceNode + '-' + new Date().getHours(),
+      JSON.stringify(serviceNodeQuality),
+      'EX',
+      3600,
+    );
+    console.log(serviceNode + ': ' + JSON.stringify(serviceNodeQuality));
   }
 
   // Per hour, record the latency and success rate of each node
   // When selecting a node, pull the stats for each node in the session
   // Rank and weight them for node choice
-  async cherryPickNode(pocketSession: Session, blockchain: string): Promise<Node> {
-    const rawNodes = {} as { [nodePublicKey: string]: Node};
-    const sortedLogs = [] as {nodePublicKey: string, attempts: number, successRate: number, averageSuccessLatency: number}[];
+  async cherryPickNode(
+    pocketSession: Session,
+    blockchain: string,
+  ): Promise<Node> {
+    const rawNodes = {} as {[nodePublicKey: string]: Node};
+    const sortedLogs = [] as {
+      nodePublicKey: string;
+      attempts: number;
+      successRate: number;
+      averageSuccessLatency: number;
+    }[];
 
     for (const node of pocketSession.sessionNodes) {
       rawNodes[node.publicKey] = node;
@@ -101,9 +122,11 @@ export class CherryPicker {
         }
 
         // Has the node had any success in the past hour?
-        if (parsedLog.results["200"] > 0) {
-          successRate = (parsedLog.results["200"] / attempts);
-          averageSuccessLatency = parseFloat(parseFloat(parsedLog.averageSuccessLatency).toFixed(5));
+        if (parsedLog.results['200'] > 0) {
+          successRate = parsedLog.results['200'] / attempts;
+          averageSuccessLatency = parseFloat(
+            parseFloat(parsedLog.averageSuccessLatency).toFixed(5),
+          );
         }
       }
       sortedLogs.push({
@@ -112,17 +135,17 @@ export class CherryPicker {
         successRate: successRate,
         averageSuccessLatency: averageSuccessLatency,
       });
-    };
+    }
 
     // Sort node logs by highest success rate, then by lowest latency
     sortedLogs.sort((a, b) => {
-      if (a.successRate < b.successRate) { 
+      if (a.successRate < b.successRate) {
         return 1;
       } else if (a.successRate > b.successRate) {
         return -1;
       }
       if (a.successRate === b.successRate) {
-        if (a.averageSuccessLatency > b.averageSuccessLatency) { 
+        if (a.averageSuccessLatency > b.averageSuccessLatency) {
           return 1;
         } else if (a.averageSuccessLatency < b.averageSuccessLatency) {
           return -1;
@@ -138,9 +161,9 @@ export class CherryPicker {
     // Iterate through sorted logs and form in to a weighted list of nodes
     let rankedNodes = [] as Node[];
 
-    // weightFactor pushes the fastest nodes with the highest success rates 
+    // weightFactor pushes the fastest nodes with the highest success rates
     // to be called on more often for relays.
-    // 
+    //
     // The node with the highest success rate and the lowest average latency will
     // be 10 times more likely to be selected than a node that has had failures.
     let weightFactor = 10;
@@ -151,26 +174,23 @@ export class CherryPicker {
     for (const sortedLog of sortedLogs) {
       if (sortedLog.successRate === 1) {
         // For untested nodes and nodes with 100% success rates, weight their selection
-        for (let x=1; x <= weightFactor; x++) {
+        for (let x = 1; x <= weightFactor; x++) {
           rankedNodes.push(rawNodes[sortedLog.nodePublicKey]);
         }
         weightFactor = weightFactor - 2;
-      }
-      else if (sortedLog.successRate > 0.95) {
+      } else if (sortedLog.successRate > 0.95) {
         // For all nodes with reasonable success rate, weight their selection less
-        for (let x=1; x <= weightFactor; x++) {
+        for (let x = 1; x <= weightFactor; x++) {
           rankedNodes.push(rawNodes[sortedLog.nodePublicKey]);
         }
         weightFactor = weightFactor - 3;
         if (weightFactor <= 0) {
           weightFactor = 1;
         }
-      }
-      else if (sortedLog.successRate > 0) {
+      } else if (sortedLog.successRate > 0) {
         // For all nodes with limited success rate, do not weight
         rankedNodes.push(rawNodes[sortedLog.nodePublicKey]);
-      }
-      else if (sortedLog.successRate === 0) {
+      } else if (sortedLog.successRate === 0) {
         // If a node has a 0% success rate and < max failures, keep them in rotation
         // If a node has a 0% success rate and > max failures shelve them until next hour
         if (sortedLog.attempts < maxFailuresPerHour) {
@@ -178,17 +198,19 @@ export class CherryPicker {
         }
       }
     }
-    
+
     // If we have no nodes left because all 5 are failures, ¯\_(ツ)_/¯
     if (rankedNodes.length === 0) {
       rankedNodes = pocketSession.sessionNodes;
     }
 
-    const selectedNode = Math.floor(Math.random() * (rankedNodes.length));
+    const selectedNode = Math.floor(Math.random() * rankedNodes.length);
     const node = rankedNodes[selectedNode];
     if (this.checkDebug) {
-      console.log("Number of weighted nodes for selection: " + rankedNodes.length);
-      console.log("Selected "+ selectedNode + " : " + node.publicKey);
+      console.log(
+        'Number of weighted nodes for selection: ' + rankedNodes.length,
+      );
+      console.log('Selected ' + selectedNode + ' : ' + node.publicKey);
     }
     return node;
   }
