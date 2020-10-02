@@ -100,7 +100,7 @@ export class PocketGatewayApplication extends BootMixin(
     }
 
     const configuration = new Configuration(
-      5,
+      20,
       100000,
       5,
       120000,
