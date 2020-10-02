@@ -33,7 +33,7 @@ jobs:
         envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_TESTNET_ENCRYPTION_KEY }}
         envkey_PG_CONNECTION: ${{ secrets.PG_TESTNET_CONNECTION }}
         envkey_PG_CERTIFICATE: ${{ secrets.PG_TESTNET_CERTIFICATE }}
-        envkey_DISPATCH_URL: https://node1.testnet.pokt.network:443
+        envkey_DISPATCH_URL: https://node1.testnet.pokt.network,https://node2.testnet.pokt.network,https://node3.testnet.pokt.network
         envkey_REDIS_ENDPOINT: dashboard-testnet.js6zbp.ng.0001.usw2.cache.amazonaws.com
         envkey_REDIS_PORT: 6379
         envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4

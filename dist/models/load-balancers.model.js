@@ -24,6 +24,13 @@ tslib_1.__decorate([
 ], LoadBalancers.prototype, "user", void 0);
 tslib_1.__decorate([
     repository_1.property({
+        type: 'string',
+        required: false,
+    }),
+    tslib_1.__metadata("design:type", String)
+], LoadBalancers.prototype, "name", void 0);
+tslib_1.__decorate([
+    repository_1.property({
         type: 'array',
         itemType: 'string',
         required: true,
