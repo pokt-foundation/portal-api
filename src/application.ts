@@ -100,9 +100,9 @@ export class PocketGatewayApplication extends BootMixin(
     }
 
     const configuration = new Configuration(
-      20,
+      0,
       100000,
-      5,
+      0,
       120000,
       false,
       pocketSessionBlockFrequency,
