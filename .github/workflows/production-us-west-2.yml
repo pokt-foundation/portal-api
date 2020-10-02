@@ -1,4 +1,4 @@
-name: Production Deployment
+name: Production Deployment us-west-2
 
 on:
   push:
