@@ -33,7 +33,7 @@ jobs:
         envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_PRODUCTION_ENCRYPTION_KEY }}
         envkey_PG_CONNECTION: ${{ secrets.PG_PRODUCTION_CONNECTION }}
         envkey_PG_CERTIFICATE: ${{ secrets.PG_PRODUCTION_CERTIFICATE }}
-        envkey_DISPATCH_URL: https://node1.mainnet.pokt.network
+        envkey_DISPATCH_URL: https://node1.mainnet.pokt.network,https://node2.mainnet.pokt.network,https://node3.mainnet.pokt.network,https://node4.mainnet.pokt.network,https://node5.mainnet.pokt.network,https://pocket-seed.simply-vc.com.mt:8082
         envkey_REDIS_ENDPOINT: dashboard.js6zbp.ng.0001.usw2.cache.amazonaws.com
         envkey_REDIS_PORT: 6379
         envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
