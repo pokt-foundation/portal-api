@@ -63,7 +63,7 @@ jobs:
     - name: Deploy / ap-southeast-1
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
-        task-definition: ${{ steps.task-def-us-west-2.outputs.task-definition }}
+        task-definition: ${{ steps.task-def-ap-southeast-1.outputs.task-definition }}
         service: gateway-service
         cluster: gateway
         wait-for-service-stability: true
