@@ -16,6 +16,12 @@ export class LoadBalancers extends Entity {
   user: string;
 
   @property({
+    type: 'string',
+    required: false,
+  })
+  name: string;
+
+  @property({
     type: 'array',
     itemType: 'string',
     required: true,

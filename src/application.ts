@@ -88,7 +88,17 @@ export class PocketGatewayApplication extends BootMixin(
     }
 
     // Create the Pocket instance
-    const dispatchers = new URL(dispatchURL);
+    const dispatchers = new Array();
+
+    if (dispatchURL.indexOf(",")) {
+      const dispatcherArray = dispatchURL.split(",");
+      dispatcherArray.forEach(function(dispatcher) {
+        dispatchers.push(new URL(dispatcher));
+      });
+    } else {
+      dispatchers.push(new URL(dispatchURL));
+    }
+
     const configuration = new Configuration(
       5,
       100000,
@@ -102,7 +112,7 @@ export class PocketGatewayApplication extends BootMixin(
       false,
     );
     const rpcProvider = new HttpRpcProvider(dispatchers);
-    const pocket = new Pocket([dispatchers], rpcProvider, configuration);
+    const pocket = new Pocket(dispatchers, rpcProvider, configuration);
 
     // Bind to application context for shared re-use
     this.bind('pocketInstance').to(pocket);
