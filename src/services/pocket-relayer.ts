@@ -80,16 +80,37 @@ export class PocketRelayer {
   async sendRelay(
     rawData: object,
     application: Applications,
+    requestTimeOut: number = 0,
+    overallTimeOut: number = 0, 
+    relayRetries: number = 0
   ): Promise<string | Error> {
+    if (relayRetries) {
+      this.relayRetries = relayRetries;
+    }
+    let overallStart;
     for (let x = 1; x <= this.relayRetries; x++) {
-      if (x > 1) {
+      if (x === 1) {
+        overallStart = process.hrtime();
+      } else {
         console.log('Relay Attempt ' + x);
+        
+        // Compute the overall time taken on this LB request
+        const overallCurrent = process.hrtime(overallStart);
+        const overallCurrentElasped = Math.round((overallCurrent[0] * 1e9 + overallCurrent[1]) / 1e6);
+        if (
+            overallTimeOut &&
+            overallCurrentElasped > overallTimeOut
+          ) {
+          console.log('Overall Timeout exceeded: ' + overallTimeOut);
+          return new HttpErrors.InternalServerError('Overall Timeout exceeded: ' + overallTimeOut);
+        }
       }
-      const result = await this._sendRelay(rawData, application);
+      const result = await this._sendRelay(rawData, application, requestTimeOut);
       if (!(result instanceof Error)) {
         return result;
       }
     }
+    console.log('Relay attempts exhausted');
     return new HttpErrors.InternalServerError('Relay attempts exhausted');
   }
 
@@ -97,6 +118,7 @@ export class PocketRelayer {
   async _sendRelay(
     rawData: object,
     application: Applications,
+    requestTimeOut: number
   ): Promise<string | Error> {
     // This converts the raw data into formatted JSON then back to a string for relaying.
     // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
@@ -113,7 +135,7 @@ export class PocketRelayer {
         ' req: ' +
         data,
     );
-    const elapsedStart = process.hrtime();
+    const relayStart = process.hrtime();
 
     const [blockchain, blockchainEnforceResult] = await this.loadBlockchain();
 
@@ -173,12 +195,18 @@ export class PocketRelayer {
       console.log(pocketSession);
     }
 
+    // Adjust Pocket Configuration for a custom requestTimeOut
+    let relayConfiguration = this.pocketConfiguration;
+    if (requestTimeOut) {
+      relayConfiguration = this.updateConfiguration(requestTimeOut);
+    }
+
     // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
     const relayResponse = await this.pocket.sendRelay(
       data,
       blockchain,
       pocketAAT,
-      this.pocketConfiguration,
+      relayConfiguration,
       undefined,
       undefined,
       this.relayPath,
@@ -186,6 +214,7 @@ export class PocketRelayer {
     );
 
     if (this.checkDebug) {
+      console.log(relayConfiguration);
       console.log(relayResponse);
     }
 
@@ -235,7 +264,7 @@ export class PocketRelayer {
           appPubKey: application.gatewayAAT.applicationPublicKey,
           blockchain,
           serviceNode: relayResponse.proof.servicerPubKey,
-          elapsedStart,
+          relayStart,
           result: 503,
           bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
           method: method,
@@ -260,7 +289,7 @@ export class PocketRelayer {
           appPubKey: application.gatewayAAT.applicationPublicKey,
           blockchain,
           serviceNode: relayResponse.proof.servicerPubKey,
-          elapsedStart,
+          relayStart,
           result: 200,
           bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
           method: method,
@@ -293,7 +322,7 @@ export class PocketRelayer {
         appPubKey: application.gatewayAAT.applicationPublicKey,
         blockchain,
         serviceNode: node?.publicKey,
-        elapsedStart,
+        relayStart,
         result: 500,
         bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
         method: method,
@@ -305,6 +334,21 @@ export class PocketRelayer {
       // TODO: ConsensusNode is a possible return
       return new Error('relayResponse is undefined');
     }
+  }
+
+  updateConfiguration(requestTimeOut: number) {
+    return new Configuration(
+      this.pocketConfiguration.maxDispatchers,
+      this.pocketConfiguration.maxSessions,
+      this.pocketConfiguration.consensusNodeCount,
+      requestTimeOut,
+      this.pocketConfiguration.acceptDisputedResponses,
+      this.pocketConfiguration.sessionBlockFrequency,
+      this.pocketConfiguration.blockTime,
+      this.pocketConfiguration.maxSessionRefreshRetries,
+      this.pocketConfiguration.validateRelayResponses,
+      this.pocketConfiguration.rejectSelfSignedCertificates
+    );
   }
 
   // Load requested blockchain by parsing the URL

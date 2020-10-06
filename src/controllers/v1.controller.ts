@@ -113,7 +113,7 @@ export class V1Controller {
         filter,
       );
       if (application?.id) {
-        return this.pocketRelayer.sendRelay(rawData, application);
+        return this.pocketRelayer.sendRelay(rawData, application, parseInt(loadBalancer.requestTimeOut), parseInt(loadBalancer.overallTimeOut), parseInt(loadBalancer.relayRetries));
       }
     }
     throw new HttpErrors.InternalServerError(

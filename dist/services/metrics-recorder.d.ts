@@ -12,11 +12,11 @@ export declare class MetricsRecorder {
         cherryPicker: CherryPicker;
         processUID: string;
     });
-    recordMetric({ appPubKey, blockchain, serviceNode, elapsedStart, result, bytes, method, }: {
+    recordMetric({ appPubKey, blockchain, serviceNode, relayStart, result, bytes, method, }: {
         appPubKey: string;
         blockchain: string;
         serviceNode: string | undefined;
-        elapsedStart: [number, number];
+        relayStart: [number, number];
         result: number;
         bytes: number;
         method: string | undefined;
