@@ -32,7 +32,7 @@ export class MetricsRecorder {
     appPubKey,
     blockchain,
     serviceNode,
-    elapsedStart,
+    relayStart,
     result,
     bytes,
     method,
@@ -40,14 +40,14 @@ export class MetricsRecorder {
     appPubKey: string;
     blockchain: string;
     serviceNode: string | undefined;
-    elapsedStart: [number, number];
+    relayStart: [number, number];
     result: number;
     bytes: number;
     method: string | undefined;
   }): Promise<void> {
     try {
-      const elapsedEnd = process.hrtime(elapsedStart);
-      const elapsedTime = (elapsedEnd[0] * 1e9 + elapsedEnd[1]) / 1e9;
+      const relayEnd = process.hrtime(relayStart);
+      const elapsedTime = (relayEnd[0] * 1e9 + relayEnd[1]) / 1e9;
 
       const metricsValues = [
         new Date(),

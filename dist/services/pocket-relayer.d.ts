@@ -35,8 +35,9 @@ export declare class PocketRelayer {
         blockchainsRepository: BlockchainsRepository;
         checkDebug: boolean;
     });
-    sendRelay(rawData: object, application: Applications): Promise<string | Error>;
-    _sendRelay(rawData: object, application: Applications): Promise<string | Error>;
+    sendRelay(rawData: object, application: Applications, requestTimeOut?: number, overallTimeOut?: number, relayRetries?: number): Promise<string | Error>;
+    _sendRelay(rawData: object, application: Applications, requestTimeOut: number): Promise<string | Error>;
+    updateConfiguration(requestTimeOut: number): Configuration;
     loadBlockchain(): Promise<string[]>;
     checkEnforcementJSON(test: string): boolean;
     checkSecretKey(application: Applications): boolean;

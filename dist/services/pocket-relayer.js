@@ -20,20 +20,36 @@ class PocketRelayer {
         this.checkDebug = checkDebug;
         this.blockchainsRepository = blockchainsRepository;
     }
-    async sendRelay(rawData, application) {
+    async sendRelay(rawData, application, requestTimeOut = 0, overallTimeOut = 0, relayRetries = 0) {
+        if (relayRetries) {
+            this.relayRetries = relayRetries;
+        }
+        let overallStart;
         for (let x = 1; x <= this.relayRetries; x++) {
-            if (x > 1) {
-                console.log('Relay Attempt ' + x);
+            if (x === 1) {
+                overallStart = process.hrtime();
             }
-            const result = await this._sendRelay(rawData, application);
+            else {
+                console.log('Relay Attempt ' + x);
+                // Compute the overall time taken on this LB request
+                const overallCurrent = process.hrtime(overallStart);
+                const overallCurrentElasped = Math.round((overallCurrent[0] * 1e9 + overallCurrent[1]) / 1e6);
+                if (overallTimeOut &&
+                    overallCurrentElasped > overallTimeOut) {
+                    console.log('Overall Timeout exceeded: ' + overallTimeOut);
+                    return new rest_1.HttpErrors.InternalServerError('Overall Timeout exceeded: ' + overallTimeOut);
+                }
+            }
+            const result = await this._sendRelay(rawData, application, requestTimeOut);
             if (!(result instanceof Error)) {
                 return result;
             }
         }
+        console.log('Relay attempts exhausted');
         return new rest_1.HttpErrors.InternalServerError('Relay attempts exhausted');
     }
     // Private function to allow relay retries
-    async _sendRelay(rawData, application) {
+    async _sendRelay(rawData, application, requestTimeOut) {
         // This converts the raw data into formatted JSON then back to a string for relaying.
         // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
         // extraneous characters like newlines and tabs from the rawData.
@@ -46,7 +62,7 @@ class PocketRelayer {
             this.host +
             ' req: ' +
             data);
-        const elapsedStart = process.hrtime();
+        const relayStart = process.hrtime();
         const [blockchain, blockchainEnforceResult] = await this.loadBlockchain();
         // Secret key check
         if (!this.checkSecretKey(application)) {
@@ -71,9 +87,15 @@ class PocketRelayer {
         if (this.checkDebug) {
             console.log(pocketSession);
         }
+        // Adjust Pocket Configuration for a custom requestTimeOut
+        let relayConfiguration = this.pocketConfiguration;
+        if (requestTimeOut) {
+            relayConfiguration = this.updateConfiguration(requestTimeOut);
+        }
         // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
-        const relayResponse = await this.pocket.sendRelay(data, blockchain, pocketAAT, this.pocketConfiguration, undefined, undefined, this.relayPath, node);
+        const relayResponse = await this.pocket.sendRelay(data, blockchain, pocketAAT, relayConfiguration, undefined, undefined, this.relayPath, node);
         if (this.checkDebug) {
+            console.log(relayConfiguration);
             console.log(relayResponse);
         }
         // Method recording for metrics
@@ -118,7 +140,7 @@ class PocketRelayer {
                     appPubKey: application.gatewayAAT.applicationPublicKey,
                     blockchain,
                     serviceNode: relayResponse.proof.servicerPubKey,
-                    elapsedStart,
+                    relayStart,
                     result: 503,
                     bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
                     method: method,
@@ -141,7 +163,7 @@ class PocketRelayer {
                     appPubKey: application.gatewayAAT.applicationPublicKey,
                     blockchain,
                     serviceNode: relayResponse.proof.servicerPubKey,
-                    elapsedStart,
+                    relayStart,
                     result: 200,
                     bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
                     method: method,
@@ -169,7 +191,7 @@ class PocketRelayer {
                 appPubKey: application.gatewayAAT.applicationPublicKey,
                 blockchain,
                 serviceNode: node === null || node === void 0 ? void 0 : node.publicKey,
-                elapsedStart,
+                relayStart,
                 result: 500,
                 bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
                 method: method,
@@ -181,6 +203,9 @@ class PocketRelayer {
             // TODO: ConsensusNode is a possible return
             return new Error('relayResponse is undefined');
         }
+    }
+    updateConfiguration(requestTimeOut) {
+        return new pocket_js_1.Configuration(this.pocketConfiguration.maxDispatchers, this.pocketConfiguration.maxSessions, this.pocketConfiguration.consensusNodeCount, requestTimeOut, this.pocketConfiguration.acceptDisputedResponses, this.pocketConfiguration.sessionBlockFrequency, this.pocketConfiguration.blockTime, this.pocketConfiguration.maxSessionRefreshRetries, this.pocketConfiguration.validateRelayResponses, this.pocketConfiguration.rejectSelfSignedCertificates);
     }
     // Load requested blockchain by parsing the URL
     async loadBlockchain() {

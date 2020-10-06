@@ -71,7 +71,7 @@ let V1Controller = class V1Controller {
             // one randomly for the relay.
             const application = await this.fetchRandomLoadBalancerApplication(loadBalancer.id, loadBalancer.applicationIDs, filter);
             if (application === null || application === void 0 ? void 0 : application.id) {
-                return this.pocketRelayer.sendRelay(rawData, application);
+                return this.pocketRelayer.sendRelay(rawData, application, parseInt(loadBalancer.requestTimeOut), parseInt(loadBalancer.overallTimeOut), parseInt(loadBalancer.relayRetries));
             }
         }
         throw new rest_1.HttpErrors.InternalServerError('Load Balancer configuration error');
