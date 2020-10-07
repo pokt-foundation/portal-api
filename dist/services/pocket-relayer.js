@@ -80,7 +80,17 @@ class PocketRelayer {
                 console.log(fallbackResponse);
             }
             if (!(fallbackResponse instanceof pocket_js_1.RpcError)) {
-                console.log("fallback success");
+                // Success
+                console.log('FALLBACK ' +
+                    application.id +
+                    ' chain: ' +
+                    blockchain +
+                    ' req: ' +
+                    rawData.toString().replace(/[\r\n\s]+/gm, "") +
+                    ' res: ' +
+                    fallbackResponse +
+                    ' node: ' +
+                    fallbackChoice.baseURL);
                 const responseParsed = JSON.parse(fallbackResponse);
                 await this.metricsRecorder.recordMetric({
                     applicationID: application.id,
@@ -231,7 +241,8 @@ class PocketRelayer {
                 ' req: ' +
                 JSON.stringify(data) +
                 ' res: ' +
-                relayResponse.message);
+                relayResponse.message +
+                ' node: ' + (node === null || node === void 0 ? void 0 : node.publicKey));
             await this.metricsRecorder.recordMetric({
                 applicationID: application.id,
                 appPubKey: application.gatewayAAT.applicationPublicKey,
