@@ -2038,7 +2038,7 @@
         "signature": "75b8b059a00b6b8f090be39f69fbf84018c53ef865cd8146173a6f5eeec058f0"
       },
       "./src/services/pocket-relayer.ts": {
-        "version": "36d28f9087f96603037de3bfcb1210624f81844d5a645166e4d55c20919be038",
+        "version": "f3f4ce673f3b9d911e59553916e8c2e8bab95a8555dd041ac76a34dcc0232b89",
         "signature": "8351f10cafcbee263a47b6b337d2e0b95b5b72d94725d577106af3a53acdc4e0"
       },
       "./src/controllers/v1.controller.ts": {
@@ -9360,6 +9360,7 @@
       "./node_modules/@loopback/rest/index.d.ts",
       "./src/sequence.ts",
       "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts",
+      "./src/application.ts",
       "./src/index.ts",
       "./src/migrate.ts",
       "./node_modules/@types/cookiejar/index.d.ts",
@@ -9562,7 +9563,6 @@
       "../../../node_modules/@types/react/global.d.ts",
       "../../../node_modules/csstype/index.d.ts",
       "../../../node_modules/@types/react/index.d.ts",
-      "./src/application.ts",
       "./src/services/pocket-relayer.ts"
     ]
   },
