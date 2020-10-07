@@ -63,7 +63,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
             throw new rest_1.HttpErrors.InternalServerError('DATABASE_ENCRYPTION_KEY required in ENV');
         }
         // Create the Pocket instance
-        const dispatchers = new Array();
+        const dispatchers = [];
         if (dispatchURL.indexOf(",")) {
             const dispatcherArray = dispatchURL.split(",");
             dispatcherArray.forEach(function (dispatcher) {
@@ -73,7 +73,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         else {
             dispatchers.push(new URL(dispatchURL));
         }
-        const configuration = new Configuration(5, 100000, 5, 120000, false, pocketSessionBlockFrequency, pocketBlockTime, undefined, undefined, false);
+        const configuration = new Configuration(0, 100000, 0, 120000, false, pocketSessionBlockFrequency, pocketBlockTime, undefined, undefined, false);
         const rpcProvider = new HttpRpcProvider(dispatchers);
         const pocket = new Pocket(dispatchers, rpcProvider, configuration);
         // Bind to application context for shared re-use

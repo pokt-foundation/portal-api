@@ -46,6 +46,6 @@ export declare class V1Controller {
     applicationRelay(id: string, rawData: object, filter?: FilterExcludingWhere<Applications>): Promise<string | Error>;
     fetchLoadBalancer(id: string, filter: FilterExcludingWhere | undefined): Promise<LoadBalancers | undefined>;
     fetchApplication(id: string, filter: FilterExcludingWhere | undefined): Promise<Applications | undefined>;
-    fetchRandomLoadBalancerApplication(id: string, applicationIDs: string[], filter: FilterExcludingWhere | undefined): Promise<Applications | undefined>;
+    fetchLoadBalancerApplication(id: string, applicationIDs: string[], blockchain: string, filter: FilterExcludingWhere | undefined): Promise<Applications | undefined>;
     checkDebug(): boolean;
 }

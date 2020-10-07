@@ -105,15 +105,18 @@ export class V1Controller {
 
     const loadBalancer = await this.fetchLoadBalancer(id, filter);
     if (loadBalancer?.id) {
+      // eslint-disable-next-line 
+      const [blockchain, _] = await this.pocketRelayer.loadBlockchain();
       // Fetch applications contained in this Load Balancer. Verify they exist and choose
       // one randomly for the relay.
-      const application = await this.fetchRandomLoadBalancerApplication(
+      const application = await this.fetchLoadBalancerApplication(
         loadBalancer.id,
         loadBalancer.applicationIDs,
+        blockchain,
         filter,
       );
       if (application?.id) {
-        return this.pocketRelayer.sendRelay(rawData, application);
+        return this.pocketRelayer.sendRelay(rawData, application, parseInt(loadBalancer.requestTimeOut), parseInt(loadBalancer.overallTimeOut), parseInt(loadBalancer.relayRetries));
       }
     }
     throw new HttpErrors.InternalServerError(
@@ -206,9 +209,10 @@ export class V1Controller {
   }
 
   // Pull a random Load Balancer Application from redis then DB
-  async fetchRandomLoadBalancerApplication(
+  async fetchLoadBalancerApplication(
     id: string,
     applicationIDs: string[],
+    blockchain: string,
     filter: FilterExcludingWhere | undefined,
   ): Promise<Applications | undefined> {
     let verifiedIDs: string[] = [];
@@ -239,7 +243,7 @@ export class V1Controller {
       throw new HttpErrors.Forbidden('Load Balancer configuration invalid');
     }
     return this.fetchApplication(
-      verifiedIDs[Math.floor(Math.random() * verifiedIDs.length)],
+      await this.cherryPicker.cherryPickApplication(verifiedIDs, blockchain),
       filter,
     );
   }
