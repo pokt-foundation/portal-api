@@ -242,8 +242,14 @@ export class V1Controller {
     if (verifiedIDs.length < 1) {
       throw new HttpErrors.Forbidden('Load Balancer configuration invalid');
     }
+    /*
     return this.fetchApplication(
       await this.cherryPicker.cherryPickApplication(verifiedIDs, blockchain),
+      filter,
+    );
+    */
+    return this.fetchApplication(
+      verifiedIDs[Math.floor(Math.random() * verifiedIDs.length)],
       filter,
     );
   }

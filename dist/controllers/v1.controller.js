@@ -140,7 +140,13 @@ let V1Controller = class V1Controller {
         if (verifiedIDs.length < 1) {
             throw new rest_1.HttpErrors.Forbidden('Load Balancer configuration invalid');
         }
-        return this.fetchApplication(await this.cherryPicker.cherryPickApplication(verifiedIDs, blockchain), filter);
+        /*
+        return this.fetchApplication(
+          await this.cherryPicker.cherryPickApplication(verifiedIDs, blockchain),
+          filter,
+        );
+        */
+        return this.fetchApplication(verifiedIDs[Math.floor(Math.random() * verifiedIDs.length)], filter);
     }
     // Debug log for testing based on user agent
     checkDebug() {
