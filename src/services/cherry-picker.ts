@@ -208,13 +208,13 @@ export class CherryPicker {
     let weightFactor = 10;
 
     for (const sortedLog of sortedLogs) {
-      if (sortedLog.successRate === 1) {
-        // For untested apps/nodes and those with 100% success rates, weight their selection
+      if (sortedLog.successRate > 0.95) {
+        // For untested apps/nodes and those > 95% success rates, weight their selection
         for (let x = 1; x <= weightFactor; x++) {
           rankedItems.push(sortedLog.id);
         }
         weightFactor = weightFactor - 2;
-      } else if (sortedLog.successRate > 0.95) {
+      } else if (sortedLog.successRate > 0.85) {
         // For all apps/nodes with reasonable success rate, weight their selection less
         for (let x = 1; x <= weightFactor; x++) {
           rankedItems.push(sortedLog.id);
