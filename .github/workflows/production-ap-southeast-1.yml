@@ -39,7 +39,7 @@ jobs:
         envkey_REDIS_PORT: 6379
         envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
         envkey_POCKET_BLOCK_TIME: 900000
-        envkey_POCKET_RELAY_RETRIES: 5
+        envkey_POCKET_RELAY_RETRIES: 0
         file_name: .env
 
     - name: Build, tag, and push image to Amazon ECR
