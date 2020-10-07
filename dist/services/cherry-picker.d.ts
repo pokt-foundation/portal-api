@@ -11,7 +11,7 @@ export declare class CherryPicker {
     cherryPickNode(pocketSession: Session, blockchain: string): Promise<Node>;
     fetchRawServiceLog(blockchain: string, id: string | undefined): Promise<string | null>;
     updateServiceQuality(blockchain: string, applicationID: string, serviceNode: string, elapsedTime: number, result: number): Promise<void>;
-    _updateServiceQuality(blockchain: string, id: string, elapsedTime: number, result: number): Promise<void>;
+    _updateServiceQuality(blockchain: string, id: string, elapsedTime: number, result: number, ttl: number): Promise<void>;
     rankItems(sortedLogs: Array<ServiceLog>, maxFailuresPerPeriod: number): string[];
     createUnsortedLog(id: string, rawServiceLog: any): ServiceLog;
     sortLogs(array: ServiceLog[]): ServiceLog[];

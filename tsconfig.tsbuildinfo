@@ -1994,8 +1994,8 @@
         "signature": "ce3c16bd239d4345a1ffabff3dcbb5025d281292742f4cfa5a29398b815bbb60"
       },
       "./src/services/cherry-picker.ts": {
-        "version": "6575c973e790b2d7cb30b4aa4d11ddf95a576bce060fc7e796566a924e20df43",
-        "signature": "275ecefaeb826b8c2c49f1ff50b0656665ffc177d0832f5bb4a19f55f29bc31a"
+        "version": "6bbc9778e73dc0cf5207273ecd0c1174ba6a3b77957d22ba22193724cd0a0304",
+        "signature": "b6d6455954f2ca67c6e62134dde504179ea2118908a4d903b82d71cac9bb3662"
       },
       "./src/services/metrics-recorder.ts": {
         "version": "ca899ade5901bf342c09f107161996033bfbb40be4e931558fb651506589ae9e",
