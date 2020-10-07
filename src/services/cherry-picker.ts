@@ -33,8 +33,8 @@ export class CherryPicker {
     sortedLogs = this.sortLogs(sortedLogs);
 
     // Iterate through sorted logs and form in to a weighted list 
-    // 10 failures per 15 minutes allowed on apps
-    let rankedItems = this.rankItems(sortedLogs, 10);  
+    // 15 failures per 15 minutes allowed on apps (all 5 nodes failed 3 times)
+    let rankedItems = this.rankItems(sortedLogs, 15);  
 
     // If we have no applications left because all are failures, ¯\_(ツ)_/¯
     if (rankedItems.length === 0) {
@@ -146,7 +146,7 @@ export class CherryPicker {
     const serviceLog = await this.fetchRawServiceLog(blockchain, id);
 
     let serviceQuality;
-    // Update service quality log for this hour
+    // Update service quality log for this time period
     if (serviceLog) {
       serviceQuality = JSON.parse(serviceLog);
 
