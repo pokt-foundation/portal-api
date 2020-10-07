@@ -65,7 +65,9 @@ class PocketRelayer {
         }
         // Exhausted relay attempts; use fallback
         if (this.fallbacks.length > 0 && this.pocket !== undefined) {
+            const relayStart = process.hrtime();
             const [blockchain, blockchainEnforceResult] = await this.loadBlockchain();
+            const method = this.parseMethod(rawData.toString());
             const fallbackChoice = new pocket_js_1.HttpRpcProvider(this.fallbacks[Math.floor(Math.random() * this.fallbacks.length)]);
             const fallbackPayload = { data: rawData.toString(), method: "", path: this.relayPath, headers: null };
             const fallbackMeta = { block_height: 0 };
@@ -80,6 +82,16 @@ class PocketRelayer {
             if (!(fallbackResponse instanceof pocket_js_1.RpcError)) {
                 console.log("fallback success");
                 const responseParsed = JSON.parse(fallbackResponse);
+                await this.metricsRecorder.recordMetric({
+                    applicationID: application.id,
+                    appPubKey: application.gatewayAAT.applicationPublicKey,
+                    blockchain,
+                    serviceNode: "fallback:" + fallbackChoice.baseURL,
+                    relayStart,
+                    result: 200,
+                    bytes: Buffer.byteLength(responseParsed.response, 'utf8'),
+                    method: method,
+                });
                 // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
                 if (blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
                     blockchainEnforceResult.toLowerCase() === 'json' // the check is for JSON
@@ -143,21 +155,7 @@ class PocketRelayer {
             console.log(relayConfiguration);
             console.log(relayResponse);
         }
-        // Method recording for metrics
-        if (parsedRawData instanceof Array) {
-            // Join the methods of calls in an array for chains that can join multiple calls in one
-            for (const key in parsedRawData) {
-                if (parsedRawData[key].method) {
-                    if (method) {
-                        method += ',';
-                    }
-                    method += parsedRawData[key].method;
-                }
-            }
-        }
-        else if (parsedRawData.method) {
-            method = parsedRawData.method;
-        }
+        method = this.parseMethod(parsedRawData);
         // Success
         if (relayResponse instanceof pocket_js_1.RelayResponse) {
             // First, check for the format of the result; Pocket Nodes will return relays that include
@@ -251,6 +249,25 @@ class PocketRelayer {
             // TODO: ConsensusNode is a possible return
             return new Error('relayResponse is undefined');
         }
+    }
+    parseMethod(parsedRawData) {
+        // Method recording for metrics
+        let method = "";
+        if (parsedRawData instanceof Array) {
+            // Join the methods of calls in an array for chains that can join multiple calls in one
+            for (const key in parsedRawData) {
+                if (parsedRawData[key].method) {
+                    if (method) {
+                        method += ',';
+                    }
+                    method += parsedRawData[key].method;
+                }
+            }
+        }
+        else if (parsedRawData.method) {
+            method = parsedRawData.method;
+        }
+        return method;
     }
     updateConfiguration(requestTimeOut) {
         return new pocket_js_1.Configuration(this.pocketConfiguration.maxDispatchers, this.pocketConfiguration.maxSessions, this.pocketConfiguration.consensusNodeCount, requestTimeOut, this.pocketConfiguration.acceptDisputedResponses, this.pocketConfiguration.sessionBlockFrequency, this.pocketConfiguration.blockTime, this.pocketConfiguration.maxSessionRefreshRetries, this.pocketConfiguration.validateRelayResponses, this.pocketConfiguration.rejectSelfSignedCertificates);
