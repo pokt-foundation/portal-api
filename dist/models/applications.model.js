@@ -12,6 +12,7 @@ tslib_1.__decorate([
         type: 'string',
         id: true,
         generated: true,
+        required: true,
     }),
     tslib_1.__metadata("design:type", String)
 ], Applications.prototype, "id", void 0);

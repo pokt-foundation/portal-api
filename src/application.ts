@@ -88,7 +88,7 @@ export class PocketGatewayApplication extends BootMixin(
     }
 
     // Create the Pocket instance
-    const dispatchers = new Array();
+    const dispatchers = [];
 
     if (dispatchURL.indexOf(",")) {
       const dispatcherArray = dispatchURL.split(",");

@@ -29,6 +29,7 @@ export class MetricsRecorder {
 
   // Record relay metrics in redis then push to timescaleDB for analytics
   async recordMetric({
+    applicationID,
     appPubKey,
     blockchain,
     serviceNode,
@@ -37,6 +38,7 @@ export class MetricsRecorder {
     bytes,
     method,
   }: {
+    applicationID: string;
     appPubKey: string;
     blockchain: string;
     serviceNode: string | undefined;
@@ -90,8 +92,9 @@ export class MetricsRecorder {
       }
 
       if (serviceNode) {
-        await this.cherryPicker.updateServiceNodeQuality(
+        await this.cherryPicker.updateServiceQuality(
           blockchain,
+          applicationID,
           serviceNode,
           elapsedTime,
           result,
