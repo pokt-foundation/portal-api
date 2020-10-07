@@ -20,32 +20,33 @@ class PocketRelayer {
         this.checkDebug = checkDebug;
         this.blockchainsRepository = blockchainsRepository;
     }
-    async sendRelay(rawData, application, requestTimeOut = 0, overallTimeOut = 0, relayRetries = 0) {
-        if (relayRetries) {
+    async sendRelay(rawData, application, requestTimeOut, overallTimeOut, relayRetries) {
+        if (relayRetries !== undefined &&
+            relayRetries >= 0) {
             this.relayRetries = relayRetries;
         }
-        let overallStart;
+        // First attempt
+        const overallStart = process.hrtime();
+        const result = await this._sendRelay(rawData, application, requestTimeOut);
+        if (!(result instanceof Error)) {
+            return result;
+        }
+        // Retries if applicable
         for (let x = 1; x <= this.relayRetries; x++) {
-            if (x === 1) {
-                overallStart = process.hrtime();
-            }
-            else {
-                console.log('Relay Attempt ' + x);
-                // Compute the overall time taken on this LB request
-                const overallCurrent = process.hrtime(overallStart);
-                const overallCurrentElasped = Math.round((overallCurrent[0] * 1e9 + overallCurrent[1]) / 1e6);
-                if (overallTimeOut &&
-                    overallCurrentElasped > overallTimeOut) {
-                    console.log('Overall Timeout exceeded: ' + overallTimeOut);
-                    return new rest_1.HttpErrors.InternalServerError('Overall Timeout exceeded: ' + overallTimeOut);
-                }
+            console.log('Relay Attempt ' + x);
+            // Compute the overall time taken on this LB request
+            const overallCurrent = process.hrtime(overallStart);
+            const overallCurrentElasped = Math.round((overallCurrent[0] * 1e9 + overallCurrent[1]) / 1e6);
+            if (overallTimeOut &&
+                overallCurrentElasped > overallTimeOut) {
+                console.log('Overall Timeout exceeded: ' + overallTimeOut);
+                return new rest_1.HttpErrors.InternalServerError('Overall Timeout exceeded: ' + overallTimeOut);
             }
             const result = await this._sendRelay(rawData, application, requestTimeOut);
             if (!(result instanceof Error)) {
                 return result;
             }
         }
-        console.log('Relay attempts exhausted');
         return new rest_1.HttpErrors.InternalServerError('Relay attempts exhausted');
     }
     // Private function to allow relay retries
@@ -137,6 +138,7 @@ class PocketRelayer {
                     ' node: ' +
                     relayResponse.proof.servicerPubKey);
                 await this.metricsRecorder.recordMetric({
+                    applicationID: application.id,
                     appPubKey: application.gatewayAAT.applicationPublicKey,
                     blockchain,
                     serviceNode: relayResponse.proof.servicerPubKey,
@@ -160,6 +162,7 @@ class PocketRelayer {
                     ' node: ' +
                     relayResponse.proof.servicerPubKey);
                 await this.metricsRecorder.recordMetric({
+                    applicationID: application.id,
                     appPubKey: application.gatewayAAT.applicationPublicKey,
                     blockchain,
                     serviceNode: relayResponse.proof.servicerPubKey,
@@ -188,6 +191,7 @@ class PocketRelayer {
                 ' res: ' +
                 relayResponse.message);
             await this.metricsRecorder.recordMetric({
+                applicationID: application.id,
                 appPubKey: application.gatewayAAT.applicationPublicKey,
                 blockchain,
                 serviceNode: node === null || node === void 0 ? void 0 : node.publicKey,

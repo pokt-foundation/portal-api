@@ -63,7 +63,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
             throw new rest_1.HttpErrors.InternalServerError('DATABASE_ENCRYPTION_KEY required in ENV');
         }
         // Create the Pocket instance
-        const dispatchers = new Array();
+        const dispatchers = [];
         if (dispatchURL.indexOf(",")) {
             const dispatcherArray = dispatchURL.split(",");
             dispatcherArray.forEach(function (dispatcher) {

@@ -67,9 +67,11 @@ let V1Controller = class V1Controller {
         console.log('PROCESSING LB ' + id);
         const loadBalancer = await this.fetchLoadBalancer(id, filter);
         if (loadBalancer === null || loadBalancer === void 0 ? void 0 : loadBalancer.id) {
+            // eslint-disable-next-line 
+            const [blockchain, _] = await this.pocketRelayer.loadBlockchain();
             // Fetch applications contained in this Load Balancer. Verify they exist and choose
             // one randomly for the relay.
-            const application = await this.fetchRandomLoadBalancerApplication(loadBalancer.id, loadBalancer.applicationIDs, filter);
+            const application = await this.fetchLoadBalancerApplication(loadBalancer.id, loadBalancer.applicationIDs, blockchain, filter);
             if (application === null || application === void 0 ? void 0 : application.id) {
                 return this.pocketRelayer.sendRelay(rawData, application, parseInt(loadBalancer.requestTimeOut), parseInt(loadBalancer.overallTimeOut), parseInt(loadBalancer.relayRetries));
             }
@@ -118,7 +120,7 @@ let V1Controller = class V1Controller {
         return new models_1.Applications(JSON.parse(cachedApplication));
     }
     // Pull a random Load Balancer Application from redis then DB
-    async fetchRandomLoadBalancerApplication(id, applicationIDs, filter) {
+    async fetchLoadBalancerApplication(id, applicationIDs, blockchain, filter) {
         let verifiedIDs = [];
         const cachedLoadBalancerApplicationIDs = await this.redis.get('applicationIDs-' + id);
         // Fetch from DB if not found in redis
@@ -138,7 +140,7 @@ let V1Controller = class V1Controller {
         if (verifiedIDs.length < 1) {
             throw new rest_1.HttpErrors.Forbidden('Load Balancer configuration invalid');
         }
-        return this.fetchApplication(verifiedIDs[Math.floor(Math.random() * verifiedIDs.length)], filter);
+        return this.fetchApplication(await this.cherryPicker.cherryPickApplication(verifiedIDs, blockchain), filter);
     }
     // Debug log for testing based on user agent
     checkDebug() {
