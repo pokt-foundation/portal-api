@@ -38,6 +38,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         //
         // For Dev, you need to pass them in via .env file
         const dispatchURL = process.env.DISPATCH_URL || '';
+        const fallbackURL = process.env.FALLBACK_URL || '';
         const clientPrivateKey = process.env.GATEWAY_CLIENT_PRIVATE_KEY || '';
         const clientPassphrase = process.env.GATEWAY_CLIENT_PASSPHRASE || '';
         const pocketSessionBlockFrequency = parseInt(process.env.POCKET_SESSION_BLOCK_FREQUENCY) || 0;
@@ -46,6 +47,9 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         const databaseEncryptionKey = (_a = process.env.DATABASE_ENCRYPTION_KEY) !== null && _a !== void 0 ? _a : '';
         if (!dispatchURL) {
             throw new rest_1.HttpErrors.InternalServerError('DISPATCH_URL required in ENV');
+        }
+        if (!fallbackURL) {
+            throw new rest_1.HttpErrors.InternalServerError('FALLBACK_URL required in ENV');
         }
         if (!clientPrivateKey) {
             throw new rest_1.HttpErrors.InternalServerError('GATEWAY_CLIENT_PRIVATE_KEY required in ENV');
@@ -80,6 +84,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         this.bind('pocketInstance').to(pocket);
         this.bind('pocketConfiguration').to(configuration);
         this.bind('relayRetries').to(relayRetries);
+        this.bind('fallbackURL').to(fallbackURL);
         // Unlock primary client account for relay signing
         try {
             const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase);

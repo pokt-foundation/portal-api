@@ -17,9 +17,10 @@ export declare class PocketRelayer {
     secretKey: string;
     relayPath: string;
     relayRetries: number;
-    checkDebug: boolean;
     blockchainsRepository: BlockchainsRepository;
-    constructor({ host, origin, userAgent, pocket, pocketConfiguration, cherryPicker, metricsRecorder, redis, databaseEncryptionKey, secretKey, relayPath, relayRetries, blockchainsRepository, checkDebug, }: {
+    checkDebug: boolean;
+    fallbacks: Array<URL>;
+    constructor({ host, origin, userAgent, pocket, pocketConfiguration, cherryPicker, metricsRecorder, redis, databaseEncryptionKey, secretKey, relayPath, relayRetries, blockchainsRepository, checkDebug, fallbackURL, }: {
         host: string;
         origin: string;
         userAgent: string;
@@ -34,6 +35,7 @@ export declare class PocketRelayer {
         relayRetries: number;
         blockchainsRepository: BlockchainsRepository;
         checkDebug: boolean;
+        fallbackURL: string;
     });
     sendRelay(rawData: object, application: Applications, requestTimeOut?: number, overallTimeOut?: number, relayRetries?: number): Promise<string | Error>;
     _sendRelay(rawData: object, application: Applications, requestTimeOut: number | undefined): Promise<string | Error>;

@@ -12,7 +12,7 @@ const cherry_picker_1 = require("../services/cherry-picker");
 const metrics_recorder_1 = require("../services/metrics-recorder");
 const pocket_relayer_1 = require("../services/pocket-relayer");
 let V1Controller = class V1Controller {
-    constructor(secretKey, host, origin, userAgent, contentType, relayPath, relayRetries, pocket, pocketConfiguration, redis, pgPool, databaseEncryptionKey, processUID, applicationsRepository, blockchainsRepository, loadBalancersRepository) {
+    constructor(secretKey, host, origin, userAgent, contentType, relayPath, relayRetries, pocket, pocketConfiguration, redis, pgPool, databaseEncryptionKey, processUID, fallbackURL, applicationsRepository, blockchainsRepository, loadBalancersRepository) {
         this.secretKey = secretKey;
         this.host = host;
         this.origin = origin;
@@ -26,6 +26,7 @@ let V1Controller = class V1Controller {
         this.pgPool = pgPool;
         this.databaseEncryptionKey = databaseEncryptionKey;
         this.processUID = processUID;
+        this.fallbackURL = fallbackURL;
         this.applicationsRepository = applicationsRepository;
         this.blockchainsRepository = blockchainsRepository;
         this.loadBalancersRepository = loadBalancersRepository;
@@ -54,6 +55,7 @@ let V1Controller = class V1Controller {
             relayRetries: this.relayRetries,
             blockchainsRepository: this.blockchainsRepository,
             checkDebug: this.checkDebug(),
+            fallbackURL: this.fallbackURL,
         });
     }
     /**
@@ -225,11 +227,12 @@ V1Controller = tslib_1.__decorate([
     tslib_1.__param(10, context_1.inject('pgPool')),
     tslib_1.__param(11, context_1.inject('databaseEncryptionKey')),
     tslib_1.__param(12, context_1.inject('processUID')),
-    tslib_1.__param(13, repository_1.repository(repositories_1.ApplicationsRepository)),
-    tslib_1.__param(14, repository_1.repository(repositories_1.BlockchainsRepository)),
-    tslib_1.__param(15, repository_1.repository(repositories_1.LoadBalancersRepository)),
+    tslib_1.__param(13, context_1.inject('fallbackURL')),
+    tslib_1.__param(14, repository_1.repository(repositories_1.ApplicationsRepository)),
+    tslib_1.__param(15, repository_1.repository(repositories_1.BlockchainsRepository)),
+    tslib_1.__param(16, repository_1.repository(repositories_1.LoadBalancersRepository)),
     tslib_1.__metadata("design:paramtypes", [String, String, String, String, String, String, Number, pocket_js_1.Pocket,
-        pocket_js_1.Configuration, Object, pg_1.Pool, String, String, repositories_1.ApplicationsRepository,
+        pocket_js_1.Configuration, Object, pg_1.Pool, String, String, String, repositories_1.ApplicationsRepository,
         repositories_1.BlockchainsRepository,
         repositories_1.LoadBalancersRepository])
 ], V1Controller);
