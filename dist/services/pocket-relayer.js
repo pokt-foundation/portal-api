@@ -40,14 +40,14 @@ class PocketRelayer {
             if (overallTimeOut &&
                 overallCurrentElasped > overallTimeOut) {
                 console.log('Overall Timeout exceeded: ' + overallTimeOut);
-                return new rest_1.HttpErrors.GatewayTimeout('Overall Timeout exceeded: ' + overallTimeOut);
+                return new rest_1.HttpErrors.InternalServerError('Overall Timeout exceeded: ' + overallTimeOut);
             }
             const result = await this._sendRelay(rawData, application, requestTimeOut);
             if (!(result instanceof Error)) {
                 return result;
             }
         }
-        return new rest_1.HttpErrors.GatewayTimeout('Relay attempts exhausted');
+        return new rest_1.HttpErrors.InternalServerError('Relay attempts exhausted');
     }
     // Private function to allow relay retries
     async _sendRelay(rawData, application, requestTimeOut) {
