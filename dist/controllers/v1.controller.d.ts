@@ -21,13 +21,14 @@ export declare class V1Controller {
     private pgPool;
     private databaseEncryptionKey;
     private processUID;
+    private fallbackURL;
     applicationsRepository: ApplicationsRepository;
     private blockchainsRepository;
     private loadBalancersRepository;
     cherryPicker: CherryPicker;
     metricsRecorder: MetricsRecorder;
     pocketRelayer: PocketRelayer;
-    constructor(secretKey: string, host: string, origin: string, userAgent: string, contentType: string, relayPath: string, relayRetries: number, pocket: Pocket, pocketConfiguration: Configuration, redis: Redis, pgPool: PGPool, databaseEncryptionKey: string, processUID: string, applicationsRepository: ApplicationsRepository, blockchainsRepository: BlockchainsRepository, loadBalancersRepository: LoadBalancersRepository);
+    constructor(secretKey: string, host: string, origin: string, userAgent: string, contentType: string, relayPath: string, relayRetries: number, pocket: Pocket, pocketConfiguration: Configuration, redis: Redis, pgPool: PGPool, databaseEncryptionKey: string, processUID: string, fallbackURL: string, applicationsRepository: ApplicationsRepository, blockchainsRepository: BlockchainsRepository, loadBalancersRepository: LoadBalancersRepository);
     /**
      * Load Balancer Relay
      *

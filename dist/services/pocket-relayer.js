@@ -4,7 +4,7 @@ const strong_cryptor_1 = require("strong-cryptor");
 const rest_1 = require("@loopback/rest");
 const pocket_js_1 = require("@pokt-network/pocket-js");
 class PocketRelayer {
-    constructor({ host, origin, userAgent, pocket, pocketConfiguration, cherryPicker, metricsRecorder, redis, databaseEncryptionKey, secretKey, relayPath, relayRetries, blockchainsRepository, checkDebug, }) {
+    constructor({ host, origin, userAgent, pocket, pocketConfiguration, cherryPicker, metricsRecorder, redis, databaseEncryptionKey, secretKey, relayPath, relayRetries, blockchainsRepository, checkDebug, fallbackURL, }) {
         this.host = host;
         this.origin = origin;
         this.userAgent = userAgent;
@@ -17,8 +17,20 @@ class PocketRelayer {
         this.secretKey = secretKey;
         this.relayPath = relayPath;
         this.relayRetries = relayRetries;
-        this.checkDebug = checkDebug;
         this.blockchainsRepository = blockchainsRepository;
+        this.checkDebug = checkDebug;
+        // Create the array of fallback relayers as last resort
+        const fallbacks = [];
+        if (fallbackURL.indexOf(",")) {
+            const fallbackArray = fallbackURL.split(",");
+            fallbackArray.forEach(function (fallback) {
+                fallbacks.push(new URL(fallback));
+            });
+        }
+        else {
+            fallbacks.push(new URL(fallbackURL));
+        }
+        this.fallbacks = fallbacks;
     }
     async sendRelay(rawData, application, requestTimeOut, overallTimeOut, relayRetries) {
         if (relayRetries !== undefined &&
@@ -40,14 +52,21 @@ class PocketRelayer {
             if (overallTimeOut &&
                 overallCurrentElasped > overallTimeOut) {
                 console.log('Overall Timeout exceeded: ' + overallTimeOut);
-                return new rest_1.HttpErrors.InternalServerError('Overall Timeout exceeded: ' + overallTimeOut);
+                return new rest_1.HttpErrors.GatewayTimeout('Overall Timeout exceeded: ' + overallTimeOut);
             }
             const result = await this._sendRelay(rawData, application, requestTimeOut);
             if (!(result instanceof Error)) {
                 return result;
             }
         }
-        return new rest_1.HttpErrors.InternalServerError('Relay attempts exhausted');
+        // Exhausted relay attempts; use fallback
+        if (this.fallbacks.length > 0 && this.pocket !== undefined) {
+            console.log("fallback");
+            const fallbackChoice = new pocket_js_1.HttpRpcProvider(this.fallbacks[Math.floor(Math.random() * this.fallbacks.length)]);
+            console.log(fallbackChoice);
+            //const fallbackResponse = await this.pocket.rpc(). 
+        }
+        return new rest_1.HttpErrors.GatewayTimeout('Relay attempts exhausted');
     }
     // Private function to allow relay retries
     async _sendRelay(rawData, application, requestTimeOut) {
