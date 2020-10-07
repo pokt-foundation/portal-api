@@ -160,7 +160,19 @@ export class PocketRelayer {
         console.log(fallbackResponse);
       }
       if (!(fallbackResponse instanceof RpcError)) {
-        console.log("fallback success");
+        // Success
+        console.log(
+          'FALLBACK ' +
+            application.id +
+            ' chain: ' +
+            blockchain +
+            ' req: ' +
+            rawData.toString().replace( /[\r\n\s]+/gm, "" ) +
+            ' res: ' +
+            fallbackResponse +
+            ' node: ' +
+            fallbackChoice.baseURL
+        );
 
         const responseParsed = JSON.parse(fallbackResponse);
 
@@ -379,7 +391,9 @@ export class PocketRelayer {
           ' req: ' +
           JSON.stringify(data) +
           ' res: ' +
-          relayResponse.message,
+          relayResponse.message + 
+          ' node: ' +
+          node?.publicKey
       );
 
       await this.metricsRecorder.recordMetric({

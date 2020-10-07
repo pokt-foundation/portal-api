@@ -2038,7 +2038,7 @@
         "signature": "75b8b059a00b6b8f090be39f69fbf84018c53ef865cd8146173a6f5eeec058f0"
       },
       "./src/services/pocket-relayer.ts": {
-        "version": "4b9b6f3519e423950ffe32b7daf72e58242108ba53a9d19dc03b7a8737519b10",
+        "version": "b9f5b689ff6d758633953556979b8d8837415bb63d2e01a700900d334502eed1",
         "signature": "21e7162e60b83dc35a6811186f7538385f1d223051648b805e5e80c7073469e3"
       },
       "./src/controllers/v1.controller.ts": {
@@ -9540,6 +9540,8 @@
       "./node_modules/strong-cryptor/dist/encryptor.d.ts",
       "./node_modules/strong-cryptor/dist/decryptor.d.ts",
       "./node_modules/strong-cryptor/dist/index.d.ts",
+      "./src/controllers/v1.controller.ts",
+      "./src/controllers/index.ts",
       "./node_modules/@types/aes-js/index.d.ts",
       "./node_modules/@types/keyv/index.d.ts",
       "./node_modules/@types/http-cache-semantics/index.d.ts",
@@ -9561,9 +9563,7 @@
       "../../../node_modules/@types/react/global.d.ts",
       "../../../node_modules/csstype/index.d.ts",
       "../../../node_modules/@types/react/index.d.ts",
-      "./src/services/pocket-relayer.ts",
-      "./src/controllers/v1.controller.ts",
-      "./src/controllers/index.ts"
+      "./src/services/pocket-relayer.ts"
     ]
   },
   "version": "3.8.3"
