@@ -124,13 +124,15 @@ export class CherryPicker {
       blockchain,
       applicationID,
       elapsedTime,
-      result
+      result,
+      900
     );
     await this._updateServiceQuality(
       blockchain,
       serviceNode,
       elapsedTime,
-      result
+      result,
+      3600
     );
   }
 
@@ -139,6 +141,7 @@ export class CherryPicker {
     id: string,
     elapsedTime: number,
     result: number,
+    ttl: number
   ): Promise<void> {
     const serviceLog = await this.fetchRawServiceLog(blockchain, id);
 
@@ -188,7 +191,7 @@ export class CherryPicker {
       blockchain + '-' + id + '-' + new Date().getHours(),
       JSON.stringify(serviceQuality),
       'EX',
-      3600,
+      ttl,
     );
     if (this.checkDebug) {
       console.log(id + ': ' + JSON.stringify(serviceQuality));

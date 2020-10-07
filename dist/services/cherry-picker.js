@@ -71,10 +71,10 @@ class CherryPicker {
     // Record app & node service quality in redis for future selection weight
     // { id: { results: { 200: x, 500: y, ... }, averageSuccessLatency: z }
     async updateServiceQuality(blockchain, applicationID, serviceNode, elapsedTime, result) {
-        await this._updateServiceQuality(blockchain, applicationID, elapsedTime, result);
-        await this._updateServiceQuality(blockchain, serviceNode, elapsedTime, result);
+        await this._updateServiceQuality(blockchain, applicationID, elapsedTime, result, 900);
+        await this._updateServiceQuality(blockchain, serviceNode, elapsedTime, result, 3600);
     }
-    async _updateServiceQuality(blockchain, id, elapsedTime, result) {
+    async _updateServiceQuality(blockchain, id, elapsedTime, result, ttl) {
         const serviceLog = await this.fetchRawServiceLog(blockchain, id);
         let serviceQuality;
         // Update service quality log for this hour
@@ -113,7 +113,7 @@ class CherryPicker {
                 averageSuccessLatency: elapsedTime.toFixed(5),
             };
         }
-        await this.redis.set(blockchain + '-' + id + '-' + new Date().getHours(), JSON.stringify(serviceQuality), 'EX', 3600);
+        await this.redis.set(blockchain + '-' + id + '-' + new Date().getHours(), JSON.stringify(serviceQuality), 'EX', ttl);
         if (this.checkDebug) {
             console.log(id + ': ' + JSON.stringify(serviceQuality));
         }
