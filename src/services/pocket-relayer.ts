@@ -15,6 +15,11 @@ import {Redis} from 'ioredis';
 import {BlockchainsRepository} from '../repositories';
 import {Applications} from '../models';
 
+interface FallbackRelay { payload: FallbackPayload; meta: FallbackMeta; proof: FallbackProof };
+interface FallbackPayload { data: String; method: String; path: String; headers: null };
+interface FallbackMeta { block_height: number } ;
+interface FallbackProof { blockchain: String };
+
 export class PocketRelayer {
   host: string;
   origin: string;
@@ -136,11 +141,35 @@ export class PocketRelayer {
       }
     }
     // Exhausted relay attempts; use fallback
-    if (this.fallbacks.length > 0 && this.pocket !== undefined) {
-      console.log("fallback");
+    if (this.fallbacks.length > 0 && this.pocket !== undefined) {      
+      const [blockchain, blockchainEnforceResult] = await this.loadBlockchain();
       const fallbackChoice = new HttpRpcProvider(this.fallbacks[Math.floor(Math.random() * this.fallbacks.length)]);
-      console.log(fallbackChoice);
-      //const fallbackResponse = await this.pocket.rpc(). 
+      const fallbackPayload : FallbackPayload = {data: rawData.toString(), method: "", path: this.relayPath,  headers: null};
+      const fallbackMeta: FallbackMeta = {block_height: 0};
+      const fallbackProof: FallbackProof = {blockchain: blockchain};
+      const fallbackRelay: FallbackRelay = {payload: fallbackPayload, meta: fallbackMeta, proof: fallbackProof};
+
+      const fallbackResponse = await fallbackChoice.send("/v1/client/relay", JSON.stringify(fallbackRelay), 1200000, false);
+      
+      if (this.checkDebug) {
+        console.log(fallbackChoice);
+        console.log(fallbackRelay);
+        console.log(fallbackResponse);
+      }
+      if (!(fallbackResponse instanceof RpcError)) {
+        console.log("fallback success");
+        const responseParsed = JSON.parse(fallbackResponse);
+        // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
+        if (
+          blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
+          blockchainEnforceResult.toLowerCase() === 'json' // the check is for JSON
+        ) {
+          return JSON.parse(responseParsed.response);
+        }
+        else {
+          return responseParsed.response;
+        }
+      }
     }
     return new HttpErrors.GatewayTimeout('Relay attempts exhausted');
   }
