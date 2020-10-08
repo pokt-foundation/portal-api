@@ -27,7 +27,13 @@
 		"linuxParameters": null,
 		"cpu": 0,
 		"resourceRequirements": null,
-		"ulimits": null,
+		"ulimits": [
+			{
+				"name": "nofile",
+				"hardLimit": 65535,
+				"softLimit": 65535
+			}
+		],
 		"dnsServers": null,
 		"mountPoints": [],
 		"workingDirectory": null,
