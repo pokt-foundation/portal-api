@@ -160,7 +160,7 @@ class PocketRelayer {
             relayConfiguration = this.updateConfiguration(requestTimeOut);
         }
         // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
-        const relayResponse = await this.pocket.sendRelay(data, blockchain, pocketAAT, relayConfiguration, undefined, undefined, this.relayPath, node);
+        const relayResponse = await this.pocket.sendRelay(data, blockchain, pocketAAT, relayConfiguration, undefined, undefined, "/junk/path", node);
         if (this.checkDebug) {
             console.log(relayConfiguration);
             console.log(relayResponse);
@@ -243,6 +243,11 @@ class PocketRelayer {
                 ' res: ' +
                 relayResponse.message +
                 ' node: ' + (node === null || node === void 0 ? void 0 : node.publicKey));
+            const re = /message": "([^\n])+"/g;
+            const matches = re.exec(relayResponse.message);
+            if (matches !== null && matches[0]) {
+                console.log('NODE ERROR: ' + matches[0]);
+            }
             await this.metricsRecorder.recordMetric({
                 applicationID: application.id,
                 appPubKey: application.gatewayAAT.applicationPublicKey,
