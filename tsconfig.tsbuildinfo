@@ -2038,7 +2038,7 @@
         "signature": "75b8b059a00b6b8f090be39f69fbf84018c53ef865cd8146173a6f5eeec058f0"
       },
       "./src/services/pocket-relayer.ts": {
-        "version": "b9f5b689ff6d758633953556979b8d8837415bb63d2e01a700900d334502eed1",
+        "version": "8e486228bfee6eb44183d6c3c2a092443fb8d9ca6c37f701a7569617ce3792a4",
         "signature": "21e7162e60b83dc35a6811186f7538385f1d223051648b805e5e80c7073469e3"
       },
       "./src/controllers/v1.controller.ts": {
