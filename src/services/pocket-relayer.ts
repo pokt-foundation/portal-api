@@ -395,11 +395,6 @@ export class PocketRelayer {
           ' node: ' +
           node?.publicKey
       );
-      const re = /message": "([^\n])+"/g;
-      const matches = re.exec(relayResponse.message);
-      if (matches !== null && matches[0]) {
-        console.log('NODE ERROR: ' + matches[0]);
-      }
 
       await this.metricsRecorder.recordMetric({
         applicationID: application.id,
