@@ -8,6 +8,7 @@ const service_proxy_1 = require("@loopback/service-proxy");
 const sequence_1 = require("./sequence");
 const account_1 = require("@pokt-network/pocket-js/dist/keybase/models/account");
 const path_1 = tslib_1.__importDefault(require("path"));
+const logger = require('./services/logger');
 const pocketJS = require('@pokt-network/pocket-js');
 const { Pocket, Configuration, HttpRpcProvider } = pocketJS;
 const Redis = require('ioredis');
@@ -33,18 +34,18 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         };
     }
     async loadPocket() {
-        var _a;
+        var _a, _b, _c, _d, _e, _f, _g, _h;
         // Requirements; for Production these are stored in GitHub repo secrets
         //
         // For Dev, you need to pass them in via .env file
-        const dispatchURL = process.env.DISPATCH_URL || '';
-        const fallbackURL = process.env.FALLBACK_URL || '';
-        const clientPrivateKey = process.env.GATEWAY_CLIENT_PRIVATE_KEY || '';
-        const clientPassphrase = process.env.GATEWAY_CLIENT_PASSPHRASE || '';
-        const pocketSessionBlockFrequency = parseInt(process.env.POCKET_SESSION_BLOCK_FREQUENCY) || 0;
-        const pocketBlockTime = parseInt(process.env.POCKET_BLOCK_TIME) || 0;
-        const relayRetries = parseInt(process.env.POCKET_RELAY_RETRIES) || 0;
-        const databaseEncryptionKey = (_a = process.env.DATABASE_ENCRYPTION_KEY) !== null && _a !== void 0 ? _a : '';
+        const dispatchURL = (_a = process.env.DISPATCH_URL) !== null && _a !== void 0 ? _a : '';
+        const fallbackURL = (_b = process.env.FALLBACK_URL) !== null && _b !== void 0 ? _b : '';
+        const clientPrivateKey = (_c = process.env.GATEWAY_CLIENT_PRIVATE_KEY) !== null && _c !== void 0 ? _c : '';
+        const clientPassphrase = (_d = process.env.GATEWAY_CLIENT_PASSPHRASE) !== null && _d !== void 0 ? _d : '';
+        const pocketSessionBlockFrequency = (_e = parseInt(process.env.POCKET_SESSION_BLOCK_FREQUENCY)) !== null && _e !== void 0 ? _e : 0;
+        const pocketBlockTime = (_f = parseInt(process.env.POCKET_BLOCK_TIME)) !== null && _f !== void 0 ? _f : 0;
+        const relayRetries = (_g = parseInt(process.env.POCKET_RELAY_RETRIES)) !== null && _g !== void 0 ? _g : 0;
+        const databaseEncryptionKey = (_h = process.env.DATABASE_ENCRYPTION_KEY) !== null && _h !== void 0 ? _h : '';
         if (!dispatchURL) {
             throw new rest_1.HttpErrors.InternalServerError('DISPATCH_URL required in ENV');
         }
@@ -85,6 +86,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         this.bind('pocketConfiguration').to(configuration);
         this.bind('relayRetries').to(relayRetries);
         this.bind('fallbackURL').to(fallbackURL);
+        this.bind('logger').to(logger);
         // Unlock primary client account for relay signing
         try {
             const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase);
@@ -93,7 +95,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
             }
         }
         catch (e) {
-            console.log(e);
+            logger.log('error', e);
             throw new rest_1.HttpErrors.InternalServerError('Unable to import or unlock base client account');
         }
         // Load Redis for cache

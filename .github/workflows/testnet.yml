@@ -33,6 +33,11 @@ jobs:
         envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_TESTNET_ENCRYPTION_KEY }}
         envkey_PG_CONNECTION: ${{ secrets.PG_TESTNET_CONNECTION }}
         envkey_PG_CERTIFICATE: ${{ secrets.PG_TESTNET_CERTIFICATE }}
+        envkey_AWS_S3_ACCESS_KEY_ID: ${{ secrets.AWS_S3_ACCESS_KEY_ID }}
+        envkey_AWS_S3_SECRET_ACCESS_KEY: ${{ secrets.AWS_S3_SECRET_ACCESS_KEY }}
+        envkey_AWS_S3_LOGS_BUCKET: pocket-gateway
+        envkey_AWS_S3_LOGS_FOLDER: logs/testnet
+        envkey_AWS_S3_LOGS_REGION: us-west-2
         envkey_DISPATCH_URL: https://node1.testnet.pokt.network,https://node2.testnet.pokt.network,https://node3.testnet.pokt.network
         envkey_FALLBACK_URL: https://node1.testnet.pokt.network,https://node2.testnet.pokt.network,https://node3.testnet.pokt.network
         envkey_REDIS_ENDPOINT: dashboard-testnet.js6zbp.ng.0001.usw2.cache.amazonaws.com

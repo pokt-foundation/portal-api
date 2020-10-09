@@ -11,8 +11,9 @@ const pg_1 = require("pg");
 const cherry_picker_1 = require("../services/cherry-picker");
 const metrics_recorder_1 = require("../services/metrics-recorder");
 const pocket_relayer_1 = require("../services/pocket-relayer");
+const logger = require('../services/logger');
 let V1Controller = class V1Controller {
-    constructor(secretKey, host, origin, userAgent, contentType, relayPath, relayRetries, pocket, pocketConfiguration, redis, pgPool, databaseEncryptionKey, processUID, fallbackURL, applicationsRepository, blockchainsRepository, loadBalancersRepository) {
+    constructor(secretKey, host, origin, userAgent, contentType, relayPath, relayRetries, pocket, pocketConfiguration, redis, pgPool, databaseEncryptionKey, processUID, fallbackURL, requestID, applicationsRepository, blockchainsRepository, loadBalancersRepository) {
         this.secretKey = secretKey;
         this.host = host;
         this.origin = origin;
@@ -27,6 +28,7 @@ let V1Controller = class V1Controller {
         this.databaseEncryptionKey = databaseEncryptionKey;
         this.processUID = processUID;
         this.fallbackURL = fallbackURL;
+        this.requestID = requestID;
         this.applicationsRepository = applicationsRepository;
         this.blockchainsRepository = blockchainsRepository;
         this.loadBalancersRepository = loadBalancersRepository;
@@ -66,19 +68,26 @@ let V1Controller = class V1Controller {
      * @param id Load Balancer ID
      */
     async loadBalancerRelay(id, rawData, filter) {
-        console.log('PROCESSING LB ' + id);
-        const loadBalancer = await this.fetchLoadBalancer(id, filter);
-        if (loadBalancer === null || loadBalancer === void 0 ? void 0 : loadBalancer.id) {
-            // eslint-disable-next-line 
-            const [blockchain, _] = await this.pocketRelayer.loadBlockchain();
-            // Fetch applications contained in this Load Balancer. Verify they exist and choose
-            // one randomly for the relay.
-            const application = await this.fetchLoadBalancerApplication(loadBalancer.id, loadBalancer.applicationIDs, blockchain, filter);
-            if (application === null || application === void 0 ? void 0 : application.id) {
-                return this.pocketRelayer.sendRelay(rawData, application, parseInt(loadBalancer.requestTimeOut), parseInt(loadBalancer.overallTimeOut), parseInt(loadBalancer.relayRetries));
+        logger.log('info', 'PROCESSING', { requestID: this.requestID, relayType: 'LB', typeID: id });
+        try {
+            const loadBalancer = await this.fetchLoadBalancer(id, filter);
+            if (loadBalancer === null || loadBalancer === void 0 ? void 0 : loadBalancer.id) {
+                // eslint-disable-next-line 
+                const [blockchain, _] = await this.pocketRelayer.loadBlockchain();
+                // Fetch applications contained in this Load Balancer. Verify they exist and choose
+                // one randomly for the relay.
+                const application = await this.fetchLoadBalancerApplication(loadBalancer.id, loadBalancer.applicationIDs, blockchain, filter);
+                if (application === null || application === void 0 ? void 0 : application.id) {
+                    return this.pocketRelayer.sendRelay(rawData, application, this.requestID, parseInt(loadBalancer.requestTimeOut), parseInt(loadBalancer.overallTimeOut), parseInt(loadBalancer.relayRetries));
+                }
             }
         }
-        throw new rest_1.HttpErrors.InternalServerError('Load Balancer configuration error');
+        catch (e) {
+            logger.log('error', 'Load balancer not found', { requestID: this.requestID, relayType: 'LB', typeID: id });
+            return new rest_1.HttpErrors.InternalServerError('Load balancer not found');
+        }
+        logger.log('error', 'Load balancer configuration error', { requestID: this.requestID, relayType: 'LB', typeID: id });
+        return new rest_1.HttpErrors.InternalServerError('Load balancer configuration error');
     }
     /**
      * Application Relay
@@ -88,12 +97,19 @@ let V1Controller = class V1Controller {
      * @param id Application ID
      */
     async applicationRelay(id, rawData, filter) {
-        console.log('PROCESSING APP ' + id);
-        const application = await this.fetchApplication(id, filter);
-        if (application === null || application === void 0 ? void 0 : application.id) {
-            return this.pocketRelayer.sendRelay(rawData, application);
+        logger.log('info', 'PROCESSING', { requestID: this.requestID, relayType: 'APP', typeID: id });
+        try {
+            const application = await this.fetchApplication(id, filter);
+            if (application === null || application === void 0 ? void 0 : application.id) {
+                return this.pocketRelayer.sendRelay(rawData, application, this.requestID);
+            }
         }
-        throw new rest_1.HttpErrors.InternalServerError('Application not found');
+        catch (e) {
+            logger.log('error', 'Application not found', { requestID: this.requestID, relayType: 'LB', typeID: id });
+            return new rest_1.HttpErrors.InternalServerError('Application not found');
+        }
+        logger.log('error', 'Application not found', { requestID: this.requestID, relayType: 'APP', typeID: id });
+        return new rest_1.HttpErrors.InternalServerError('Application not found');
     }
     // Pull LoadBalancer records from redis then DB
     async fetchLoadBalancer(id, filter) {
@@ -144,7 +160,7 @@ let V1Controller = class V1Controller {
         }
         /*
         return this.fetchApplication(
-          await this.cherryPicker.cherryPickApplication(verifiedIDs, blockchain),
+          await this.cherryPicker.cherryPickApplication(id, verifiedIDs, blockchain),
           filter,
         );
         */
@@ -228,11 +244,12 @@ V1Controller = tslib_1.__decorate([
     tslib_1.__param(11, context_1.inject('databaseEncryptionKey')),
     tslib_1.__param(12, context_1.inject('processUID')),
     tslib_1.__param(13, context_1.inject('fallbackURL')),
-    tslib_1.__param(14, repository_1.repository(repositories_1.ApplicationsRepository)),
-    tslib_1.__param(15, repository_1.repository(repositories_1.BlockchainsRepository)),
-    tslib_1.__param(16, repository_1.repository(repositories_1.LoadBalancersRepository)),
+    tslib_1.__param(14, context_1.inject('requestID')),
+    tslib_1.__param(15, repository_1.repository(repositories_1.ApplicationsRepository)),
+    tslib_1.__param(16, repository_1.repository(repositories_1.BlockchainsRepository)),
+    tslib_1.__param(17, repository_1.repository(repositories_1.LoadBalancersRepository)),
     tslib_1.__metadata("design:paramtypes", [String, String, String, String, String, String, Number, pocket_js_1.Pocket,
-        pocket_js_1.Configuration, Object, pg_1.Pool, String, String, String, repositories_1.ApplicationsRepository,
+        pocket_js_1.Configuration, Object, pg_1.Pool, String, String, String, String, repositories_1.ApplicationsRepository,
         repositories_1.BlockchainsRepository,
         repositories_1.LoadBalancersRepository])
 ], V1Controller);
