@@ -12,7 +12,8 @@ export declare class MetricsRecorder {
         cherryPicker: CherryPicker;
         processUID: string;
     });
-    recordMetric({ applicationID, appPubKey, blockchain, serviceNode, relayStart, result, bytes, method, }: {
+    recordMetric({ requestID, applicationID, appPubKey, blockchain, serviceNode, relayStart, result, bytes, delivered, fallback, method, error, }: {
+        requestID: string;
         applicationID: string;
         appPubKey: string;
         blockchain: string;
@@ -20,6 +21,9 @@ export declare class MetricsRecorder {
         relayStart: [number, number];
         result: number;
         bytes: number;
+        delivered: boolean;
+        fallback: boolean;
         method: string | undefined;
+        error: string | undefined;
     }): Promise<void>;
 }

@@ -3,6 +3,7 @@ import {Pool as PGPool} from 'pg';
 import {CherryPicker} from './cherry-picker';
 
 const pgFormat = require('pg-format');
+const logger = require('../services/logger');
 
 export class MetricsRecorder {
   redis: Redis;
@@ -29,6 +30,7 @@ export class MetricsRecorder {
 
   // Record relay metrics in redis then push to timescaleDB for analytics
   async recordMetric({
+    requestID,
     applicationID,
     appPubKey,
     blockchain,
@@ -36,8 +38,12 @@ export class MetricsRecorder {
     relayStart,
     result,
     bytes,
+    delivered,
+    fallback,
     method,
+    error,
   }: {
+    requestID: string;
     applicationID: string;
     appPubKey: string;
     blockchain: string;
@@ -45,11 +51,27 @@ export class MetricsRecorder {
     relayStart: [number, number];
     result: number;
     bytes: number;
+    delivered: boolean;
+    fallback: boolean;
     method: string | undefined;
+    error: string | undefined;
   }): Promise<void> {
     try {
       const relayEnd = process.hrtime(relayStart);
       const elapsedTime = (relayEnd[0] * 1e9 + relayEnd[1]) / 1e9;
+      let fallbackTag = '';
+
+      if (fallback) {
+        fallbackTag = ' FALLBACK';
+      }
+
+      if (result === 200) {
+        logger.log('info', 'SUCCESS' + fallbackTag, {requestID: requestID, relayType: 'APP', typeID: applicationID});
+      } else if (result === 500) {
+        logger.log('error', 'FAILURE' + fallbackTag + ' ' + error, {requestID: requestID, relayType: 'APP', typeID: applicationID});
+      } else if (result === 503) {
+        logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' ' + error, {requestID: requestID, relayType: 'APP', typeID: applicationID});
+      }
 
       const metricsValues = [
         new Date(),
@@ -101,7 +123,7 @@ export class MetricsRecorder {
         );
       }
     } catch (err) {
-      console.log(err.stack);
+      logger.log('error', err.stack);
     }
   }
 }

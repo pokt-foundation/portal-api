@@ -1,6 +1,8 @@
 import {PocketGatewayApplication} from './application';
 import {ApplicationConfig} from '@loopback/core';
 
+const logger = require('./services/logger');
+
 export {PocketGatewayApplication};
 
 export async function main(options: ApplicationConfig = {}) {
@@ -9,6 +11,6 @@ export async function main(options: ApplicationConfig = {}) {
   await app.start();
   await app.loadPocket();
 
-  console.log(`Server is running at ${app.restServer.url}`);
+  logger.log('info', `Server is running at ${app.restServer.url}`, {requestID: '', relayType: '', typeID: ''});
   return app;
 }
