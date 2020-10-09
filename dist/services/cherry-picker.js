@@ -22,7 +22,7 @@ class CherryPicker {
         let rankedItems = this.rankItems(sortedLogs, 15);
         // If we have no applications left because all are failures, ¯\_(ツ)_/¯
         if (rankedItems.length === 0) {
-            logger.log('warn', 'Cherry picking failure -- apps', { requestID: requestID, relayType: 'LB', typeID: loadBalancerID });
+            logger.log('warn', 'Cherry picking failure -- apps', { requestID: requestID, relayType: 'LB', typeID: loadBalancerID, serviceNode: '' });
             rankedItems = applications;
         }
         const selectedApplication = Math.floor(Math.random() * rankedItems.length);
@@ -53,14 +53,14 @@ class CherryPicker {
         let rankedItems = this.rankItems(sortedLogs, 3);
         // If we have no nodes left because all 5 are failures, ¯\_(ツ)_/¯
         if (rankedItems.length === 0) {
-            logger.log('warn', 'Cherry picking failure -- nodes', { requestID: requestID, relayType: 'APP', typeID: application.id });
+            logger.log('warn', 'Cherry picking failure -- nodes', { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: '' });
             rankedItems = rawNodeIDs;
         }
         const selectedNode = Math.floor(Math.random() * rankedItems.length);
         const node = rawNodes[rankedItems[selectedNode]];
         if (this.checkDebug) {
-            logger.log('debug', 'Number of weighted nodes for selection: ' + rankedItems.length, { requestID: requestID, relayType: 'APP', typeID: application.id });
-            logger.log('debug', 'Selected ' + selectedNode + ' : ' + node.publicKey, { requestID: requestID, relayType: 'APP', typeID: application.id });
+            logger.log('debug', 'Number of weighted nodes for selection: ' + rankedItems.length, { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: '' });
+            logger.log('debug', 'Selected ' + selectedNode + ' : ' + node.publicKey, { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: '' });
         }
         return node;
     }
@@ -205,7 +205,7 @@ class CherryPicker {
             return 0;
         });
         if (this.checkDebug) {
-            logger.log('debug', 'Sorted logs: ' + JSON.stringify(sortedLogs), { requestID: requestID, relayType: relayType, typeID: typeID });
+            logger.log('debug', 'Sorted logs: ' + JSON.stringify(sortedLogs), { requestID: requestID, relayType: relayType, typeID: typeID, serviceNode: '' });
         }
         return sortedLogs;
     }

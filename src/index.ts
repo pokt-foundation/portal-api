@@ -11,6 +11,6 @@ export async function main(options: ApplicationConfig = {}) {
   await app.start();
   await app.loadPocket();
 
-  logger.log('info', `Server is running at ${app.restServer.url}`, {requestID: '', relayType: '', typeID: ''});
+  logger.log('info', `Server is running at ${app.restServer.url}`, {requestID: '', relayType: '', typeID: '', serviceNode: ''});
   return app;
 }

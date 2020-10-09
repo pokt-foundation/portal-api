@@ -43,7 +43,7 @@ export class CherryPicker {
 
     // If we have no applications left because all are failures, ¯\_(ツ)_/¯
     if (rankedItems.length === 0) {
-      logger.log('warn', 'Cherry picking failure -- apps', {requestID: requestID, relayType: 'LB', typeID: loadBalancerID});
+      logger.log('warn', 'Cherry picking failure -- apps', {requestID: requestID, relayType: 'LB', typeID: loadBalancerID, serviceNode: ''});
       rankedItems = applications;
     }
 
@@ -96,7 +96,7 @@ export class CherryPicker {
 
     // If we have no nodes left because all 5 are failures, ¯\_(ツ)_/¯
     if (rankedItems.length === 0) {
-      logger.log('warn', 'Cherry picking failure -- nodes', {requestID: requestID, relayType: 'APP', typeID: application.id});
+      logger.log('warn', 'Cherry picking failure -- nodes', {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
       rankedItems = rawNodeIDs;
     }
 
@@ -106,11 +106,11 @@ export class CherryPicker {
       logger.log(
         'debug',
         'Number of weighted nodes for selection: ' + rankedItems.length,
-        {requestID: requestID, relayType: 'APP', typeID: application.id});
+        {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
       logger.log(
         'debug',
         'Selected ' + selectedNode + ' : ' + node.publicKey,
-        {requestID: requestID, relayType: 'APP', typeID: application.id});
+        {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
     }
     return node;
   }
@@ -304,7 +304,7 @@ export class CherryPicker {
       logger.log(
         'debug',
         'Sorted logs: ' + JSON.stringify(sortedLogs),
-        {requestID: requestID, relayType: relayType, typeID: typeID});
+        {requestID: requestID, relayType: relayType, typeID: typeID, serviceNode: ''});
     }
     return sortedLogs;
   };

@@ -66,11 +66,11 @@ export class MetricsRecorder {
       }
 
       if (result === 200) {
-        logger.log('info', 'SUCCESS' + fallbackTag, {requestID: requestID, relayType: 'APP', typeID: applicationID});
+        logger.log('info', 'SUCCESS' + fallbackTag, {requestID: requestID, relayType: 'APP', typeID: applicationID, serviceNode: serviceNode});
       } else if (result === 500) {
-        logger.log('error', 'FAILURE' + fallbackTag + ' ' + error, {requestID: requestID, relayType: 'APP', typeID: applicationID});
+        logger.log('error', 'FAILURE' + fallbackTag + ' ' + error + ' node: ' + serviceNode, {requestID: requestID, relayType: 'APP', typeID: applicationID, serviceNode: serviceNode});
       } else if (result === 503) {
-        logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' ' + error, {requestID: requestID, relayType: 'APP', typeID: applicationID});
+        logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' ' + error + ' node: ' + serviceNode, {requestID: requestID, relayType: 'APP', typeID: applicationID, serviceNode: serviceNode});
       }
 
       const metricsValues = [

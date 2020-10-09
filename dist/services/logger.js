@@ -46,8 +46,8 @@ class TimestampFirst {
 var jsonFormat = format.combine(format.timestamp({
     format: 'YYYY-MM-DD HH:mm:ss.SSS'
 }), new TimestampFirst(true), format.json());
-const consoleFormat = printf(({ level, message, requestID, relayType, typeID }) => {
-    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] ${message}`;
+const consoleFormat = printf(({ level, message, requestID, relayType, typeID, serviceNode }) => {
+    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] ${message}`;
 });
 const debugFilter = format((log, opts) => {
     return log.level === 'debug' ? log : false;
@@ -94,7 +94,7 @@ function generateS3Logger(folder) {
         secret_access_key: s3SecretAccessKey,
     });
     s3StreamLogger.on('error', function (err) {
-        console.log('error', 'S3 logging transport error', err);
+        console.log('error', 'S3 logging error', err);
     });
     return s3StreamLogger;
 }
