@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
 const context_1 = require("@loopback/context");
 const rest_1 = require("@loopback/rest");
+const shortID = require('shortid');
 const SequenceActions = rest_1.RestBindings.SequenceActions;
 let GatewaySequence = class GatewaySequence {
     constructor(findRoute, parseParams, invoke, send, reject) {
@@ -33,6 +34,8 @@ let GatewaySequence = class GatewaySequence {
                 }
             }
             context.bind('secretKey').to(secretKey);
+            // Unique ID for log tracing
+            context.bind('requestID').to(shortID.generate());
             const route = this.findRoute(request);
             const args = await this.parseParams(request, route);
             const result = await this.invoke(route, args);

@@ -10,6 +10,7 @@ import {
   SequenceHandler,
 } from '@loopback/rest';
 
+const shortID = require('shortid');
 const SequenceActions = RestBindings.SequenceActions;
 
 export class GatewaySequence implements SequenceHandler {
@@ -46,6 +47,9 @@ export class GatewaySequence implements SequenceHandler {
         }
       }
       context.bind('secretKey').to(secretKey);
+
+      // Unique ID for log tracing
+      context.bind('requestID').to(shortID.generate());
 
       const route = this.findRoute(request);
       const args = await this.parseParams(request, route);
