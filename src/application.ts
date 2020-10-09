@@ -7,9 +7,9 @@ import {GatewaySequence} from './sequence';
 import {Account} from '@pokt-network/pocket-js/dist/keybase/models/account';
 
 import path from 'path';
+const logger = require('./services/logger');
 
 const pocketJS = require('@pokt-network/pocket-js');
-
 const {Pocket, Configuration, HttpRpcProvider} = pocketJS;
 
 const Redis = require('ioredis');
@@ -44,18 +44,18 @@ export class PocketGatewayApplication extends BootMixin(
     // Requirements; for Production these are stored in GitHub repo secrets
     //
     // For Dev, you need to pass them in via .env file
-    const dispatchURL: string = process.env.DISPATCH_URL || '';
-    const fallbackURL: string = process.env.FALLBACK_URL || '';
+    const dispatchURL: string = process.env.DISPATCH_URL ?? '';
+    const fallbackURL: string = process.env.FALLBACK_URL ?? '';
     const clientPrivateKey: string =
-      process.env.GATEWAY_CLIENT_PRIVATE_KEY || '';
+      process.env.GATEWAY_CLIENT_PRIVATE_KEY ?? '';
     const clientPassphrase: string =
-      process.env.GATEWAY_CLIENT_PASSPHRASE || '';
+      process.env.GATEWAY_CLIENT_PASSPHRASE ?? '';
     const pocketSessionBlockFrequency: number =
-      parseInt(process.env.POCKET_SESSION_BLOCK_FREQUENCY) || 0;
+      parseInt(process.env.POCKET_SESSION_BLOCK_FREQUENCY) ?? 0;
     const pocketBlockTime: number =
-      parseInt(process.env.POCKET_BLOCK_TIME) || 0;
+      parseInt(process.env.POCKET_BLOCK_TIME) ?? 0;
     const relayRetries: number =
-      parseInt(process.env.POCKET_RELAY_RETRIES) || 0;
+      parseInt(process.env.POCKET_RELAY_RETRIES) ?? 0;
     const databaseEncryptionKey: string =
       process.env.DATABASE_ENCRYPTION_KEY ?? '';
 
@@ -123,6 +123,7 @@ export class PocketGatewayApplication extends BootMixin(
     this.bind('pocketConfiguration').to(configuration);
     this.bind('relayRetries').to(relayRetries);
     this.bind('fallbackURL').to(fallbackURL);
+    this.bind('logger').to(logger);
 
     // Unlock primary client account for relay signing
     try {
@@ -138,7 +139,7 @@ export class PocketGatewayApplication extends BootMixin(
         );
       }
     } catch (e) {
-      console.log(e);
+      logger.log('error', e);
       throw new HttpErrors.InternalServerError(
         'Unable to import or unlock base client account',
       );

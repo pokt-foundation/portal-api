@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const pgFormat = require('pg-format');
+const logger = require('../services/logger');
 class MetricsRecorder {
     constructor({ redis, pgPool, cherryPicker, processUID, }) {
         this.redis = redis;
@@ -9,10 +10,23 @@ class MetricsRecorder {
         this.processUID = processUID;
     }
     // Record relay metrics in redis then push to timescaleDB for analytics
-    async recordMetric({ applicationID, appPubKey, blockchain, serviceNode, relayStart, result, bytes, method, }) {
+    async recordMetric({ requestID, applicationID, appPubKey, blockchain, serviceNode, relayStart, result, bytes, delivered, fallback, method, error, }) {
         try {
             const relayEnd = process.hrtime(relayStart);
             const elapsedTime = (relayEnd[0] * 1e9 + relayEnd[1]) / 1e9;
+            let fallbackTag = '';
+            if (fallback) {
+                fallbackTag = ' FALLBACK';
+            }
+            if (result === 200) {
+                logger.log('info', 'SUCCESS' + fallbackTag, { requestID: requestID, relayType: 'APP', typeID: applicationID });
+            }
+            else if (result === 500) {
+                logger.log('error', 'FAILURE' + fallbackTag + ' ' + error, { requestID: requestID, relayType: 'APP', typeID: applicationID });
+            }
+            else if (result === 503) {
+                logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' ' + error, { requestID: requestID, relayType: 'APP', typeID: applicationID });
+            }
             const metricsValues = [
                 new Date(),
                 appPubKey,
@@ -52,7 +66,7 @@ class MetricsRecorder {
             }
         }
         catch (err) {
-            console.log(err.stack);
+            logger.log('error', err.stack);
         }
     }
 }
