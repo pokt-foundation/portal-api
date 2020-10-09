@@ -129,7 +129,7 @@ function generateS3Logger(folder:string): any {
   });
   
   s3StreamLogger.on('error', function(err: Error){
-    console.log('error', 'S3 logging transport error', err);
+    console.log('error', 'S3 logging error', err);
   });
   return s3StreamLogger;
 }
