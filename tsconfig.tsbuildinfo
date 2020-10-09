@@ -2042,7 +2042,7 @@
         "signature": "4268ae77fea3dfd44b681677cb8ba998d21463a10d37e5286651c07e8659d183"
       },
       "./src/services/pocket-relayer.ts": {
-        "version": "8d0b18f0870227ff953633deef964b5ac3bc131301369d17929d08cf24bc8fd3",
+        "version": "6ea58328887b416e33bddfea935c9f9a0b662c42fc20c0c2de71c4c3e324ccdc",
         "signature": "4cd45f65530cbb545798dfa71db8b23c063447ac3babe1b3e677ebad4a531c91"
       },
       "./src/controllers/v1.controller.ts": {
@@ -2054,7 +2054,7 @@
         "signature": "c27d67de5b5b7aecde13ca899c3197d3c1538b964251fa91a055cb19fb0b6ce7"
       },
       "./src/services/logger.ts": {
-        "version": "888c1a7d5b7f25d4d61479ac5e541a79c0f8c64ee7d6939b533e58e4e53c8043",
+        "version": "09c25037c8ce40a4bce899fb3dd0b77f4928c4bafaacf498e39e2973945cc122",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
       },
       "./node_modules/@types/aes-js/index.d.ts": {

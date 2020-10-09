@@ -52,6 +52,7 @@ class PocketRelayer {
         const parsedRawData = JSON.parse(rawData.toString());
         const data = JSON.stringify(parsedRawData);
         const method = this.parseMethod(parsedRawData);
+        const fallbackAvailable = (this.fallbacks.length > 0 && this.pocket !== undefined) ? true : false;
         // Retries if applicable
         for (let x = 0; x <= this.relayRetries; x++) {
             let relayStart = process.hrtime();
@@ -91,6 +92,8 @@ class PocketRelayer {
             }
             else if (relayResponse instanceof relay_error_1.RelayError) {
                 // Record failure metric, retry if possible or fallback
+                // If this is the last retry and fallback is available, mark the error not delivered
+                const errorDelivered = (x === this.relayRetries && fallbackAvailable) ? false : true;
                 await this.metricsRecorder.recordMetric({
                     requestID: requestID,
                     applicationID: application.id,
@@ -100,17 +103,15 @@ class PocketRelayer {
                     relayStart,
                     result: 500,
                     bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
-                    delivered: false,
+                    delivered: errorDelivered,
                     fallback: false,
                     method: method,
                     error: relayResponse.message,
                 });
-                // NEED TO : determine here whether that error is delivered to the client or not
-                // if above is the last retry and fallback isn't available, mark it as delivered
             }
         }
         // Exhausted relay attempts; use fallback
-        if (this.fallbacks.length > 0 && this.pocket !== undefined) {
+        if (fallbackAvailable) {
             let relayStart = process.hrtime();
             const [blockchain, blockchainEnforceResult] = await this.loadBlockchain();
             const fallbackChoice = new pocket_js_1.HttpRpcProvider(this.fallbacks[Math.floor(Math.random() * this.fallbacks.length)]);

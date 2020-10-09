@@ -30,7 +30,23 @@ const timestampUTC = () => {
     const timestamp = new Date();
     return timestamp.toISOString();
 };
-const logFormat = printf(({ level, message, requestID, relayType, typeID }) => {
+class TimestampFirst {
+    constructor(enabled = true) {
+        this.enabled = enabled;
+    }
+    transform(obj) {
+        if (this.enabled) {
+            return Object.assign({
+                timestamp: obj.timestamp
+            }, obj);
+        }
+        return obj;
+    }
+}
+var jsonFormat = format.combine(format.timestamp({
+    format: 'YYYY-MM-DD HH:mm:ss.SSS'
+}), new TimestampFirst(true), format.json());
+const consoleFormat = printf(({ level, message, requestID, relayType, typeID }) => {
     return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] ${message}`;
 });
 const debugFilter = format((log, opts) => {
@@ -40,42 +56,31 @@ const options = {
     console: {
         level: 'info',
         handleExceptions: true,
-        json: false,
         colorize: true,
-        timestamp: true,
         format: format.combine(format.colorize(), format.simple(), format.timestamp({
-            format: 'YYYY-MM-DD HH:mm:ss',
-        }), logFormat),
+            format: 'YYYY-MM-DD HH:mm:ss.SSS',
+        }), consoleFormat),
     },
     s3Info: {
         level: 'info',
         handleExceptions: true,
-        json: true,
         colorize: false,
         stream: s3StreamInfo,
-        format: format.combine(format.splat(), format.timestamp({
-            format: 'YYYY-MM-DD HH:mm:ss',
-        })),
+        format: format.combine(jsonFormat),
     },
     s3Error: {
         level: 'error',
         handleExceptions: true,
-        json: true,
         colorize: false,
         stream: s3StreamError,
-        format: format.combine(format.timestamp({
-            format: 'YYYY-MM-DD HH:mm:ss',
-        })),
+        format: format.combine(jsonFormat),
     },
     s3Debug: {
         level: 'debug',
         handleExceptions: true,
-        json: true,
         colorize: false,
         stream: s3StreamDebug,
-        format: format.combine(debugFilter(), format.splat(), format.timestamp({
-            format: 'YYYY-MM-DD HH:mm:ss',
-        })),
+        format: format.combine(debugFilter(), jsonFormat),
     },
 };
 function generateS3Logger(folder) {
