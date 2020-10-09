@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const strong_cryptor_1 = require("strong-cryptor");
 const rest_1 = require("@loopback/rest");
 const pocket_js_1 = require("@pokt-network/pocket-js");
+const relay_error_1 = require("../errors/relay-error");
+const logger = require('../services/logger');
 ;
 ;
 ;
@@ -36,38 +38,81 @@ class PocketRelayer {
         }
         this.fallbacks = fallbacks;
     }
-    async sendRelay(rawData, application, requestTimeOut, overallTimeOut, relayRetries) {
+    async sendRelay(rawData, application, requestID, requestTimeOut, overallTimeOut, relayRetries) {
         if (relayRetries !== undefined &&
             relayRetries >= 0) {
             this.relayRetries = relayRetries;
         }
-        // First attempt
+        const [blockchain, blockchainEnforceResult] = await this.loadBlockchain();
         const overallStart = process.hrtime();
-        const result = await this._sendRelay(rawData, application, requestTimeOut);
-        if (!(result instanceof Error)) {
-            return result;
-        }
+        // This converts the raw data into formatted JSON then back to a string for relaying.
+        // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
+        // extraneous characters like newlines and tabs from the rawData.
+        // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
+        const parsedRawData = JSON.parse(rawData.toString());
+        const data = JSON.stringify(parsedRawData);
+        const method = this.parseMethod(parsedRawData);
         // Retries if applicable
-        for (let x = 1; x <= this.relayRetries; x++) {
-            console.log('Relay Attempt ' + x);
+        for (let x = 0; x <= this.relayRetries; x++) {
+            let relayStart = process.hrtime();
             // Compute the overall time taken on this LB request
             const overallCurrent = process.hrtime(overallStart);
             const overallCurrentElasped = Math.round((overallCurrent[0] * 1e9 + overallCurrent[1]) / 1e6);
             if (overallTimeOut &&
                 overallCurrentElasped > overallTimeOut) {
-                console.log('Overall Timeout exceeded: ' + overallTimeOut);
+                logger.log('error', 'Overall Timeout exceeded: ' + overallTimeOut, { requestID: requestID, relayType: 'APP', typeID: application.id });
                 return new rest_1.HttpErrors.GatewayTimeout('Overall Timeout exceeded: ' + overallTimeOut);
             }
-            const result = await this._sendRelay(rawData, application, requestTimeOut);
-            if (!(result instanceof Error)) {
-                return result;
+            // Send this relay attempt
+            const relayResponse = await this._sendRelay(data, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult);
+            if (!(relayResponse instanceof Error)) {
+                // Record success metric
+                await this.metricsRecorder.recordMetric({
+                    requestID: requestID,
+                    applicationID: application.id,
+                    appPubKey: application.gatewayAAT.applicationPublicKey,
+                    blockchain,
+                    serviceNode: relayResponse.proof.servicerPubKey,
+                    relayStart,
+                    result: 200,
+                    bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
+                    delivered: false,
+                    fallback: false,
+                    method: method,
+                    error: undefined
+                });
+                // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
+                if (blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
+                    blockchainEnforceResult.toLowerCase() === 'json' // the check is for JSON
+                ) {
+                    return JSON.parse(relayResponse.payload);
+                }
+                return relayResponse.payload;
+            }
+            else if (relayResponse instanceof relay_error_1.RelayError) {
+                // Record failure metric, retry if possible or fallback
+                await this.metricsRecorder.recordMetric({
+                    requestID: requestID,
+                    applicationID: application.id,
+                    appPubKey: application.gatewayAAT.applicationPublicKey,
+                    blockchain,
+                    serviceNode: relayResponse.servicer_node,
+                    relayStart,
+                    result: 500,
+                    bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
+                    delivered: false,
+                    fallback: false,
+                    method: method,
+                    error: relayResponse.message,
+                });
+                // NEED TO : determine here whether that error is delivered to the client or not
+                // if above is the last retry and fallback isn't available, mark it as delivered
             }
         }
         // Exhausted relay attempts; use fallback
         if (this.fallbacks.length > 0 && this.pocket !== undefined) {
-            const relayStart = process.hrtime();
+            let relayStart = process.hrtime();
             const [blockchain, blockchainEnforceResult] = await this.loadBlockchain();
-            const method = this.parseMethod(rawData.toString());
             const fallbackChoice = new pocket_js_1.HttpRpcProvider(this.fallbacks[Math.floor(Math.random() * this.fallbacks.length)]);
             const fallbackPayload = { data: rawData.toString(), method: "", path: this.relayPath, headers: null };
             const fallbackMeta = { block_height: 0 };
@@ -75,24 +120,14 @@ class PocketRelayer {
             const fallbackRelay = { payload: fallbackPayload, meta: fallbackMeta, proof: fallbackProof };
             const fallbackResponse = await fallbackChoice.send("/v1/client/relay", JSON.stringify(fallbackRelay), 1200000, false);
             if (this.checkDebug) {
-                console.log(fallbackChoice);
-                console.log(fallbackRelay);
-                console.log(fallbackResponse);
+                logger.log('debug', JSON.stringify(fallbackChoice), { requestID: requestID, relayType: 'FALLBACK', typeID: application.id });
+                logger.log('debug', JSON.stringify(fallbackRelay), { requestID: requestID, relayType: 'FALLBACK', typeID: application.id });
+                logger.log('debug', JSON.stringify(fallbackResponse), { requestID: requestID, relayType: 'FALLBACK', typeID: application.id });
             }
             if (!(fallbackResponse instanceof pocket_js_1.RpcError)) {
-                // Success
-                console.log('FALLBACK ' +
-                    application.id +
-                    ' chain: ' +
-                    blockchain +
-                    ' req: ' +
-                    rawData.toString().replace(/[\r\n\s]+/gm, "") +
-                    ' res: ' +
-                    fallbackResponse +
-                    ' node: ' +
-                    fallbackChoice.baseURL);
                 const responseParsed = JSON.parse(fallbackResponse);
                 await this.metricsRecorder.recordMetric({
+                    requestID: requestID,
                     applicationID: application.id,
                     appPubKey: application.gatewayAAT.applicationPublicKey,
                     blockchain,
@@ -100,7 +135,10 @@ class PocketRelayer {
                     relayStart,
                     result: 200,
                     bytes: Buffer.byteLength(responseParsed.response, 'utf8'),
+                    delivered: false,
+                    fallback: true,
                     method: method,
+                    error: undefined
                 });
                 // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
                 if (blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
@@ -116,21 +154,8 @@ class PocketRelayer {
         return new rest_1.HttpErrors.GatewayTimeout('Relay attempts exhausted');
     }
     // Private function to allow relay retries
-    async _sendRelay(rawData, application, requestTimeOut) {
-        // This converts the raw data into formatted JSON then back to a string for relaying.
-        // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
-        // extraneous characters like newlines and tabs from the rawData.
-        // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
-        const parsedRawData = JSON.parse(rawData.toString());
-        const data = JSON.stringify(parsedRawData);
-        console.log('RELAYING APP ' +
-            application.id +
-            ' host: ' +
-            this.host +
-            ' req: ' +
-            data);
-        const relayStart = process.hrtime();
-        const [blockchain, blockchainEnforceResult] = await this.loadBlockchain();
+    async _sendRelay(data, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult) {
+        logger.log('info', 'RELAYING ' + blockchain + ' req: ' + data, { requestID: requestID, relayType: 'APP', typeID: application.id });
         // Secret key check
         if (!this.checkSecretKey(application)) {
             throw new rest_1.HttpErrors.Forbidden('SecretKey does not match');
@@ -145,14 +170,14 @@ class PocketRelayer {
         }
         // Checks pass; create AAT
         const pocketAAT = new pocket_js_1.PocketAAT(application.gatewayAAT.version, application.gatewayAAT.clientPublicKey, application.gatewayAAT.applicationPublicKey, application.gatewayAAT.applicationSignature);
-        let node, method = '';
+        let node;
         // Pull the session so we can get a list of nodes and cherry pick which one to use
         const pocketSession = await this.pocket.sessionManager.getCurrentSession(pocketAAT, blockchain, this.pocketConfiguration);
         if (pocketSession instanceof pocket_js_1.Session) {
-            node = await this.cherryPicker.cherryPickNode(pocketSession, blockchain);
+            node = await this.cherryPicker.cherryPickNode(application, pocketSession, blockchain, requestID);
         }
         if (this.checkDebug) {
-            console.log(pocketSession);
+            logger.log('debug', JSON.stringify(pocketSession), { requestID: requestID, relayType: 'APP', typeID: application.id });
         }
         // Adjust Pocket Configuration for a custom requestTimeOut
         let relayConfiguration = this.pocketConfiguration;
@@ -162,10 +187,9 @@ class PocketRelayer {
         // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
         const relayResponse = await this.pocket.sendRelay(data, blockchain, pocketAAT, relayConfiguration, undefined, undefined, this.relayPath, node);
         if (this.checkDebug) {
-            console.log(relayConfiguration);
-            console.log(relayResponse);
+            logger.log('debug', JSON.stringify(relayConfiguration), { requestID: requestID, relayType: 'APP', typeID: application.id });
+            logger.log('debug', JSON.stringify(relayResponse), { requestID: requestID, relayType: 'APP', typeID: application.id });
         }
-        method = this.parseMethod(parsedRawData);
         // Success
         if (relayResponse instanceof pocket_js_1.RelayResponse) {
             // First, check for the format of the result; Pocket Nodes will return relays that include
@@ -178,82 +202,16 @@ class PocketRelayer {
                 !this.checkEnforcementJSON(relayResponse.payload) // the relay response is not valid JSON
             ) {
                 // then this result is invalid
-                // Invalid
-                console.log('INVALID ' +
-                    application.id +
-                    ' chain: ' +
-                    blockchain +
-                    ' req: ' +
-                    JSON.stringify(data) +
-                    ' res: ' +
-                    relayResponse.payload +
-                    ' node: ' +
-                    relayResponse.proof.servicerPubKey);
-                await this.metricsRecorder.recordMetric({
-                    applicationID: application.id,
-                    appPubKey: application.gatewayAAT.applicationPublicKey,
-                    blockchain,
-                    serviceNode: relayResponse.proof.servicerPubKey,
-                    relayStart,
-                    result: 503,
-                    bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
-                    method: method,
-                });
-                return new Error(relayResponse.payload);
+                return new relay_error_1.RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey);
             }
             else {
                 // Success
-                console.log('SUCCESS ' +
-                    application.id +
-                    ' chain: ' +
-                    blockchain +
-                    ' req: ' +
-                    JSON.stringify(data) +
-                    ' res: ' +
-                    relayResponse.payload +
-                    ' node: ' +
-                    relayResponse.proof.servicerPubKey);
-                await this.metricsRecorder.recordMetric({
-                    applicationID: application.id,
-                    appPubKey: application.gatewayAAT.applicationPublicKey,
-                    blockchain,
-                    serviceNode: relayResponse.proof.servicerPubKey,
-                    relayStart,
-                    result: 200,
-                    bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
-                    method: method,
-                });
-                // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
-                if (blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
-                    blockchainEnforceResult.toLowerCase() === 'json' // the check is for JSON
-                ) {
-                    return JSON.parse(relayResponse.payload);
-                }
-                return relayResponse.payload;
+                return relayResponse;
             }
         }
         // Error
         else if (relayResponse instanceof pocket_js_1.RpcError) {
-            console.log('ERROR ' +
-                application.id +
-                ' chain: ' +
-                blockchain +
-                ' req: ' +
-                JSON.stringify(data) +
-                ' res: ' +
-                relayResponse.message +
-                ' node: ' + (node === null || node === void 0 ? void 0 : node.publicKey));
-            await this.metricsRecorder.recordMetric({
-                applicationID: application.id,
-                appPubKey: application.gatewayAAT.applicationPublicKey,
-                blockchain,
-                serviceNode: node === null || node === void 0 ? void 0 : node.publicKey,
-                relayStart,
-                result: 500,
-                bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
-                method: method,
-            });
-            return new Error(relayResponse.message);
+            return new relay_error_1.RelayError(relayResponse.message, 500, node === null || node === void 0 ? void 0 : node.publicKey);
         }
         // ConsensusNode
         else {

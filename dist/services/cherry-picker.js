@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const logger = require('../services/logger');
 class CherryPicker {
     constructor({ redis, checkDebug }) {
         this.redis = redis;
@@ -8,34 +9,34 @@ class CherryPicker {
     // Record the latency and success rate of each application, 15 minute TTL
     // When selecting an application, pull the stats for each application in the load balancer
     // Rank and weight them for application choice
-    async cherryPickApplication(applications, blockchain) {
+    async cherryPickApplication(loadBalancerID, applications, blockchain, requestID) {
         let sortedLogs = [];
         for (const application of applications) {
             const rawServiceLog = await this.fetchRawServiceLog(blockchain, application);
             sortedLogs.push(this.createUnsortedLog(application, rawServiceLog));
         }
         // Sort application logs by highest success rate, then by lowest latency
-        sortedLogs = this.sortLogs(sortedLogs);
+        sortedLogs = this.sortLogs(sortedLogs, requestID, 'LB', loadBalancerID);
         // Iterate through sorted logs and form in to a weighted list 
         // 15 failures per 15 minutes allowed on apps (all 5 nodes failed 3 times)
         let rankedItems = this.rankItems(sortedLogs, 15);
         // If we have no applications left because all are failures, ¯\_(ツ)_/¯
         if (rankedItems.length === 0) {
-            console.log("Cherry picking failure -- apps");
+            logger.log('warn', 'Cherry picking failure -- apps', { requestID: requestID, relayType: 'LB', typeID: loadBalancerID });
             rankedItems = applications;
         }
         const selectedApplication = Math.floor(Math.random() * rankedItems.length);
         const application = rankedItems[selectedApplication];
         if (this.checkDebug) {
-            console.log('Number of weighted applications for selection: ' + rankedItems.length);
-            console.log('Selected ' + selectedApplication + ' : ' + application);
+            logger.log('debug', 'Number of weighted applications for selection: ' + rankedItems.length, { requestID: requestID, relayType: 'LB', typeID: loadBalancerID });
+            logger.log('debug', 'Selected ' + selectedApplication + ' : ' + application, { requestID: requestID, relayType: 'LB', typeID: loadBalancerID });
         }
         return application;
     }
     // Record the latency and success rate of each node, 1 hour TTL
     // When selecting a node, pull the stats for each node in the session
     // Rank and weight them for node choice
-    async cherryPickNode(pocketSession, blockchain) {
+    async cherryPickNode(application, pocketSession, blockchain, requestID) {
         const rawNodes = {};
         const rawNodeIDs = [];
         let sortedLogs = [];
@@ -46,20 +47,20 @@ class CherryPicker {
             sortedLogs.push(this.createUnsortedLog(node.publicKey, rawServiceLog));
         }
         // Sort node logs by highest success rate, then by lowest latency
-        sortedLogs = this.sortLogs(sortedLogs);
+        sortedLogs = this.sortLogs(sortedLogs, requestID, 'APP', application.id);
         // Iterate through sorted logs and form in to a weighted list 
         // 3 failures per hour allowed on nodes
         let rankedItems = this.rankItems(sortedLogs, 3);
         // If we have no nodes left because all 5 are failures, ¯\_(ツ)_/¯
         if (rankedItems.length === 0) {
-            console.log("Cherry picking failure -- nodes");
+            logger.log('warn', 'Cherry picking failure -- nodes', { requestID: requestID, relayType: 'APP', typeID: application.id });
             rankedItems = rawNodeIDs;
         }
         const selectedNode = Math.floor(Math.random() * rankedItems.length);
         const node = rawNodes[rankedItems[selectedNode]];
         if (this.checkDebug) {
-            console.log('Number of weighted nodes for selection: ' + rankedItems.length);
-            console.log('Selected ' + selectedNode + ' : ' + node.publicKey);
+            logger.log('debug', 'Number of weighted nodes for selection: ' + rankedItems.length, { requestID: requestID, relayType: 'APP', typeID: application.id });
+            logger.log('debug', 'Selected ' + selectedNode + ' : ' + node.publicKey, { requestID: requestID, relayType: 'APP', typeID: application.id });
         }
         return node;
     }
@@ -114,9 +115,6 @@ class CherryPicker {
             };
         }
         await this.redis.set(blockchain + '-' + id + '-' + new Date().getHours(), JSON.stringify(serviceQuality), 'EX', ttl);
-        if (this.checkDebug) {
-            console.log(id + ': ' + JSON.stringify(serviceQuality));
-        }
     }
     rankItems(sortedLogs, maxFailuresPerPeriod) {
         const rankedItems = [];
@@ -187,7 +185,7 @@ class CherryPicker {
             averageSuccessLatency: averageSuccessLatency,
         };
     }
-    sortLogs(array) {
+    sortLogs(array, requestID, relayType, typeID) {
         const sortedLogs = array.sort((a, b) => {
             if (a.successRate < b.successRate) {
                 return 1;
@@ -207,7 +205,7 @@ class CherryPicker {
             return 0;
         });
         if (this.checkDebug) {
-            console.log(sortedLogs);
+            logger.log('debug', 'Sorted logs: ' + JSON.stringify(sortedLogs), { requestID: requestID, relayType: relayType, typeID: typeID });
         }
         return sortedLogs;
     }

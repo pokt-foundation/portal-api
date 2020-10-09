@@ -14,6 +14,8 @@ import {CherryPicker} from '../services/cherry-picker';
 import {MetricsRecorder} from '../services/metrics-recorder';
 import {PocketRelayer} from '../services/pocket-relayer';
 
+const logger = require('../services/logger');
+
 export class V1Controller {
   cherryPicker: CherryPicker;
   metricsRecorder: MetricsRecorder;
@@ -34,6 +36,7 @@ export class V1Controller {
     @inject('databaseEncryptionKey') private databaseEncryptionKey: string,
     @inject('processUID') private processUID: string,
     @inject('fallbackURL') private fallbackURL: string,
+    @inject('requestID') private requestID: string,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -103,26 +106,35 @@ export class V1Controller {
     @param.filter(Applications, {exclude: 'where'})
     filter?: FilterExcludingWhere<Applications>,
   ): Promise<string | Error> {
-    console.log('PROCESSING LB ' + id);
+    logger.log('info', 'PROCESSING', {requestID: this.requestID, relayType: 'LB', typeID: id});
 
-    const loadBalancer = await this.fetchLoadBalancer(id, filter);
-    if (loadBalancer?.id) {
-      // eslint-disable-next-line 
-      const [blockchain, _] = await this.pocketRelayer.loadBlockchain();
-      // Fetch applications contained in this Load Balancer. Verify they exist and choose
-      // one randomly for the relay.
-      const application = await this.fetchLoadBalancerApplication(
-        loadBalancer.id,
-        loadBalancer.applicationIDs,
-        blockchain,
-        filter,
-      );
-      if (application?.id) {
-        return this.pocketRelayer.sendRelay(rawData, application, parseInt(loadBalancer.requestTimeOut), parseInt(loadBalancer.overallTimeOut), parseInt(loadBalancer.relayRetries));
+    try {
+      const loadBalancer = await this.fetchLoadBalancer(id, filter);
+      if (loadBalancer?.id) {
+        // eslint-disable-next-line 
+        const [blockchain, _] = await this.pocketRelayer.loadBlockchain();
+        // Fetch applications contained in this Load Balancer. Verify they exist and choose
+        // one randomly for the relay.
+        const application = await this.fetchLoadBalancerApplication(
+          loadBalancer.id,
+          loadBalancer.applicationIDs,
+          blockchain,
+          filter,
+        );
+        if (application?.id) {
+          return this.pocketRelayer.sendRelay(rawData, application, this.requestID, parseInt(loadBalancer.requestTimeOut), parseInt(loadBalancer.overallTimeOut), parseInt(loadBalancer.relayRetries));
+        }
       }
+    } catch (e) {
+      logger.log('error', 'Load balancer not found', {requestID: this.requestID, relayType: 'LB', typeID: id});
+      return new HttpErrors.InternalServerError(
+        'Load balancer not found',
+      );
     }
-    throw new HttpErrors.InternalServerError(
-      'Load Balancer configuration error',
+    
+    logger.log('error', 'Load balancer configuration error', {requestID: this.requestID, relayType: 'LB', typeID: id});
+    return new HttpErrors.InternalServerError(
+      'Load balancer configuration error',
     );
   }
 
@@ -159,13 +171,23 @@ export class V1Controller {
     @param.filter(Applications, {exclude: 'where'})
     filter?: FilterExcludingWhere<Applications>,
   ): Promise<string | Error> {
-    console.log('PROCESSING APP ' + id);
+    logger.log('info', 'PROCESSING', {requestID: this.requestID, relayType: 'APP', typeID: id});
 
-    const application = await this.fetchApplication(id, filter);
-    if (application?.id) {
-      return this.pocketRelayer.sendRelay(rawData, application);
+    try {
+      const application = await this.fetchApplication(id, filter);
+      if (application?.id) {
+        return this.pocketRelayer.sendRelay(rawData, application, this.requestID);
+      }
+    } catch (e) {
+      logger.log('error', 'Application not found', {requestID: this.requestID, relayType: 'LB', typeID: id});
+      return new HttpErrors.InternalServerError(
+        'Application not found',
+      );
     }
-    throw new HttpErrors.InternalServerError('Application not found');
+    logger.log('error', 'Application not found', {requestID: this.requestID, relayType: 'APP', typeID: id});
+    return new HttpErrors.InternalServerError(
+      'Application not found'
+    );
   }
 
   // Pull LoadBalancer records from redis then DB
@@ -246,7 +268,7 @@ export class V1Controller {
     }
     /*
     return this.fetchApplication(
-      await this.cherryPicker.cherryPickApplication(verifiedIDs, blockchain),
+      await this.cherryPicker.cherryPickApplication(id, verifiedIDs, blockchain),
       filter,
     );
     */
