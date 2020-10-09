@@ -1322,7 +1322,7 @@
         "signature": "f4b295f6c43ea9ebb0fb3113c36874d56119f89d425fcf1f49e6be31cd2dd130"
       },
       "./src/index.ts": {
-        "version": "45e665124faa9c39a22acd5650ea696bcd00d405c672ab2c5ea2334184e2b0bb",
+        "version": "e00e68920bdc16e2b77b5f3d5b575d98864f2220414d3a61dfa4189f76552082",
         "signature": "2c1e64b6cdfbeb152eb10a597e4d5a1b27e04726fb02f95b0699101fedddf3ed"
       },
       "./src/migrate.ts": {
@@ -1994,11 +1994,11 @@
         "signature": "ce3c16bd239d4345a1ffabff3dcbb5025d281292742f4cfa5a29398b815bbb60"
       },
       "./src/services/cherry-picker.ts": {
-        "version": "9f5aa9e9124f45e411ba66a5dcb9790f0dbb5effb651c9fa2596c1f5bc073f50",
+        "version": "61ac39e1670e7c3b765060c85f4fb1a1a7a43d8d95a9004e274a6e4e99cb8f1d",
         "signature": "33d2075ec55eb53197c78317e397af0d999ec671e253078e655f96c75a032f71"
       },
       "./src/services/metrics-recorder.ts": {
-        "version": "040e8b6d58e00e6d11a32732800ed7ab853e131148b9b1c371a6ae76bd4b2285",
+        "version": "354b2c8b0433193a49c8045571514a823e5354586e1261eeba60d4a8a9ceeeb2",
         "signature": "b9c3fb3feb8af8c219d54e8910625440fe0e38c4f71ad3036d5c148f65158318"
       },
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": {
@@ -2042,11 +2042,11 @@
         "signature": "4268ae77fea3dfd44b681677cb8ba998d21463a10d37e5286651c07e8659d183"
       },
       "./src/services/pocket-relayer.ts": {
-        "version": "6ea58328887b416e33bddfea935c9f9a0b662c42fc20c0c2de71c4c3e324ccdc",
+        "version": "e0bf5b5c46e8ddfbdd057daebda96515541645d54db1a95d9c80ecded581e7ba",
         "signature": "4cd45f65530cbb545798dfa71db8b23c063447ac3babe1b3e677ebad4a531c91"
       },
       "./src/controllers/v1.controller.ts": {
-        "version": "de26bb9c9bf15357066bc2f6a3c5530241dbb8d5cea2bcf88756f1e0e4c92a34",
+        "version": "8bd168680b5d5cb19992ec6f785030d30f25a186be4376722b0ac3fc30c7802b",
         "signature": "ed74a602b08063740df85267fad9cd5c1e7cd289b2326b403e2af1805dbf0a97"
       },
       "./src/controllers/index.ts": {
@@ -2054,7 +2054,7 @@
         "signature": "c27d67de5b5b7aecde13ca899c3197d3c1538b964251fa91a055cb19fb0b6ce7"
       },
       "./src/services/logger.ts": {
-        "version": "09c25037c8ce40a4bce899fb3dd0b77f4928c4bafaacf498e39e2973945cc122",
+        "version": "53b82e540e2ebf4cd776a7c7b5ae2988d1ab223e9e06c314aceba8f4ff17f32e",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
       },
       "./node_modules/@types/aes-js/index.d.ts": {
@@ -9381,7 +9381,6 @@
       "./src/sequence.ts",
       "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts",
       "./src/application.ts",
-      "./src/index.ts",
       "./src/migrate.ts",
       "./node_modules/@types/cookiejar/index.d.ts",
       "./node_modules/@types/superagent/index.d.ts",
@@ -9549,8 +9548,6 @@
       "./node_modules/@types/ioredis/index.d.ts",
       "./node_modules/pg-types/index.d.ts",
       "./node_modules/@types/pg/index.d.ts",
-      "./src/services/cherry-picker.ts",
-      "./src/services/metrics-recorder.ts",
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts",
       "./node_modules/strong-cryptor/dist/typings/index.d.ts",
       "./node_modules/strong-cryptor/dist/v2/decryptor.d.ts",
@@ -9561,8 +9558,6 @@
       "./node_modules/strong-cryptor/dist/decryptor.d.ts",
       "./node_modules/strong-cryptor/dist/index.d.ts",
       "./src/errors/relay-error.ts",
-      "./src/services/pocket-relayer.ts",
-      "./src/controllers/v1.controller.ts",
       "./src/controllers/index.ts",
       "./node_modules/@types/aes-js/index.d.ts",
       "./node_modules/@types/keyv/index.d.ts",
@@ -9585,6 +9580,11 @@
       "../../../node_modules/@types/react/global.d.ts",
       "../../../node_modules/csstype/index.d.ts",
       "../../../node_modules/@types/react/index.d.ts",
+      "./src/index.ts",
+      "./src/services/cherry-picker.ts",
+      "./src/services/metrics-recorder.ts",
+      "./src/services/pocket-relayer.ts",
+      "./src/controllers/v1.controller.ts",
       "./src/services/logger.ts"
     ]
   },

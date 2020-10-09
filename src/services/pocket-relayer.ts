@@ -139,7 +139,7 @@ export class PocketRelayer {
           overallTimeOut &&
           overallCurrentElasped > overallTimeOut
         ) {
-        logger.log('error', 'Overall Timeout exceeded: ' + overallTimeOut, {requestID: requestID, relayType: 'APP', typeID: application.id});
+        logger.log('error', 'Overall Timeout exceeded: ' + overallTimeOut, {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
         return new HttpErrors.GatewayTimeout('Overall Timeout exceeded: ' + overallTimeOut);
       }
       
@@ -205,9 +205,9 @@ export class PocketRelayer {
       const fallbackResponse = await fallbackChoice.send("/v1/client/relay", JSON.stringify(fallbackRelay), 1200000, false);
       
       if (this.checkDebug) {
-        logger.log('debug', JSON.stringify(fallbackChoice), {requestID: requestID, relayType: 'FALLBACK', typeID: application.id});
-        logger.log('debug', JSON.stringify(fallbackRelay), {requestID: requestID, relayType: 'FALLBACK', typeID: application.id});
-        logger.log('debug', JSON.stringify(fallbackResponse), {requestID: requestID, relayType: 'FALLBACK', typeID: application.id});
+        logger.log('debug', JSON.stringify(fallbackChoice), {requestID: requestID, relayType: 'FALLBACK', typeID: application.id, serviceNode: 'fallback:'+fallbackChoice.baseURL});
+        logger.log('debug', JSON.stringify(fallbackRelay), {requestID: requestID, relayType: 'FALLBACK', typeID: application.id, serviceNode: 'fallback:'+fallbackChoice.baseURL});
+        logger.log('debug', JSON.stringify(fallbackResponse), {requestID: requestID, relayType: 'FALLBACK', typeID: application.id, serviceNode: 'fallback:'+fallbackChoice.baseURL});
       }
       if (!(fallbackResponse instanceof RpcError)) {
         const responseParsed = JSON.parse(fallbackResponse);
@@ -250,7 +250,7 @@ export class PocketRelayer {
     blockchain: string,
     blockchainEnforceResult: string
   ): Promise<RelayResponse | Error> {
-    logger.log('info', 'RELAYING ' + blockchain + ' req: ' + data, {requestID: requestID, relayType: 'APP', typeID: application.id});
+    logger.log('info', 'RELAYING ' + blockchain + ' req: ' + data, {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
     
     // Secret key check
     if (!this.checkSecretKey(application)) {
@@ -304,7 +304,7 @@ export class PocketRelayer {
     }
 
     if (this.checkDebug) {
-      logger.log('debug', JSON.stringify(pocketSession), {requestID: requestID, relayType: 'APP', typeID: application.id});
+      logger.log('debug', JSON.stringify(pocketSession), {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: node?.publicKey});
     }
 
     // Adjust Pocket Configuration for a custom requestTimeOut
@@ -326,8 +326,8 @@ export class PocketRelayer {
     );
 
     if (this.checkDebug) {
-      logger.log('debug', JSON.stringify(relayConfiguration), {requestID: requestID, relayType: 'APP', typeID: application.id});
-      logger.log('debug', JSON.stringify(relayResponse), {requestID: requestID, relayType: 'APP', typeID: application.id});
+      logger.log('debug', JSON.stringify(relayConfiguration), {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: node?.publicKey});
+      logger.log('debug', JSON.stringify(relayResponse), {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: node?.publicKey});
     }
 
     // Success

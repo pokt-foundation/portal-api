@@ -61,7 +61,7 @@ class PocketRelayer {
             const overallCurrentElasped = Math.round((overallCurrent[0] * 1e9 + overallCurrent[1]) / 1e6);
             if (overallTimeOut &&
                 overallCurrentElasped > overallTimeOut) {
-                logger.log('error', 'Overall Timeout exceeded: ' + overallTimeOut, { requestID: requestID, relayType: 'APP', typeID: application.id });
+                logger.log('error', 'Overall Timeout exceeded: ' + overallTimeOut, { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: '' });
                 return new rest_1.HttpErrors.GatewayTimeout('Overall Timeout exceeded: ' + overallTimeOut);
             }
             // Send this relay attempt
@@ -121,9 +121,9 @@ class PocketRelayer {
             const fallbackRelay = { payload: fallbackPayload, meta: fallbackMeta, proof: fallbackProof };
             const fallbackResponse = await fallbackChoice.send("/v1/client/relay", JSON.stringify(fallbackRelay), 1200000, false);
             if (this.checkDebug) {
-                logger.log('debug', JSON.stringify(fallbackChoice), { requestID: requestID, relayType: 'FALLBACK', typeID: application.id });
-                logger.log('debug', JSON.stringify(fallbackRelay), { requestID: requestID, relayType: 'FALLBACK', typeID: application.id });
-                logger.log('debug', JSON.stringify(fallbackResponse), { requestID: requestID, relayType: 'FALLBACK', typeID: application.id });
+                logger.log('debug', JSON.stringify(fallbackChoice), { requestID: requestID, relayType: 'FALLBACK', typeID: application.id, serviceNode: 'fallback:' + fallbackChoice.baseURL });
+                logger.log('debug', JSON.stringify(fallbackRelay), { requestID: requestID, relayType: 'FALLBACK', typeID: application.id, serviceNode: 'fallback:' + fallbackChoice.baseURL });
+                logger.log('debug', JSON.stringify(fallbackResponse), { requestID: requestID, relayType: 'FALLBACK', typeID: application.id, serviceNode: 'fallback:' + fallbackChoice.baseURL });
             }
             if (!(fallbackResponse instanceof pocket_js_1.RpcError)) {
                 const responseParsed = JSON.parse(fallbackResponse);
@@ -156,7 +156,7 @@ class PocketRelayer {
     }
     // Private function to allow relay retries
     async _sendRelay(data, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult) {
-        logger.log('info', 'RELAYING ' + blockchain + ' req: ' + data, { requestID: requestID, relayType: 'APP', typeID: application.id });
+        logger.log('info', 'RELAYING ' + blockchain + ' req: ' + data, { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: '' });
         // Secret key check
         if (!this.checkSecretKey(application)) {
             throw new rest_1.HttpErrors.Forbidden('SecretKey does not match');
@@ -178,7 +178,7 @@ class PocketRelayer {
             node = await this.cherryPicker.cherryPickNode(application, pocketSession, blockchain, requestID);
         }
         if (this.checkDebug) {
-            logger.log('debug', JSON.stringify(pocketSession), { requestID: requestID, relayType: 'APP', typeID: application.id });
+            logger.log('debug', JSON.stringify(pocketSession), { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: node === null || node === void 0 ? void 0 : node.publicKey });
         }
         // Adjust Pocket Configuration for a custom requestTimeOut
         let relayConfiguration = this.pocketConfiguration;
@@ -188,8 +188,8 @@ class PocketRelayer {
         // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
         const relayResponse = await this.pocket.sendRelay(data, blockchain, pocketAAT, relayConfiguration, undefined, undefined, this.relayPath, node);
         if (this.checkDebug) {
-            logger.log('debug', JSON.stringify(relayConfiguration), { requestID: requestID, relayType: 'APP', typeID: application.id });
-            logger.log('debug', JSON.stringify(relayResponse), { requestID: requestID, relayType: 'APP', typeID: application.id });
+            logger.log('debug', JSON.stringify(relayConfiguration), { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: node === null || node === void 0 ? void 0 : node.publicKey });
+            logger.log('debug', JSON.stringify(relayResponse), { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: node === null || node === void 0 ? void 0 : node.publicKey });
         }
         // Success
         if (relayResponse instanceof pocket_js_1.RelayResponse) {

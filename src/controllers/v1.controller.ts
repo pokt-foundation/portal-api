@@ -106,7 +106,7 @@ export class V1Controller {
     @param.filter(Applications, {exclude: 'where'})
     filter?: FilterExcludingWhere<Applications>,
   ): Promise<string | Error> {
-    logger.log('info', 'PROCESSING', {requestID: this.requestID, relayType: 'LB', typeID: id});
+    logger.log('info', 'PROCESSING', {requestID: this.requestID, relayType: 'LB', typeID: id, serviceNode: ''});
 
     try {
       const loadBalancer = await this.fetchLoadBalancer(id, filter);
@@ -126,13 +126,13 @@ export class V1Controller {
         }
       }
     } catch (e) {
-      logger.log('error', 'Load balancer not found', {requestID: this.requestID, relayType: 'LB', typeID: id});
+      logger.log('error', 'Load balancer not found', {requestID: this.requestID, relayType: 'LB', typeID: id, serviceNode: ''});
       return new HttpErrors.InternalServerError(
         'Load balancer not found',
       );
     }
     
-    logger.log('error', 'Load balancer configuration error', {requestID: this.requestID, relayType: 'LB', typeID: id});
+    logger.log('error', 'Load balancer configuration error', {requestID: this.requestID, relayType: 'LB', typeID: id, serviceNode: ''});
     return new HttpErrors.InternalServerError(
       'Load balancer configuration error',
     );
@@ -171,7 +171,7 @@ export class V1Controller {
     @param.filter(Applications, {exclude: 'where'})
     filter?: FilterExcludingWhere<Applications>,
   ): Promise<string | Error> {
-    logger.log('info', 'PROCESSING', {requestID: this.requestID, relayType: 'APP', typeID: id});
+    logger.log('info', 'PROCESSING', {requestID: this.requestID, relayType: 'APP', typeID: id, serviceNode: ''});
 
     try {
       const application = await this.fetchApplication(id, filter);
@@ -179,12 +179,12 @@ export class V1Controller {
         return this.pocketRelayer.sendRelay(rawData, application, this.requestID);
       }
     } catch (e) {
-      logger.log('error', 'Application not found', {requestID: this.requestID, relayType: 'LB', typeID: id});
+      logger.log('error', 'Application not found', {requestID: this.requestID, relayType: 'APP', typeID: id, serviceNode: ''});
       return new HttpErrors.InternalServerError(
         'Application not found',
       );
     }
-    logger.log('error', 'Application not found', {requestID: this.requestID, relayType: 'APP', typeID: id});
+    logger.log('error', 'Application not found', {requestID: this.requestID, relayType: 'APP', typeID: id, serviceNode: ''});
     return new HttpErrors.InternalServerError(
       'Application not found'
     );

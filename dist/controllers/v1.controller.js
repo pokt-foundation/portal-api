@@ -68,7 +68,7 @@ let V1Controller = class V1Controller {
      * @param id Load Balancer ID
      */
     async loadBalancerRelay(id, rawData, filter) {
-        logger.log('info', 'PROCESSING', { requestID: this.requestID, relayType: 'LB', typeID: id });
+        logger.log('info', 'PROCESSING', { requestID: this.requestID, relayType: 'LB', typeID: id, serviceNode: '' });
         try {
             const loadBalancer = await this.fetchLoadBalancer(id, filter);
             if (loadBalancer === null || loadBalancer === void 0 ? void 0 : loadBalancer.id) {
@@ -83,10 +83,10 @@ let V1Controller = class V1Controller {
             }
         }
         catch (e) {
-            logger.log('error', 'Load balancer not found', { requestID: this.requestID, relayType: 'LB', typeID: id });
+            logger.log('error', 'Load balancer not found', { requestID: this.requestID, relayType: 'LB', typeID: id, serviceNode: '' });
             return new rest_1.HttpErrors.InternalServerError('Load balancer not found');
         }
-        logger.log('error', 'Load balancer configuration error', { requestID: this.requestID, relayType: 'LB', typeID: id });
+        logger.log('error', 'Load balancer configuration error', { requestID: this.requestID, relayType: 'LB', typeID: id, serviceNode: '' });
         return new rest_1.HttpErrors.InternalServerError('Load balancer configuration error');
     }
     /**
@@ -97,7 +97,7 @@ let V1Controller = class V1Controller {
      * @param id Application ID
      */
     async applicationRelay(id, rawData, filter) {
-        logger.log('info', 'PROCESSING', { requestID: this.requestID, relayType: 'APP', typeID: id });
+        logger.log('info', 'PROCESSING', { requestID: this.requestID, relayType: 'APP', typeID: id, serviceNode: '' });
         try {
             const application = await this.fetchApplication(id, filter);
             if (application === null || application === void 0 ? void 0 : application.id) {
@@ -105,10 +105,10 @@ let V1Controller = class V1Controller {
             }
         }
         catch (e) {
-            logger.log('error', 'Application not found', { requestID: this.requestID, relayType: 'LB', typeID: id });
+            logger.log('error', 'Application not found', { requestID: this.requestID, relayType: 'APP', typeID: id, serviceNode: '' });
             return new rest_1.HttpErrors.InternalServerError('Application not found');
         }
-        logger.log('error', 'Application not found', { requestID: this.requestID, relayType: 'APP', typeID: id });
+        logger.log('error', 'Application not found', { requestID: this.requestID, relayType: 'APP', typeID: id, serviceNode: '' });
         return new rest_1.HttpErrors.InternalServerError('Application not found');
     }
     // Pull LoadBalancer records from redis then DB
