@@ -1998,7 +1998,7 @@
         "signature": "33d2075ec55eb53197c78317e397af0d999ec671e253078e655f96c75a032f71"
       },
       "./src/services/metrics-recorder.ts": {
-        "version": "354b2c8b0433193a49c8045571514a823e5354586e1261eeba60d4a8a9ceeeb2",
+        "version": "99512e36606c6f9ea18b2f5019004ac904a3337f08a1d523648f5ba9f3cc50cb",
         "signature": "b9c3fb3feb8af8c219d54e8910625440fe0e38c4f71ad3036d5c148f65158318"
       },
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": {
@@ -9381,6 +9381,7 @@
       "./src/sequence.ts",
       "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts",
       "./src/application.ts",
+      "./src/index.ts",
       "./src/migrate.ts",
       "./node_modules/@types/cookiejar/index.d.ts",
       "./node_modules/@types/superagent/index.d.ts",
@@ -9548,6 +9549,7 @@
       "./node_modules/@types/ioredis/index.d.ts",
       "./node_modules/pg-types/index.d.ts",
       "./node_modules/@types/pg/index.d.ts",
+      "./src/services/cherry-picker.ts",
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts",
       "./node_modules/strong-cryptor/dist/typings/index.d.ts",
       "./node_modules/strong-cryptor/dist/v2/decryptor.d.ts",
@@ -9558,7 +9560,10 @@
       "./node_modules/strong-cryptor/dist/decryptor.d.ts",
       "./node_modules/strong-cryptor/dist/index.d.ts",
       "./src/errors/relay-error.ts",
+      "./src/services/pocket-relayer.ts",
+      "./src/controllers/v1.controller.ts",
       "./src/controllers/index.ts",
+      "./src/services/logger.ts",
       "./node_modules/@types/aes-js/index.d.ts",
       "./node_modules/@types/keyv/index.d.ts",
       "./node_modules/@types/http-cache-semantics/index.d.ts",
@@ -9580,12 +9585,7 @@
       "../../../node_modules/@types/react/global.d.ts",
       "../../../node_modules/csstype/index.d.ts",
       "../../../node_modules/@types/react/index.d.ts",
-      "./src/index.ts",
-      "./src/services/cherry-picker.ts",
-      "./src/services/metrics-recorder.ts",
-      "./src/services/pocket-relayer.ts",
-      "./src/controllers/v1.controller.ts",
-      "./src/services/logger.ts"
+      "./src/services/metrics-recorder.ts"
     ]
   },
   "version": "3.8.3"
