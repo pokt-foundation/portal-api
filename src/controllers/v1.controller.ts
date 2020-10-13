@@ -106,6 +106,13 @@ export class V1Controller {
     @param.filter(Applications, {exclude: 'where'})
     filter?: FilterExcludingWhere<Applications>,
   ): Promise<string | Error> {
+    // Take the relay path from the end of the endpoint URL
+    if (id.match(/[0-9a-zA-Z]{24}~/g))
+    {
+      this.relayPath = id.slice(24).replace(/~/gi, '/');
+      id = id.slice(0,24);
+    }
+
     logger.log('info', 'PROCESSING', {requestID: this.requestID, relayType: 'LB', typeID: id, serviceNode: ''});
 
     try {
@@ -171,6 +178,12 @@ export class V1Controller {
     @param.filter(Applications, {exclude: 'where'})
     filter?: FilterExcludingWhere<Applications>,
   ): Promise<string | Error> {
+    // Take the relay path from the end of the endpoint URL
+    if (id.match(/[0-9a-zA-Z]{24}~/g))
+    {
+      this.relayPath = id.slice(24).replace(/~/gi, '/');
+      id = id.slice(0,24);
+    }
     logger.log('info', 'PROCESSING', {requestID: this.requestID, relayType: 'APP', typeID: id, serviceNode: ''});
 
     try {

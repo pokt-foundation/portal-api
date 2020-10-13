@@ -68,6 +68,11 @@ let V1Controller = class V1Controller {
      * @param id Load Balancer ID
      */
     async loadBalancerRelay(id, rawData, filter) {
+        // Take the relay path from the end of the endpoint URL
+        if (id.match(/[0-9a-zA-Z]{24}~/g)) {
+            this.relayPath = id.slice(24).replace(/~/gi, '/');
+            id = id.slice(0, 24);
+        }
         logger.log('info', 'PROCESSING', { requestID: this.requestID, relayType: 'LB', typeID: id, serviceNode: '' });
         try {
             const loadBalancer = await this.fetchLoadBalancer(id, filter);
@@ -97,6 +102,11 @@ let V1Controller = class V1Controller {
      * @param id Application ID
      */
     async applicationRelay(id, rawData, filter) {
+        // Take the relay path from the end of the endpoint URL
+        if (id.match(/[0-9a-zA-Z]{24}~/g)) {
+            this.relayPath = id.slice(24).replace(/~/gi, '/');
+            id = id.slice(0, 24);
+        }
         logger.log('info', 'PROCESSING', { requestID: this.requestID, relayType: 'APP', typeID: id, serviceNode: '' });
         try {
             const application = await this.fetchApplication(id, filter);

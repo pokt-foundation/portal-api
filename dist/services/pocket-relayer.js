@@ -53,8 +53,6 @@ class PocketRelayer {
         const data = JSON.stringify(parsedRawData);
         const method = this.parseMethod(parsedRawData);
         const fallbackAvailable = (this.fallbacks.length > 0 && this.pocket !== undefined) ? true : false;
-        logger.log('info', 'fa', { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: '' });
-        logger.log('info', fallbackAvailable, { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: '' });
         // Retries if applicable
         for (let x = 0; x <= this.relayRetries; x++) {
             let relayStart = process.hrtime();

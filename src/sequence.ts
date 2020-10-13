@@ -51,6 +51,24 @@ export class GatewaySequence implements SequenceHandler {
       // Unique ID for log tracing
       context.bind('requestID').to(shortID.generate());
 
+      // Custom routing for blockchain paths:
+      // If it finds an extra path on the end of the request, slice off the path 
+      // and convert the slashes to tildes for processing in the v1.controller
+      if (
+        request.method === "POST" &&
+        (
+          // Matches either /v1/lb/LOADBALANCER_ID or /v1/APPLICATION_ID
+          request.url.match(/^\/v1\/lb\//) ||
+          request.url.match(/^\/v1\/[0-9a-zA-Z]{24}\//)
+        )
+      ) {
+        if (request.url.match(/^\/v1\/lb\//)) {
+          request.url = `/v1/lb/${request.url.slice(7).replace(/\//gi, '~')}`;
+        } else if (request.url.match(/^\/v1\/[0-9a-z]{24}\//)) {
+          request.url = `${request.url.slice(0,28)}${request.url.slice(28).replace(/\//gi, '~')}`;
+        }
+      }
+
       const route = this.findRoute(request);
       const args = await this.parseParams(request, route);
       const result = await this.invoke(route, args);
