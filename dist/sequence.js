@@ -37,9 +37,8 @@ let GatewaySequence = class GatewaySequence {
             // Unique ID for log tracing
             context.bind('requestID').to(shortID.generate());
             // Custom routing for blockchain paths:
-            // If it finds an extra path on the end of the request, 
-            // slice off the path and convert the slashes to tildes
-            // for processing in the v1.controller
+            // If it finds an extra path on the end of the request, slice off the path 
+            // and convert the slashes to tildes for processing in the v1.controller
             if (request.method === "POST" &&
                 (
                 // Matches either /v1/lb/LOADBALANCER_ID or /v1/APPLICATION_ID

@@ -15,12 +15,11 @@ export declare class PocketRelayer {
     redis: Redis;
     databaseEncryptionKey: string;
     secretKey: string;
-    relayPath: string;
     relayRetries: number;
     blockchainsRepository: BlockchainsRepository;
     checkDebug: boolean;
     fallbacks: Array<URL>;
-    constructor({ host, origin, userAgent, pocket, pocketConfiguration, cherryPicker, metricsRecorder, redis, databaseEncryptionKey, secretKey, relayPath, relayRetries, blockchainsRepository, checkDebug, fallbackURL, }: {
+    constructor({ host, origin, userAgent, pocket, pocketConfiguration, cherryPicker, metricsRecorder, redis, databaseEncryptionKey, secretKey, relayRetries, blockchainsRepository, checkDebug, fallbackURL, }: {
         host: string;
         origin: string;
         userAgent: string;
@@ -31,14 +30,13 @@ export declare class PocketRelayer {
         redis: Redis;
         databaseEncryptionKey: string;
         secretKey: string;
-        relayPath: string;
         relayRetries: number;
         blockchainsRepository: BlockchainsRepository;
         checkDebug: boolean;
         fallbackURL: string;
     });
-    sendRelay(rawData: object, application: Applications, requestID: string, requestTimeOut?: number, overallTimeOut?: number, relayRetries?: number): Promise<string | Error>;
-    _sendRelay(data: string, requestID: string, application: Applications, requestTimeOut: number | undefined, blockchain: string, blockchainEnforceResult: string): Promise<RelayResponse | Error>;
+    sendRelay(rawData: object, relayPath: string, application: Applications, requestID: string, requestTimeOut?: number, overallTimeOut?: number, relayRetries?: number): Promise<string | Error>;
+    _sendRelay(data: string, relayPath: string, requestID: string, application: Applications, requestTimeOut: number | undefined, blockchain: string, blockchainEnforceResult: string): Promise<RelayResponse | Error>;
     parseMethod(parsedRawData: any): string;
     updateConfiguration(requestTimeOut: number): Configuration;
     loadBlockchain(): Promise<string[]>;

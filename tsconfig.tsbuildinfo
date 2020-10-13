@@ -1310,7 +1310,7 @@
         "signature": "a15b48b01a590689bbbf03aac6a5291a8dddf77477a46d9e0037adfcc07942b8"
       },
       "./src/sequence.ts": {
-        "version": "80996ae1879c4441665c97724a122fd1185b6355b1c0d33b5d61175734fd94c1",
+        "version": "ce71d6a2ad0c21be59b07703a62241c9f5035d792a6491995dd9e13d9e497d5f",
         "signature": "8721cf11eb4936ffee74356179ce18d3cc7ff99cbc861af322c1a9cfb31c4609"
       },
       "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts": {
@@ -2042,11 +2042,11 @@
         "signature": "4268ae77fea3dfd44b681677cb8ba998d21463a10d37e5286651c07e8659d183"
       },
       "./src/services/pocket-relayer.ts": {
-        "version": "fd9d06dbf6dae393c3c3757d320ae9b797f8e471a9408254701db159179968f9",
-        "signature": "4cd45f65530cbb545798dfa71db8b23c063447ac3babe1b3e677ebad4a531c91"
+        "version": "13af7497a77d9f790a6fa8c5f843d48b71216c372ed0b4184592e35179bfcde1",
+        "signature": "45c4657525887fee510822311d7bcf8d223a82e33d0a4e09bc43edc0329f1dc1"
       },
       "./src/controllers/v1.controller.ts": {
-        "version": "ed562df094e31819c81da24311272874b90391eb3b22d16eb25003ca53b247b5",
+        "version": "fc4afd38ddea375943be83086e974d00edbc42a7ee6cc70eba255635c171105e",
         "signature": "ed74a602b08063740df85267fad9cd5c1e7cd289b2326b403e2af1805dbf0a97"
       },
       "./src/controllers/index.ts": {
@@ -9561,7 +9561,7 @@
       "./node_modules/strong-cryptor/dist/decryptor.d.ts",
       "./node_modules/strong-cryptor/dist/index.d.ts",
       "./src/errors/relay-error.ts",
-      "./src/services/pocket-relayer.ts",
+      "./src/controllers/v1.controller.ts",
       "./src/controllers/index.ts",
       "./src/services/logger.ts",
       "./node_modules/@types/aes-js/index.d.ts",
@@ -9585,7 +9585,7 @@
       "../../../node_modules/@types/react/global.d.ts",
       "../../../node_modules/csstype/index.d.ts",
       "../../../node_modules/@types/react/index.d.ts",
-      "./src/controllers/v1.controller.ts"
+      "./src/services/pocket-relayer.ts"
     ]
   },
   "version": "3.8.3"
