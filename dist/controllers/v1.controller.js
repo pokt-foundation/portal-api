@@ -53,7 +53,6 @@ let V1Controller = class V1Controller {
             redis: this.redis,
             databaseEncryptionKey: this.databaseEncryptionKey,
             secretKey: this.secretKey,
-            relayPath: this.relayPath,
             relayRetries: this.relayRetries,
             blockchainsRepository: this.blockchainsRepository,
             checkDebug: this.checkDebug(),
@@ -83,7 +82,7 @@ let V1Controller = class V1Controller {
                 // one randomly for the relay.
                 const application = await this.fetchLoadBalancerApplication(loadBalancer.id, loadBalancer.applicationIDs, blockchain, filter);
                 if (application === null || application === void 0 ? void 0 : application.id) {
-                    return this.pocketRelayer.sendRelay(rawData, application, this.requestID, parseInt(loadBalancer.requestTimeOut), parseInt(loadBalancer.overallTimeOut), parseInt(loadBalancer.relayRetries));
+                    return this.pocketRelayer.sendRelay(rawData, this.relayPath, application, this.requestID, parseInt(loadBalancer.requestTimeOut), parseInt(loadBalancer.overallTimeOut), parseInt(loadBalancer.relayRetries));
                 }
             }
         }
@@ -111,7 +110,7 @@ let V1Controller = class V1Controller {
         try {
             const application = await this.fetchApplication(id, filter);
             if (application === null || application === void 0 ? void 0 : application.id) {
-                return this.pocketRelayer.sendRelay(rawData, application, this.requestID);
+                return this.pocketRelayer.sendRelay(rawData, this.relayPath, application, this.requestID);
             }
         }
         catch (e) {

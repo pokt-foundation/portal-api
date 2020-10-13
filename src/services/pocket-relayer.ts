@@ -34,7 +34,6 @@ export class PocketRelayer {
   redis: Redis;
   databaseEncryptionKey: string;
   secretKey: string;
-  relayPath: string;
   relayRetries: number;
   blockchainsRepository: BlockchainsRepository;
   checkDebug: boolean;
@@ -51,7 +50,6 @@ export class PocketRelayer {
     redis,
     databaseEncryptionKey,
     secretKey,
-    relayPath,
     relayRetries,
     blockchainsRepository,
     checkDebug,
@@ -67,7 +65,6 @@ export class PocketRelayer {
     redis: Redis;
     databaseEncryptionKey: string;
     secretKey: string;
-    relayPath: string;
     relayRetries: number;
     blockchainsRepository: BlockchainsRepository;
     checkDebug: boolean;
@@ -83,7 +80,6 @@ export class PocketRelayer {
     this.redis = redis;
     this.databaseEncryptionKey = databaseEncryptionKey;
     this.secretKey = secretKey;
-    this.relayPath = relayPath;
     this.relayRetries = relayRetries;
     this.blockchainsRepository = blockchainsRepository;
     this.checkDebug = checkDebug;
@@ -104,6 +100,7 @@ export class PocketRelayer {
 
   async sendRelay(
     rawData: object,
+    relayPath: string,
     application: Applications,
     requestID: string,
     requestTimeOut?: number,
@@ -144,7 +141,7 @@ export class PocketRelayer {
       }
       
       // Send this relay attempt
-      const relayResponse = await this._sendRelay(data, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult);
+      const relayResponse = await this._sendRelay(data, relayPath, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult);
       
       if (!(relayResponse instanceof Error)) {
         // Record success metric
@@ -197,7 +194,7 @@ export class PocketRelayer {
       const [blockchain, blockchainEnforceResult] = await this.loadBlockchain();
       
       const fallbackChoice = new HttpRpcProvider(this.fallbacks[Math.floor(Math.random() * this.fallbacks.length)]);
-      const fallbackPayload : FallbackPayload = {data: rawData.toString(), method: "", path: this.relayPath,  headers: null};
+      const fallbackPayload : FallbackPayload = {data: rawData.toString(), method: "", path: relayPath,  headers: null};
       const fallbackMeta: FallbackMeta = {block_height: 0};
       const fallbackProof: FallbackProof = {blockchain: blockchain};
       const fallbackRelay: FallbackRelay = {payload: fallbackPayload, meta: fallbackMeta, proof: fallbackProof};
@@ -247,6 +244,7 @@ export class PocketRelayer {
   // Private function to allow relay retries
   async _sendRelay(
     data: string,
+    relayPath: string,
     requestID: string,
     application: Applications,
     requestTimeOut: number | undefined,
@@ -315,7 +313,7 @@ export class PocketRelayer {
     if (requestTimeOut) {
       relayConfiguration = this.updateConfiguration(requestTimeOut);
     }
-
+    
     // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
     const relayResponse = await this.pocket.sendRelay(
       data,
@@ -324,7 +322,7 @@ export class PocketRelayer {
       relayConfiguration,
       undefined,
       undefined,
-      this.relayPath,
+      relayPath,
       node,
     );
 

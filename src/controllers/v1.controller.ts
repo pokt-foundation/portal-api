@@ -65,7 +65,6 @@ export class V1Controller {
       redis: this.redis,
       databaseEncryptionKey: this.databaseEncryptionKey,
       secretKey: this.secretKey,
-      relayPath: this.relayPath,
       relayRetries: this.relayRetries,
       blockchainsRepository: this.blockchainsRepository,
       checkDebug: this.checkDebug(),
@@ -129,7 +128,7 @@ export class V1Controller {
           filter,
         );
         if (application?.id) {
-          return this.pocketRelayer.sendRelay(rawData, application, this.requestID, parseInt(loadBalancer.requestTimeOut), parseInt(loadBalancer.overallTimeOut), parseInt(loadBalancer.relayRetries));
+          return this.pocketRelayer.sendRelay(rawData, this.relayPath, application, this.requestID, parseInt(loadBalancer.requestTimeOut), parseInt(loadBalancer.overallTimeOut), parseInt(loadBalancer.relayRetries));
         }
       }
     } catch (e) {
@@ -189,7 +188,7 @@ export class V1Controller {
     try {
       const application = await this.fetchApplication(id, filter);
       if (application?.id) {
-        return this.pocketRelayer.sendRelay(rawData, application, this.requestID);
+        return this.pocketRelayer.sendRelay(rawData, this.relayPath, application, this.requestID);
       }
     } catch (e) {
       logger.log('error', 'Application not found', {requestID: this.requestID, relayType: 'APP', typeID: id, serviceNode: ''});
