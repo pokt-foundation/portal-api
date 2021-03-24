@@ -38,6 +38,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         // Requirements; for Production these are stored in GitHub repo secrets
         //
         // For Dev, you need to pass them in via .env file
+        const environment = process.env.NODE_ENV || 'production';
         const dispatchURL = (_a = process.env.DISPATCH_URL) !== null && _a !== void 0 ? _a : '';
         const fallbackURL = (_b = process.env.FALLBACK_URL) !== null && _b !== void 0 ? _b : '';
         const clientPrivateKey = (_c = process.env.GATEWAY_CLIENT_PRIVATE_KEY) !== null && _c !== void 0 ? _c : '';
@@ -115,32 +116,39 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         if (!pgConnection) {
             throw new rest_1.HttpErrors.InternalServerError('PG_CONNECTION required in ENV');
         }
-        if (!pgCertificate) {
+        if (!pgCertificate && environment !== 'development') {
             throw new rest_1.HttpErrors.InternalServerError('PG_CERTIFICATE required in ENV');
         }
         // Pull public certificate from Redis or s3 if not there
         const cachedCertificate = await redis.get('timescaleDBCertificate');
         let publicCertificate;
-        if (!cachedCertificate) {
-            try {
-                const s3Certificate = await got(pgCertificate);
-                publicCertificate = s3Certificate.body;
+        console.log("xxx", { cachedCertificate, environment });
+        if (environment === 'production') {
+            if (!cachedCertificate) {
+                try {
+                    const s3Certificate = await got(pgCertificate);
+                    publicCertificate = s3Certificate.body;
+                }
+                catch (e) {
+                    throw new rest_1.HttpErrors.InternalServerError('Invalid Certificate');
+                }
+                redis.set('timescaleDBCertificate', publicCertificate, 'EX', 600);
             }
-            catch (e) {
-                throw new rest_1.HttpErrors.InternalServerError('Invalid Certificate');
+            else {
+                publicCertificate = cachedCertificate;
             }
-            redis.set('timescaleDBCertificate', publicCertificate, 'EX', 600);
         }
-        else {
-            publicCertificate = cachedCertificate;
-        }
-        const pgPool = new pg.Pool({
-            connectionString: pgConnection,
-            ssl: {
+        const ssl = environment === 'production'
+            ? {
                 rejectUnauthorized: false,
                 ca: publicCertificate,
-            },
-        });
+            }
+            : false;
+        const pgConfig = {
+            connectionString: pgConnection,
+            ssl,
+        };
+        const pgPool = new pg.Pool(pgConfig);
         this.bind('pgPool').to(pgPool);
         this.bind('databaseEncryptionKey').to(databaseEncryptionKey);
         // Create a UID for this process
