@@ -122,11 +122,13 @@ export class PocketRelayer {
     // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
     // extraneous characters like newlines and tabs from the rawData.
     // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
+    console.log({
+      rawData, stringRawData: rawData.toString(),
+    })
     const parsedRawData = JSON.parse(rawData.toString());
     const data = JSON.stringify(parsedRawData);
     const method = this.parseMethod(parsedRawData);
     const fallbackAvailable = (this.fallbacks.length > 0 && this.pocket !== undefined) ? true : false;
-
     // Retries if applicable
     for (let x = 0; x <= this.relayRetries; x++) { 
       let relayStart = process.hrtime();

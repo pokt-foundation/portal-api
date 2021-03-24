@@ -44,6 +44,7 @@ export class PocketGatewayApplication extends BootMixin(
     // Requirements; for Production these are stored in GitHub repo secrets
     //
     // For Dev, you need to pass them in via .env file
+    const environment: string = process.env.NODE_ENV || 'production';
     const dispatchURL: string = process.env.DISPATCH_URL ?? '';
     const fallbackURL: string = process.env.FALLBACK_URL ?? '';
     const clientPrivateKey: string =
@@ -167,7 +168,8 @@ export class PocketGatewayApplication extends BootMixin(
     if (!pgConnection) {
       throw new HttpErrors.InternalServerError('PG_CONNECTION required in ENV');
     }
-    if (!pgCertificate) {
+
+    if (!pgCertificate && environment !== 'development') {
       throw new HttpErrors.InternalServerError(
         'PG_CERTIFICATE required in ENV',
       );
@@ -177,25 +179,36 @@ export class PocketGatewayApplication extends BootMixin(
     const cachedCertificate = await redis.get('timescaleDBCertificate');
     let publicCertificate;
 
-    if (!cachedCertificate) {
-      try {
-        const s3Certificate = await got(pgCertificate);
-        publicCertificate = s3Certificate.body;
-      } catch (e) {
-        throw new HttpErrors.InternalServerError('Invalid Certificate');
+    console.log("xxx", {cachedCertificate, environment});
+
+    if (environment === 'production') {
+      if (!cachedCertificate) {
+        try {
+          const s3Certificate = await got(pgCertificate);
+          publicCertificate = s3Certificate.body;
+        } catch (e) {
+          throw new HttpErrors.InternalServerError('Invalid Certificate');
+        }
+        redis.set('timescaleDBCertificate', publicCertificate, 'EX', 600);
+      } else {
+        publicCertificate = cachedCertificate;
       }
-      redis.set('timescaleDBCertificate', publicCertificate, 'EX', 600);
-    } else {
-      publicCertificate = cachedCertificate;
     }
 
-    const pgPool = new pg.Pool({
+    const ssl = environment === 'production'
+      ? {
+          rejectUnauthorized: false,
+          ca: publicCertificate,
+        }
+      : false;
+
+    const pgConfig = {
       connectionString: pgConnection,
-      ssl: {
-        rejectUnauthorized: false,
-        ca: publicCertificate,
-      },
-    });
+      ssl,
+    };
+
+    const pgPool = new pg.Pool(pgConfig);
+    
     this.bind('pgPool').to(pgPool);
     this.bind('databaseEncryptionKey').to(databaseEncryptionKey);
 
