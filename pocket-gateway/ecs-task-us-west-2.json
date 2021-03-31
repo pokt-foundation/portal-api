@@ -39,7 +39,7 @@
 		"workingDirectory": null,
 		"dockerSecurityOptions": null,
 		"memory": null,
-		"memoryReservation": 2048,
+		"memoryReservation": 4096,
 		"volumesFrom": [],
 		"stopTimeout": null,
 		"image": "059424750518.dkr.ecr.us-west-2.amazonaws.com/gateway:latest",
@@ -63,7 +63,7 @@
 	  }
 	],
 	"placementConstraints": [],
-	"memory": "2048",
+	"memory": "4096",
 	"taskRoleArn": null,
 	"family": "gateway",
 	"pidMode": null,
