@@ -1,0 +1,76 @@
+name: Production Deployment eu-west-1
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  deploy:
+    name: Gateway
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: eu-west-1
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+    
+    - name: Make envfile eu-west-1
+      uses: SpicyPizza/create-envfile@v1
+      with:
+        envkey_GATEWAY_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PRIVATE_KEY }}
+        envkey_GATEWAY_CLIENT_PASSPHRASE: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PASSPHRASE }}
+        envkey_MONGO_ENDPOINT: ${{ secrets.MONGO_PRODUCTION_ENDPOINT }}
+        envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_PRODUCTION_ENCRYPTION_KEY }}
+        envkey_PG_CONNECTION: ${{ secrets.PG_PRODUCTION_CONNECTION }}
+        envkey_PG_CERTIFICATE: ${{ secrets.PG_PRODUCTION_CERTIFICATE }}
+        envkey_AWS_S3_ACCESS_KEY_ID: ${{ secrets.AWS_S3_ACCESS_KEY_ID }}
+        envkey_AWS_S3_SECRET_ACCESS_KEY: ${{ secrets.AWS_S3_SECRET_ACCESS_KEY }}
+        envkey_AWS_S3_LOGS_BUCKET: pocket-gateway
+        envkey_AWS_S3_LOGS_FOLDER: logs/mainnet
+        envkey_AWS_S3_LOGS_REGION: eu-west-1
+        envkey_DISPATCH_URL: https://node1.mainnet.pokt.network,https://node2.mainnet.pokt.network,https://node3.mainnet.pokt.network,https://node4.mainnet.pokt.network,https://node5.mainnet.pokt.network,https://node6.mainnet.pokt.network,https://node7.mainnet.pokt.network,https://node8.mainnet.pokt.network,https://node9.mainnet.pokt.network,https://node10.mainnet.pokt.network,https://node11.mainnet.pokt.network,https://node12.mainnet.pokt.network,https://node13.mainnet.pokt.network,https://node14.mainnet.pokt.network,https://node15.mainnet.pokt.network,https://node16.mainnet.pokt.network,https://node17.mainnet.pokt.network,https://node18.mainnet.pokt.network,https://node19.mainnet.pokt.network,https://node20.mainnet.pokt.network
+        envkey_FALLBACK_URL: https://alt1.mainnet.pokt.network,https://alt2.mainnet.pokt.network,https://alt3.mainnet.pokt.network,https://alt4.mainnet.pokt.network,https://alt5.mainnet.pokt.network,https://alt6.mainnet.pokt.network,https://alt7.mainnet.pokt.network,https://alt8.mainnet.pokt.network,https://alt9.mainnet.pokt.network,https://alt10.mainnet.pokt.network
+        envkey_REDIS_ENDPOINT: gateway.dj2dgc.ng.0001.euw1.cache.amazonaws.com:6379
+        envkey_REDIS_PORT: 6379
+        envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
+        envkey_POCKET_BLOCK_TIME: 1038000
+        envkey_POCKET_RELAY_RETRIES: 0
+        file_name: .env
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: gateway
+        IMAGE_TAG: latest
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+    - name: Fill in the new image ID / eu-west-1
+      id: task-def-eu-west-1
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: pocket-gateway/ecs-task-eu-west-1.json
+        container-name: gateway
+        image: ${{ steps.build-image.outputs.image }}
+
+    - name: Deploy / eu-west-1
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.task-def-eu-west-1.outputs.task-definition }}
+        service: gateway-service
+        cluster: gateway
+        wait-for-service-stability: true
+
