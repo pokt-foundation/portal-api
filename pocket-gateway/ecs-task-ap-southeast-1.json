@@ -42,7 +42,7 @@
 		"memoryReservation": 2048,
 		"volumesFrom": [],
 		"stopTimeout": null,
-		"image": "059424750518.dkr.ecr.us-west-2.amazonaws.com/gateway:latest",
+		"image": "059424750518.dkr.ecr.ap-southeast-1.amazonaws.com/gateway:latest",
 		"startTimeout": null,
 		"firelensConfiguration": null,
 		"dependsOn": null,
