@@ -10,11 +10,7 @@
 		  "secretOptions": null,
 		  "options": {
 			"awslogs-group": "/ecs/gateway",
-<<<<<<< HEAD:pocket-gateway/ecs-task-eu-west-1.json
 			"awslogs-region": "eu-west-1",
-=======
-			"awslogs-region": "us-east-2",
->>>>>>> ae0ac5e (moving gateway to us-e-2):pocket-gateway/ecs-task-us-east-2.json
 			"awslogs-stream-prefix": "ecs"
 		  }
 		},
@@ -46,11 +42,7 @@
 		"memoryReservation": 8192,
 		"volumesFrom": [],
 		"stopTimeout": null,
-<<<<<<< HEAD:pocket-gateway/ecs-task-eu-west-1.json
 		"image": "059424750518.dkr.ecr.eu-west-1.amazonaws.com/gateway:latest",
-=======
-		"image": "059424750518.dkr.ecr.us-east-2.amazonaws.com/gateway:latest",
->>>>>>> ae0ac5e (moving gateway to us-e-2):pocket-gateway/ecs-task-us-east-2.json
 		"startTimeout": null,
 		"firelensConfiguration": null,
 		"dependsOn": null,
