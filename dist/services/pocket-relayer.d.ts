@@ -1,6 +1,6 @@
 import { CherryPicker } from '../services/cherry-picker';
 import { MetricsRecorder } from '../services/metrics-recorder';
-import { RelayResponse, Pocket, Configuration } from '@pokt-network/pocket-js';
+import { RelayResponse, Pocket, Configuration, HTTPMethod } from '@pokt-network/pocket-js';
 import { Redis } from 'ioredis';
 import { BlockchainsRepository } from '../repositories';
 import { Applications } from '../models';
@@ -35,8 +35,8 @@ export declare class PocketRelayer {
         checkDebug: boolean;
         fallbackURL: string;
     });
-    sendRelay(rawData: object, relayPath: string, application: Applications, requestID: string, requestTimeOut?: number, overallTimeOut?: number, relayRetries?: number): Promise<string | Error>;
-    _sendRelay(data: string, relayPath: string, requestID: string, application: Applications, requestTimeOut: number | undefined, blockchain: string, blockchainEnforceResult: string): Promise<RelayResponse | Error>;
+    sendRelay(rawData: object, relayPath: string, httpMethod: HTTPMethod, application: Applications, requestID: string, requestTimeOut?: number, overallTimeOut?: number, relayRetries?: number): Promise<string | Error>;
+    _sendRelay(data: string, relayPath: string, httpMethod: HTTPMethod, requestID: string, application: Applications, requestTimeOut: number | undefined, blockchain: string, blockchainEnforceResult: string): Promise<RelayResponse | Error>;
     parseMethod(parsedRawData: any): string;
     updateConfiguration(requestTimeOut: number): Configuration;
     loadBlockchain(): Promise<string[]>;
