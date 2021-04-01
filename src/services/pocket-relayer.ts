@@ -10,6 +10,7 @@ import {
   Configuration,
   RpcError,
   HttpRpcProvider,
+  HTTPMethod,
 } from '@pokt-network/pocket-js';
 import {Redis} from 'ioredis';
 import {BlockchainsRepository} from '../repositories';
@@ -101,6 +102,7 @@ export class PocketRelayer {
   async sendRelay(
     rawData: object,
     relayPath: string,
+    httpMethod: HTTPMethod,
     application: Applications,
     requestID: string,
     requestTimeOut?: number,
@@ -141,7 +143,7 @@ export class PocketRelayer {
       }
       
       // Send this relay attempt
-      const relayResponse = await this._sendRelay(data, relayPath, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult);
+      const relayResponse = await this._sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult);
       
       if (!(relayResponse instanceof Error)) {
         // Record success metric
@@ -194,7 +196,7 @@ export class PocketRelayer {
       const [blockchain, blockchainEnforceResult] = await this.loadBlockchain();
       
       const fallbackChoice = new HttpRpcProvider(this.fallbacks[Math.floor(Math.random() * this.fallbacks.length)]);
-      const fallbackPayload : FallbackPayload = {data: rawData.toString(), method: "", path: relayPath,  headers: null};
+      const fallbackPayload : FallbackPayload = {data: rawData.toString(), method: httpMethod, path: relayPath,  headers: null};
       const fallbackMeta: FallbackMeta = {block_height: 0};
       const fallbackProof: FallbackProof = {blockchain: blockchain};
       const fallbackRelay: FallbackRelay = {payload: fallbackPayload, meta: fallbackMeta, proof: fallbackProof};
@@ -245,6 +247,7 @@ export class PocketRelayer {
   async _sendRelay(
     data: string,
     relayPath: string,
+    httpMethod: HTTPMethod,
     requestID: string,
     application: Applications,
     requestTimeOut: number | undefined,
@@ -321,7 +324,7 @@ export class PocketRelayer {
       pocketAAT,
       relayConfiguration,
       undefined,
-      undefined,
+      httpMethod,
       relayPath,
       node,
     );

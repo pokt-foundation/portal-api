@@ -22,6 +22,7 @@ let GatewaySequence = class GatewaySequence {
             context.bind('origin').to(request.headers['origin']);
             context.bind('contentType').to(request.headers['content-type']);
             context.bind('relayPath').to(request.headers['relay-path']);
+            context.bind('httpMethod').to(request.method);
             let secretKey = '';
             // SecretKey passed in via basic http auth
             if (request.headers['authorization']) {
