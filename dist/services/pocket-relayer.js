@@ -37,7 +37,7 @@ class PocketRelayer {
         }
         this.fallbacks = fallbacks;
     }
-    async sendRelay(rawData, relayPath, application, requestID, requestTimeOut, overallTimeOut, relayRetries) {
+    async sendRelay(rawData, relayPath, httpMethod, application, requestID, requestTimeOut, overallTimeOut, relayRetries) {
         if (relayRetries !== undefined &&
             relayRetries >= 0) {
             this.relayRetries = relayRetries;
@@ -64,7 +64,7 @@ class PocketRelayer {
                 return new rest_1.HttpErrors.GatewayTimeout('Overall Timeout exceeded: ' + overallTimeOut);
             }
             // Send this relay attempt
-            const relayResponse = await this._sendRelay(data, relayPath, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult);
+            const relayResponse = await this._sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult);
             if (!(relayResponse instanceof Error)) {
                 // Record success metric
                 await this.metricsRecorder.recordMetric({
@@ -114,7 +114,7 @@ class PocketRelayer {
             let relayStart = process.hrtime();
             const [blockchain, blockchainEnforceResult] = await this.loadBlockchain();
             const fallbackChoice = new pocket_js_1.HttpRpcProvider(this.fallbacks[Math.floor(Math.random() * this.fallbacks.length)]);
-            const fallbackPayload = { data: rawData.toString(), method: "", path: relayPath, headers: null };
+            const fallbackPayload = { data: rawData.toString(), method: httpMethod, path: relayPath, headers: null };
             const fallbackMeta = { block_height: 0 };
             const fallbackProof = { blockchain: blockchain };
             const fallbackRelay = { payload: fallbackPayload, meta: fallbackMeta, proof: fallbackProof };
@@ -157,7 +157,7 @@ class PocketRelayer {
         return new rest_1.HttpErrors.GatewayTimeout('Relay attempts exhausted');
     }
     // Private function to allow relay retries
-    async _sendRelay(data, relayPath, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult) {
+    async _sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult) {
         logger.log('info', 'RELAYING ' + blockchain + ' req: ' + data, { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: '' });
         // Secret key check
         if (!this.checkSecretKey(application)) {
@@ -188,7 +188,7 @@ class PocketRelayer {
             relayConfiguration = this.updateConfiguration(requestTimeOut);
         }
         // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
-        const relayResponse = await this.pocket.sendRelay(data, blockchain, pocketAAT, relayConfiguration, undefined, undefined, relayPath, node);
+        const relayResponse = await this.pocket.sendRelay(data, blockchain, pocketAAT, relayConfiguration, undefined, httpMethod, relayPath, node);
         if (this.checkDebug) {
             logger.log('debug', JSON.stringify(relayConfiguration), { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: node === null || node === void 0 ? void 0 : node.publicKey });
             logger.log('debug', JSON.stringify(relayResponse), { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: node === null || node === void 0 ? void 0 : node.publicKey });

@@ -7,7 +7,7 @@ import {
   BlockchainsRepository,
   LoadBalancersRepository,
 } from '../repositories';
-import {Pocket, Configuration} from '@pokt-network/pocket-js';
+import {Pocket, Configuration, HTTPMethod} from '@pokt-network/pocket-js';
 import {Redis} from 'ioredis';
 import {Pool as PGPool} from 'pg';
 import {CherryPicker} from '../services/cherry-picker';
@@ -27,6 +27,7 @@ export class V1Controller {
     @inject('origin') private origin: string,
     @inject('userAgent') private userAgent: string,
     @inject('contentType') private contentType: string,
+    @inject('httpMethod') private httpMethod: HTTPMethod,
     @inject('relayPath') private relayPath: string,
     @inject('relayRetries') private relayRetries: number,
     @inject('pocketInstance') private pocket: Pocket,
@@ -128,7 +129,7 @@ export class V1Controller {
           filter,
         );
         if (application?.id) {
-          return this.pocketRelayer.sendRelay(rawData, this.relayPath, application, this.requestID, parseInt(loadBalancer.requestTimeOut), parseInt(loadBalancer.overallTimeOut), parseInt(loadBalancer.relayRetries));
+          return this.pocketRelayer.sendRelay(rawData, this.relayPath, this.httpMethod, application, this.requestID, parseInt(loadBalancer.requestTimeOut), parseInt(loadBalancer.overallTimeOut), parseInt(loadBalancer.relayRetries));
         }
       }
     } catch (e) {
@@ -188,7 +189,7 @@ export class V1Controller {
     try {
       const application = await this.fetchApplication(id, filter);
       if (application?.id) {
-        return this.pocketRelayer.sendRelay(rawData, this.relayPath, application, this.requestID);
+        return this.pocketRelayer.sendRelay(rawData, this.relayPath, this.httpMethod, application, this.requestID);
       }
     } catch (e) {
       logger.log('error', 'Application not found', {requestID: this.requestID, relayType: 'APP', typeID: id, serviceNode: ''});
