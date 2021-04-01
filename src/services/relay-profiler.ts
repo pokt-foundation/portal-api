@@ -17,6 +17,7 @@ export class RelayProfiler extends BaseProfiler {
     this.pgPool = pgPool;
   }
 
+  //@ts-ignore
   async flushResults(requestID: string, blockchain: string, functionName: string, results: ProfileResult[]): Promise<void> {
     /*
     const bulkData: any[] = [];
