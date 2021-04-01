@@ -134,9 +134,9 @@ export class PocketRelayer {
     const fallbackAvailable = (this.fallbacks.length > 0 && this.pocket !== undefined) ? true : false;
 
     // Retries if applicable
-    for (let x = 0; x <= this.relayRetries; x++) { 
+    for (let x = 0; x <= this.relayRetries; x++) {
       let relayStart = process.hrtime();
-      
+
       // Compute the overall time taken on this LB request
       const overallCurrent = process.hrtime(overallStart);
       const overallCurrentElasped = Math.round((overallCurrent[0] * 1e9 + overallCurrent[1]) / 1e6);
@@ -147,10 +147,10 @@ export class PocketRelayer {
         logger.log('error', 'Overall Timeout exceeded: ' + overallTimeOut, {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
         return new HttpErrors.GatewayTimeout('Overall Timeout exceeded: ' + overallTimeOut);
       }
-      
+
       // Send this relay attempt
       const relayResponse = await this._sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult, blockchainSyncCheck);
-      
+
       if (!(relayResponse instanceof Error)) {
         // Record success metric
         await this.metricsRecorder.recordMetric({
@@ -167,7 +167,7 @@ export class PocketRelayer {
           method: method,
           error: undefined
         });
-        
+
         // Clear error log
         await this.redis.del(blockchain + '-' + relayResponse.proof.servicerPubKey + '-errors');
 
@@ -210,7 +210,7 @@ export class PocketRelayer {
       }
     }
     // Exhausted relay attempts; use fallback
-    if (fallbackAvailable) {      
+    if (fallbackAvailable) {
       let relayStart = process.hrtime();
 
       const fallbackChoice = new HttpRpcProvider(this.fallbacks[Math.floor(Math.random() * this.fallbacks.length)]);
@@ -220,7 +220,7 @@ export class PocketRelayer {
       const fallbackRelay: FallbackRelay = {payload: fallbackPayload, meta: fallbackMeta, proof: fallbackProof};
 
       const fallbackResponse = await fallbackChoice.send("/v1/client/relay", JSON.stringify(fallbackRelay), 1200000, false);
-      
+
       if (this.checkDebug) {
         logger.log('debug', JSON.stringify(fallbackChoice), {requestID: requestID, relayType: 'FALLBACK', typeID: application.id, serviceNode: 'fallback:'+fallbackChoice.baseURL});
         logger.log('debug', JSON.stringify(fallbackRelay), {requestID: requestID, relayType: 'FALLBACK', typeID: application.id, serviceNode: 'fallback:'+fallbackChoice.baseURL});
@@ -274,7 +274,7 @@ export class PocketRelayer {
     blockchainSyncCheck: string,
   ): Promise<RelayResponse | Error> {
     logger.log('info', 'RELAYING ' + blockchain + ' req: ' + data, {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
-    
+
     // Secret key check
     if (!this.checkSecretKey(application)) {
       throw new HttpErrors.Forbidden('SecretKey does not match');

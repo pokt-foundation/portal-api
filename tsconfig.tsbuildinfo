@@ -945,15 +945,15 @@
         "version": "5eff4d1cd1afa8e2b79de736f8509a0d0c663ca0cba26713db636142b1ca2580",
         "signature": "5eff4d1cd1afa8e2b79de736f8509a0d0c663ca0cba26713db636142b1ca2580"
       },
-      "./node_modules/openapi3-ts/dist/model/SpecificationExtension.d.ts": {
+      "./node_modules/openapi3-ts/dist/model/specificationextension.d.ts": {
         "version": "9508fcc6616ea31bf848463f161571bcb0c8726b267a43e231f21fca775007e7",
         "signature": "9508fcc6616ea31bf848463f161571bcb0c8726b267a43e231f21fca775007e7"
       },
-      "./node_modules/openapi3-ts/dist/model/OpenApi.d.ts": {
+      "./node_modules/openapi3-ts/dist/model/openapi.d.ts": {
         "version": "0aaac1eca2cda0e09152730f943814ff55bdfd9eead7630b8eeeda3a4de64d5d",
         "signature": "0aaac1eca2cda0e09152730f943814ff55bdfd9eead7630b8eeeda3a4de64d5d"
       },
-      "./node_modules/openapi3-ts/dist/model/Server.d.ts": {
+      "./node_modules/openapi3-ts/dist/model/server.d.ts": {
         "version": "737286d5a8cddd8afc923c70d68c23ebd01700a0b53cad4949b633ffd304c777",
         "signature": "737286d5a8cddd8afc923c70d68c23ebd01700a0b53cad4949b633ffd304c777"
       },
@@ -961,7 +961,7 @@
         "version": "6a967509640ff83b343c01c6dc5ef6330c929ce0e838b217768b46414e28e85c",
         "signature": "6a967509640ff83b343c01c6dc5ef6330c929ce0e838b217768b46414e28e85c"
       },
-      "./node_modules/openapi3-ts/dist/dsl/OpenApiBuilder.d.ts": {
+      "./node_modules/openapi3-ts/dist/dsl/openapibuilder.d.ts": {
         "version": "b5fb985d427871256ce82a572af57648e48a8372e1165936968ca5181d578da6",
         "signature": "b5fb985d427871256ce82a572af57648e48a8372e1165936968ca5181d578da6"
       },
@@ -1406,16 +1406,16 @@
         "signature": "0c59cac12f1a4fd6c1b8508e942bc1d4dce00a559d93e4c5e261a4126b1b3472"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/response-deliver-tx.d.ts": {
-        "version": "665322b9d382144b4a8ae51f5edd8898511a1e683a9e53b6a924db4c2ae39808",
-        "signature": "665322b9d382144b4a8ae51f5edd8898511a1e683a9e53b6a924db4c2ae39808"
+        "version": "647a46d51fdc9fff9f0139b8b7525487cd1aa276f4934a106cb51f115933eacc",
+        "signature": "647a46d51fdc9fff9f0139b8b7525487cd1aa276f4934a106cb51f115933eacc"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/stdtx.d.ts": {
-        "version": "63f320c587796b038f95f0151444c2c4af474f452804ff8c3d8e56717886763b",
-        "signature": "63f320c587796b038f95f0151444c2c4af474f452804ff8c3d8e56717886763b"
+        "version": "d9e1735e53b9beb9f6318c7ff4b32fef14d5006120a66705767f464f34cac36f",
+        "signature": "d9e1735e53b9beb9f6318c7ff4b32fef14d5006120a66705767f464f34cac36f"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/transaction.d.ts": {
-        "version": "aff1a2d305403ac51bd3dfceee6122cbfbf9dabc33af9242dd8e84e22e6a8967",
-        "signature": "aff1a2d305403ac51bd3dfceee6122cbfbf9dabc33af9242dd8e84e22e6a8967"
+        "version": "1ae1900df8bd978e34fad5ea01f3e7860865123db2d0e8b6e181f840a9b7fc8a",
+        "signature": "1ae1900df8bd978e34fad5ea01f3e7860865123db2d0e8b6e181f840a9b7fc8a"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-account-txs-response.d.ts": {
         "version": "d2a27202a6c8f3e6f213714480caebab318746f454e7fdf5d3a607a322414987",
@@ -1546,8 +1546,8 @@
         "signature": "182a1f016cf32f2aa30dd6f7e97dac60d372a20558e0fdba28020502bdffcf5b"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-tx-response.d.ts": {
-        "version": "609d2a8745238b02d6504529413d672c82dd213da96a96d970df8ec062441bcf",
-        "signature": "609d2a8745238b02d6504529413d672c82dd213da96a96d970df8ec062441bcf"
+        "version": "815d53f50b3364127905f2b457713db1e2a867dab2353b6cd6f89132b3c6f131",
+        "signature": "815d53f50b3364127905f2b457713db1e2a867dab2353b6cd6f89132b3c6f131"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/query-upgrade-response.d.ts": {
         "version": "edb0cc057409f2434567bd1e40bf49494988b96296d5762648af74317b3978dd",
@@ -1654,8 +1654,8 @@
         "signature": "f4d2bb58d6dfe39ab5519d63ee80a17d2b8fe2bca4055a01698f9d8f8be11659"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/result-tx.d.ts": {
-        "version": "948fc41e845f22430e0ebe4c7b8928d1cd9ccca9c4365e00aadd7485b8508534",
-        "signature": "948fc41e845f22430e0ebe4c7b8928d1cd9ccca9c4365e00aadd7485b8508534"
+        "version": "288c83371492be49d796b66631fa8686a0887422f1319cbb957bdb3d71076aed",
+        "signature": "288c83371492be49d796b66631fa8686a0887422f1319cbb957bdb3d71076aed"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/routes.d.ts": {
         "version": "34ead86540d6028cafb4e32acac72639b4776164006b3e28b4c36bcb07c2bc1e",
@@ -1690,12 +1690,12 @@
         "signature": "2c79a4f53b84ee8fe3fd2cce134f93c882dda71bf6e31df5821f144531c5faad"
       },
       "./node_modules/@pokt-network/pocket-js/dist/utils/base-profiler.d.ts": {
-        "version": "7cfb6da9e890756ddf5d58f2533deddfe5829646ecdb3b26ad62a572c3502f1a",
-        "signature": "7cfb6da9e890756ddf5d58f2533deddfe5829646ecdb3b26ad62a572c3502f1a"
+        "version": "08678f11c059023ecc7baf430b91ab9e896e7dd963c67b5df40150b86905c325",
+        "signature": "08678f11c059023ecc7baf430b91ab9e896e7dd963c67b5df40150b86905c325"
       },
       "./node_modules/@pokt-network/pocket-js/dist/pocket.d.ts": {
-        "version": "9e38c0018b54319bcd4c2196d89893052d0c96207eee1ff54b01791179e8b065",
-        "signature": "9e38c0018b54319bcd4c2196d89893052d0c96207eee1ff54b01791179e8b065"
+        "version": "2069cccab8b6efbc904a6e2ada2b5887ff69463e0e838573b3b1934aace66934",
+        "signature": "2069cccab8b6efbc904a6e2ada2b5887ff69463e0e838573b3b1934aace66934"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/providers/pocket-rpc-provider.d.ts": {
         "version": "1e6a7ac548677a5f0ea744d3c2397df7b1aacfc4cf7ca11fe35b282e40fc45dc",
@@ -1882,8 +1882,8 @@
         "signature": "d416bca7efa797d11d0b5d165f4a5e122b8724c073a5a592fe9a3a02381c8891"
       },
       "./node_modules/@pokt-network/pocket-js/dist/utils/no-op-profiler.d.ts": {
-        "version": "5b4d885f98088840dd901d4be1a54693aadc4a4a809f2d8035799d0679800d22",
-        "signature": "5b4d885f98088840dd901d4be1a54693aadc4a4a809f2d8035799d0679800d22"
+        "version": "360223fb3b570d313cb2637481a3c609a37c9de78804f3f4db166b8aefe7f7e1",
+        "signature": "360223fb3b570d313cb2637481a3c609a37c9de78804f3f4db166b8aefe7f7e1"
       },
       "./node_modules/@pokt-network/pocket-js/dist/utils/type-guard.d.ts": {
         "version": "1ecc6d639b8943315d964e4926ed36343a9bc8c937af929593a3c8730a1f32f0",
@@ -1914,7 +1914,7 @@
         "signature": "ce3c16bd239d4345a1ffabff3dcbb5025d281292742f4cfa5a29398b815bbb60"
       },
       "./src/services/relay-profiler.ts": {
-        "version": "6d8d4173c7fa9d08655e8ccf350b3eb30877cf4b6fa4df09ef923552f3219217",
+        "version": "2ecd3c570607156ce3122b4524e56e34d17ff0575f2a602437d3b13a3a36b30a",
         "signature": "ff8e9b000db6b9db543b5c807908b2de8a24d1616379e7419d949d6b4e8a33bd"
       },
       "./src/application.ts": {
@@ -2122,7 +2122,7 @@
         "signature": "4268ae77fea3dfd44b681677cb8ba998d21463a10d37e5286651c07e8659d183"
       },
       "./src/services/pocket-relayer.ts": {
-        "version": "7eff72e4b928a20494e2f3238d1094d868432d6b2996a87c5c5ecd76a8c835fd",
+        "version": "fa5a8ac782376808780fb0bdf6541128bb531725e803efa85c21ae16aa6181ce",
         "signature": "ad65d9326d5067bf7ab46068d21ec91864a00f671837c961050af3928f6d1035"
       },
       "./src/controllers/v1.controller.ts": {
@@ -2132,10 +2132,6 @@
       "./src/controllers/index.ts": {
         "version": "c27d67de5b5b7aecde13ca899c3197d3c1538b964251fa91a055cb19fb0b6ce7",
         "signature": "c27d67de5b5b7aecde13ca899c3197d3c1538b964251fa91a055cb19fb0b6ce7"
-      },
-      "./src/controllers/web3index.controller.ts": {
-        "version": "be59e2f19afb47eb4ff0e7ee047bcdeed21084e51264787c0b3775cdd95f114d",
-        "signature": "04f8ec859ee6b42d1145a0c7288224bdff45d1bd6a0e873593b4cf392ddfcaed"
       },
       "./node_modules/logzio-nodejs/lib/logzio-nodejs.d.ts": {
         "version": "8b1404d626c6c4d3ca84157a75c0a3364411bd91006323ccb20ddf8fc78aab16",
@@ -3180,22 +3176,22 @@
         "./node_modules/@loopback/repository-json-schema/dist/filter-json-schema.d.ts",
         "./node_modules/@loopback/repository-json-schema/dist/keys.d.ts"
       ],
-      "./node_modules/openapi3-ts/dist/model/OpenApi.d.ts": [
-        "./node_modules/openapi3-ts/dist/model/SpecificationExtension.d.ts"
+      "./node_modules/openapi3-ts/dist/model/openapi.d.ts": [
+        "./node_modules/openapi3-ts/dist/model/specificationextension.d.ts"
       ],
-      "./node_modules/openapi3-ts/dist/model/Server.d.ts": [
-        "./node_modules/openapi3-ts/dist/model/OpenApi.d.ts"
+      "./node_modules/openapi3-ts/dist/model/server.d.ts": [
+        "./node_modules/openapi3-ts/dist/model/openapi.d.ts"
       ],
       "./node_modules/openapi3-ts/dist/model/index.d.ts": [
-        "./node_modules/openapi3-ts/dist/model/SpecificationExtension.d.ts",
-        "./node_modules/openapi3-ts/dist/model/OpenApi.d.ts",
-        "./node_modules/openapi3-ts/dist/model/Server.d.ts"
+        "./node_modules/openapi3-ts/dist/model/specificationextension.d.ts",
+        "./node_modules/openapi3-ts/dist/model/openapi.d.ts",
+        "./node_modules/openapi3-ts/dist/model/server.d.ts"
       ],
-      "./node_modules/openapi3-ts/dist/dsl/OpenApiBuilder.d.ts": [
+      "./node_modules/openapi3-ts/dist/dsl/openapibuilder.d.ts": [
         "./node_modules/openapi3-ts/dist/model/index.d.ts"
       ],
       "./node_modules/openapi3-ts/dist/dsl/index.d.ts": [
-        "./node_modules/openapi3-ts/dist/dsl/OpenApiBuilder.d.ts"
+        "./node_modules/openapi3-ts/dist/dsl/openapibuilder.d.ts"
       ],
       "./node_modules/openapi3-ts/dist/index.d.ts": [
         "./node_modules/openapi3-ts/dist/model/index.d.ts",
@@ -4446,11 +4442,6 @@
         "./src/controllers/v1.controller.ts",
         "./src/controllers/blockchains.controller.ts"
       ],
-      "./src/controllers/web3index.controller.ts": [
-        "./node_modules/@loopback/context/dist/index.d.ts",
-        "./node_modules/@loopback/rest/index.d.ts",
-        "./node_modules/@types/pg/index.d.ts"
-      ],
       "./node_modules/winston-transport/index.d.ts": [
         "./node_modules/@types/node/stream.d.ts",
         "./node_modules/logform/index.d.ts",
@@ -5429,22 +5420,22 @@
         "./node_modules/@loopback/repository-json-schema/dist/filter-json-schema.d.ts",
         "./node_modules/@loopback/repository-json-schema/dist/keys.d.ts"
       ],
-      "./node_modules/openapi3-ts/dist/model/OpenApi.d.ts": [
-        "./node_modules/openapi3-ts/dist/model/SpecificationExtension.d.ts"
+      "./node_modules/openapi3-ts/dist/model/openapi.d.ts": [
+        "./node_modules/openapi3-ts/dist/model/specificationextension.d.ts"
       ],
-      "./node_modules/openapi3-ts/dist/model/Server.d.ts": [
-        "./node_modules/openapi3-ts/dist/model/OpenApi.d.ts"
+      "./node_modules/openapi3-ts/dist/model/server.d.ts": [
+        "./node_modules/openapi3-ts/dist/model/openapi.d.ts"
       ],
       "./node_modules/openapi3-ts/dist/model/index.d.ts": [
-        "./node_modules/openapi3-ts/dist/model/SpecificationExtension.d.ts",
-        "./node_modules/openapi3-ts/dist/model/OpenApi.d.ts",
-        "./node_modules/openapi3-ts/dist/model/Server.d.ts"
+        "./node_modules/openapi3-ts/dist/model/specificationextension.d.ts",
+        "./node_modules/openapi3-ts/dist/model/openapi.d.ts",
+        "./node_modules/openapi3-ts/dist/model/server.d.ts"
       ],
-      "./node_modules/openapi3-ts/dist/dsl/OpenApiBuilder.d.ts": [
+      "./node_modules/openapi3-ts/dist/dsl/openapibuilder.d.ts": [
         "./node_modules/openapi3-ts/dist/model/index.d.ts"
       ],
       "./node_modules/openapi3-ts/dist/dsl/index.d.ts": [
-        "./node_modules/openapi3-ts/dist/dsl/OpenApiBuilder.d.ts"
+        "./node_modules/openapi3-ts/dist/dsl/openapibuilder.d.ts"
       ],
       "./node_modules/openapi3-ts/dist/index.d.ts": [
         "./node_modules/openapi3-ts/dist/model/index.d.ts",
@@ -6666,9 +6657,6 @@
         "./src/controllers/v1.controller.ts",
         "./src/controllers/blockchains.controller.ts"
       ],
-      "./src/controllers/web3index.controller.ts": [
-        "./node_modules/@types/pg/index.d.ts"
-      ],
       "./node_modules/winston-transport/index.d.ts": [
         "./node_modules/@types/node/stream.d.ts",
         "./node_modules/logform/index.d.ts",
@@ -6957,11 +6945,11 @@
       "./node_modules/@loopback/repository-json-schema/dist/filter-json-schema.d.ts",
       "./node_modules/@loopback/repository-json-schema/dist/keys.d.ts",
       "./node_modules/@loopback/repository-json-schema/dist/index.d.ts",
-      "./node_modules/openapi3-ts/dist/model/SpecificationExtension.d.ts",
-      "./node_modules/openapi3-ts/dist/model/OpenApi.d.ts",
-      "./node_modules/openapi3-ts/dist/model/Server.d.ts",
+      "./node_modules/openapi3-ts/dist/model/specificationextension.d.ts",
+      "./node_modules/openapi3-ts/dist/model/openapi.d.ts",
+      "./node_modules/openapi3-ts/dist/model/server.d.ts",
       "./node_modules/openapi3-ts/dist/model/index.d.ts",
-      "./node_modules/openapi3-ts/dist/dsl/OpenApiBuilder.d.ts",
+      "./node_modules/openapi3-ts/dist/dsl/openapibuilder.d.ts",
       "./node_modules/openapi3-ts/dist/dsl/index.d.ts",
       "./node_modules/openapi3-ts/dist/index.d.ts",
       "./node_modules/@loopback/openapi-v3/dist/types.d.ts",
@@ -7199,8 +7187,6 @@
       "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
       "./node_modules/pg-types/index.d.ts",
       "./node_modules/@types/pg/index.d.ts",
-      "./src/services/relay-profiler.ts",
-      "./src/application.ts",
       "./src/index.ts",
       "./src/migrate.ts",
       "./node_modules/@types/cookiejar/index.d.ts",
@@ -7238,6 +7224,7 @@
       "./src/controllers/blockchains.controller.ts",
       "./src/controllers/ping.controller.ts",
       "./node_modules/@types/ioredis/index.d.ts",
+      "./src/services/cherry-picker.ts",
       "./src/services/metrics-recorder.ts",
       "./src/services/sync-checker.ts",
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts",
@@ -7253,7 +7240,6 @@
       "./src/services/pocket-relayer.ts",
       "./src/controllers/v1.controller.ts",
       "./src/controllers/index.ts",
-      "./src/controllers/web3index.controller.ts",
       "./node_modules/logzio-nodejs/lib/logzio-nodejs.d.ts",
       "./node_modules/logform/index.d.ts",
       "./node_modules/winston-transport/index.d.ts",
@@ -7278,7 +7264,8 @@
       "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
       "./node_modules/@types/varint/index.d.ts",
-      "./src/services/cherry-picker.ts"
+      "./src/services/relay-profiler.ts",
+      "./src/application.ts"
     ]
   },
   "version": "3.8.3"
