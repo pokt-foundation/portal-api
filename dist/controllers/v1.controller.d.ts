@@ -1,7 +1,7 @@
 import { FilterExcludingWhere } from '@loopback/repository';
 import { Applications, LoadBalancers } from '../models';
 import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from '../repositories';
-import { Pocket, Configuration } from '@pokt-network/pocket-js';
+import { Pocket, Configuration, HTTPMethod } from '@pokt-network/pocket-js';
 import { Redis } from 'ioredis';
 import { Pool as PGPool } from 'pg';
 import { CherryPicker } from '../services/cherry-picker';
@@ -13,6 +13,7 @@ export declare class V1Controller {
     private origin;
     private userAgent;
     private contentType;
+    private httpMethod;
     private relayPath;
     private relayRetries;
     private pocket;
@@ -29,7 +30,7 @@ export declare class V1Controller {
     cherryPicker: CherryPicker;
     metricsRecorder: MetricsRecorder;
     pocketRelayer: PocketRelayer;
-    constructor(secretKey: string, host: string, origin: string, userAgent: string, contentType: string, relayPath: string, relayRetries: number, pocket: Pocket, pocketConfiguration: Configuration, redis: Redis, pgPool: PGPool, databaseEncryptionKey: string, processUID: string, fallbackURL: string, requestID: string, applicationsRepository: ApplicationsRepository, blockchainsRepository: BlockchainsRepository, loadBalancersRepository: LoadBalancersRepository);
+    constructor(secretKey: string, host: string, origin: string, userAgent: string, contentType: string, httpMethod: HTTPMethod, relayPath: string, relayRetries: number, pocket: Pocket, pocketConfiguration: Configuration, redis: Redis, pgPool: PGPool, databaseEncryptionKey: string, processUID: string, fallbackURL: string, requestID: string, applicationsRepository: ApplicationsRepository, blockchainsRepository: BlockchainsRepository, loadBalancersRepository: LoadBalancersRepository);
     /**
      * Load Balancer Relay
      *
