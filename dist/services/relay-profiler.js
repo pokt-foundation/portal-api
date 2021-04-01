@@ -9,6 +9,7 @@ class RelayProfiler extends pocket_js_1.BaseProfiler {
         this.data = [];
         this.pgPool = pgPool;
     }
+    //@ts-ignore
     async flushResults(requestID, blockchain, functionName, results) {
         /*
         const bulkData: any[] = [];
