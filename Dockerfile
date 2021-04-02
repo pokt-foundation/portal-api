@@ -1,6 +1,12 @@
 # Check out https://hub.docker.com/_/node to select a new base image
 FROM node:10-slim
 
+# Bind to all network interfaces so that it can be mapped to the host OS
+ENV NODE_ENV=production
+ENV WATCH=true
+ENV HOST=0.0.0.0
+ENV PORT=3000
+
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y git
@@ -21,10 +27,6 @@ COPY . .
 
 # NPM build
 RUN npm run build
-
-# Bind to all network interfaces so that it can be mapped to the host OS
-ENV HOST=0.0.0.0
-ENV PORT=3000
 
 EXPOSE ${PORT}
 

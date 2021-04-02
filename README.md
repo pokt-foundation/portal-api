@@ -33,11 +33,6 @@ $ docker-compose -f tasks.yml up download-production-data
 ```
 $ npm run tasks:db:persist-production-data
 ```
-or
-```
-$ docker-compose -f tasks.yml up persist-production-data
-```
-
 And you are good to go.
 
 ##### Spin everything locally
