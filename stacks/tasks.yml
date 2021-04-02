@@ -2,23 +2,23 @@ version: "3.5"
 
 services:
 
-  retrieve-prod-db:
+  download-production-data:
     image: mongo:latest
     command: /scripts/export-production-data.sh
     volumes: 
       - ~/.pocket/production_data:/data/
-      - "./scripts:/scripts"
+      - "../scripts:/scripts"
     env_file:
-      - .tasks.env
+      - ../.tasks.env
     
-  apply-prod-db:
+  persist-production-data:
     image: mongo:latest
     command: /scripts/import-production-data.sh
     volumes:
       - ~/.pocket/production_data:/data/
-      - "./scripts:/scripts"
+      - "../scripts:/scripts"
       - ~/.pocket/mongodb:/data/db
     env_file:
-      - .tasks.env
+      - ../.tasks.env
 
   # add pocket account creation
