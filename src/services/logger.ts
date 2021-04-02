@@ -2,7 +2,7 @@ import {HttpErrors} from '@loopback/rest';
 
 require("dotenv").config();
 
-const { createLogger, format, transports } = require('winston');
+const { createLogger, format, transports: winstonTransports } = require('winston');
 const { printf } = format;
 const S3StreamLogger = require('s3-streamlogger').S3StreamLogger;
 
@@ -11,6 +11,7 @@ const s3SecretAccessKey: string = process.env.AWS_S3_SECRET_ACCESS_KEY ?? '';
 const s3LogsRegion: string = process.env.AWS_S3_LOGS_REGION ?? '';
 const s3LogsBucket: string = process.env.AWS_S3_LOGS_BUCKET ?? '';
 const s3LogsFolder: string = process.env.AWS_S3_LOGS_FOLDER ?? '';
+const environment: string = process.env.NODE_ENV ?? 'production';
 
 if (!s3AccessKeyID) {
   throw new HttpErrors.InternalServerError(
@@ -143,12 +144,21 @@ interface Log {
   serviceNode: string;
 }
 
+//@ts-ignore
+const getS3Transports = (): Array<any> => [
+  new (winstonTransports.Stream)(options.s3Info),
+  new (winstonTransports.Stream)(options.s3Error),
+  new (winstonTransports.Stream)(options.s3Debug),
+] as Array<any>
+
+//@ts-ignore
+const getLocalTransports = (): Array<any> => [new winstonTransports.Console(options.console)] as Array<any>
+
+const transports = environment === 'production'
+  ? [...getS3Transports(), ...getLocalTransports()]
+  : getLocalTransports();
+
 module.exports = createLogger({
-  transports: [
-    new transports.Console(options.console),
-    new (transports.Stream)(options.s3Info),
-    new (transports.Stream)(options.s3Error),
-    new (transports.Stream)(options.s3Debug),
-  ],
+  transports,
   exitOnError: false,
 });

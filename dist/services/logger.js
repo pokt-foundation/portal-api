@@ -1,9 +1,9 @@
 "use strict";
-var _a, _b, _c, _d, _e;
+var _a, _b, _c, _d, _e, _f;
 Object.defineProperty(exports, "__esModule", { value: true });
 const rest_1 = require("@loopback/rest");
 require("dotenv").config();
-const { createLogger, format, transports } = require('winston');
+const { createLogger, format, transports: winstonTransports } = require('winston');
 const { printf } = format;
 const S3StreamLogger = require('s3-streamlogger').S3StreamLogger;
 const s3AccessKeyID = (_a = process.env.AWS_S3_ACCESS_KEY_ID) !== null && _a !== void 0 ? _a : '';
@@ -11,6 +11,7 @@ const s3SecretAccessKey = (_b = process.env.AWS_S3_SECRET_ACCESS_KEY) !== null &
 const s3LogsRegion = (_c = process.env.AWS_S3_LOGS_REGION) !== null && _c !== void 0 ? _c : '';
 const s3LogsBucket = (_d = process.env.AWS_S3_LOGS_BUCKET) !== null && _d !== void 0 ? _d : '';
 const s3LogsFolder = (_e = process.env.AWS_S3_LOGS_FOLDER) !== null && _e !== void 0 ? _e : '';
+const environment = (_f = process.env.NODE_ENV) !== null && _f !== void 0 ? _f : 'production';
 if (!s3AccessKeyID) {
     throw new rest_1.HttpErrors.InternalServerError('AWS_S3_ACCESS_KEY_ID required in ENV');
 }
@@ -98,13 +99,19 @@ function generateS3Logger(folder) {
     });
     return s3StreamLogger;
 }
+//@ts-ignore
+const getS3Transports = () => [
+    new (winstonTransports.Stream)(options.s3Info),
+    new (winstonTransports.Stream)(options.s3Error),
+    new (winstonTransports.Stream)(options.s3Debug),
+];
+//@ts-ignore
+const getLocalTransports = () => [new winstonTransports.Console(options.console)];
+const transports = environment === 'production'
+    ? [...getS3Transports(), ...getLocalTransports()]
+    : getLocalTransports();
 module.exports = createLogger({
-    transports: [
-        new transports.Console(options.console),
-        new (transports.Stream)(options.s3Info),
-        new (transports.Stream)(options.s3Error),
-        new (transports.Stream)(options.s3Debug),
-    ],
+    transports,
     exitOnError: false,
 });
 //# sourceMappingURL=logger.js.map
