@@ -91,8 +91,8 @@ export class CherryPicker {
     sortedLogs = this.sortLogs(sortedLogs, requestID, 'APP', application.id);
 
     // Iterate through sorted logs and form in to a weighted list 
-    // 3 failures per hour allowed on nodes
-    let rankedItems = this.rankItems(sortedLogs, 3);    
+    // If you fail your first relay in the session, go to the back of the line
+    let rankedItems = this.rankItems(sortedLogs, 1);    
 
     // If we have no nodes left because all 5 are failures, ¯\_(ツ)_/¯
     if (rankedItems.length === 0) {
