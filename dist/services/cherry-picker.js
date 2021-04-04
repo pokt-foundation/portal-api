@@ -64,9 +64,9 @@ class CherryPicker {
         }
         return node;
     }
-    // Fetch app/node's hourly service log from redis
+    // Fetch app/node's service log from redis
     async fetchRawServiceLog(blockchain, id) {
-        const rawServiceLog = await this.redis.get(blockchain + '-' + id + '-' + new Date().getHours());
+        const rawServiceLog = await this.redis.get(blockchain + '-' + id + '-service');
         return rawServiceLog;
     }
     // Fetch app/node's overall failure true/false log from redis
@@ -119,7 +119,7 @@ class CherryPicker {
                 averageSuccessLatency: elapsedTime.toFixed(5),
             };
         }
-        await this.redis.set(blockchain + '-' + id + '-' + new Date().getHours(), JSON.stringify(serviceQuality), 'EX', ttl);
+        await this.redis.set(blockchain + '-' + id + '-service', JSON.stringify(serviceQuality), 'EX', ttl);
     }
     async rankItems(blockchain, sortedLogs, maxFailuresPerPeriod) {
         const rankedItems = [];
