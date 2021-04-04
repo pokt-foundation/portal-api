@@ -2014,7 +2014,7 @@
         "signature": "ce3c16bd239d4345a1ffabff3dcbb5025d281292742f4cfa5a29398b815bbb60"
       },
       "./src/services/cherry-picker.ts": {
-        "version": "f079d78c85d25b329228ec2cf7e8dcc23fffd59a67fda7d9a316262a95c9dcf0",
+        "version": "948e9918e08efd0e781fbf394ee03ae1ea877163716fdc4fc102c3c594436284",
         "signature": "31144e89641fa4f6971297473b5cf0357e3d6417dd569aded8db5fedb2c92b8a"
       },
       "./src/services/metrics-recorder.ts": {
@@ -9617,6 +9617,7 @@
       "./node_modules/@types/ioredis/index.d.ts",
       "./node_modules/pg-types/index.d.ts",
       "./node_modules/@types/pg/index.d.ts",
+      "./src/services/metrics-recorder.ts",
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts",
       "./node_modules/strong-cryptor/dist/typings/index.d.ts",
       "./node_modules/strong-cryptor/dist/v2/decryptor.d.ts",
@@ -9627,6 +9628,9 @@
       "./node_modules/strong-cryptor/dist/decryptor.d.ts",
       "./node_modules/strong-cryptor/dist/index.d.ts",
       "./src/errors/relay-error.ts",
+      "./src/services/pocket-relayer.ts",
+      "./src/controllers/v1.controller.ts",
+      "./src/controllers/index.ts",
       "./src/services/logger.ts",
       "./node_modules/@types/aes-js/index.d.ts",
       "./node_modules/@types/keyv/index.d.ts",
@@ -9647,11 +9651,7 @@
       "./node_modules/@types/prettier/index.d.ts",
       "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
-      "./src/services/cherry-picker.ts",
-      "./src/controllers/v1.controller.ts",
-      "./src/services/pocket-relayer.ts",
-      "./src/services/metrics-recorder.ts",
-      "./src/controllers/index.ts"
+      "./src/services/cherry-picker.ts"
     ]
   },
   "version": "3.8.3"

@@ -160,7 +160,7 @@ export class CherryPicker {
       serviceNode,
       elapsedTime,
       result,
-      3600
+      7200
     );
   }
 
@@ -253,10 +253,10 @@ export class CherryPicker {
         rankedItems.push(sortedLog.id);
       } else if (sortedLog.successRate === 0) {
         // If an app/node has a 0% success rate and < max failures, keep them in rotation
-        // If an app/node has a 0% success rate and > max failures shelve them until next period
         if (sortedLog.attempts < maxFailuresPerPeriod) {
           rankedItems.push(sortedLog.id);
         }
+        // If an app/node has a 0% success rate and >= max failures shelve them until next period
         else {
           // If a node has been shelved, mark it as questionable so that in the future, it is never
           // put into the maximum weighting category.
