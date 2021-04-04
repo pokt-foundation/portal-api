@@ -130,14 +130,15 @@ class CherryPicker {
         // be 10 times more likely to be selected than a node that has had failures.
         let weightFactor = 10;
         for (const sortedLog of sortedLogs) {
-            if (sortedLog.successRate > 0.95 && !sortedLog.failure) {
-                // For untested apps/nodes and those > 95% success rates, weight their selection
+            // Brand new sessions include all nodes in this group so we avoid putting failures here
+            if (sortedLog.successRate > 0.98 && !sortedLog.failure) {
+                // For untested apps/nodes and those > 98% success rates, weight their selection
                 for (let x = 1; x <= weightFactor; x++) {
                     rankedItems.push(sortedLog.id);
                 }
                 weightFactor = weightFactor - 2;
             }
-            else if (sortedLog.successRate > 0.85 && !sortedLog.failure) {
+            else if (sortedLog.successRate > 0.95) {
                 // For all apps/nodes with reasonable success rate, weight their selection less
                 for (let x = 1; x <= weightFactor; x++) {
                     rankedItems.push(sortedLog.id);
@@ -178,7 +179,12 @@ class CherryPicker {
         // Check here to see if it was shelved the last time it was in a session
         // If so, mark it in the service log
         const failureLog = await this.fetchRawFailureLog(blockchain, id);
-        failure = (failureLog === 'true');
+        // Pull the error log to see how many errors in a row; if > 5, mark as failure
+        let errorLog = await this.redis.get(blockchain + '-' + id + '-errors');
+        if (!errorLog) {
+            errorLog = '0';
+        }
+        failure = ((failureLog === 'true') || (parseInt(errorLog) > 5));
         if (!rawServiceLog) {
             // App/Node hasn't had a relay in the past hour
             // Success rate of 1 boosts this node into the primary group so it gets tested
