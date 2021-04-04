@@ -240,7 +240,7 @@ export class CherryPicker {
           rankedItems.push(sortedLog.id);
         }
         weightFactor = weightFactor - 2;
-      } else if (sortedLog.successRate > 0.95) {
+      } else if (sortedLog.successRate > 0.95 && !sortedLog.failure) {
         // For all apps/nodes with reasonable success rate, weight their selection less
         for (let x = 1; x <= weightFactor; x++) {
           rankedItems.push(sortedLog.id);
