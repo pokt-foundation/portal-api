@@ -117,13 +117,13 @@ export class CherryPicker {
     return node;
   }
   
-  // Fetch app/node's hourly service log from redis
+  // Fetch app/node's service log from redis
   async fetchRawServiceLog(
     blockchain: string,
     id: string | undefined,
   ): Promise<string | null> {
     const rawServiceLog = await this.redis.get(
-      blockchain + '-' + id + '-' + new Date().getHours(),
+      blockchain + '-' + id + '-service',
     );
     return rawServiceLog;
   }
@@ -216,7 +216,7 @@ export class CherryPicker {
     }
 
     await this.redis.set(
-      blockchain + '-' + id + '-' + new Date().getHours(),
+      blockchain + '-' + id + '-service',
       JSON.stringify(serviceQuality),
       'EX',
       ttl,
