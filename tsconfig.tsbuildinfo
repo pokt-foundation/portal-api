@@ -2014,7 +2014,7 @@
         "signature": "ce3c16bd239d4345a1ffabff3dcbb5025d281292742f4cfa5a29398b815bbb60"
       },
       "./src/services/cherry-picker.ts": {
-        "version": "e8b67c000f86dc47f5881a800e0f8b9cc2c498fb5670f7cb06055f8c15168df9",
+        "version": "4fa1f6e2dc4e6b0ef283b1146928fe577c080aa4b485ac3d218e4e56086e18c6",
         "signature": "31144e89641fa4f6971297473b5cf0357e3d6417dd569aded8db5fedb2c92b8a"
       },
       "./src/services/metrics-recorder.ts": {
@@ -9627,6 +9627,7 @@
       "./node_modules/strong-cryptor/dist/decryptor.d.ts",
       "./node_modules/strong-cryptor/dist/index.d.ts",
       "./src/errors/relay-error.ts",
+      "./src/services/pocket-relayer.ts",
       "./src/controllers/v1.controller.ts",
       "./src/controllers/index.ts",
       "./src/services/logger.ts",
@@ -9649,8 +9650,7 @@
       "./node_modules/@types/prettier/index.d.ts",
       "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
-      "./src/services/cherry-picker.ts",
-      "./src/services/pocket-relayer.ts"
+      "./src/services/cherry-picker.ts"
     ]
   },
   "version": "3.8.3"
