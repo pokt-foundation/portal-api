@@ -2,7 +2,7 @@ name: Production Deployment us-east-2
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master-off ]
 
 jobs:
   deploy:
