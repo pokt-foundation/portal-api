@@ -69,7 +69,7 @@ class CherryPicker {
         const rawServiceLog = await this.redis.get(blockchain + '-' + id + '-' + new Date().getHours());
         return rawServiceLog;
     }
-    // Fetch app/node's hourly service log from redis
+    // Fetch app/node's overall failure true/false log from redis
     async fetchRawFailureLog(blockchain, id) {
         const rawFailureLog = await this.redis.get(blockchain + '-' + id + '-failure');
         return rawFailureLog;
@@ -78,7 +78,7 @@ class CherryPicker {
     // { id: { results: { 200: x, 500: y, ... }, averageSuccessLatency: z }
     async updateServiceQuality(blockchain, applicationID, serviceNode, elapsedTime, result) {
         await this._updateServiceQuality(blockchain, applicationID, elapsedTime, result, 900);
-        await this._updateServiceQuality(blockchain, serviceNode, elapsedTime, result, 3600);
+        await this._updateServiceQuality(blockchain, serviceNode, elapsedTime, result, 7200);
     }
     async _updateServiceQuality(blockchain, id, elapsedTime, result, ttl) {
         const serviceLog = await this.fetchRawServiceLog(blockchain, id);
@@ -153,16 +153,18 @@ class CherryPicker {
             }
             else if (sortedLog.successRate === 0) {
                 // If an app/node has a 0% success rate and < max failures, keep them in rotation
-                // If an app/node has a 0% success rate and > max failures shelve them until next period
                 if (sortedLog.attempts < maxFailuresPerPeriod) {
                     rankedItems.push(sortedLog.id);
                 }
-                // If a node has been shelved, mark it as questionable so that in the future, it is never
-                // put into the maximum weighting category.
-                // Once a node has performed well enough in a session, check to see if it is marked
-                // If so, erase the scarlet letter
-                if (!sortedLog.failure) {
-                    await this.redis.set(blockchain + '-' + sortedLog.id + '-failure', 'true', 'EX', (60 * 60 * 24 * 30));
+                // If an app/node has a 0% success rate and >= max failures shelve them until next period
+                else {
+                    // If a node has been shelved, mark it as questionable so that in the future, it is never
+                    // put into the maximum weighting category.
+                    // Once a node has performed well enough in a session, check to see if it is marked
+                    // If so, erase the scarlet letter
+                    if (!sortedLog.failure) {
+                        await this.redis.set(blockchain + '-' + sortedLog.id + '-failure', 'true', 'EX', (60 * 60 * 24 * 30));
+                    }
                 }
             }
         }
