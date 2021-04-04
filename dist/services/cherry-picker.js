@@ -13,13 +13,13 @@ class CherryPicker {
         let sortedLogs = [];
         for (const application of applications) {
             const rawServiceLog = await this.fetchRawServiceLog(blockchain, application);
-            sortedLogs.push(this.createUnsortedLog(application, rawServiceLog));
+            sortedLogs.push(await this.createUnsortedLog(application, blockchain, rawServiceLog));
         }
         // Sort application logs by highest success rate, then by lowest latency
         sortedLogs = this.sortLogs(sortedLogs, requestID, 'LB', loadBalancerID);
         // Iterate through sorted logs and form in to a weighted list 
         // 15 failures per 15 minutes allowed on apps (all 5 nodes failed 3 times)
-        let rankedItems = this.rankItems(sortedLogs, 15);
+        let rankedItems = await this.rankItems(blockchain, sortedLogs, 15);
         // If we have no applications left because all are failures, ¯\_(ツ)_/¯
         if (rankedItems.length === 0) {
             logger.log('warn', 'Cherry picking failure -- apps', { requestID: requestID, relayType: 'LB', typeID: loadBalancerID, serviceNode: '' });
@@ -44,13 +44,13 @@ class CherryPicker {
             rawNodes[node.publicKey] = node;
             rawNodeIDs.push(node.publicKey);
             const rawServiceLog = await this.fetchRawServiceLog(blockchain, node.publicKey);
-            sortedLogs.push(this.createUnsortedLog(node.publicKey, rawServiceLog));
+            sortedLogs.push(await this.createUnsortedLog(node.publicKey, blockchain, rawServiceLog));
         }
         // Sort node logs by highest success rate, then by lowest latency
         sortedLogs = this.sortLogs(sortedLogs, requestID, 'APP', application.id);
         // Iterate through sorted logs and form in to a weighted list 
         // If you fail your first relay in the session, go to the back of the line
-        let rankedItems = this.rankItems(sortedLogs, 1);
+        let rankedItems = await this.rankItems(blockchain, sortedLogs, 1);
         // If we have no nodes left because all 5 are failures, ¯\_(ツ)_/¯
         if (rankedItems.length === 0) {
             logger.log('warn', 'Cherry picking failure -- nodes', { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: '' });
@@ -68,6 +68,11 @@ class CherryPicker {
     async fetchRawServiceLog(blockchain, id) {
         const rawServiceLog = await this.redis.get(blockchain + '-' + id + '-' + new Date().getHours());
         return rawServiceLog;
+    }
+    // Fetch app/node's hourly service log from redis
+    async fetchRawFailureLog(blockchain, id) {
+        const rawFailureLog = await this.redis.get(blockchain + '-' + id + '-failure');
+        return rawFailureLog;
     }
     // Record app & node service quality in redis for future selection weight
     // { id: { results: { 200: x, 500: y, ... }, averageSuccessLatency: z }
@@ -116,7 +121,7 @@ class CherryPicker {
         }
         await this.redis.set(blockchain + '-' + id + '-' + new Date().getHours(), JSON.stringify(serviceQuality), 'EX', ttl);
     }
-    rankItems(sortedLogs, maxFailuresPerPeriod) {
+    async rankItems(blockchain, sortedLogs, maxFailuresPerPeriod) {
         const rankedItems = [];
         // weightFactor pushes the fastest apps/nodes with the highest success rates
         // to be called on more often for relays.
@@ -125,14 +130,14 @@ class CherryPicker {
         // be 10 times more likely to be selected than a node that has had failures.
         let weightFactor = 10;
         for (const sortedLog of sortedLogs) {
-            if (sortedLog.successRate > 0.95) {
+            if (sortedLog.successRate > 0.95 && !sortedLog.failure) {
                 // For untested apps/nodes and those > 95% success rates, weight their selection
                 for (let x = 1; x <= weightFactor; x++) {
                     rankedItems.push(sortedLog.id);
                 }
                 weightFactor = weightFactor - 2;
             }
-            else if (sortedLog.successRate > 0.85) {
+            else if (sortedLog.successRate > 0.85 && !sortedLog.failure) {
                 // For all apps/nodes with reasonable success rate, weight their selection less
                 for (let x = 1; x <= weightFactor; x++) {
                     rankedItems.push(sortedLog.id);
@@ -152,14 +157,26 @@ class CherryPicker {
                 if (sortedLog.attempts < maxFailuresPerPeriod) {
                     rankedItems.push(sortedLog.id);
                 }
+                // If a node has been shelved, mark it as questionable so that in the future, it is never
+                // put into the maximum weighting category.
+                // Once a node has performed well enough in a session, check to see if it is marked
+                // If so, erase the scarlet letter
+                if (!sortedLog.failure) {
+                    await this.redis.set(blockchain + '-' + sortedLog.id + '-failure', 'true', 'EX', (60 * 60 * 24 * 30));
+                }
             }
         }
         return rankedItems;
     }
-    createUnsortedLog(id, rawServiceLog) {
+    async createUnsortedLog(id, blockchain, rawServiceLog) {
         let attempts = 0;
         let successRate = 0;
         let averageSuccessLatency = 0;
+        let failure = false;
+        // Check here to see if it was shelved the last time it was in a session
+        // If so, mark it in the service log
+        const failureLog = await this.fetchRawFailureLog(blockchain, id);
+        failure = (failureLog === 'true');
         if (!rawServiceLog) {
             // App/Node hasn't had a relay in the past hour
             // Success rate of 1 boosts this node into the primary group so it gets tested
@@ -174,6 +191,11 @@ class CherryPicker {
             }
             // Has the node had any success in the past hour?
             if (parsedLog.results['200'] > 0) {
+                // If previously marked as failure, erase that
+                if (failure) {
+                    failure = false;
+                    await this.redis.set(blockchain + '-' + id + '-failure', 'false', 'EX', (60 * 60 * 24 * 30));
+                }
                 successRate = parsedLog.results['200'] / attempts;
                 averageSuccessLatency = parseFloat(parseFloat(parsedLog.averageSuccessLatency).toFixed(5));
             }
@@ -183,6 +205,7 @@ class CherryPicker {
             attempts: attempts,
             successRate: successRate,
             averageSuccessLatency: averageSuccessLatency,
+            failure: failure,
         };
     }
     sortLogs(array, requestID, relayType, typeID) {
