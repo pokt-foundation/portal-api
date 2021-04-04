@@ -128,7 +128,7 @@ export class CherryPicker {
     return rawServiceLog;
   }
   
-  // Fetch app/node's hourly service log from redis
+  // Fetch app/node's overall failure true/false log from redis
   async fetchRawFailureLog(
     blockchain: string,
     id: string | undefined,
@@ -257,17 +257,19 @@ export class CherryPicker {
         if (sortedLog.attempts < maxFailuresPerPeriod) {
           rankedItems.push(sortedLog.id);
         }
-        // If a node has been shelved, mark it as questionable so that in the future, it is never
-        // put into the maximum weighting category.
-        // Once a node has performed well enough in a session, check to see if it is marked
-        // If so, erase the scarlet letter
-        if (!sortedLog.failure) {
-          await this.redis.set(
-            blockchain + '-' + sortedLog.id + '-failure',
-            'true',
-            'EX',
-            (60 * 60 * 24 * 30),
-          );
+        else {
+          // If a node has been shelved, mark it as questionable so that in the future, it is never
+          // put into the maximum weighting category.
+          // Once a node has performed well enough in a session, check to see if it is marked
+          // If so, erase the scarlet letter
+          if (!sortedLog.failure) {
+            await this.redis.set(
+              blockchain + '-' + sortedLog.id + '-failure',
+              'true',
+              'EX',
+              (60 * 60 * 24 * 30),
+            );
+          }
         }
       }
     }
