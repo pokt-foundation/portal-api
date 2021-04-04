@@ -2014,7 +2014,7 @@
         "signature": "ce3c16bd239d4345a1ffabff3dcbb5025d281292742f4cfa5a29398b815bbb60"
       },
       "./src/services/cherry-picker.ts": {
-        "version": "948e9918e08efd0e781fbf394ee03ae1ea877163716fdc4fc102c3c594436284",
+        "version": "4b038f684ae7205c1e50db724bf59827538087a9a2e03cebae1a250dc89925e4",
         "signature": "31144e89641fa4f6971297473b5cf0357e3d6417dd569aded8db5fedb2c92b8a"
       },
       "./src/services/metrics-recorder.ts": {
