@@ -161,6 +161,10 @@ export class PocketRelayer {
           method: method,
           error: undefined
         });
+        
+        // Clear error log
+        await this.redis.del(blockchain + '-' + relayResponse.proof.servicerPubKey + '-errors');
+
         // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
         if (
           blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
@@ -173,6 +177,9 @@ export class PocketRelayer {
         // Record failure metric, retry if possible or fallback
         // If this is the last retry and fallback is available, mark the error not delivered
         const errorDelivered = (x === this.relayRetries && fallbackAvailable) ? false : true;
+
+        // Increment error log
+        await this.redis.incr(blockchain + '-' + relayResponse.servicer_node + '-errors');
 
         await this.metricsRecorder.recordMetric({
           requestID: requestID,
