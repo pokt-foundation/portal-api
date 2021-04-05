@@ -15,6 +15,12 @@ const process = require('process');
 const pg = require('pg');
 const got = require('got');
 
+import {Pocket} from '@pokt-network/pocket-js';
+
+export interface pocketJSInstances {
+  [index:string]: Pocket;
+};
+
 require('log-timestamp');
 require('dotenv').config();
 
@@ -154,5 +160,9 @@ export class PocketGatewayApplication extends BootMixin(
     const parts = [os.hostname(), process.pid, +new Date()];
     const hash = crypto.createHash('md5').update(parts.join(''));
     this.bind('processUID').to(hash.digest('hex'));
+
+    // Load an empty array to store PocketJS instances
+    const pocketJSInstances = {} as pocketJSInstances;
+    this.bind('pocketJSInstances').to(pocketJSInstances);
   }
 }

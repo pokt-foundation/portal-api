@@ -1,5 +1,9 @@
 import { ApplicationConfig } from '@loopback/core';
 import { RestApplication } from '@loopback/rest';
+import { Pocket } from '@pokt-network/pocket-js';
+export interface pocketJSInstances {
+    [index: string]: Pocket;
+}
 declare const PocketGatewayApplication_base: (new (...args: any[]) => {
     projectRoot: string;
     bootOptions?: import("@loopback/boot").BootOptions | undefined;

@@ -3,10 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
 const context_1 = require("@loopback/context");
 const rest_1 = require("@loopback/rest");
-const account_1 = require("@pokt-network/pocket-js/dist/keybase/models/account");
 const logger = require('./services/logger');
-const pocketJS = require('@pokt-network/pocket-js');
-const { Pocket, Configuration, HttpRpcProvider } = pocketJS;
 const shortID = require('shortid');
 const SequenceActions = rest_1.RestBindings.SequenceActions;
 let GatewaySequence = class GatewaySequence {
@@ -24,33 +21,6 @@ let GatewaySequence = class GatewaySequence {
     }
     async handle(context) {
         try {
-            // Create the Pocket instance
-            const dispatchers = [];
-            if (this.dispatchURL.indexOf(",")) {
-                const dispatcherArray = this.dispatchURL.split(",");
-                dispatcherArray.forEach(function (dispatcher) {
-                    dispatchers.push(new URL(dispatcher));
-                });
-            }
-            else {
-                dispatchers.push(new URL(this.dispatchURL));
-            }
-            const configuration = new Configuration(0, 100000, 0, 120000, false, this.pocketSessionBlockFrequency, this.pocketBlockTime, undefined, undefined, false);
-            const rpcProvider = new HttpRpcProvider(dispatchers);
-            const pocket = new Pocket(dispatchers, rpcProvider, configuration);
-            context.bind('pocketInstance').to(pocket);
-            context.bind('pocketConfiguration').to(configuration);
-            // Unlock primary client account for relay signing
-            try {
-                const importAccount = await pocket.keybase.importAccount(Buffer.from(this.clientPrivateKey, 'hex'), this.clientPassphrase);
-                if (importAccount instanceof account_1.Account) {
-                    await pocket.keybase.unlockAccount(importAccount.addressHex, this.clientPassphrase, 0);
-                }
-            }
-            catch (e) {
-                logger.log('error', e);
-                throw new rest_1.HttpErrors.InternalServerError('Unable to import or unlock base client account');
-            }
             const { request, response } = context;
             // Record the host, user-agent, and origin for processing
             context.bind('host').to(request.headers['host']);
