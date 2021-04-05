@@ -22,10 +22,8 @@ services:
 
   db:
     image: mongo:latest
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: mongouser
-      MONGO_INITDB_ROOT_PASSWORD: mongopassword
-      MONGO_INITDB_DATABASE: gatewaydb
+    env_file:
+      - ../.tasks.env
     volumes: 
       - ~/.pocket/mongodb:/data/db
     ports:

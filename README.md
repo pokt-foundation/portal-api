@@ -11,11 +11,6 @@ make sure you create tasks.env by:
 $ cp .tasks.env.example .tasks.env
 ```
 
-Spin up your local database using:
-```
-$ npm run services:db:up
-```
-
 Replace `_SRC_` env variables with the gateway production values
 and `_DEST_` with the same values as `MONGO_INIT` values, then run:
 
