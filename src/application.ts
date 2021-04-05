@@ -4,13 +4,9 @@ import {RepositoryMixin} from '@loopback/repository';
 import {RestApplication, HttpErrors} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import {GatewaySequence} from './sequence';
-import {Account} from '@pokt-network/pocket-js/dist/keybase/models/account';
 
 import path from 'path';
 const logger = require('./services/logger');
-
-const pocketJS = require('@pokt-network/pocket-js');
-const {Pocket, Configuration, HttpRpcProvider} = pocketJS;
 
 const Redis = require('ioredis');
 const crypto = require('crypto');
@@ -40,7 +36,7 @@ export class PocketGatewayApplication extends BootMixin(
     };
   }
 
-  async loadPocket(): Promise<void> {
+  async loadApp(): Promise<void> {
     // Requirements; for Production these are stored in GitHub repo secrets
     //
     // For Dev, you need to pass them in via .env file
@@ -91,59 +87,14 @@ export class PocketGatewayApplication extends BootMixin(
       );
     }
 
-    // Create the Pocket instance
-    const dispatchers = [];
-
-    if (dispatchURL.indexOf(",")) {
-      const dispatcherArray = dispatchURL.split(",");
-      dispatcherArray.forEach(function(dispatcher) {
-        dispatchers.push(new URL(dispatcher));
-      });
-    } else {
-      dispatchers.push(new URL(dispatchURL));
-    }
-
-    const configuration = new Configuration(
-      0,
-      100000,
-      0,
-      120000,
-      false,
-      pocketSessionBlockFrequency,
-      pocketBlockTime,
-      undefined,
-      undefined,
-      false,
-    );
-    const rpcProvider = new HttpRpcProvider(dispatchers);
-    const pocket = new Pocket(dispatchers, rpcProvider, configuration);
-    
-    // Bind to application context for shared re-use
-    this.bind('pocketInstance').to(pocket);
-    this.bind('pocketConfiguration').to(configuration);
+    this.bind('dispatchURL').to(dispatchURL);
+    this.bind('pocketSessionBlockFrequency').to(pocketSessionBlockFrequency);
+    this.bind('pocketBlockTime').to(pocketBlockTime);
+    this.bind('clientPrivateKey').to(clientPrivateKey);
+    this.bind('clientPassphrase').to(clientPassphrase);
     this.bind('relayRetries').to(relayRetries);
     this.bind('fallbackURL').to(fallbackURL);
     this.bind('logger').to(logger);
-
-    // Unlock primary client account for relay signing
-    try {
-      const importAccount = await pocket.keybase.importAccount(
-        Buffer.from(clientPrivateKey, 'hex'),
-        clientPassphrase,
-      );
-      if (importAccount instanceof Account) {
-        await pocket.keybase.unlockAccount(
-          importAccount.addressHex,
-          clientPassphrase,
-          0,
-        );
-      }
-    } catch (e) {
-      logger.log('error', e);
-      throw new HttpErrors.InternalServerError(
-        'Unable to import or unlock base client account',
-      );
-    }
 
     // Load Redis for cache
     const redisEndpoint: string = process.env.REDIS_ENDPOINT || '';
