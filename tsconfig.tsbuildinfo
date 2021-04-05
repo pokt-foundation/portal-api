@@ -1310,168 +1310,20 @@
         "signature": "a15b48b01a590689bbbf03aac6a5291a8dddf77477a46d9e0037adfcc07942b8"
       },
       "./src/sequence.ts": {
-        "version": "ce71d6a2ad0c21be59b07703a62241c9f5035d792a6491995dd9e13d9e497d5f",
-        "signature": "8721cf11eb4936ffee74356179ce18d3cc7ff99cbc861af322c1a9cfb31c4609"
-      },
-      "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts": {
-        "version": "e0209f76544838f42150bccec0103aee3bc26edd64feb1c2dce0176018012ef4",
-        "signature": "e0209f76544838f42150bccec0103aee3bc26edd64feb1c2dce0176018012ef4"
-      },
-      "./src/application.ts": {
-        "version": "33f2b847dc8f0d840980c65a8fffa7e007066c5ce208a86bc0dc96b58ea65be0",
-        "signature": "f4b295f6c43ea9ebb0fb3113c36874d56119f89d425fcf1f49e6be31cd2dd130"
-      },
-      "./src/index.ts": {
-        "version": "e00e68920bdc16e2b77b5f3d5b575d98864f2220414d3a61dfa4189f76552082",
-        "signature": "2c1e64b6cdfbeb152eb10a597e4d5a1b27e04726fb02f95b0699101fedddf3ed"
-      },
-      "./src/migrate.ts": {
-        "version": "e66e374a6eed205c62cf538c1fc98ed4be9d3457ea97e7fc16295daa60b7eb91",
-        "signature": "d289609b56df6411204c89f5197dc2d4d19910336a10c86cd9b3af21b22e344d"
-      },
-      "./node_modules/@types/cookiejar/index.d.ts": {
-        "version": "16b7fb094ffaa5d270f934e7406e8baee2f8245cfabf6dcc20f693389f005f56",
-        "signature": "16b7fb094ffaa5d270f934e7406e8baee2f8245cfabf6dcc20f693389f005f56"
-      },
-      "./node_modules/@types/superagent/index.d.ts": {
-        "version": "54290ac8d5f9b94a669980e6acb63b43b4df6138caf2fc3cdcb8e99553f1583a",
-        "signature": "54290ac8d5f9b94a669980e6acb63b43b4df6138caf2fc3cdcb8e99553f1583a"
-      },
-      "./node_modules/@types/supertest/index.d.ts": {
-        "version": "e6540dcaa31aadbd070bea91d31c387c3e03baf78ea56420e706ae77660ae45a",
-        "signature": "e6540dcaa31aadbd070bea91d31c387c3e03baf78ea56420e706ae77660ae45a"
-      },
-      "./node_modules/@loopback/testlab/dist/client.d.ts": {
-        "version": "d33fe7df13cb34fa58fcd9fc11c052dd905c05172185a3a5a31b736501c2a629",
-        "signature": "d33fe7df13cb34fa58fcd9fc11c052dd905c05172185a3a5a31b736501c2a629"
-      },
-      "./node_modules/@loopback/testlab/should-as-function.d.ts": {
-        "version": "e0bcc7ecaf53e76bf21f3660a85db7eedeb36ceeb58969801858095658d1428d",
-        "signature": "e0bcc7ecaf53e76bf21f3660a85db7eedeb36ceeb58969801858095658d1428d"
-      },
-      "./node_modules/@loopback/testlab/dist/expect.d.ts": {
-        "version": "5791b63ac312a792f888401243acd5084f27c2c76792d436fa68e9581a74bd6d",
-        "signature": "5791b63ac312a792f888401243acd5084f27c2c76792d436fa68e9581a74bd6d"
-      },
-      "./node_modules/@loopback/testlab/dist/http-error-logger.d.ts": {
-        "version": "1d965675096492c8b8634e95d2ba80df0937100c1ca1a4be0aa521f2fcf4e679",
-        "signature": "1d965675096492c8b8634e95d2ba80df0937100c1ca1a4be0aa521f2fcf4e679"
-      },
-      "./node_modules/@loopback/testlab/dist/http-server-config.d.ts": {
-        "version": "915ad988fcef8653bc578f63739303346d761aa6d462d4bc4ef8579ad7df6766",
-        "signature": "915ad988fcef8653bc578f63739303346d761aa6d462d4bc4ef8579ad7df6766"
-      },
-      "./node_modules/@loopback/testlab/dist/request.d.ts": {
-        "version": "87c409fe1f923e4449a75e4c07dd939436e9c8f76b834fb44a6937147867813d",
-        "signature": "87c409fe1f923e4449a75e4c07dd939436e9c8f76b834fb44a6937147867813d"
-      },
-      "./node_modules/@types/shot/index.d.ts": {
-        "version": "1858582b6b5b66476d2885696bd490e58d7a2eb0d48f505e214967ca00acd0ea",
-        "signature": "1858582b6b5b66476d2885696bd490e58d7a2eb0d48f505e214967ca00acd0ea"
-      },
-      "./node_modules/@loopback/testlab/dist/shot.d.ts": {
-        "version": "c35b3b6ef644c4144c767d0ef2573b32b79cd989d84e266a73f0c8966dc0ef97",
-        "signature": "c35b3b6ef644c4144c767d0ef2573b32b79cd989d84e266a73f0c8966dc0ef97"
-      },
-      "./node_modules/@types/sinonjs__fake-timers/index.d.ts": {
-        "version": "558a9770503071d5a6fc6c596f7230bb79f2d034ced4a205bd1ebcad3b5879ec",
-        "signature": "558a9770503071d5a6fc6c596f7230bb79f2d034ced4a205bd1ebcad3b5879ec"
-      },
-      "./node_modules/@types/sinon/ts3.1/index.d.ts": {
-        "version": "5fea7154f7cc1d8b1e56b2c8917cf57b529799201f75871b3d8df13de45123b8",
-        "signature": "5fea7154f7cc1d8b1e56b2c8917cf57b529799201f75871b3d8df13de45123b8"
-      },
-      "./node_modules/@loopback/testlab/dist/sinon.d.ts": {
-        "version": "451d3238632a48b1d487785be7ad51904238a63a593884d1b9cb4cefd51c31d0",
-        "signature": "451d3238632a48b1d487785be7ad51904238a63a593884d1b9cb4cefd51c31d0"
-      },
-      "./node_modules/@loopback/testlab/dist/skip.d.ts": {
-        "version": "049893f64a1b25accec1fdb7d40dc8d8d8c08d6db07d321092c4124373c9e381",
-        "signature": "049893f64a1b25accec1fdb7d40dc8d8d8c08d6db07d321092c4124373c9e381"
-      },
-      "./node_modules/@loopback/testlab/dist/test-sandbox.d.ts": {
-        "version": "c09d3d8964ff66481d085b2702fb5295a94756dce4739beda789b11b89c3aaca",
-        "signature": "c09d3d8964ff66481d085b2702fb5295a94756dce4739beda789b11b89c3aaca"
-      },
-      "./node_modules/@loopback/testlab/dist/to-json.d.ts": {
-        "version": "d22280c29a0d4d6acba8968091ed9b772946c78e36d4b0cb7eca1803b8b8c2f0",
-        "signature": "d22280c29a0d4d6acba8968091ed9b772946c78e36d4b0cb7eca1803b8b8c2f0"
-      },
-      "./node_modules/@loopback/testlab/dist/validate-api-spec.d.ts": {
-        "version": "8730131999f563de6b559e35f6253007cd311e676e9d17999c9287dd3e11e618",
-        "signature": "8730131999f563de6b559e35f6253007cd311e676e9d17999c9287dd3e11e618"
-      },
-      "./node_modules/@loopback/testlab/dist/index.d.ts": {
-        "version": "38992be86825669bca9d84dfa17319e89c30969e05ba85d9c7f99dbc9c2eb83f",
-        "signature": "38992be86825669bca9d84dfa17319e89c30969e05ba85d9c7f99dbc9c2eb83f"
-      },
-      "./src/__tests__/acceptance/test-helper.ts": {
-        "version": "39c10614f4a38c537cb31e28d753c1acf30b7746e47367cbe03422cb48d0ff5c",
-        "signature": "c8dfa8356ac17614a075ea3c69342a236544c47e2cb98581f7a15be64fc1ba83"
-      },
-      "./src/__tests__/acceptance/home-page.acceptance.ts": {
-        "version": "a819ec42b8bde79f4e7a1a30a4737f50a19046b2220b462d281f69ab2be3b24d",
-        "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
-      },
-      "./src/__tests__/acceptance/ping.controller.acceptance.ts": {
-        "version": "219bde9d1db15cea0abb6df76189db3e2ac48395cf37c132aecab8faa46ae291",
-        "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
-      },
-      "./src/models/blockchains.model.ts": {
-        "version": "32b222d3ca764888f820699327f89186fb167bd1ce2d7a050811c17ab12a7a55",
-        "signature": "7601bf089168bf4c65ff1faea1369310caaf1d5b7486d02eadc6c68f270a8451"
-      },
-      "./src/models/applications.model.ts": {
-        "version": "98b18c555b3e2725bf9535405688f0e980f888026c87cdb7d015f1c02fbdb3ad",
-        "signature": "90363c3cd94f92e59335e0b417c5b076459e60cf6b82018019144229dff174ca"
-      },
-      "./src/models/load-balancers.model.ts": {
-        "version": "34a2ec0df689513a9c0da75998fbf202b985133ed6245af2ed07647adb2a3099",
-        "signature": "189a3d8561e8e7a7d4e7d2fee3c806014304916daef88219af9759a3c4850938"
-      },
-      "./src/models/index.ts": {
-        "version": "8909c266b77c849e7e2e301f040db97c94dd318c51e088948f51e2c94fbb5bbb",
-        "signature": "8909c266b77c849e7e2e301f040db97c94dd318c51e088948f51e2c94fbb5bbb"
-      },
-      "./src/datasources/gateway.datasource.ts": {
-        "version": "cd1a466df78094f34036be8ef842dd6fc917bf4e7c2522e53a8ea09dffe2a2b7",
-        "signature": "882e92e6dfb6b1a3a70784e86c6bd8cbe243b830f938fef2a00568c71e08ca00"
-      },
-      "./src/datasources/index.ts": {
-        "version": "c3c7f74b332c3817aba95cabb9f62f36af691e13d9c6f8d92974607924242919",
-        "signature": "c3c7f74b332c3817aba95cabb9f62f36af691e13d9c6f8d92974607924242919"
-      },
-      "./src/repositories/blockchains.repository.ts": {
-        "version": "7798d189e59654d84d9015f4679bcf388ce48eb66b16f916aafd1f76149206a3",
-        "signature": "3bca2a5251f65752e3a623ece542271502ee1b029cc00cf8d0cda32f7ab153a6"
-      },
-      "./src/repositories/applications.repository.ts": {
-        "version": "e97935421d5e3aee066dcca59e95e046b96c59398a90188a12f63afff0334d81",
-        "signature": "1ce0a430b6a96a61e2c9ade7e10aff905447a76feeb7c2ad0608ebc4dafefcd2"
-      },
-      "./src/repositories/load-balancers.repository.ts": {
-        "version": "d0dbe23ea46a76eabc76276430735cdf99390570a46d87290eaba6435865cb2c",
-        "signature": "5d43f55098f511dd85c449bbad77e5d23e39d99cf43a2b0901c9d19a1a32aa3f"
-      },
-      "./src/repositories/index.ts": {
-        "version": "2b96d3bc206857eebcddc961a4a3da8f3f1af0eb2d5593b2f27bea109f718ee3",
-        "signature": "2b96d3bc206857eebcddc961a4a3da8f3f1af0eb2d5593b2f27bea109f718ee3"
-      },
-      "./src/controllers/blockchains.controller.ts": {
-        "version": "4aada272511d1a2def3d464a805ace8d6368a39585d07a8a7e83c2566982e9ff",
-        "signature": "976543577429681f8edd3c39e1ea422806c2cdeb5201ca186b69c4b33007ad6e"
-      },
-      "./src/controllers/ping.controller.ts": {
-        "version": "345e766a5a8233c79f1c11b09cfcd1b635bc462ace7ae1ce6b84b3fd8078384d",
-        "signature": "80e3e158fbbb22cab068c3f91ec262086822f90ca629e02984060b8caf571993"
+        "version": "d04dce8a116c1ac05b415bcd4b862efc8e63f6f781c26b2e953a3906bc65015e",
+        "signature": "cf8aa27249d8a46a04472c729c4e3e2bc027e094be2973c886ababe6baa1f64e"
       },
       "./node_modules/@pokt-network/pocket-js/dist/config/configuration.d.ts": {
-        "version": "37a123595543c0419abc76b9b85d91196c7c96f2809359929ed09b3bed098afc",
-        "signature": "37a123595543c0419abc76b9b85d91196c7c96f2809359929ed09b3bed098afc"
+        "version": "7f7fd0d34a166c9cd69a2640211bda46175011181e9e67896f080672e97cb9aa",
+        "signature": "7f7fd0d34a166c9cd69a2640211bda46175011181e9e67896f080672e97cb9aa"
       },
       "./node_modules/@pokt-network/pocket-js/dist/config/index.d.ts": {
         "version": "025e2375aaab81efabbb887ecd360078e74c38c2eacd640fb6c5d1a2248b12aa",
         "signature": "025e2375aaab81efabbb887ecd360078e74c38c2eacd640fb6c5d1a2248b12aa"
+      },
+      "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts": {
+        "version": "e0209f76544838f42150bccec0103aee3bc26edd64feb1c2dce0176018012ef4",
+        "signature": "e0209f76544838f42150bccec0103aee3bc26edd64feb1c2dce0176018012ef4"
       },
       "./node_modules/@pokt-network/pocket-js/dist/keybase/models/unlocked-account.d.ts": {
         "version": "ba99064150d2e704a404ecd8fa40690053c79923bd4a6401644f259276867cd7",
@@ -1497,21 +1349,21 @@
         "version": "4594ab33e990d05b0347c86b6c5b8cdb6fed4b77e08d88d13a43584175a5f298",
         "signature": "4594ab33e990d05b0347c86b6c5b8cdb6fed4b77e08d88d13a43584175a5f298"
       },
-      "./node_modules/@pokt-network/pocket-js/dist/rpc/errors/rpc-error.d.ts": {
-        "version": "baa388063ed5dd139953592c1bbbf00d21921c584827a3c9c7c18068f94ddf12",
-        "signature": "baa388063ed5dd139953592c1bbbf00d21921c584827a3c9c7c18068f94ddf12"
-      },
       "./node_modules/@pokt-network/pocket-js/dist/storage/kv-store.d.ts": {
         "version": "330c19934c5b19728657b6ae37f782e66fb8be7f1b93dfa689b414d13f166b43",
         "signature": "330c19934c5b19728657b6ae37f782e66fb8be7f1b93dfa689b414d13f166b43"
       },
       "./node_modules/@pokt-network/pocket-js/dist/routing-table/routing-table.d.ts": {
-        "version": "1a0e20b8951055b92b9d4e8a173ef29062ea3185842e2375794e5ada323d7237",
-        "signature": "1a0e20b8951055b92b9d4e8a173ef29062ea3185842e2375794e5ada323d7237"
+        "version": "14a6871b3bc661b2db87a6f5fd4739d4c8b5a69aad12fa0192deb87ab541333a",
+        "signature": "14a6871b3bc661b2db87a6f5fd4739d4c8b5a69aad12fa0192deb87ab541333a"
       },
       "./node_modules/@pokt-network/pocket-js/dist/routing-table/index.d.ts": {
         "version": "8e73f673ba824dc35158b0fa96f70f6f2243c6d2fbb768d18b33e6f063883040",
         "signature": "8e73f673ba824dc35158b0fa96f70f6f2243c6d2fbb768d18b33e6f063883040"
+      },
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/errors/rpc-error.d.ts": {
+        "version": "baa388063ed5dd139953592c1bbbf00d21921c584827a3c9c7c18068f94ddf12",
+        "signature": "baa388063ed5dd139953592c1bbbf00d21921c584827a3c9c7c18068f94ddf12"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/errors/index.d.ts": {
         "version": "a849a26876d08e1de0d8b9208f2941607e066c8607a2c02d7de6f2fb77d341c6",
@@ -1822,12 +1674,12 @@
         "signature": "b329f921b5a97d50fbb8761d291f24d1be15516324807a6a8deab07471510400"
       },
       "./node_modules/@pokt-network/pocket-js/dist/session/session-manager.d.ts": {
-        "version": "c1a223a79b24e76935833dc40932746716aa84a5c249cfbf98abb780d92b91f1",
-        "signature": "c1a223a79b24e76935833dc40932746716aa84a5c249cfbf98abb780d92b91f1"
+        "version": "c58028465c3f2987aedf2cb70847c58162bf046164859d795f0157f995459c7f",
+        "signature": "c58028465c3f2987aedf2cb70847c58162bf046164859d795f0157f995459c7f"
       },
       "./node_modules/@pokt-network/pocket-js/dist/pocket.d.ts": {
-        "version": "818b7f235e3d9cfb962fb87a0b98c657f58d63c2e9452a3d7928d2659a6374c3",
-        "signature": "818b7f235e3d9cfb962fb87a0b98c657f58d63c2e9452a3d7928d2659a6374c3"
+        "version": "ecd11e063db3050c0dbccba3d43c5de5bfedb5222af5306886a75c6c08ede638",
+        "signature": "ecd11e063db3050c0dbccba3d43c5de5bfedb5222af5306886a75c6c08ede638"
       },
       "./node_modules/@pokt-network/pocket-js/dist/rpc/providers/pocket-rpc-provider.d.ts": {
         "version": "1e6a7ac548677a5f0ea744d3c2397df7b1aacfc4cf7ca11fe35b282e40fc45dc",
@@ -1873,6 +1725,18 @@
         "version": "196e68db5d8792f94438bb7fee29be4478b8ae7f5ba82a964abb63f3e95f57b0",
         "signature": "196e68db5d8792f94438bb7fee29be4478b8ae7f5ba82a964abb63f3e95f57b0"
       },
+      "./node_modules/@pokt-network/amino-js/types/src/types/pocket.d.ts": {
+        "version": "e6d544ca0d1a54d21b8e0ee1057eaaed9083b2977ceafb1855cef877620c1346",
+        "signature": "e6d544ca0d1a54d21b8e0ee1057eaaed9083b2977ceafb1855cef877620c1346"
+      },
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/models/tx-signature.d.ts": {
+        "version": "1408e26705c963c4ef49246c5f4374b137be52ffe47e7e93b059b9250576ee16",
+        "signature": "1408e26705c963c4ef49246c5f4374b137be52ffe47e7e93b059b9250576ee16"
+      },
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/models/coin-denom.d.ts": {
+        "version": "332208b2d5c7a56d2783a26f8ec4730a8e82abfd98ad2da9fb7fe95bdf1c8c68",
+        "signature": "332208b2d5c7a56d2783a26f8ec4730a8e82abfd98ad2da9fb7fe95bdf1c8c68"
+      },
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/msgs/tx-msg.d.ts": {
         "version": "94997715b45eb6c57efe6b8040447dd18cbc3f2d253dcf281bd6f5b1228879da",
         "signature": "94997715b45eb6c57efe6b8040447dd18cbc3f2d253dcf281bd6f5b1228879da"
@@ -1913,21 +1777,9 @@
         "version": "c3c2c02090d6452dcee233d032359f4419280bdb50c4ac0b32d8164a2105395e",
         "signature": "c3c2c02090d6452dcee233d032359f4419280bdb50c4ac0b32d8164a2105395e"
       },
-      "./node_modules/@pokt-network/pocket-js/dist/transactions/models/coin-denom.d.ts": {
-        "version": "5981f89ad7e587ea922ae51813f8429c70a2e57270be2892c189f0fa6db9c5f1",
-        "signature": "5981f89ad7e587ea922ae51813f8429c70a2e57270be2892c189f0fa6db9c5f1"
-      },
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/std-sign-doc.d.ts": {
         "version": "bc78d822342c2862b3f88b10ebc060ac945b002cc5e6eee10e3a356a597154e5",
         "signature": "bc78d822342c2862b3f88b10ebc060ac945b002cc5e6eee10e3a356a597154e5"
-      },
-      "./node_modules/@pokt-network/amino-js/types/src/types/pocket.d.ts": {
-        "version": "e6d544ca0d1a54d21b8e0ee1057eaaed9083b2977ceafb1855cef877620c1346",
-        "signature": "e6d544ca0d1a54d21b8e0ee1057eaaed9083b2977ceafb1855cef877620c1346"
-      },
-      "./node_modules/@pokt-network/pocket-js/dist/transactions/models/tx-signature.d.ts": {
-        "version": "1408e26705c963c4ef49246c5f4374b137be52ffe47e7e93b059b9250576ee16",
-        "signature": "1408e26705c963c4ef49246c5f4374b137be52ffe47e7e93b059b9250576ee16"
       },
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/std-tx.d.ts": {
         "version": "fa7d3e15a644e89bf7df034f1824e3cb4c95744a172de3354ee5e2c937007994",
@@ -1940,6 +1792,26 @@
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/index.d.ts": {
         "version": "f52a9833dc9c272e2fd5c0e9affea147290721e167873645a9c44aa2b94ed6e4",
         "signature": "f52a9833dc9c272e2fd5c0e9affea147290721e167873645a9c44aa2b94ed6e4"
+      },
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/itx-signer-factory.d.ts": {
+        "version": "c4f2817808965ff83b1b42062cb41d87431a08b955f7d61cee0fa2093beab405",
+        "signature": "c4f2817808965ff83b1b42062cb41d87431a08b955f7d61cee0fa2093beab405"
+      },
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/amino-tx-signer-factory.d.ts": {
+        "version": "692b8be800e7018fd597168d16dc8ca79ab6398343bac4a62612bb53bb4f4b40",
+        "signature": "692b8be800e7018fd597168d16dc8ca79ab6398343bac4a62612bb53bb4f4b40"
+      },
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/proto-tx-signer-factory.d.ts": {
+        "version": "00093bc6aa61ad51aeb88a04bc6837425c6e2f2f88af91648115a1d296d0cb20",
+        "signature": "00093bc6aa61ad51aeb88a04bc6837425c6e2f2f88af91648115a1d296d0cb20"
+      },
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/tx-signer-factory.d.ts": {
+        "version": "2413d05c6aaf722f9a19212a3884cfde2f8c98956eb521a155d78a69a9f02f95",
+        "signature": "2413d05c6aaf722f9a19212a3884cfde2f8c98956eb521a155d78a69a9f02f95"
+      },
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/index.d.ts": {
+        "version": "7532b8444716c1ef4a812509bab8b048a2a41355ac4aaf5c03b062765ed5ef9e",
+        "signature": "7532b8444716c1ef4a812509bab8b048a2a41355ac4aaf5c03b062765ed5ef9e"
       },
       "./node_modules/@pokt-network/pocket-js/dist/transactions/i-transaction-sender.d.ts": {
         "version": "b75b4ebfaf26783d623a863706fc4e0e57cb88b21626c8a9acefa484f08fdfaf",
@@ -1954,8 +1826,8 @@
         "signature": "95bd370db669f63cd1c852dbf60a11aa243c04cf864f9a1a96fd4b31c5618392"
       },
       "./node_modules/@pokt-network/pocket-js/dist/transactions/index.d.ts": {
-        "version": "894df47282daa6496a2e7568d2001e70ebf56fbd4ddfaf6e5594df48eabe07c3",
-        "signature": "894df47282daa6496a2e7568d2001e70ebf56fbd4ddfaf6e5594df48eabe07c3"
+        "version": "63f9553426f4e47998a904e51893973f3537730a8d5211e2c1140567ec427d65",
+        "signature": "63f9553426f4e47998a904e51893973f3537730a8d5211e2c1140567ec427d65"
       },
       "./node_modules/@pokt-network/pocket-js/dist/utils/key-pair.d.ts": {
         "version": "d416bca7efa797d11d0b5d165f4a5e122b8724c073a5a592fe9a3a02381c8891",
@@ -1981,6 +1853,154 @@
         "version": "47470ea3c908d371659cf2e3273b2e39a5fde524a1bcd633bf5ad192d806f86d",
         "signature": "47470ea3c908d371659cf2e3273b2e39a5fde524a1bcd633bf5ad192d806f86d"
       },
+      "./src/application.ts": {
+        "version": "9b70693b5a0b1eb5391a63587cb73a7e0a796b4388f0b905447adf11f6b31fa3",
+        "signature": "d180d9bd76ca2026b1f09b05d9482497e3c4fab753992b423a2b46612b53b0b2"
+      },
+      "./src/index.ts": {
+        "version": "553cb665fec9dc0c4d06c6761640bc5d286c571f33b3361d3ba0f372df754fe0",
+        "signature": "2c1e64b6cdfbeb152eb10a597e4d5a1b27e04726fb02f95b0699101fedddf3ed"
+      },
+      "./src/migrate.ts": {
+        "version": "e66e374a6eed205c62cf538c1fc98ed4be9d3457ea97e7fc16295daa60b7eb91",
+        "signature": "d289609b56df6411204c89f5197dc2d4d19910336a10c86cd9b3af21b22e344d"
+      },
+      "./node_modules/@types/cookiejar/index.d.ts": {
+        "version": "16b7fb094ffaa5d270f934e7406e8baee2f8245cfabf6dcc20f693389f005f56",
+        "signature": "16b7fb094ffaa5d270f934e7406e8baee2f8245cfabf6dcc20f693389f005f56"
+      },
+      "./node_modules/@types/superagent/index.d.ts": {
+        "version": "54290ac8d5f9b94a669980e6acb63b43b4df6138caf2fc3cdcb8e99553f1583a",
+        "signature": "54290ac8d5f9b94a669980e6acb63b43b4df6138caf2fc3cdcb8e99553f1583a"
+      },
+      "./node_modules/@types/supertest/index.d.ts": {
+        "version": "e6540dcaa31aadbd070bea91d31c387c3e03baf78ea56420e706ae77660ae45a",
+        "signature": "e6540dcaa31aadbd070bea91d31c387c3e03baf78ea56420e706ae77660ae45a"
+      },
+      "./node_modules/@loopback/testlab/dist/client.d.ts": {
+        "version": "d33fe7df13cb34fa58fcd9fc11c052dd905c05172185a3a5a31b736501c2a629",
+        "signature": "d33fe7df13cb34fa58fcd9fc11c052dd905c05172185a3a5a31b736501c2a629"
+      },
+      "./node_modules/@loopback/testlab/should-as-function.d.ts": {
+        "version": "e0bcc7ecaf53e76bf21f3660a85db7eedeb36ceeb58969801858095658d1428d",
+        "signature": "e0bcc7ecaf53e76bf21f3660a85db7eedeb36ceeb58969801858095658d1428d"
+      },
+      "./node_modules/@loopback/testlab/dist/expect.d.ts": {
+        "version": "5791b63ac312a792f888401243acd5084f27c2c76792d436fa68e9581a74bd6d",
+        "signature": "5791b63ac312a792f888401243acd5084f27c2c76792d436fa68e9581a74bd6d"
+      },
+      "./node_modules/@loopback/testlab/dist/http-error-logger.d.ts": {
+        "version": "1d965675096492c8b8634e95d2ba80df0937100c1ca1a4be0aa521f2fcf4e679",
+        "signature": "1d965675096492c8b8634e95d2ba80df0937100c1ca1a4be0aa521f2fcf4e679"
+      },
+      "./node_modules/@loopback/testlab/dist/http-server-config.d.ts": {
+        "version": "915ad988fcef8653bc578f63739303346d761aa6d462d4bc4ef8579ad7df6766",
+        "signature": "915ad988fcef8653bc578f63739303346d761aa6d462d4bc4ef8579ad7df6766"
+      },
+      "./node_modules/@loopback/testlab/dist/request.d.ts": {
+        "version": "87c409fe1f923e4449a75e4c07dd939436e9c8f76b834fb44a6937147867813d",
+        "signature": "87c409fe1f923e4449a75e4c07dd939436e9c8f76b834fb44a6937147867813d"
+      },
+      "./node_modules/@types/shot/index.d.ts": {
+        "version": "1858582b6b5b66476d2885696bd490e58d7a2eb0d48f505e214967ca00acd0ea",
+        "signature": "1858582b6b5b66476d2885696bd490e58d7a2eb0d48f505e214967ca00acd0ea"
+      },
+      "./node_modules/@loopback/testlab/dist/shot.d.ts": {
+        "version": "c35b3b6ef644c4144c767d0ef2573b32b79cd989d84e266a73f0c8966dc0ef97",
+        "signature": "c35b3b6ef644c4144c767d0ef2573b32b79cd989d84e266a73f0c8966dc0ef97"
+      },
+      "./node_modules/@types/sinonjs__fake-timers/index.d.ts": {
+        "version": "558a9770503071d5a6fc6c596f7230bb79f2d034ced4a205bd1ebcad3b5879ec",
+        "signature": "558a9770503071d5a6fc6c596f7230bb79f2d034ced4a205bd1ebcad3b5879ec"
+      },
+      "./node_modules/@types/sinon/ts3.1/index.d.ts": {
+        "version": "5fea7154f7cc1d8b1e56b2c8917cf57b529799201f75871b3d8df13de45123b8",
+        "signature": "5fea7154f7cc1d8b1e56b2c8917cf57b529799201f75871b3d8df13de45123b8"
+      },
+      "./node_modules/@loopback/testlab/dist/sinon.d.ts": {
+        "version": "451d3238632a48b1d487785be7ad51904238a63a593884d1b9cb4cefd51c31d0",
+        "signature": "451d3238632a48b1d487785be7ad51904238a63a593884d1b9cb4cefd51c31d0"
+      },
+      "./node_modules/@loopback/testlab/dist/skip.d.ts": {
+        "version": "049893f64a1b25accec1fdb7d40dc8d8d8c08d6db07d321092c4124373c9e381",
+        "signature": "049893f64a1b25accec1fdb7d40dc8d8d8c08d6db07d321092c4124373c9e381"
+      },
+      "./node_modules/@loopback/testlab/dist/test-sandbox.d.ts": {
+        "version": "c09d3d8964ff66481d085b2702fb5295a94756dce4739beda789b11b89c3aaca",
+        "signature": "c09d3d8964ff66481d085b2702fb5295a94756dce4739beda789b11b89c3aaca"
+      },
+      "./node_modules/@loopback/testlab/dist/to-json.d.ts": {
+        "version": "d22280c29a0d4d6acba8968091ed9b772946c78e36d4b0cb7eca1803b8b8c2f0",
+        "signature": "d22280c29a0d4d6acba8968091ed9b772946c78e36d4b0cb7eca1803b8b8c2f0"
+      },
+      "./node_modules/@loopback/testlab/dist/validate-api-spec.d.ts": {
+        "version": "8730131999f563de6b559e35f6253007cd311e676e9d17999c9287dd3e11e618",
+        "signature": "8730131999f563de6b559e35f6253007cd311e676e9d17999c9287dd3e11e618"
+      },
+      "./node_modules/@loopback/testlab/dist/index.d.ts": {
+        "version": "38992be86825669bca9d84dfa17319e89c30969e05ba85d9c7f99dbc9c2eb83f",
+        "signature": "38992be86825669bca9d84dfa17319e89c30969e05ba85d9c7f99dbc9c2eb83f"
+      },
+      "./src/__tests__/acceptance/test-helper.ts": {
+        "version": "39c10614f4a38c537cb31e28d753c1acf30b7746e47367cbe03422cb48d0ff5c",
+        "signature": "c8dfa8356ac17614a075ea3c69342a236544c47e2cb98581f7a15be64fc1ba83"
+      },
+      "./src/__tests__/acceptance/home-page.acceptance.ts": {
+        "version": "a819ec42b8bde79f4e7a1a30a4737f50a19046b2220b462d281f69ab2be3b24d",
+        "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+      },
+      "./src/__tests__/acceptance/ping.controller.acceptance.ts": {
+        "version": "219bde9d1db15cea0abb6df76189db3e2ac48395cf37c132aecab8faa46ae291",
+        "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+      },
+      "./src/models/blockchains.model.ts": {
+        "version": "32b222d3ca764888f820699327f89186fb167bd1ce2d7a050811c17ab12a7a55",
+        "signature": "7601bf089168bf4c65ff1faea1369310caaf1d5b7486d02eadc6c68f270a8451"
+      },
+      "./src/models/applications.model.ts": {
+        "version": "98b18c555b3e2725bf9535405688f0e980f888026c87cdb7d015f1c02fbdb3ad",
+        "signature": "90363c3cd94f92e59335e0b417c5b076459e60cf6b82018019144229dff174ca"
+      },
+      "./src/models/load-balancers.model.ts": {
+        "version": "34a2ec0df689513a9c0da75998fbf202b985133ed6245af2ed07647adb2a3099",
+        "signature": "189a3d8561e8e7a7d4e7d2fee3c806014304916daef88219af9759a3c4850938"
+      },
+      "./src/models/index.ts": {
+        "version": "8909c266b77c849e7e2e301f040db97c94dd318c51e088948f51e2c94fbb5bbb",
+        "signature": "8909c266b77c849e7e2e301f040db97c94dd318c51e088948f51e2c94fbb5bbb"
+      },
+      "./src/datasources/gateway.datasource.ts": {
+        "version": "cd1a466df78094f34036be8ef842dd6fc917bf4e7c2522e53a8ea09dffe2a2b7",
+        "signature": "882e92e6dfb6b1a3a70784e86c6bd8cbe243b830f938fef2a00568c71e08ca00"
+      },
+      "./src/datasources/index.ts": {
+        "version": "c3c7f74b332c3817aba95cabb9f62f36af691e13d9c6f8d92974607924242919",
+        "signature": "c3c7f74b332c3817aba95cabb9f62f36af691e13d9c6f8d92974607924242919"
+      },
+      "./src/repositories/blockchains.repository.ts": {
+        "version": "7798d189e59654d84d9015f4679bcf388ce48eb66b16f916aafd1f76149206a3",
+        "signature": "3bca2a5251f65752e3a623ece542271502ee1b029cc00cf8d0cda32f7ab153a6"
+      },
+      "./src/repositories/applications.repository.ts": {
+        "version": "e97935421d5e3aee066dcca59e95e046b96c59398a90188a12f63afff0334d81",
+        "signature": "1ce0a430b6a96a61e2c9ade7e10aff905447a76feeb7c2ad0608ebc4dafefcd2"
+      },
+      "./src/repositories/load-balancers.repository.ts": {
+        "version": "d0dbe23ea46a76eabc76276430735cdf99390570a46d87290eaba6435865cb2c",
+        "signature": "5d43f55098f511dd85c449bbad77e5d23e39d99cf43a2b0901c9d19a1a32aa3f"
+      },
+      "./src/repositories/index.ts": {
+        "version": "2b96d3bc206857eebcddc961a4a3da8f3f1af0eb2d5593b2f27bea109f718ee3",
+        "signature": "2b96d3bc206857eebcddc961a4a3da8f3f1af0eb2d5593b2f27bea109f718ee3"
+      },
+      "./src/controllers/blockchains.controller.ts": {
+        "version": "4aada272511d1a2def3d464a805ace8d6368a39585d07a8a7e83c2566982e9ff",
+        "signature": "976543577429681f8edd3c39e1ea422806c2cdeb5201ca186b69c4b33007ad6e"
+      },
+      "./src/controllers/ping.controller.ts": {
+        "version": "345e766a5a8233c79f1c11b09cfcd1b635bc462ace7ae1ce6b84b3fd8078384d",
+        "signature": "80e3e158fbbb22cab068c3f91ec262086822f90ca629e02984060b8caf571993"
+      },
       "./node_modules/@types/ioredis/index.d.ts": {
         "version": "da0d877bc22bd961aa9aec36bc0d02524f21abb08b645eb9335ce0079426c24a",
         "signature": "da0d877bc22bd961aa9aec36bc0d02524f21abb08b645eb9335ce0079426c24a"
@@ -1994,8 +2014,8 @@
         "signature": "ce3c16bd239d4345a1ffabff3dcbb5025d281292742f4cfa5a29398b815bbb60"
       },
       "./src/services/cherry-picker.ts": {
-        "version": "61ac39e1670e7c3b765060c85f4fb1a1a7a43d8d95a9004e274a6e4e99cb8f1d",
-        "signature": "33d2075ec55eb53197c78317e397af0d999ec671e253078e655f96c75a032f71"
+        "version": "4fa1f6e2dc4e6b0ef283b1146928fe577c080aa4b485ac3d218e4e56086e18c6",
+        "signature": "31144e89641fa4f6971297473b5cf0357e3d6417dd569aded8db5fedb2c92b8a"
       },
       "./src/services/metrics-recorder.ts": {
         "version": "99512e36606c6f9ea18b2f5019004ac904a3337f08a1d523648f5ba9f3cc50cb",
@@ -2042,12 +2062,12 @@
         "signature": "4268ae77fea3dfd44b681677cb8ba998d21463a10d37e5286651c07e8659d183"
       },
       "./src/services/pocket-relayer.ts": {
-        "version": "13af7497a77d9f790a6fa8c5f843d48b71216c372ed0b4184592e35179bfcde1",
-        "signature": "45c4657525887fee510822311d7bcf8d223a82e33d0a4e09bc43edc0329f1dc1"
+        "version": "2ec97ed0b16b321f30effec9102a12833e35f4cfca127cefe6e911f7e79e8d52",
+        "signature": "eb4dd969a742742b1aa1a63342ab135240eda20e9b96e7a3a7983d920773ca5e"
       },
       "./src/controllers/v1.controller.ts": {
-        "version": "fc4afd38ddea375943be83086e974d00edbc42a7ee6cc70eba255635c171105e",
-        "signature": "ed74a602b08063740df85267fad9cd5c1e7cd289b2326b403e2af1805dbf0a97"
+        "version": "4301f599835f2fece2ea84289b7b53d28c2ee7f9ac6b195d1ce64db811103bd4",
+        "signature": "39ca7ad2598c66ad95480cd314c2add5147e73d6286fb17976ee5ecdd5b20746"
       },
       "./src/controllers/index.ts": {
         "version": "c27d67de5b5b7aecde13ca899c3197d3c1538b964251fa91a055cb19fb0b6ce7",
@@ -2098,12 +2118,20 @@
         "signature": "393137c76bd922ba70a2f8bf1ade4f59a16171a02fb25918c168d48875b0cfb0"
       },
       "./node_modules/@types/libsodium-wrappers/index.d.ts": {
-        "version": "b3b779656d1d39daf89b4f963e31cf296d83791b200fdd8107b4bdde8dc1c7c2",
-        "signature": "b3b779656d1d39daf89b4f963e31cf296d83791b200fdd8107b4bdde8dc1c7c2"
+        "version": "13d24e4c08e70dbd95b83cd664c4e7e207208e79d62169a80e202b1d6f5de1ad",
+        "signature": "13d24e4c08e70dbd95b83cd664c4e7e207208e79d62169a80e202b1d6f5de1ad"
+      },
+      "./node_modules/@types/long/index.d.ts": {
+        "version": "e8465811693dfe4e96ef2b3dffda539d6edfe896961b7af37b44db2c0e48532b",
+        "signature": "e8465811693dfe4e96ef2b3dffda539d6edfe896961b7af37b44db2c0e48532b"
       },
       "./node_modules/@types/mocha/index.d.ts": {
         "version": "f24768499dab9a34c0aff9c9e3fbfe5117001bfabba4a1db01a17df086d6a606",
         "signature": "f24768499dab9a34c0aff9c9e3fbfe5117001bfabba4a1db01a17df086d6a606"
+      },
+      "./node_modules/@types/object-hash/index.d.ts": {
+        "version": "a84c95e04a7387764e5c9f03a1bb1083ffa1166254a517398524630e918f8627",
+        "signature": "a84c95e04a7387764e5c9f03a1bb1083ffa1166254a517398524630e918f8627"
       },
       "./node_modules/@types/on-finished/index.d.ts": {
         "version": "c69767317aec528b574762b18727db85eef7cf66f33617cc0ee905cbe5a43d97",
@@ -2113,6 +2141,10 @@
         "version": "060937b9e71c39c855e3572260800c74f248947c5781ddd8db1f3e0a08696c13",
         "signature": "060937b9e71c39c855e3572260800c74f248947c5781ddd8db1f3e0a08696c13"
       },
+      "./node_modules/@types/prettier/index.d.ts": {
+        "version": "29651525db5579157e617c77e869af8bfdc1130f5d811c1f759ad35b7bafc8ef",
+        "signature": "29651525db5579157e617c77e869af8bfdc1130f5d811c1f759ad35b7bafc8ef"
+      },
       "./node_modules/@types/scrypt-js/index.d.ts": {
         "version": "e772961267ab8e53ae53d6925120571d0af508251db3513f3a3ec41fc3e0eb7c",
         "signature": "e772961267ab8e53ae53d6925120571d0af508251db3513f3a3ec41fc3e0eb7c"
@@ -2120,26 +2152,6 @@
       "./node_modules/@types/type-is/index.d.ts": {
         "version": "37e4c904fc4eede08a541021c074c160cf27f6a756e4459197c2711fb8b2a648",
         "signature": "37e4c904fc4eede08a541021c074c160cf27f6a756e4459197c2711fb8b2a648"
-      },
-      "../../../node_modules/@types/bn.js/index.d.ts": {
-        "version": "b5c402b51d6bc805d447d1824fda6dbf299b36c8941e481f1cf0816080b6d44e",
-        "signature": "b5c402b51d6bc805d447d1824fda6dbf299b36c8941e481f1cf0816080b6d44e"
-      },
-      "../../../node_modules/@types/prop-types/index.d.ts": {
-        "version": "a7e32dcb90bf0c1b7a1e4ac89b0f7747cbcba25e7beddc1ebf17be1e161842ad",
-        "signature": "a7e32dcb90bf0c1b7a1e4ac89b0f7747cbcba25e7beddc1ebf17be1e161842ad"
-      },
-      "../../../node_modules/@types/react/global.d.ts": {
-        "version": "b4cd656db9b65fff477f65dbda00a5de4e2e765375316abd0c3ffd1282664ccc",
-        "signature": "b4cd656db9b65fff477f65dbda00a5de4e2e765375316abd0c3ffd1282664ccc"
-      },
-      "../../../node_modules/csstype/index.d.ts": {
-        "version": "a849a53cf1d5a35db4ae42e8bef37b82e43c58a805356f45d1f08de2ab905ccc",
-        "signature": "a849a53cf1d5a35db4ae42e8bef37b82e43c58a805356f45d1f08de2ab905ccc"
-      },
-      "../../../node_modules/@types/react/index.d.ts": {
-        "version": "9290135198d502d92bdae0051b10294d121e38ea9a9beb3f71654b6b4bdf6d1d",
-        "signature": "9290135198d502d92bdae0051b10294d121e38ea9a9beb3f71654b6b4bdf6d1d"
       }
     },
     "options": {
@@ -4367,252 +4379,17 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
-      "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts": [
-        "./node_modules/@types/node/ts3.7/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/application.ts": [
-        "./node_modules/@loopback/boot/dist/index.d.ts",
-        "./node_modules/@loopback/core/dist/index.d.ts",
-        "./node_modules/@loopback/repository/dist/index.d.ts",
-        "./node_modules/@loopback/rest/index.d.ts",
-        "./node_modules/@loopback/service-proxy/dist/index.d.ts",
-        "./src/sequence.ts",
-        "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts",
-        "./node_modules/@types/node/path.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/index.ts": [
-        "./src/application.ts",
-        "./node_modules/@loopback/core/dist/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/migrate.ts": [
-        "./src/application.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@types/cookiejar/index.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@types/superagent/index.d.ts": [
-        "./node_modules/@types/node/fs.d.ts",
-        "./node_modules/@types/node/http.d.ts",
-        "./node_modules/@types/node/stream.d.ts",
-        "./node_modules/@types/cookiejar/index.d.ts",
-        "./node_modules/@types/node/ts3.7/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@types/supertest/index.d.ts": [
-        "./node_modules/@types/superagent/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/client.d.ts": [
-        "./node_modules/@types/node/http.d.ts",
-        "./node_modules/@types/supertest/index.d.ts",
-        "./node_modules/@types/node/ts3.7/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/should-as-function.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/expect.d.ts": [
-        "./node_modules/@loopback/testlab/should-as-function.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/http-error-logger.d.ts": [
-        "./node_modules/@types/express/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/http-server-config.d.ts": [
-        "./node_modules/@types/node/https.d.ts",
-        "./node_modules/@types/node/net.d.ts",
-        "./node_modules/@types/node/ts3.7/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/request.d.ts": [
-        "./node_modules/@types/node/http.d.ts",
-        "./node_modules/@types/node/https.d.ts",
-        "./node_modules/@types/node/ts3.7/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@types/shot/index.d.ts": [
-        "./node_modules/@types/node/http.d.ts",
-        "./node_modules/@types/node/stream.d.ts",
-        "./node_modules/@types/node/ts3.7/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/shot.d.ts": [
-        "./node_modules/@types/express/index.d.ts",
-        "./node_modules/@types/node/http.d.ts",
-        "./node_modules/@types/shot/index.d.ts",
-        "./node_modules/@types/node/ts3.7/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@types/sinonjs__fake-timers/index.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@types/sinon/ts3.1/index.d.ts": [
-        "./node_modules/@types/sinonjs__fake-timers/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/sinon.d.ts": [
-        "./node_modules/@types/sinon/ts3.1/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/skip.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/test-sandbox.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/to-json.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/validate-api-spec.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/index.d.ts": [
-        "./node_modules/@loopback/testlab/dist/client.d.ts",
-        "./node_modules/@loopback/testlab/dist/expect.d.ts",
-        "./node_modules/@loopback/testlab/dist/http-error-logger.d.ts",
-        "./node_modules/@loopback/testlab/dist/http-server-config.d.ts",
-        "./node_modules/@loopback/testlab/dist/request.d.ts",
-        "./node_modules/@loopback/testlab/dist/shot.d.ts",
-        "./node_modules/@loopback/testlab/dist/sinon.d.ts",
-        "./node_modules/@loopback/testlab/dist/skip.d.ts",
-        "./node_modules/@loopback/testlab/dist/test-sandbox.d.ts",
-        "./node_modules/@loopback/testlab/dist/to-json.d.ts",
-        "./node_modules/@loopback/testlab/dist/validate-api-spec.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/__tests__/acceptance/test-helper.ts": [
-        "./src/index.ts",
-        "./node_modules/@loopback/testlab/dist/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/__tests__/acceptance/home-page.acceptance.ts": [
-        "./node_modules/@loopback/testlab/dist/index.d.ts",
-        "./src/index.ts",
-        "./src/__tests__/acceptance/test-helper.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/__tests__/acceptance/ping.controller.acceptance.ts": [
-        "./node_modules/@loopback/testlab/dist/index.d.ts",
-        "./src/index.ts",
-        "./src/__tests__/acceptance/test-helper.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/models/blockchains.model.ts": [
-        "./node_modules/@loopback/repository/dist/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/models/applications.model.ts": [
-        "./node_modules/@loopback/repository/dist/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/models/load-balancers.model.ts": [
-        "./node_modules/@loopback/repository/dist/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/models/index.ts": [
-        "./src/models/blockchains.model.ts",
-        "./src/models/applications.model.ts",
-        "./src/models/load-balancers.model.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/datasources/gateway.datasource.ts": [
-        "./node_modules/@loopback/core/dist/index.d.ts",
-        "./node_modules/@loopback/repository/dist/index.d.ts",
-        "./node_modules/@loopback/rest/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/datasources/index.ts": [
-        "./src/datasources/gateway.datasource.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/repositories/blockchains.repository.ts": [
-        "./node_modules/@loopback/repository/dist/index.d.ts",
-        "./src/models/index.ts",
-        "./src/datasources/index.ts",
-        "./node_modules/@loopback/core/dist/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/repositories/applications.repository.ts": [
-        "./node_modules/@loopback/repository/dist/index.d.ts",
-        "./src/models/index.ts",
-        "./src/datasources/index.ts",
-        "./node_modules/@loopback/core/dist/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/repositories/load-balancers.repository.ts": [
-        "./node_modules/@loopback/repository/dist/index.d.ts",
-        "./src/models/index.ts",
-        "./src/datasources/index.ts",
-        "./node_modules/@loopback/core/dist/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/repositories/index.ts": [
-        "./src/repositories/blockchains.repository.ts",
-        "./src/repositories/applications.repository.ts",
-        "./src/repositories/load-balancers.repository.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/controllers/blockchains.controller.ts": [
-        "./node_modules/@loopback/repository/dist/index.d.ts",
-        "./node_modules/@loopback/rest/index.d.ts",
-        "./src/models/index.ts",
-        "./src/repositories/index.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/controllers/ping.controller.ts": [
-        "./node_modules/@loopback/rest/index.d.ts",
-        "./node_modules/@loopback/context/dist/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
       "./node_modules/@pokt-network/pocket-js/dist/config/configuration.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
       "./node_modules/@pokt-network/pocket-js/dist/config/index.d.ts": [
         "./node_modules/@pokt-network/pocket-js/dist/config/configuration.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts": [
+        "./node_modules/@types/node/ts3.7/index.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -4651,10 +4428,6 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
-      "./node_modules/@pokt-network/pocket-js/dist/rpc/errors/rpc-error.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
       "./node_modules/@pokt-network/pocket-js/dist/storage/kv-store.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
@@ -4662,13 +4435,16 @@
       "./node_modules/@pokt-network/pocket-js/dist/routing-table/routing-table.d.ts": [
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/node.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/config/index.d.ts",
-        "./node_modules/@pokt-network/pocket-js/dist/rpc/errors/rpc-error.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/storage/kv-store.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
       "./node_modules/@pokt-network/pocket-js/dist/routing-table/index.d.ts": [
         "./node_modules/@pokt-network/pocket-js/dist/routing-table/routing-table.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/errors/rpc-error.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -5132,7 +4908,7 @@
         "./node_modules/@pokt-network/pocket-js/dist/storage/kv-store.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/config/index.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/errors/rpc-error.d.ts",
-        "./node_modules/@pokt-network/pocket-js/dist/routing-table/routing-table.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/index.d.ts",
         "./node_modules/@pokt-network/aat-js/lib/src/index.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
@@ -5143,7 +4919,6 @@
         "./node_modules/@pokt-network/pocket-js/dist/session/session-manager.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/index.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/keybase/keybase.d.ts",
-        "./node_modules/@pokt-network/pocket-js/dist/routing-table/routing-table.d.ts",
         "./node_modules/@pokt-network/aat-js/lib/src/index.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/consensus-relay-response.d.ts",
@@ -5231,6 +5006,20 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./node_modules/@pokt-network/amino-js/types/src/types/pocket.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/models/tx-signature.d.ts": [
+        "./node_modules/@pokt-network/amino-js/types/src/types/pocket.d.ts",
+        "./node_modules/@types/node/ts3.7/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/models/coin-denom.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/msgs/tx-msg.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
@@ -5289,24 +5078,10 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
-      "./node_modules/@pokt-network/pocket-js/dist/transactions/models/coin-denom.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/std-sign-doc.d.ts": [
         "./node_modules/@pokt-network/pocket-js/dist/transactions/models/amino-encodable.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/transactions/models/msgs/tx-msg.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/transactions/models/coin-denom.d.ts",
-        "./node_modules/@types/node/ts3.7/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@pokt-network/amino-js/types/src/types/pocket.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@pokt-network/pocket-js/dist/transactions/models/tx-signature.d.ts": [
-        "./node_modules/@pokt-network/amino-js/types/src/types/pocket.d.ts",
         "./node_modules/@types/node/ts3.7/index.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
@@ -5335,6 +5110,44 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/itx-signer-factory.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/models/tx-signature.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/models/index.d.ts",
+        "./node_modules/@types/node/ts3.7/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/amino-tx-signer-factory.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/models/tx-signature.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/models/coin-denom.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/models/index.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/itx-signer-factory.d.ts",
+        "./node_modules/@types/node/ts3.7/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/proto-tx-signer-factory.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/models/tx-signature.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/models/coin-denom.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/models/index.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/itx-signer-factory.d.ts",
+        "./node_modules/@types/node/ts3.7/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/tx-signer-factory.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/itx-signer-factory.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/index.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/amino-tx-signer-factory.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/itx-signer-factory.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/proto-tx-signer-factory.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/tx-signer-factory.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./node_modules/@pokt-network/pocket-js/dist/transactions/i-transaction-sender.d.ts": [
         "./node_modules/@pokt-network/pocket-js/dist/transactions/models/coin-denom.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/raw-tx-response.d.ts",
@@ -5358,6 +5171,7 @@
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
       "./node_modules/@pokt-network/pocket-js/dist/transactions/index.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/index.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/transactions/models/index.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/transactions/i-transaction-sender.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/transactions/transaction-sender.d.ts",
@@ -5404,6 +5218,241 @@
         "./node_modules/@pokt-network/pocket-js/dist/transactions/index.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/utils/index.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/pocket.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/application.ts": [
+        "./node_modules/@loopback/boot/dist/index.d.ts",
+        "./node_modules/@loopback/core/dist/index.d.ts",
+        "./node_modules/@loopback/repository/dist/index.d.ts",
+        "./node_modules/@loopback/rest/index.d.ts",
+        "./node_modules/@loopback/service-proxy/dist/index.d.ts",
+        "./src/sequence.ts",
+        "./node_modules/@types/node/path.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/index.ts": [
+        "./src/application.ts",
+        "./node_modules/@loopback/core/dist/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/migrate.ts": [
+        "./src/application.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@types/cookiejar/index.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@types/superagent/index.d.ts": [
+        "./node_modules/@types/node/fs.d.ts",
+        "./node_modules/@types/node/http.d.ts",
+        "./node_modules/@types/node/stream.d.ts",
+        "./node_modules/@types/cookiejar/index.d.ts",
+        "./node_modules/@types/node/ts3.7/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@types/supertest/index.d.ts": [
+        "./node_modules/@types/superagent/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/client.d.ts": [
+        "./node_modules/@types/node/http.d.ts",
+        "./node_modules/@types/supertest/index.d.ts",
+        "./node_modules/@types/node/ts3.7/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/should-as-function.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/expect.d.ts": [
+        "./node_modules/@loopback/testlab/should-as-function.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/http-error-logger.d.ts": [
+        "./node_modules/@types/express/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/http-server-config.d.ts": [
+        "./node_modules/@types/node/https.d.ts",
+        "./node_modules/@types/node/net.d.ts",
+        "./node_modules/@types/node/ts3.7/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/request.d.ts": [
+        "./node_modules/@types/node/http.d.ts",
+        "./node_modules/@types/node/https.d.ts",
+        "./node_modules/@types/node/ts3.7/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@types/shot/index.d.ts": [
+        "./node_modules/@types/node/http.d.ts",
+        "./node_modules/@types/node/stream.d.ts",
+        "./node_modules/@types/node/ts3.7/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/shot.d.ts": [
+        "./node_modules/@types/express/index.d.ts",
+        "./node_modules/@types/node/http.d.ts",
+        "./node_modules/@types/shot/index.d.ts",
+        "./node_modules/@types/node/ts3.7/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@types/sinonjs__fake-timers/index.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@types/sinon/ts3.1/index.d.ts": [
+        "./node_modules/@types/sinonjs__fake-timers/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/sinon.d.ts": [
+        "./node_modules/@types/sinon/ts3.1/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/skip.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/test-sandbox.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/to-json.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/validate-api-spec.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/index.d.ts": [
+        "./node_modules/@loopback/testlab/dist/client.d.ts",
+        "./node_modules/@loopback/testlab/dist/expect.d.ts",
+        "./node_modules/@loopback/testlab/dist/http-error-logger.d.ts",
+        "./node_modules/@loopback/testlab/dist/http-server-config.d.ts",
+        "./node_modules/@loopback/testlab/dist/request.d.ts",
+        "./node_modules/@loopback/testlab/dist/shot.d.ts",
+        "./node_modules/@loopback/testlab/dist/sinon.d.ts",
+        "./node_modules/@loopback/testlab/dist/skip.d.ts",
+        "./node_modules/@loopback/testlab/dist/test-sandbox.d.ts",
+        "./node_modules/@loopback/testlab/dist/to-json.d.ts",
+        "./node_modules/@loopback/testlab/dist/validate-api-spec.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/__tests__/acceptance/test-helper.ts": [
+        "./src/index.ts",
+        "./node_modules/@loopback/testlab/dist/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/__tests__/acceptance/home-page.acceptance.ts": [
+        "./node_modules/@loopback/testlab/dist/index.d.ts",
+        "./src/index.ts",
+        "./src/__tests__/acceptance/test-helper.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/__tests__/acceptance/ping.controller.acceptance.ts": [
+        "./node_modules/@loopback/testlab/dist/index.d.ts",
+        "./src/index.ts",
+        "./src/__tests__/acceptance/test-helper.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/models/blockchains.model.ts": [
+        "./node_modules/@loopback/repository/dist/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/models/applications.model.ts": [
+        "./node_modules/@loopback/repository/dist/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/models/load-balancers.model.ts": [
+        "./node_modules/@loopback/repository/dist/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/models/index.ts": [
+        "./src/models/blockchains.model.ts",
+        "./src/models/applications.model.ts",
+        "./src/models/load-balancers.model.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/datasources/gateway.datasource.ts": [
+        "./node_modules/@loopback/core/dist/index.d.ts",
+        "./node_modules/@loopback/repository/dist/index.d.ts",
+        "./node_modules/@loopback/rest/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/datasources/index.ts": [
+        "./src/datasources/gateway.datasource.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/repositories/blockchains.repository.ts": [
+        "./node_modules/@loopback/repository/dist/index.d.ts",
+        "./src/models/index.ts",
+        "./src/datasources/index.ts",
+        "./node_modules/@loopback/core/dist/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/repositories/applications.repository.ts": [
+        "./node_modules/@loopback/repository/dist/index.d.ts",
+        "./src/models/index.ts",
+        "./src/datasources/index.ts",
+        "./node_modules/@loopback/core/dist/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/repositories/load-balancers.repository.ts": [
+        "./node_modules/@loopback/repository/dist/index.d.ts",
+        "./src/models/index.ts",
+        "./src/datasources/index.ts",
+        "./node_modules/@loopback/core/dist/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/repositories/index.ts": [
+        "./src/repositories/blockchains.repository.ts",
+        "./src/repositories/applications.repository.ts",
+        "./src/repositories/load-balancers.repository.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/controllers/blockchains.controller.ts": [
+        "./node_modules/@loopback/repository/dist/index.d.ts",
+        "./node_modules/@loopback/rest/index.d.ts",
+        "./src/models/index.ts",
+        "./src/repositories/index.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/controllers/ping.controller.ts": [
+        "./node_modules/@loopback/rest/index.d.ts",
+        "./node_modules/@loopback/context/dist/index.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -5500,6 +5549,7 @@
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
       "./src/services/pocket-relayer.ts": [
+        "./node_modules/@loopback/context/dist/index.d.ts",
         "./src/services/cherry-picker.ts",
         "./src/services/metrics-recorder.ts",
         "./node_modules/strong-cryptor/dist/index.d.ts",
@@ -5509,6 +5559,8 @@
         "./src/repositories/index.ts",
         "./src/models/index.ts",
         "./src/errors/relay-error.ts",
+        "./src/application.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -5524,6 +5576,7 @@
         "./src/services/cherry-picker.ts",
         "./src/services/metrics-recorder.ts",
         "./src/services/pocket-relayer.ts",
+        "./src/application.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -5600,7 +5653,15 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./node_modules/@types/long/index.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./node_modules/@types/mocha/index.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@types/object-hash/index.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -5614,6 +5675,10 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./node_modules/@types/prettier/index.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./node_modules/@types/scrypt-js/index.d.ts": [
         "./node_modules/@types/node/ts3.7/index.d.ts",
         "./node_modules/@types/node/util.d.ts",
@@ -5622,30 +5687,6 @@
       "./node_modules/@types/type-is/index.d.ts": [
         "./node_modules/@types/node/http.d.ts",
         "./node_modules/@types/node/ts3.7/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "../../../node_modules/@types/bn.js/index.d.ts": [
-        "./node_modules/@types/node/ts3.7/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "../../../node_modules/@types/prop-types/index.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "../../../node_modules/@types/react/global.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "../../../node_modules/csstype/index.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "../../../node_modules/@types/react/index.d.ts": [
-        "../../../node_modules/csstype/index.d.ts",
-        "../../../node_modules/@types/prop-types/index.d.ts",
-        "../../../node_modules/@types/react/global.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ]
@@ -7849,194 +7890,17 @@
       "./src/sequence.ts": [
         "./node_modules/@loopback/rest/index.d.ts"
       ],
-      "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts": [
-        "./node_modules/@types/node/ts3.7/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/application.ts": [
-        "./node_modules/@loopback/boot/dist/index.d.ts",
-        "./node_modules/@loopback/core/dist/index.d.ts",
-        "./node_modules/@loopback/repository/dist/index.d.ts",
-        "./node_modules/loopback-datasource-juggler/index.d.ts",
-        "./node_modules/@loopback/rest/index.d.ts"
-      ],
-      "./src/index.ts": [
-        "./src/application.ts",
-        "./node_modules/@loopback/core/index.d.ts"
-      ],
-      "./node_modules/@types/cookiejar/index.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@types/superagent/index.d.ts": [
-        "./node_modules/@types/node/fs.d.ts",
-        "./node_modules/@types/node/http.d.ts",
-        "./node_modules/@types/node/stream.d.ts",
-        "./node_modules/@types/cookiejar/index.d.ts",
-        "./node_modules/@types/node/ts3.7/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@types/supertest/index.d.ts": [
-        "./node_modules/@types/superagent/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/client.d.ts": [
-        "./node_modules/@types/node/http.d.ts",
-        "./node_modules/@types/supertest/index.d.ts",
-        "./node_modules/@types/node/ts3.2/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/should-as-function.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/expect.d.ts": [
-        "./node_modules/@loopback/testlab/should-as-function.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/http-error-logger.d.ts": [
-        "./node_modules/@types/express/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/http-server-config.d.ts": [
-        "./node_modules/@types/node/https.d.ts",
-        "./node_modules/@types/node/net.d.ts",
-        "./node_modules/@types/node/ts3.7/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/request.d.ts": [
-        "./node_modules/@types/node/http.d.ts",
-        "./node_modules/@types/node/https.d.ts",
-        "./node_modules/@types/node/ts3.2/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@types/shot/index.d.ts": [
-        "./node_modules/@types/node/http.d.ts",
-        "./node_modules/@types/node/stream.d.ts",
-        "./node_modules/@types/node/ts3.2/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/shot.d.ts": [
-        "./node_modules/@types/express/index.d.ts",
-        "./node_modules/@types/node/http.d.ts",
-        "./node_modules/@types/shot/index.d.ts",
-        "./node_modules/@types/node/ts3.2/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@types/sinonjs__fake-timers/index.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@types/sinon/ts3.1/index.d.ts": [
-        "./node_modules/@types/sinonjs__fake-timers/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/sinon.d.ts": [
-        "./node_modules/@types/sinon/ts3.1/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/skip.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/test-sandbox.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/to-json.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/validate-api-spec.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@loopback/testlab/dist/index.d.ts": [
-        "./node_modules/@loopback/testlab/dist/client.d.ts",
-        "./node_modules/@loopback/testlab/dist/expect.d.ts",
-        "./node_modules/@loopback/testlab/dist/http-error-logger.d.ts",
-        "./node_modules/@loopback/testlab/dist/http-server-config.d.ts",
-        "./node_modules/@loopback/testlab/dist/request.d.ts",
-        "./node_modules/@loopback/testlab/dist/shot.d.ts",
-        "./node_modules/@loopback/testlab/dist/sinon.d.ts",
-        "./node_modules/@loopback/testlab/dist/skip.d.ts",
-        "./node_modules/@loopback/testlab/dist/test-sandbox.d.ts",
-        "./node_modules/@loopback/testlab/dist/to-json.d.ts",
-        "./node_modules/@loopback/testlab/dist/validate-api-spec.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/__tests__/acceptance/test-helper.ts": [
-        "./src/index.ts",
-        "./node_modules/@loopback/testlab/index.d.ts"
-      ],
-      "./src/models/blockchains.model.ts": [
-        "./node_modules/@loopback/repository/index.d.ts"
-      ],
-      "./src/models/applications.model.ts": [
-        "./node_modules/@loopback/repository/dist/index.d.ts"
-      ],
-      "./src/models/load-balancers.model.ts": [
-        "./node_modules/@loopback/repository/dist/index.d.ts"
-      ],
-      "./src/models/index.ts": [
-        "./src/models/blockchains.model.ts",
-        "./src/models/applications.model.ts",
-        "./src/models/load-balancers.model.ts"
-      ],
-      "./src/datasources/gateway.datasource.ts": [
-        "./node_modules/@loopback/repository/index.d.ts",
-        "./node_modules/@loopback/core/index.d.ts"
-      ],
-      "./src/datasources/index.ts": [
-        "./src/datasources/gateway.datasource.ts"
-      ],
-      "./src/repositories/blockchains.repository.ts": [
-        "./src/datasources/index.ts",
-        "./node_modules/@loopback/repository/index.d.ts",
-        "./src/models/index.ts"
-      ],
-      "./src/repositories/applications.repository.ts": [
-        "./src/datasources/index.ts",
-        "./node_modules/@loopback/repository/index.d.ts",
-        "./src/models/index.ts"
-      ],
-      "./src/repositories/load-balancers.repository.ts": [
-        "./src/datasources/index.ts",
-        "./node_modules/@loopback/repository/dist/index.d.ts",
-        "./src/models/index.ts"
-      ],
-      "./src/repositories/index.ts": [
-        "./src/repositories/blockchains.repository.ts",
-        "./src/repositories/applications.repository.ts",
-        "./src/repositories/load-balancers.repository.ts"
-      ],
-      "./src/controllers/blockchains.controller.ts": [
-        "./src/repositories/index.ts",
-        "./src/models/index.ts",
-        "./node_modules/@loopback/repository/index.d.ts"
-      ],
-      "./src/controllers/ping.controller.ts": [
-        "./node_modules/@loopback/rest/index.d.ts"
-      ],
       "./node_modules/@pokt-network/pocket-js/dist/config/configuration.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
       "./node_modules/@pokt-network/pocket-js/dist/config/index.d.ts": [
         "./node_modules/@pokt-network/pocket-js/dist/config/configuration.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts": [
+        "./node_modules/@types/node/ts3.7/index.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -8075,10 +7939,6 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
-      "./node_modules/@pokt-network/pocket-js/dist/rpc/errors/rpc-error.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
       "./node_modules/@pokt-network/pocket-js/dist/storage/kv-store.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
@@ -8086,13 +7946,16 @@
       "./node_modules/@pokt-network/pocket-js/dist/routing-table/routing-table.d.ts": [
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/node.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/config/index.d.ts",
-        "./node_modules/@pokt-network/pocket-js/dist/rpc/errors/rpc-error.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/storage/kv-store.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
       "./node_modules/@pokt-network/pocket-js/dist/routing-table/index.d.ts": [
         "./node_modules/@pokt-network/pocket-js/dist/routing-table/routing-table.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/errors/rpc-error.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -8556,7 +8419,7 @@
         "./node_modules/@pokt-network/pocket-js/dist/storage/kv-store.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/config/index.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/errors/rpc-error.d.ts",
-        "./node_modules/@pokt-network/pocket-js/dist/routing-table/routing-table.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/rpc/models/index.d.ts",
         "./node_modules/@pokt-network/aat-js/lib/src/index.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
@@ -8567,7 +8430,6 @@
         "./node_modules/@pokt-network/pocket-js/dist/session/session-manager.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/index.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/keybase/keybase.d.ts",
-        "./node_modules/@pokt-network/pocket-js/dist/routing-table/routing-table.d.ts",
         "./node_modules/@pokt-network/aat-js/lib/src/index.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/consensus-relay-response.d.ts",
@@ -8655,6 +8517,20 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./node_modules/@pokt-network/amino-js/types/src/types/pocket.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/models/tx-signature.d.ts": [
+        "./node_modules/@pokt-network/amino-js/types/src/types/pocket.d.ts",
+        "./node_modules/@types/node/ts3.7/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/models/coin-denom.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/msgs/tx-msg.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
@@ -8713,24 +8589,10 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
-      "./node_modules/@pokt-network/pocket-js/dist/transactions/models/coin-denom.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/std-sign-doc.d.ts": [
         "./node_modules/@pokt-network/pocket-js/dist/transactions/models/amino-encodable.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/transactions/models/msgs/tx-msg.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/transactions/models/coin-denom.d.ts",
-        "./node_modules/@types/node/ts3.7/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@pokt-network/amino-js/types/src/types/pocket.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./node_modules/@pokt-network/pocket-js/dist/transactions/models/tx-signature.d.ts": [
-        "./node_modules/@pokt-network/amino-js/types/src/types/pocket.d.ts",
         "./node_modules/@types/node/ts3.7/index.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
@@ -8759,6 +8621,44 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/itx-signer-factory.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/models/tx-signature.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/models/index.d.ts",
+        "./node_modules/@types/node/ts3.7/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/amino-tx-signer-factory.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/models/tx-signature.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/models/coin-denom.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/models/index.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/itx-signer-factory.d.ts",
+        "./node_modules/@types/node/ts3.7/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/proto-tx-signer-factory.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/models/tx-signature.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/models/coin-denom.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/models/index.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/itx-signer-factory.d.ts",
+        "./node_modules/@types/node/ts3.7/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/tx-signer-factory.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/itx-signer-factory.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/index.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/amino-tx-signer-factory.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/itx-signer-factory.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/proto-tx-signer-factory.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/tx-signer-factory.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./node_modules/@pokt-network/pocket-js/dist/transactions/i-transaction-sender.d.ts": [
         "./node_modules/@pokt-network/pocket-js/dist/transactions/models/coin-denom.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/raw-tx-response.d.ts",
@@ -8782,6 +8682,7 @@
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
       "./node_modules/@pokt-network/pocket-js/dist/transactions/index.d.ts": [
+        "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/index.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/transactions/models/index.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/transactions/i-transaction-sender.d.ts",
         "./node_modules/@pokt-network/pocket-js/dist/transactions/transaction-sender.d.ts",
@@ -8830,6 +8731,184 @@
         "./node_modules/@pokt-network/pocket-js/dist/pocket.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/application.ts": [
+        "./node_modules/@loopback/boot/dist/index.d.ts",
+        "./node_modules/@loopback/core/dist/index.d.ts",
+        "./node_modules/@loopback/repository/dist/index.d.ts",
+        "./node_modules/loopback-datasource-juggler/index.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
+        "./node_modules/@loopback/rest/index.d.ts"
+      ],
+      "./src/index.ts": [
+        "./src/application.ts",
+        "./node_modules/@loopback/core/index.d.ts"
+      ],
+      "./node_modules/@types/cookiejar/index.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@types/superagent/index.d.ts": [
+        "./node_modules/@types/node/fs.d.ts",
+        "./node_modules/@types/node/http.d.ts",
+        "./node_modules/@types/node/stream.d.ts",
+        "./node_modules/@types/cookiejar/index.d.ts",
+        "./node_modules/@types/node/ts3.7/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@types/supertest/index.d.ts": [
+        "./node_modules/@types/superagent/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/client.d.ts": [
+        "./node_modules/@types/node/http.d.ts",
+        "./node_modules/@types/supertest/index.d.ts",
+        "./node_modules/@types/node/ts3.2/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/should-as-function.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/expect.d.ts": [
+        "./node_modules/@loopback/testlab/should-as-function.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/http-error-logger.d.ts": [
+        "./node_modules/@types/express/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/http-server-config.d.ts": [
+        "./node_modules/@types/node/https.d.ts",
+        "./node_modules/@types/node/net.d.ts",
+        "./node_modules/@types/node/ts3.7/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/request.d.ts": [
+        "./node_modules/@types/node/http.d.ts",
+        "./node_modules/@types/node/https.d.ts",
+        "./node_modules/@types/node/ts3.2/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@types/shot/index.d.ts": [
+        "./node_modules/@types/node/http.d.ts",
+        "./node_modules/@types/node/stream.d.ts",
+        "./node_modules/@types/node/ts3.2/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/shot.d.ts": [
+        "./node_modules/@types/express/index.d.ts",
+        "./node_modules/@types/node/http.d.ts",
+        "./node_modules/@types/shot/index.d.ts",
+        "./node_modules/@types/node/ts3.2/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@types/sinonjs__fake-timers/index.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@types/sinon/ts3.1/index.d.ts": [
+        "./node_modules/@types/sinonjs__fake-timers/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/sinon.d.ts": [
+        "./node_modules/@types/sinon/ts3.1/index.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/skip.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/test-sandbox.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/to-json.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/validate-api-spec.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@loopback/testlab/dist/index.d.ts": [
+        "./node_modules/@loopback/testlab/dist/client.d.ts",
+        "./node_modules/@loopback/testlab/dist/expect.d.ts",
+        "./node_modules/@loopback/testlab/dist/http-error-logger.d.ts",
+        "./node_modules/@loopback/testlab/dist/http-server-config.d.ts",
+        "./node_modules/@loopback/testlab/dist/request.d.ts",
+        "./node_modules/@loopback/testlab/dist/shot.d.ts",
+        "./node_modules/@loopback/testlab/dist/sinon.d.ts",
+        "./node_modules/@loopback/testlab/dist/skip.d.ts",
+        "./node_modules/@loopback/testlab/dist/test-sandbox.d.ts",
+        "./node_modules/@loopback/testlab/dist/to-json.d.ts",
+        "./node_modules/@loopback/testlab/dist/validate-api-spec.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/__tests__/acceptance/test-helper.ts": [
+        "./src/index.ts",
+        "./node_modules/@loopback/testlab/index.d.ts"
+      ],
+      "./src/models/blockchains.model.ts": [
+        "./node_modules/@loopback/repository/index.d.ts"
+      ],
+      "./src/models/applications.model.ts": [
+        "./node_modules/@loopback/repository/dist/index.d.ts"
+      ],
+      "./src/models/load-balancers.model.ts": [
+        "./node_modules/@loopback/repository/dist/index.d.ts"
+      ],
+      "./src/models/index.ts": [
+        "./src/models/blockchains.model.ts",
+        "./src/models/applications.model.ts",
+        "./src/models/load-balancers.model.ts"
+      ],
+      "./src/datasources/gateway.datasource.ts": [
+        "./node_modules/@loopback/repository/index.d.ts",
+        "./node_modules/@loopback/core/index.d.ts"
+      ],
+      "./src/datasources/index.ts": [
+        "./src/datasources/gateway.datasource.ts"
+      ],
+      "./src/repositories/blockchains.repository.ts": [
+        "./src/datasources/index.ts",
+        "./node_modules/@loopback/repository/index.d.ts",
+        "./src/models/index.ts"
+      ],
+      "./src/repositories/applications.repository.ts": [
+        "./src/datasources/index.ts",
+        "./node_modules/@loopback/repository/index.d.ts",
+        "./src/models/index.ts"
+      ],
+      "./src/repositories/load-balancers.repository.ts": [
+        "./src/datasources/index.ts",
+        "./node_modules/@loopback/repository/dist/index.d.ts",
+        "./src/models/index.ts"
+      ],
+      "./src/repositories/index.ts": [
+        "./src/repositories/blockchains.repository.ts",
+        "./src/repositories/applications.repository.ts",
+        "./src/repositories/load-balancers.repository.ts"
+      ],
+      "./src/controllers/blockchains.controller.ts": [
+        "./src/repositories/index.ts",
+        "./src/models/index.ts",
+        "./node_modules/@loopback/repository/index.d.ts"
+      ],
+      "./src/controllers/ping.controller.ts": [
+        "./node_modules/@loopback/rest/index.d.ts"
       ],
       "./node_modules/@types/ioredis/index.d.ts": [
         "./node_modules/@types/node/tls.d.ts",
@@ -8916,11 +8995,12 @@
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
       "./src/services/pocket-relayer.ts": [
-        "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
         "./src/services/cherry-picker.ts",
         "./src/services/metrics-recorder.ts",
         "./node_modules/@types/ioredis/index.d.ts",
         "./src/repositories/index.ts",
+        "./src/application.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
         "./src/models/index.ts"
       ],
       "./src/controllers/v1.controller.ts": [
@@ -8929,6 +9009,7 @@
         "./src/services/metrics-recorder.ts",
         "./src/services/pocket-relayer.ts",
         "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
+        "./src/application.ts",
         "./node_modules/@types/ioredis/index.d.ts",
         "./node_modules/@types/pg/index.d.ts",
         "./node_modules/@loopback/repository/dist/index.d.ts",
@@ -9000,7 +9081,15 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./node_modules/@types/long/index.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./node_modules/@types/mocha/index.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./node_modules/@types/object-hash/index.d.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -9014,6 +9103,10 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
+      "./node_modules/@types/prettier/index.d.ts": [
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
       "./node_modules/@types/scrypt-js/index.d.ts": [
         "./node_modules/@types/node/ts3.2/index.d.ts",
         "./node_modules/@types/node/util.d.ts",
@@ -9022,30 +9115,6 @@
       "./node_modules/@types/type-is/index.d.ts": [
         "./node_modules/@types/node/http.d.ts",
         "./node_modules/@types/node/ts3.2/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "../../../node_modules/@types/bn.js/index.d.ts": [
-        "./node_modules/@types/node/ts3.2/index.d.ts",
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "../../../node_modules/@types/prop-types/index.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "../../../node_modules/@types/react/global.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "../../../node_modules/csstype/index.d.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "../../../node_modules/@types/react/index.d.ts": [
-        "../../../node_modules/csstype/index.d.ts",
-        "../../../node_modules/@types/prop-types/index.d.ts",
-        "../../../node_modules/@types/react/global.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ]
@@ -9379,56 +9448,19 @@
       "./node_modules/@loopback/rest/dist/index.d.ts",
       "./node_modules/@loopback/rest/index.d.ts",
       "./src/sequence.ts",
-      "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts",
-      "./src/application.ts",
-      "./src/index.ts",
-      "./src/migrate.ts",
-      "./node_modules/@types/cookiejar/index.d.ts",
-      "./node_modules/@types/superagent/index.d.ts",
-      "./node_modules/@types/supertest/index.d.ts",
-      "./node_modules/@loopback/testlab/dist/client.d.ts",
-      "./node_modules/@loopback/testlab/should-as-function.d.ts",
-      "./node_modules/@loopback/testlab/dist/expect.d.ts",
-      "./node_modules/@loopback/testlab/dist/http-error-logger.d.ts",
-      "./node_modules/@loopback/testlab/dist/http-server-config.d.ts",
-      "./node_modules/@loopback/testlab/dist/request.d.ts",
-      "./node_modules/@types/shot/index.d.ts",
-      "./node_modules/@loopback/testlab/dist/shot.d.ts",
-      "./node_modules/@types/sinonjs__fake-timers/index.d.ts",
-      "./node_modules/@types/sinon/ts3.1/index.d.ts",
-      "./node_modules/@loopback/testlab/dist/sinon.d.ts",
-      "./node_modules/@loopback/testlab/dist/skip.d.ts",
-      "./node_modules/@loopback/testlab/dist/test-sandbox.d.ts",
-      "./node_modules/@loopback/testlab/dist/to-json.d.ts",
-      "./node_modules/@loopback/testlab/dist/validate-api-spec.d.ts",
-      "./node_modules/@loopback/testlab/dist/index.d.ts",
-      "./src/__tests__/acceptance/test-helper.ts",
-      "./src/__tests__/acceptance/home-page.acceptance.ts",
-      "./src/__tests__/acceptance/ping.controller.acceptance.ts",
-      "./src/models/blockchains.model.ts",
-      "./src/models/applications.model.ts",
-      "./src/models/load-balancers.model.ts",
-      "./src/models/index.ts",
-      "./src/datasources/gateway.datasource.ts",
-      "./src/datasources/index.ts",
-      "./src/repositories/blockchains.repository.ts",
-      "./src/repositories/applications.repository.ts",
-      "./src/repositories/load-balancers.repository.ts",
-      "./src/repositories/index.ts",
-      "./src/controllers/blockchains.controller.ts",
-      "./src/controllers/ping.controller.ts",
       "./node_modules/@pokt-network/pocket-js/dist/config/configuration.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/config/index.d.ts",
+      "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/keybase/models/unlocked-account.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/keybase/models/index.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/keybase/keybase.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/keybase/index.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/staking-status.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/node.d.ts",
-      "./node_modules/@pokt-network/pocket-js/dist/rpc/errors/rpc-error.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/storage/kv-store.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/routing-table/routing-table.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/routing-table/index.d.ts",
+      "./node_modules/@pokt-network/pocket-js/dist/rpc/errors/rpc-error.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/errors/index.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/output/challenge-response.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/rpc/models/consensus-node.d.ts",
@@ -9519,6 +9551,9 @@
       "./node_modules/@pokt-network/pocket-js/dist/session/index.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/storage/in-memory-kv-store.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/storage/index.d.ts",
+      "./node_modules/@pokt-network/amino-js/types/src/types/pocket.d.ts",
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/models/tx-signature.d.ts",
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/models/coin-denom.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/msgs/tx-msg.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/msgs/msg-app-stake.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/msgs/msg-app-unjail.d.ts",
@@ -9529,13 +9564,15 @@
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/msgs/msg-send.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/msgs/index.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/amino-encodable.d.ts",
-      "./node_modules/@pokt-network/pocket-js/dist/transactions/models/coin-denom.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/std-sign-doc.d.ts",
-      "./node_modules/@pokt-network/amino-js/types/src/types/pocket.d.ts",
-      "./node_modules/@pokt-network/pocket-js/dist/transactions/models/tx-signature.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/std-tx.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/transaction-signature.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/transactions/models/index.d.ts",
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/itx-signer-factory.d.ts",
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/amino-tx-signer-factory.d.ts",
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/proto-tx-signer-factory.d.ts",
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/tx-signer-factory.d.ts",
+      "./node_modules/@pokt-network/pocket-js/dist/transactions/factory/index.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/transactions/i-transaction-sender.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/transactions/transaction-sender.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/transactions/transaction-signer.d.ts",
@@ -9546,6 +9583,43 @@
       "./node_modules/@pokt-network/pocket-js/dist/utils/validator.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/utils/index.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
+      "./src/application.ts",
+      "./src/index.ts",
+      "./src/migrate.ts",
+      "./node_modules/@types/cookiejar/index.d.ts",
+      "./node_modules/@types/superagent/index.d.ts",
+      "./node_modules/@types/supertest/index.d.ts",
+      "./node_modules/@loopback/testlab/dist/client.d.ts",
+      "./node_modules/@loopback/testlab/should-as-function.d.ts",
+      "./node_modules/@loopback/testlab/dist/expect.d.ts",
+      "./node_modules/@loopback/testlab/dist/http-error-logger.d.ts",
+      "./node_modules/@loopback/testlab/dist/http-server-config.d.ts",
+      "./node_modules/@loopback/testlab/dist/request.d.ts",
+      "./node_modules/@types/shot/index.d.ts",
+      "./node_modules/@loopback/testlab/dist/shot.d.ts",
+      "./node_modules/@types/sinonjs__fake-timers/index.d.ts",
+      "./node_modules/@types/sinon/ts3.1/index.d.ts",
+      "./node_modules/@loopback/testlab/dist/sinon.d.ts",
+      "./node_modules/@loopback/testlab/dist/skip.d.ts",
+      "./node_modules/@loopback/testlab/dist/test-sandbox.d.ts",
+      "./node_modules/@loopback/testlab/dist/to-json.d.ts",
+      "./node_modules/@loopback/testlab/dist/validate-api-spec.d.ts",
+      "./node_modules/@loopback/testlab/dist/index.d.ts",
+      "./src/__tests__/acceptance/test-helper.ts",
+      "./src/__tests__/acceptance/home-page.acceptance.ts",
+      "./src/__tests__/acceptance/ping.controller.acceptance.ts",
+      "./src/models/blockchains.model.ts",
+      "./src/models/applications.model.ts",
+      "./src/models/load-balancers.model.ts",
+      "./src/models/index.ts",
+      "./src/datasources/gateway.datasource.ts",
+      "./src/datasources/index.ts",
+      "./src/repositories/blockchains.repository.ts",
+      "./src/repositories/applications.repository.ts",
+      "./src/repositories/load-balancers.repository.ts",
+      "./src/repositories/index.ts",
+      "./src/controllers/blockchains.controller.ts",
+      "./src/controllers/ping.controller.ts",
       "./node_modules/@types/ioredis/index.d.ts",
       "./node_modules/pg-types/index.d.ts",
       "./node_modules/@types/pg/index.d.ts",
@@ -9575,16 +9649,14 @@
       "./node_modules/@types/minimatch/index.d.ts",
       "./node_modules/@types/glob/index.d.ts",
       "./node_modules/@types/libsodium-wrappers/index.d.ts",
+      "./node_modules/@types/long/index.d.ts",
       "./node_modules/@types/mocha/index.d.ts",
+      "./node_modules/@types/object-hash/index.d.ts",
       "./node_modules/@types/on-finished/index.d.ts",
       "./node_modules/@types/pg-types/index.d.ts",
+      "./node_modules/@types/prettier/index.d.ts",
       "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
-      "../../../node_modules/@types/bn.js/index.d.ts",
-      "../../../node_modules/@types/prop-types/index.d.ts",
-      "../../../node_modules/@types/react/global.d.ts",
-      "../../../node_modules/csstype/index.d.ts",
-      "../../../node_modules/@types/react/index.d.ts",
       "./src/services/pocket-relayer.ts"
     ]
   },

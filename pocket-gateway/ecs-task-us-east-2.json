@@ -10,7 +10,7 @@
 		  "secretOptions": null,
 		  "options": {
 			"awslogs-group": "/ecs/gateway",
-			"awslogs-region": "us-west-2",
+			"awslogs-region": "us-east-2",
 			"awslogs-stream-prefix": "ecs"
 		  }
 		},
@@ -42,7 +42,7 @@
 		"memoryReservation": 4096,
 		"volumesFrom": [],
 		"stopTimeout": null,
-		"image": "059424750518.dkr.ecr.us-west-2.amazonaws.com/gateway:latest",
+		"image": "059424750518.dkr.ecr.us-east-2.amazonaws.com/gateway:latest",
 		"startTimeout": null,
 		"firelensConfiguration": null,
 		"dependsOn": null,
