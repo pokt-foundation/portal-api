@@ -25,7 +25,7 @@
     "environment": [],
 		"command": [],
 		"linuxParameters": null,
-		"cpu": 0,
+		"cpu": 2048,
 		"resourceRequirements": null,
 		"ulimits": [
 			{
@@ -39,10 +39,10 @@
 		"workingDirectory": null,
 		"dockerSecurityOptions": null,
 		"memory": null,
-		"memoryReservation": 7168,
+		"memoryReservation": 4096,
 		"volumesFrom": [],
 		"stopTimeout": null,
-		"image": "059424750518.dkr.ecr.us-west-2.amazonaws.com/gateway:latest",
+		"image": "059424750518.dkr.ecr.ap-southeast-1.amazonaws.com/gateway:latest",
 		"startTimeout": null,
 		"firelensConfiguration": null,
 		"dependsOn": null,
@@ -63,7 +63,7 @@
 	  }
 	],
 	"placementConstraints": [],
-	"memory": "8192",
+	"memory": "4096",
 	"taskRoleArn": null,
 	"family": "gateway",
 	"pidMode": null,
@@ -71,7 +71,7 @@
 	  "FARGATE"
 	],
 	"networkMode": "awsvpc",
-	"cpu": "4096",
+	"cpu": "2048",
 	"inferenceAccelerators": null,
 	"proxyConfiguration": null,
 	"volumes": []

@@ -62,7 +62,7 @@
     "@loopback/rest": "^3.3.2",
     "@loopback/rest-explorer": "^2.1.2",
     "@loopback/service-proxy": "^2.1.2",
-    "@pokt-network/pocket-js": "0.6.1-rc",
+    "@pokt-network/pocket-js": "^0.6.7-rc",
     "@types/ioredis": "^4.16.2",
     "@types/pg": "^7.14.3",
     "dotenv": "^8.2.0",

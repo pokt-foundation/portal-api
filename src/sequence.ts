@@ -1,6 +1,7 @@
 import {inject} from '@loopback/context';
 import {
   FindRoute,
+  HttpErrors,
   InvokeMethod,
   ParseParams,
   Reject,
@@ -10,11 +11,18 @@ import {
   SequenceHandler,
 } from '@loopback/rest';
 
+const logger = require('./services/logger');
+
 const shortID = require('shortid');
 const SequenceActions = RestBindings.SequenceActions;
 
 export class GatewaySequence implements SequenceHandler {
   constructor(
+    @inject('dispatchURL') private dispatchURL: string,
+    @inject('pocketSessionBlockFrequency') private pocketSessionBlockFrequency: number,
+    @inject('pocketBlockTime') private pocketBlockTime: number,
+    @inject('clientPrivateKey') private clientPrivateKey: string,
+    @inject('clientPassphrase') private clientPassphrase: string,
     @inject(SequenceActions.FIND_ROUTE) protected findRoute: FindRoute,
     @inject(SequenceActions.PARSE_PARAMS) protected parseParams: ParseParams,
     @inject(SequenceActions.INVOKE_METHOD) protected invoke: InvokeMethod,
@@ -32,6 +40,7 @@ export class GatewaySequence implements SequenceHandler {
       context.bind('origin').to(request.headers['origin']);
       context.bind('contentType').to(request.headers['content-type']);
       context.bind('relayPath').to(request.headers['relay-path']);
+      context.bind('httpMethod').to(request.method);
 
       let secretKey = '';
       // SecretKey passed in via basic http auth
