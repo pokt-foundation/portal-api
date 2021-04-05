@@ -14,6 +14,7 @@ const os = require('os');
 const process = require('process');
 const pg = require('pg');
 const got = require('got');
+;
 require('log-timestamp');
 require('dotenv').config();
 class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceMixin(repository_1.RepositoryMixin(rest_1.RestApplication))) {
@@ -121,6 +122,9 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         const parts = [os.hostname(), process.pid, +new Date()];
         const hash = crypto.createHash('md5').update(parts.join(''));
         this.bind('processUID').to(hash.digest('hex'));
+        // Load an empty array to store PocketJS instances
+        const pocketJSInstances = {};
+        this.bind('pocketJSInstances').to(pocketJSInstances);
     }
 }
 exports.PocketGatewayApplication = PocketGatewayApplication;
