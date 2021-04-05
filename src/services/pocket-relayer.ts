@@ -180,6 +180,7 @@ export class PocketRelayer {
 
         // Increment error log
         await this.redis.incr(blockchain + '-' + relayResponse.servicer_node + '-errors');
+        await this.redis.expire(blockchain + '-' + relayResponse.servicer_node + '-errors', 3600);
 
         await this.metricsRecorder.recordMetric({
           requestID: requestID,
