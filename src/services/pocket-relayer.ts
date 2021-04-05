@@ -122,7 +122,8 @@ export class PocketRelayer {
     // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
     // extraneous characters like newlines and tabs from the rawData.
     // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
-
+    
+    logger.log('error', rawData, rawData.toString())
     const parsedRawData = JSON.parse(rawData.toString());
     const data = JSON.stringify(parsedRawData);
     const method = this.parseMethod(parsedRawData);
@@ -238,7 +239,9 @@ export class PocketRelayer {
           blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
           blockchainEnforceResult.toLowerCase() === 'json' // the check is for JSON
         ) {
-          return JSON.parse(responseParsed.response);
+          return typeof responseParsed.response === 'string' && responseParsed.response.match('{')
+            ? JSON.parse(responseParsed.response)
+            : responseParsed.response;
         }
         else {
           return responseParsed.response;
@@ -269,6 +272,15 @@ export class PocketRelayer {
       throw new HttpErrors.Forbidden('SecretKey does not match');
     }
 
+    logger.log('info', 
+      JSON.stringify(
+        { 
+          whitelistOrigins: JSON.stringify(application.gatewaySettings.whitelistOrigins),
+          origin: this.origin,
+        }
+      )
+    )
+
     // Whitelist: origins -- explicit matches
     if (
       !this.checkWhitelist(
@@ -298,9 +310,9 @@ export class PocketRelayer {
     // Checks pass; create AAT
     const pocketAAT = new PocketAAT(
       application.gatewayAAT.version,
-      application.gatewayAAT.clientPublicKey,
-      application.gatewayAAT.applicationPublicKey,
-      application.gatewayAAT.applicationSignature,
+      application.freeTierAAT.clientPublicKey,
+      application.freeTierAAT.applicationPublicKey,
+      application.freeTierAAT.applicationSignature,
     );
 
     let node;

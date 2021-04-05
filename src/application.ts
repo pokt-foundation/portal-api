@@ -179,8 +179,6 @@ export class PocketGatewayApplication extends BootMixin(
     const cachedCertificate = await redis.get('timescaleDBCertificate');
     let publicCertificate;
 
-    console.log("xxx", {cachedCertificate, environment});
-
     if (environment === 'production') {
       if (!cachedCertificate) {
         try {
