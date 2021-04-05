@@ -9,7 +9,7 @@ export async function main(options: ApplicationConfig = {}) {
   const app = new PocketGatewayApplication(options);
   await app.boot();
   await app.start();
-  await app.loadPocket();
+  await app.loadApp();
 
   logger.log('info', `Server is running at ${app.restServer.url}`, {requestID: '', relayType: '', typeID: '', serviceNode: ''});
   return app;

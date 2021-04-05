@@ -1,6 +1,7 @@
 import {inject} from '@loopback/context';
 import {
   FindRoute,
+  HttpErrors,
   InvokeMethod,
   ParseParams,
   Reject,
@@ -10,11 +11,23 @@ import {
   SequenceHandler,
 } from '@loopback/rest';
 
+import {Account} from '@pokt-network/pocket-js/dist/keybase/models/account';
+
+const logger = require('./services/logger');
+
+const pocketJS = require('@pokt-network/pocket-js');
+const {Pocket, Configuration, HttpRpcProvider} = pocketJS;
+
 const shortID = require('shortid');
 const SequenceActions = RestBindings.SequenceActions;
 
 export class GatewaySequence implements SequenceHandler {
   constructor(
+    @inject('dispatchURL') private dispatchURL: string,
+    @inject('pocketSessionBlockFrequency') private pocketSessionBlockFrequency: number,
+    @inject('pocketBlockTime') private pocketBlockTime: number,
+    @inject('clientPrivateKey') private clientPrivateKey: string,
+    @inject('clientPassphrase') private clientPassphrase: string,
     @inject(SequenceActions.FIND_ROUTE) protected findRoute: FindRoute,
     @inject(SequenceActions.PARSE_PARAMS) protected parseParams: ParseParams,
     @inject(SequenceActions.INVOKE_METHOD) protected invoke: InvokeMethod,
@@ -24,6 +37,57 @@ export class GatewaySequence implements SequenceHandler {
 
   async handle(context: RequestContext) {
     try {
+
+      // Create the Pocket instance
+      const dispatchers = [];
+
+      if (this.dispatchURL.indexOf(",")) {
+        const dispatcherArray = this.dispatchURL.split(",");
+        dispatcherArray.forEach(function(dispatcher) {
+          dispatchers.push(new URL(dispatcher));
+        });
+      } else {
+        dispatchers.push(new URL(this.dispatchURL));
+      }
+
+      const configuration = new Configuration(
+        0,
+        100000,
+        0,
+        120000,
+        false,
+        this.pocketSessionBlockFrequency,
+        this.pocketBlockTime,
+        undefined,
+        undefined,
+        false,
+      );
+      const rpcProvider = new HttpRpcProvider(dispatchers);
+      const pocket = new Pocket(dispatchers, rpcProvider, configuration);
+      
+      context.bind('pocketInstance').to(pocket);
+      context.bind('pocketConfiguration').to(configuration);
+
+      // Unlock primary client account for relay signing
+      try {
+        const importAccount = await pocket.keybase.importAccount(
+          Buffer.from(this.clientPrivateKey, 'hex'),
+          this.clientPassphrase,
+        );
+        if (importAccount instanceof Account) {
+          await pocket.keybase.unlockAccount(
+            importAccount.addressHex,
+            this.clientPassphrase,
+            0,
+          );
+        }
+      } catch (e) {
+        logger.log('error', e);
+        throw new HttpErrors.InternalServerError(
+          'Unable to import or unlock base client account',
+        );
+      }
+
       const {request, response} = context;
 
       // Record the host, user-agent, and origin for processing
