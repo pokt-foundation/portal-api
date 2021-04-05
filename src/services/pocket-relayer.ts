@@ -1,4 +1,3 @@
-import {inject} from '@loopback/context';
 import {CherryPicker} from '../services/cherry-picker';
 import {MetricsRecorder} from '../services/metrics-recorder';
 import {Decryptor} from 'strong-cryptor';
