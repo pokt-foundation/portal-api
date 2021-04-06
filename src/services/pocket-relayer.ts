@@ -17,12 +17,27 @@ import {BlockchainsRepository} from '../repositories';
 import {Applications} from '../models';
 import {RelayError} from '../errors/relay-error';
 
+import AatPlans from '../config/aat-plans.json';
+
 const logger = require('../services/logger');
 
-interface FallbackRelay { payload: FallbackPayload; meta: FallbackMeta; proof: FallbackProof };
-interface FallbackPayload { data: String; method: String; path: String; headers: null };
-interface FallbackMeta { block_height: number } ;
-interface FallbackProof { blockchain: String };
+interface FallbackRelay {
+  payload: FallbackPayload;
+  meta: FallbackMeta;
+  proof: FallbackProof;
+}
+interface FallbackPayload {
+  data: String;
+  method: String;
+  path: String;
+  headers: null;
+}
+interface FallbackMeta {
+  block_height: number;
+}
+interface FallbackProof {
+  blockchain: String;
+}
 
 export class PocketRelayer {
   host: string;
@@ -39,6 +54,7 @@ export class PocketRelayer {
   blockchainsRepository: BlockchainsRepository;
   checkDebug: boolean;
   fallbacks: Array<URL>;
+  aatPlan: string;
 
   constructor({
     host,
@@ -55,6 +71,7 @@ export class PocketRelayer {
     blockchainsRepository,
     checkDebug,
     fallbackURL,
+    aatPlan,
   }: {
     host: string;
     origin: string;
@@ -70,6 +87,7 @@ export class PocketRelayer {
     blockchainsRepository: BlockchainsRepository;
     checkDebug: boolean;
     fallbackURL: string;
+    aatPlan: string;
   }) {
     this.host = host;
     this.origin = origin;
@@ -84,13 +102,14 @@ export class PocketRelayer {
     this.relayRetries = relayRetries;
     this.blockchainsRepository = blockchainsRepository;
     this.checkDebug = checkDebug;
-    
+    this.aatPlan = aatPlan;
+
     // Create the array of fallback relayers as last resort
     const fallbacks = [];
 
-    if (fallbackURL.indexOf(",")) {
-      const fallbackArray = fallbackURL.split(",");
-      fallbackArray.forEach(function(fallback) {
+    if (fallbackURL.indexOf(',')) {
+      const fallbackArray = fallbackURL.split(',');
+      fallbackArray.forEach(function (fallback) {
         fallbacks.push(new URL(fallback));
       });
     } else {
@@ -106,43 +125,49 @@ export class PocketRelayer {
     application: Applications,
     requestID: string,
     requestTimeOut?: number,
-    overallTimeOut?: number, 
-    relayRetries?: number
+    overallTimeOut?: number,
+    relayRetries?: number,
   ): Promise<string | Error> {
-    if (
-      relayRetries !== undefined &&
-      relayRetries >= 0
-      ) {
+    if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries;
     }
     const [blockchain, blockchainEnforceResult] = await this.loadBlockchain();
+    logger.log('info', 'Blockchain' + JSON.stringify(blockchain))
     const overallStart = process.hrtime();
 
     // This converts the raw data into formatted JSON then back to a string for relaying.
     // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
     // extraneous characters like newlines and tabs from the rawData.
     // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
-    
-    logger.log('error', rawData, rawData.toString())
-    const parsedRawData = JSON.parse(rawData.toString());
+
+    const parsedRawData = Object.keys(rawData).length > 0
+      ? JSON.parse(rawData.toString())
+      : JSON.stringify(rawData);
     const data = JSON.stringify(parsedRawData);
     const method = this.parseMethod(parsedRawData);
-    const fallbackAvailable = (this.fallbacks.length > 0 && this.pocket !== undefined) ? true : false;
+    const fallbackAvailable =
+      this.fallbacks.length > 0 && this.pocket !== undefined ? true : false;
     // Retries if applicable
-    for (let x = 0; x <= this.relayRetries; x++) { 
+    for (let x = 0; x <= this.relayRetries; x++) {
       let relayStart = process.hrtime();
-      
+
       // Compute the overall time taken on this LB request
       const overallCurrent = process.hrtime(overallStart);
-      const overallCurrentElasped = Math.round((overallCurrent[0] * 1e9 + overallCurrent[1]) / 1e6);
-      if (
-          overallTimeOut &&
-          overallCurrentElasped > overallTimeOut
-        ) {
-        logger.log('error', 'Overall Timeout exceeded: ' + overallTimeOut, {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
-        return new HttpErrors.GatewayTimeout('Overall Timeout exceeded: ' + overallTimeOut);
+      const overallCurrentElasped = Math.round(
+        (overallCurrent[0] * 1e9 + overallCurrent[1]) / 1e6,
+      );
+      if (overallTimeOut && overallCurrentElasped > overallTimeOut) {
+        logger.log('error', 'Overall Timeout exceeded: ' + overallTimeOut, {
+          requestID: requestID,
+          relayType: 'APP',
+          typeID: application.id,
+          serviceNode: '',
+        });
+        return new HttpErrors.GatewayTimeout(
+          'Overall Timeout exceeded: ' + overallTimeOut,
+        );
       }
-      
+
       // Send this relay attempt
       const relayResponse = await this._sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult);
       
@@ -160,7 +185,7 @@ export class PocketRelayer {
           delivered: false,
           fallback: false,
           method: method,
-          error: undefined
+          error: undefined,
         });
         
         // Clear error log
@@ -177,7 +202,8 @@ export class PocketRelayer {
       } else if (relayResponse instanceof RelayError) {
         // Record failure metric, retry if possible or fallback
         // If this is the last retry and fallback is available, mark the error not delivered
-        const errorDelivered = (x === this.relayRetries && fallbackAvailable) ? false : true;
+        const errorDelivered =
+          x === this.relayRetries && fallbackAvailable ? false : true;
 
         // Increment error log
         await this.redis.incr(blockchain + '-' + relayResponse.servicer_node + '-errors');
@@ -200,7 +226,7 @@ export class PocketRelayer {
       }
     }
     // Exhausted relay attempts; use fallback
-    if (fallbackAvailable) {      
+    if (fallbackAvailable) {
       let relayStart = process.hrtime();
       const [blockchain, blockchainEnforceResult] = await this.loadBlockchain();
       
@@ -208,14 +234,38 @@ export class PocketRelayer {
       const fallbackPayload : FallbackPayload = {data: rawData.toString(), method: httpMethod, path: relayPath,  headers: null};
       const fallbackMeta: FallbackMeta = {block_height: 0};
       const fallbackProof: FallbackProof = {blockchain: blockchain};
-      const fallbackRelay: FallbackRelay = {payload: fallbackPayload, meta: fallbackMeta, proof: fallbackProof};
+      const fallbackRelay: FallbackRelay = {
+        payload: fallbackPayload,
+        meta: fallbackMeta,
+        proof: fallbackProof,
+      };
 
-      const fallbackResponse = await fallbackChoice.send("/v1/client/relay", JSON.stringify(fallbackRelay), 1200000, false);
-      
+      const fallbackResponse = await fallbackChoice.send(
+        '/v1/client/relay',
+        JSON.stringify(fallbackRelay),
+        1200000,
+        false,
+      );
+
       if (this.checkDebug) {
-        logger.log('debug', JSON.stringify(fallbackChoice), {requestID: requestID, relayType: 'FALLBACK', typeID: application.id, serviceNode: 'fallback:'+fallbackChoice.baseURL});
-        logger.log('debug', JSON.stringify(fallbackRelay), {requestID: requestID, relayType: 'FALLBACK', typeID: application.id, serviceNode: 'fallback:'+fallbackChoice.baseURL});
-        logger.log('debug', JSON.stringify(fallbackResponse), {requestID: requestID, relayType: 'FALLBACK', typeID: application.id, serviceNode: 'fallback:'+fallbackChoice.baseURL});
+        logger.log('debug', JSON.stringify(fallbackChoice), {
+          requestID: requestID,
+          relayType: 'FALLBACK',
+          typeID: application.id,
+          serviceNode: 'fallback:' + fallbackChoice.baseURL,
+        });
+        logger.log('debug', JSON.stringify(fallbackRelay), {
+          requestID: requestID,
+          relayType: 'FALLBACK',
+          typeID: application.id,
+          serviceNode: 'fallback:' + fallbackChoice.baseURL,
+        });
+        logger.log('debug', JSON.stringify(fallbackResponse), {
+          requestID: requestID,
+          relayType: 'FALLBACK',
+          typeID: application.id,
+          serviceNode: 'fallback:' + fallbackChoice.baseURL,
+        });
       }
       if (!(fallbackResponse instanceof RpcError)) {
         const responseParsed = JSON.parse(fallbackResponse);
@@ -225,30 +275,34 @@ export class PocketRelayer {
           applicationID: application.id,
           appPubKey: application.gatewayAAT.applicationPublicKey,
           blockchain,
-          serviceNode: "fallback:"+fallbackChoice.baseURL,
+          serviceNode: 'fallback:' + fallbackChoice.baseURL,
           relayStart,
           result: 200,
           bytes: Buffer.byteLength(responseParsed.response, 'utf8'),
           delivered: false,
           fallback: true,
           method: method,
-          error: undefined
+          error: undefined,
         });
         // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
         if (
           blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
           blockchainEnforceResult.toLowerCase() === 'json' // the check is for JSON
         ) {
-          return typeof responseParsed.response === 'string' && responseParsed.response.match('{')
+          return typeof responseParsed.response === 'string' &&
+            responseParsed.response.match('{')
             ? JSON.parse(responseParsed.response)
             : responseParsed.response;
-        }
-        else {
+        } else {
           return responseParsed.response;
         }
-      }
-      else {
-        logger.log('error', JSON.stringify(fallbackResponse), {requestID: requestID, relayType: 'FALLBACK', typeID: application.id, serviceNode: 'fallback:'+fallbackChoice.baseURL});
+      } else {
+        logger.log('error', JSON.stringify(fallbackResponse), {
+          requestID: requestID,
+          relayType: 'FALLBACK',
+          typeID: application.id,
+          serviceNode: 'fallback:' + fallbackChoice.baseURL,
+        });
       }
     }
     return new HttpErrors.GatewayTimeout('Relay attempts exhausted');
@@ -263,23 +317,19 @@ export class PocketRelayer {
     application: Applications,
     requestTimeOut: number | undefined,
     blockchain: string,
-    blockchainEnforceResult: string
+    blockchainEnforceResult: string,
   ): Promise<RelayResponse | Error> {
-    logger.log('info', 'RELAYING ' + blockchain + ' req: ' + data, {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
-    
+    logger.log('info', 'RELAYING ' + blockchain + ' req: ' + data, {
+      requestID: requestID,
+      relayType: 'APP',
+      typeID: application.id,
+      serviceNode: '',
+    });
+
     // Secret key check
     if (!this.checkSecretKey(application)) {
       throw new HttpErrors.Forbidden('SecretKey does not match');
     }
-
-    logger.log('info', 
-      JSON.stringify(
-        { 
-          whitelistOrigins: JSON.stringify(application.gatewaySettings.whitelistOrigins),
-          origin: this.origin,
-        }
-      )
-    )
 
     // Whitelist: origins -- explicit matches
     if (
@@ -307,13 +357,23 @@ export class PocketRelayer {
       );
     }
 
+    const aatParams: [string, string, string, string] =
+      this.aatPlan === AatPlans.FREEMIUM
+        ? [
+            application.gatewayAAT.version,
+            application.freeTierAAT.clientPublicKey,
+            application.freeTierAAT.applicationPublicKey,
+            application.freeTierAAT.applicationSignature,
+          ]
+        : [
+            application.gatewayAAT.version,
+            application.gatewayAAT.clientPublicKey,
+            application.gatewayAAT.applicationPublicKey,
+            application.gatewayAAT.applicationSignature,
+          ];
+  
     // Checks pass; create AAT
-    const pocketAAT = new PocketAAT(
-      application.gatewayAAT.version,
-      application.freeTierAAT.clientPublicKey,
-      application.freeTierAAT.applicationPublicKey,
-      application.freeTierAAT.applicationSignature,
-    );
+    const pocketAAT = new PocketAAT(...aatParams);
 
     let node;
 
@@ -360,7 +420,12 @@ export class PocketRelayer {
     }
 
     if (this.checkDebug) {
-      logger.log('debug', JSON.stringify(pocketSession), {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: node?.publicKey});
+      logger.log('debug', JSON.stringify(pocketSession), {
+        requestID: requestID,
+        relayType: 'APP',
+        typeID: application.id,
+        serviceNode: node?.publicKey,
+      });
     }
 
     // Adjust Pocket Configuration for a custom requestTimeOut
@@ -368,7 +433,18 @@ export class PocketRelayer {
     if (requestTimeOut) {
       relayConfiguration = this.updateConfiguration(requestTimeOut);
     }
-    
+
+    logger.log('info', JSON.stringify({
+      data,
+      blockchain,
+      relayConfiguration,
+      httpMethod,
+      relayPath,
+      node,
+    }))
+    logger.info('info', 'sending:'+JSON.stringify({
+      pocketAAT, data, application
+    }))
     // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
     const relayResponse = await this.pocket.sendRelay(
       data,
@@ -382,8 +458,18 @@ export class PocketRelayer {
     );
 
     if (this.checkDebug) {
-      logger.log('debug', JSON.stringify(relayConfiguration), {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: node?.publicKey});
-      logger.log('debug', JSON.stringify(relayResponse), {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: node?.publicKey});
+      logger.log('debug', JSON.stringify(relayConfiguration), {
+        requestID: requestID,
+        relayType: 'APP',
+        typeID: application.id,
+        serviceNode: node?.publicKey,
+      });
+      logger.log('debug', JSON.stringify(relayResponse), {
+        requestID: requestID,
+        relayType: 'APP',
+        typeID: application.id,
+        serviceNode: node?.publicKey,
+      });
     }
 
     // Success
@@ -402,7 +488,11 @@ export class PocketRelayer {
         )
       ) {
         // then this result is invalid
-        return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey);
+        return new RelayError(
+          relayResponse.payload,
+          503,
+          relayResponse.proof.servicerPubKey,
+        );
       } else {
         // Success
         return relayResponse;
@@ -432,7 +522,7 @@ export class PocketRelayer {
 
   parseMethod(parsedRawData: any) {
     // Method recording for metrics
-    let method = "";
+    let method = '';
     if (parsedRawData instanceof Array) {
       // Join the methods of calls in an array for chains that can join multiple calls in one
       for (const key in parsedRawData) {
@@ -460,7 +550,8 @@ export class PocketRelayer {
       this.pocketConfiguration.blockTime,
       this.pocketConfiguration.maxSessionRefreshRetries,
       this.pocketConfiguration.validateRelayResponses,
-      this.pocketConfiguration.rejectSelfSignedCertificates
+      this.pocketConfiguration.rejectSelfSignedCertificates,
+      this.pocketConfiguration.useLegacyTxCodec,
     );
   }
 

@@ -17,12 +17,17 @@ class CherryPicker {
         }
         // Sort application logs by highest success rate, then by lowest latency
         sortedLogs = this.sortLogs(sortedLogs, requestID, 'LB', loadBalancerID);
-        // Iterate through sorted logs and form in to a weighted list 
+        // Iterate through sorted logs and form in to a weighted list
         // 15 failures per 15 minutes allowed on apps (all 5 nodes failed 3 times)
         let rankedItems = await this.rankItems(blockchain, sortedLogs, 15);
         // If we have no applications left because all are failures, ¯\_(ツ)_/¯
         if (rankedItems.length === 0) {
-            logger.log('warn', 'Cherry picking failure -- apps', { requestID: requestID, relayType: 'LB', typeID: loadBalancerID, serviceNode: '' });
+            logger.log('warn', 'Cherry picking failure -- apps', {
+                requestID: requestID,
+                relayType: 'LB',
+                typeID: loadBalancerID,
+                serviceNode: '',
+            });
             rankedItems = applications;
         }
         const selectedApplication = Math.floor(Math.random() * rankedItems.length);
@@ -53,14 +58,29 @@ class CherryPicker {
         let rankedItems = await this.rankItems(blockchain, sortedLogs, 1);
         // If we have no nodes left because all 5 are failures, ¯\_(ツ)_/¯
         if (rankedItems.length === 0) {
-            logger.log('warn', 'Cherry picking failure -- nodes', { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: '' });
+            logger.log('warn', 'Cherry picking failure -- nodes', {
+                requestID: requestID,
+                relayType: 'APP',
+                typeID: application.id,
+                serviceNode: '',
+            });
             rankedItems = rawNodeIDs;
         }
         const selectedNode = Math.floor(Math.random() * rankedItems.length);
         const node = rawNodes[rankedItems[selectedNode]];
         if (this.checkDebug) {
-            logger.log('debug', 'Number of weighted nodes for selection: ' + rankedItems.length, { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: '' });
-            logger.log('debug', 'Selected ' + selectedNode + ' : ' + node.publicKey, { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: '' });
+            logger.log('debug', 'Number of weighted nodes for selection: ' + rankedItems.length, {
+                requestID: requestID,
+                relayType: 'APP',
+                typeID: application.id,
+                serviceNode: '',
+            });
+            logger.log('debug', 'Selected ' + selectedNode + ' : ' + node.publicKey, {
+                requestID: requestID,
+                relayType: 'APP',
+                typeID: application.id,
+                serviceNode: '',
+            });
         }
         return node;
     }
@@ -256,11 +276,15 @@ class CherryPicker {
             return 0;
         });
         if (this.checkDebug) {
-            logger.log('debug', 'Sorted logs: ' + JSON.stringify(sortedLogs), { requestID: requestID, relayType: relayType, typeID: typeID, serviceNode: '' });
+            logger.log('debug', 'Sorted logs: ' + JSON.stringify(sortedLogs), {
+                requestID: requestID,
+                relayType: relayType,
+                typeID: typeID,
+                serviceNode: '',
+            });
         }
         return sortedLogs;
     }
-    ;
 }
 exports.CherryPicker = CherryPicker;
 //# sourceMappingURL=cherry-picker.js.map

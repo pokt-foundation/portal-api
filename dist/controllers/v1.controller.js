@@ -13,7 +13,7 @@ const metrics_recorder_1 = require("../services/metrics-recorder");
 const pocket_relayer_1 = require("../services/pocket-relayer");
 const logger = require('../services/logger');
 let V1Controller = class V1Controller {
-    constructor(secretKey, host, origin, userAgent, contentType, httpMethod, relayPath, relayRetries, pocket, pocketConfiguration, redis, pgPool, databaseEncryptionKey, processUID, fallbackURL, requestID, applicationsRepository, blockchainsRepository, loadBalancersRepository) {
+    constructor(secretKey, host, origin, userAgent, contentType, httpMethod, relayPath, relayRetries, pocket, pocketConfiguration, redis, pgPool, databaseEncryptionKey, processUID, fallbackURL, requestID, aatPlan, applicationsRepository, blockchainsRepository, loadBalancersRepository) {
         this.secretKey = secretKey;
         this.host = host;
         this.origin = origin;
@@ -30,6 +30,7 @@ let V1Controller = class V1Controller {
         this.processUID = processUID;
         this.fallbackURL = fallbackURL;
         this.requestID = requestID;
+        this.aatPlan = aatPlan;
         this.applicationsRepository = applicationsRepository;
         this.blockchainsRepository = blockchainsRepository;
         this.loadBalancersRepository = loadBalancersRepository;
@@ -58,6 +59,7 @@ let V1Controller = class V1Controller {
             blockchainsRepository: this.blockchainsRepository,
             checkDebug: this.checkDebug(),
             fallbackURL: this.fallbackURL,
+            aatPlan: this.aatPlan,
         });
     }
     /**
@@ -73,11 +75,16 @@ let V1Controller = class V1Controller {
             this.relayPath = id.slice(24).replace(/~/gi, '/');
             id = id.slice(0, 24);
         }
-        logger.log('info', 'PROCESSING', { requestID: this.requestID, relayType: 'LB', typeID: id, serviceNode: '' });
+        logger.log('info', 'PROCESSING', {
+            requestID: this.requestID,
+            relayType: 'LB',
+            typeID: id,
+            serviceNode: '',
+        });
         try {
             const loadBalancer = await this.fetchLoadBalancer(id, filter);
             if (loadBalancer === null || loadBalancer === void 0 ? void 0 : loadBalancer.id) {
-                // eslint-disable-next-line 
+                // eslint-disable-next-line
                 const [blockchain, _] = await this.pocketRelayer.loadBlockchain();
                 // Fetch applications contained in this Load Balancer. Verify they exist and choose
                 // one randomly for the relay.
@@ -88,10 +95,20 @@ let V1Controller = class V1Controller {
             }
         }
         catch (e) {
-            logger.log('error', 'Load balancer not found', { requestID: this.requestID, relayType: 'LB', typeID: id, serviceNode: '' });
+            logger.log('error', 'Load balancer not found', {
+                requestID: this.requestID,
+                relayType: 'LB',
+                typeID: id,
+                serviceNode: '',
+            });
             return new rest_1.HttpErrors.InternalServerError('Load balancer not found');
         }
-        logger.log('error', 'Load balancer configuration error', { requestID: this.requestID, relayType: 'LB', typeID: id, serviceNode: '' });
+        logger.log('error', 'Load balancer configuration error', {
+            requestID: this.requestID,
+            relayType: 'LB',
+            typeID: id,
+            serviceNode: '',
+        });
         return new rest_1.HttpErrors.InternalServerError('Load balancer configuration error');
     }
     /**
@@ -107,18 +124,34 @@ let V1Controller = class V1Controller {
             this.relayPath = id.slice(24).replace(/~/gi, '/');
             id = id.slice(0, 24);
         }
-        logger.log('info', 'PROCESSING', { requestID: this.requestID, relayType: 'APP', typeID: id, serviceNode: '' });
+        logger.log('info', 'PROCESSING', {
+            requestID: this.requestID,
+            relayType: 'APP',
+            typeID: id,
+            serviceNode: '',
+        });
         try {
             const application = await this.fetchApplication(id, filter);
+            logger.log('info', 'application' + JSON.stringify(application));
             if (application === null || application === void 0 ? void 0 : application.id) {
                 return this.pocketRelayer.sendRelay(rawData, this.relayPath, this.httpMethod, application, this.requestID);
             }
         }
         catch (e) {
-            logger.log('error', 'Application not found', { requestID: this.requestID, relayType: 'APP', typeID: id, serviceNode: '' });
+            logger.log('error', 'Application not found', {
+                requestID: this.requestID,
+                relayType: 'APP',
+                typeID: id,
+                serviceNode: '',
+            });
             return new rest_1.HttpErrors.InternalServerError('Application not found');
         }
-        logger.log('error', 'Application not found', { requestID: this.requestID, relayType: 'APP', typeID: id, serviceNode: '' });
+        logger.log('error', 'Application not found', {
+            requestID: this.requestID,
+            relayType: 'APP',
+            typeID: id,
+            serviceNode: '',
+        });
         return new rest_1.HttpErrors.InternalServerError('Application not found');
     }
     // Pull LoadBalancer records from redis then DB
@@ -256,11 +289,12 @@ V1Controller = tslib_1.__decorate([
     tslib_1.__param(13, context_1.inject('processUID')),
     tslib_1.__param(14, context_1.inject('fallbackURL')),
     tslib_1.__param(15, context_1.inject('requestID')),
-    tslib_1.__param(16, repository_1.repository(repositories_1.ApplicationsRepository)),
-    tslib_1.__param(17, repository_1.repository(repositories_1.BlockchainsRepository)),
-    tslib_1.__param(18, repository_1.repository(repositories_1.LoadBalancersRepository)),
+    tslib_1.__param(16, context_1.inject('aatPlan')),
+    tslib_1.__param(17, repository_1.repository(repositories_1.ApplicationsRepository)),
+    tslib_1.__param(18, repository_1.repository(repositories_1.BlockchainsRepository)),
+    tslib_1.__param(19, repository_1.repository(repositories_1.LoadBalancersRepository)),
     tslib_1.__metadata("design:paramtypes", [String, String, String, String, String, String, String, Number, pocket_js_1.Pocket,
-        pocket_js_1.Configuration, Object, pg_1.Pool, String, String, String, String, repositories_1.ApplicationsRepository,
+        pocket_js_1.Configuration, Object, pg_1.Pool, String, String, String, String, String, repositories_1.ApplicationsRepository,
         repositories_1.BlockchainsRepository,
         repositories_1.LoadBalancersRepository])
 ], V1Controller);

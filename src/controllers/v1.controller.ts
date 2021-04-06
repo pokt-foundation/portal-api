@@ -38,6 +38,7 @@ export class V1Controller {
     @inject('processUID') private processUID: string,
     @inject('fallbackURL') private fallbackURL: string,
     @inject('requestID') private requestID: string,
+    @inject('aatPlan') private aatPlan: string,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -70,6 +71,7 @@ export class V1Controller {
       blockchainsRepository: this.blockchainsRepository,
       checkDebug: this.checkDebug(),
       fallbackURL: this.fallbackURL,
+      aatPlan: this.aatPlan,
     });
   }
 
@@ -107,18 +109,22 @@ export class V1Controller {
     filter?: FilterExcludingWhere<Applications>,
   ): Promise<string | Error> {
     // Take the relay path from the end of the endpoint URL
-    if (id.match(/[0-9a-zA-Z]{24}~/g))
-    {
+    if (id.match(/[0-9a-zA-Z]{24}~/g)) {
       this.relayPath = id.slice(24).replace(/~/gi, '/');
-      id = id.slice(0,24);
+      id = id.slice(0, 24);
     }
 
-    logger.log('info', 'PROCESSING', {requestID: this.requestID, relayType: 'LB', typeID: id, serviceNode: ''});
+    logger.log('info', 'PROCESSING', {
+      requestID: this.requestID,
+      relayType: 'LB',
+      typeID: id,
+      serviceNode: '',
+    });
 
     try {
       const loadBalancer = await this.fetchLoadBalancer(id, filter);
       if (loadBalancer?.id) {
-        // eslint-disable-next-line 
+        // eslint-disable-next-line
         const [blockchain, _] = await this.pocketRelayer.loadBlockchain();
         // Fetch applications contained in this Load Balancer. Verify they exist and choose
         // one randomly for the relay.
@@ -133,13 +139,21 @@ export class V1Controller {
         }
       }
     } catch (e) {
-      logger.log('error', 'Load balancer not found', {requestID: this.requestID, relayType: 'LB', typeID: id, serviceNode: ''});
-      return new HttpErrors.InternalServerError(
-        'Load balancer not found',
-      );
+      logger.log('error', 'Load balancer not found', {
+        requestID: this.requestID,
+        relayType: 'LB',
+        typeID: id,
+        serviceNode: '',
+      });
+      return new HttpErrors.InternalServerError('Load balancer not found');
     }
-    
-    logger.log('error', 'Load balancer configuration error', {requestID: this.requestID, relayType: 'LB', typeID: id, serviceNode: ''});
+
+    logger.log('error', 'Load balancer configuration error', {
+      requestID: this.requestID,
+      relayType: 'LB',
+      typeID: id,
+      serviceNode: '',
+    });
     return new HttpErrors.InternalServerError(
       'Load balancer configuration error',
     );
@@ -179,28 +193,39 @@ export class V1Controller {
     filter?: FilterExcludingWhere<Applications>,
   ): Promise<string | Error> {
     // Take the relay path from the end of the endpoint URL
-    if (id.match(/[0-9a-zA-Z]{24}~/g))
-    {
+    if (id.match(/[0-9a-zA-Z]{24}~/g)) {
       this.relayPath = id.slice(24).replace(/~/gi, '/');
-      id = id.slice(0,24);
+      id = id.slice(0, 24);
     }
-    logger.log('info', 'PROCESSING', {requestID: this.requestID, relayType: 'APP', typeID: id, serviceNode: ''});
+    logger.log('info', 'PROCESSING', {
+      requestID: this.requestID,
+      relayType: 'APP',
+      typeID: id,
+      serviceNode: '',
+    });
 
     try {
       const application = await this.fetchApplication(id, filter);
+      logger.log('info', 'application' + JSON.stringify(application))
       if (application?.id) {
         return this.pocketRelayer.sendRelay(rawData, this.relayPath, this.httpMethod, application, this.requestID);
       }
     } catch (e) {
-      logger.log('error', 'Application not found', {requestID: this.requestID, relayType: 'APP', typeID: id, serviceNode: ''});
-      return new HttpErrors.InternalServerError(
-        'Application not found',
-      );
+      logger.log('error', 'Application not found', {
+        requestID: this.requestID,
+        relayType: 'APP',
+        typeID: id,
+        serviceNode: '',
+      });
+      return new HttpErrors.InternalServerError('Application not found');
     }
-    logger.log('error', 'Application not found', {requestID: this.requestID, relayType: 'APP', typeID: id, serviceNode: ''});
-    return new HttpErrors.InternalServerError(
-      'Application not found'
-    );
+    logger.log('error', 'Application not found', {
+      requestID: this.requestID,
+      relayType: 'APP',
+      typeID: id,
+      serviceNode: '',
+    });
+    return new HttpErrors.InternalServerError('Application not found');
   }
 
   // Pull LoadBalancer records from redis then DB

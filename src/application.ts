@@ -7,6 +7,8 @@ import {GatewaySequence} from './sequence';
 import {Account} from '@pokt-network/pocket-js/dist/keybase/models/account';
 
 import path from 'path';
+import AatPlans from './config/aat-plans.json';
+
 const logger = require('./services/logger');
 
 const pocketJS = require('@pokt-network/pocket-js');
@@ -59,6 +61,7 @@ export class PocketGatewayApplication extends BootMixin(
       parseInt(process.env.POCKET_RELAY_RETRIES) ?? 0;
     const databaseEncryptionKey: string =
       process.env.DATABASE_ENCRYPTION_KEY ?? '';
+    const aatPlan = process.env.AAT_PLAN || AatPlans.PREMIUM;
 
     if (!dispatchURL) {
       throw new HttpErrors.InternalServerError('DISPATCH_URL required in ENV');
@@ -91,13 +94,17 @@ export class PocketGatewayApplication extends BootMixin(
         'DATABASE_ENCRYPTION_KEY required in ENV',
       );
     }
+    if (aatPlan !== AatPlans.PREMIUM && !AatPlans.values.includes(aatPlan)) {
+      throw new HttpErrors.InternalServerError('Unrecognized AAT Plan');
+    }
 
+    console.log('Are we up?')
     // Create the Pocket instance
     const dispatchers = [];
 
-    if (dispatchURL.indexOf(",")) {
-      const dispatcherArray = dispatchURL.split(",");
-      dispatcherArray.forEach(function(dispatcher) {
+    if (dispatchURL.indexOf(',')) {
+      const dispatcherArray = dispatchURL.split(',');
+      dispatcherArray.forEach(function (dispatcher) {
         dispatchers.push(new URL(dispatcher));
       });
     } else {
@@ -114,11 +121,11 @@ export class PocketGatewayApplication extends BootMixin(
       pocketBlockTime,
       undefined,
       undefined,
-      true,
+      false,
     );
     const rpcProvider = new HttpRpcProvider(dispatchers);
     const pocket = new Pocket(dispatchers, rpcProvider, configuration);
-    
+
     // Bind to application context for shared re-use
     this.bind('pocketInstance').to(pocket);
     this.bind('pocketConfiguration').to(configuration);
@@ -193,12 +200,13 @@ export class PocketGatewayApplication extends BootMixin(
       }
     }
 
-    const ssl = environment === 'production'
-      ? {
-          rejectUnauthorized: false,
-          ca: publicCertificate,
-        }
-      : false;
+    const ssl =
+      environment === 'production'
+        ? {
+            rejectUnauthorized: false,
+            ca: publicCertificate,
+          }
+        : false;
 
     const pgConfig = {
       connectionString: pgConnection,
@@ -206,9 +214,10 @@ export class PocketGatewayApplication extends BootMixin(
     };
 
     const pgPool = new pg.Pool(pgConfig);
-    
+
     this.bind('pgPool').to(pgPool);
     this.bind('databaseEncryptionKey').to(databaseEncryptionKey);
+    this.bind('aatPlan').to(aatPlan);
 
     // Create a UID for this process
     const parts = [os.hostname(), process.pid, +new Date()];

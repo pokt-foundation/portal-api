@@ -8,6 +8,7 @@ const service_proxy_1 = require("@loopback/service-proxy");
 const sequence_1 = require("./sequence");
 const account_1 = require("@pokt-network/pocket-js/dist/keybase/models/account");
 const path_1 = tslib_1.__importDefault(require("path"));
+const aat_plans_json_1 = tslib_1.__importDefault(require("./config/aat-plans.json"));
 const logger = require('./services/logger');
 const pocketJS = require('@pokt-network/pocket-js');
 const { Pocket, Configuration, HttpRpcProvider } = pocketJS;
@@ -47,6 +48,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         const pocketBlockTime = (_f = parseInt(process.env.POCKET_BLOCK_TIME)) !== null && _f !== void 0 ? _f : 0;
         const relayRetries = (_g = parseInt(process.env.POCKET_RELAY_RETRIES)) !== null && _g !== void 0 ? _g : 0;
         const databaseEncryptionKey = (_h = process.env.DATABASE_ENCRYPTION_KEY) !== null && _h !== void 0 ? _h : '';
+        const aatPlan = process.env.AAT_PLAN || aat_plans_json_1.default.PREMIUM;
         if (!dispatchURL) {
             throw new rest_1.HttpErrors.InternalServerError('DISPATCH_URL required in ENV');
         }
@@ -68,10 +70,14 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         if (!databaseEncryptionKey) {
             throw new rest_1.HttpErrors.InternalServerError('DATABASE_ENCRYPTION_KEY required in ENV');
         }
+        if (aatPlan !== aat_plans_json_1.default.PREMIUM && !aat_plans_json_1.default.values.includes(aatPlan)) {
+            throw new rest_1.HttpErrors.InternalServerError('Unrecognized AAT Plan');
+        }
+        console.log('Are we up?');
         // Create the Pocket instance
         const dispatchers = [];
-        if (dispatchURL.indexOf(",")) {
-            const dispatcherArray = dispatchURL.split(",");
+        if (dispatchURL.indexOf(',')) {
+            const dispatcherArray = dispatchURL.split(',');
             dispatcherArray.forEach(function (dispatcher) {
                 dispatchers.push(new URL(dispatcher));
             });
@@ -79,7 +85,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         else {
             dispatchers.push(new URL(dispatchURL));
         }
-        const configuration = new Configuration(0, 100000, 0, 120000, false, pocketSessionBlockFrequency, pocketBlockTime, undefined, undefined, false);
+        const configuration = new Configuration(50, 100000, 0, 120000, false, pocketSessionBlockFrequency, pocketBlockTime, undefined, undefined, false);
         const rpcProvider = new HttpRpcProvider(dispatchers);
         const pocket = new Pocket(dispatchers, rpcProvider, configuration);
         // Bind to application context for shared re-use
@@ -150,6 +156,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         const pgPool = new pg.Pool(pgConfig);
         this.bind('pgPool').to(pgPool);
         this.bind('databaseEncryptionKey').to(databaseEncryptionKey);
+        this.bind('aatPlan').to(aatPlan);
         // Create a UID for this process
         const parts = [os.hostname(), process.pid, +new Date()];
         const hash = crypto.createHash('md5').update(parts.join(''));

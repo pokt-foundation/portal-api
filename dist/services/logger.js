@@ -2,8 +2,8 @@
 var _a, _b, _c, _d, _e, _f;
 Object.defineProperty(exports, "__esModule", { value: true });
 const rest_1 = require("@loopback/rest");
-require("dotenv").config();
-const { createLogger, format, transports: winstonTransports } = require('winston');
+require('dotenv').config();
+const { createLogger, format, transports: winstonTransports, } = require('winston');
 const { printf } = format;
 const S3StreamLogger = require('s3-streamlogger').S3StreamLogger;
 const s3AccessKeyID = (_a = process.env.AWS_S3_ACCESS_KEY_ID) !== null && _a !== void 0 ? _a : '';
@@ -38,14 +38,14 @@ class TimestampFirst {
     transform(obj) {
         if (this.enabled) {
             return Object.assign({
-                timestamp: obj.timestamp
+                timestamp: obj.timestamp,
             }, obj);
         }
         return obj;
     }
 }
 var jsonFormat = format.combine(format.timestamp({
-    format: 'YYYY-MM-DD HH:mm:ss.SSS'
+    format: 'YYYY-MM-DD HH:mm:ss.SSS',
 }), new TimestampFirst(true), format.json());
 const consoleFormat = printf(({ level, message, requestID, relayType, typeID, serviceNode }) => {
     return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] ${message}`;
@@ -101,9 +101,9 @@ function generateS3Logger(folder) {
 }
 //@ts-ignore
 const getS3Transports = () => [
-    new (winstonTransports.Stream)(options.s3Info),
-    new (winstonTransports.Stream)(options.s3Error),
-    new (winstonTransports.Stream)(options.s3Debug),
+    new winstonTransports.Stream(options.s3Info),
+    new winstonTransports.Stream(options.s3Error),
+    new winstonTransports.Stream(options.s3Debug),
 ];
 //@ts-ignore
 const getLocalTransports = () => [new winstonTransports.Console(options.console)];
