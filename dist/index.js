@@ -7,7 +7,7 @@ async function main(options = {}) {
     const app = new application_1.PocketGatewayApplication(options);
     await app.boot();
     await app.start();
-    await app.loadApp();
+    await app.loadPocket();
     logger.log('info', `Server is running at ${app.restServer.url}`, { requestID: '', relayType: '', typeID: '', serviceNode: '' });
     return app;
 }
