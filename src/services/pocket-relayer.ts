@@ -6,18 +6,22 @@ import {
   PocketAAT,
   Session,
   RelayResponse,
-  Pocket,
-  Configuration,
   RpcError,
-  HttpRpcProvider,
   HTTPMethod,
+  Pocket as PocketType,
+  Configuration as ConfigurationType,
 } from '@pokt-network/pocket-js';
 import {Redis} from 'ioredis';
 import {BlockchainsRepository} from '../repositories';
 import {Applications} from '../models';
 import {RelayError} from '../errors/relay-error';
+import {pocketJSInstances} from '../application';
+import {Account} from '@pokt-network/pocket-js/dist/keybase/models/account';
 
 const logger = require('../services/logger');
+
+const pocketJS = require('@pokt-network/pocket-js');
+const {Pocket, Configuration, HttpRpcProvider} = pocketJS;
 
 interface FallbackRelay { payload: FallbackPayload; meta: FallbackMeta; proof: FallbackProof };
 interface FallbackPayload { data: String; method: String; path: String; headers: null };
@@ -28,8 +32,6 @@ export class PocketRelayer {
   host: string;
   origin: string;
   userAgent: string;
-  pocket: Pocket;
-  pocketConfiguration: Configuration;
   cherryPicker: CherryPicker;
   metricsRecorder: MetricsRecorder;
   redis: Redis;
@@ -39,13 +41,18 @@ export class PocketRelayer {
   blockchainsRepository: BlockchainsRepository;
   checkDebug: boolean;
   fallbacks: Array<URL>;
+  dispatchURL: string;
+  pocketSessionBlockFrequency: number;
+  pocketBlockTime: number;
+  clientPrivateKey: string;
+  clientPassphrase: string;
+  pocketJSInstances: pocketJSInstances;
 
-  constructor({
+  constructor(
+  {
     host,
     origin,
     userAgent,
-    pocket,
-    pocketConfiguration,
     cherryPicker,
     metricsRecorder,
     redis,
@@ -55,12 +62,16 @@ export class PocketRelayer {
     blockchainsRepository,
     checkDebug,
     fallbackURL,
+    dispatchURL,
+    pocketSessionBlockFrequency,
+    pocketBlockTime,
+    clientPrivateKey,
+    clientPassphrase,
+    pocketJSInstances
   }: {
     host: string;
     origin: string;
     userAgent: string;
-    pocket: Pocket;
-    pocketConfiguration: Configuration;
     cherryPicker: CherryPicker;
     metricsRecorder: MetricsRecorder;
     redis: Redis;
@@ -70,12 +81,16 @@ export class PocketRelayer {
     blockchainsRepository: BlockchainsRepository;
     checkDebug: boolean;
     fallbackURL: string;
+    dispatchURL: string;
+    pocketSessionBlockFrequency: number;
+    pocketBlockTime: number;
+    clientPrivateKey: string;
+    clientPassphrase: string;
+    pocketJSInstances: pocketJSInstances;
   }) {
     this.host = host;
     this.origin = origin;
     this.userAgent = userAgent;
-    this.pocket = pocket;
-    this.pocketConfiguration = pocketConfiguration;
     this.cherryPicker = cherryPicker;
     this.metricsRecorder = metricsRecorder;
     this.redis = redis;
@@ -84,6 +99,12 @@ export class PocketRelayer {
     this.relayRetries = relayRetries;
     this.blockchainsRepository = blockchainsRepository;
     this.checkDebug = checkDebug;
+    this.dispatchURL = dispatchURL;
+    this.pocketSessionBlockFrequency = pocketSessionBlockFrequency;
+    this.pocketBlockTime = pocketBlockTime;
+    this.clientPrivateKey = clientPrivateKey;
+    this.clientPassphrase = clientPassphrase;
+    this.pocketJSInstances = pocketJSInstances;
     
     // Create the array of fallback relayers as last resort
     const fallbacks = [];
@@ -125,7 +146,7 @@ export class PocketRelayer {
     const parsedRawData = JSON.parse(rawData.toString());
     const data = JSON.stringify(parsedRawData);
     const method = this.parseMethod(parsedRawData);
-    const fallbackAvailable = (this.fallbacks.length > 0 && this.pocket !== undefined) ? true : false;
+    const fallbackAvailable = (this.fallbacks.length > 0) ? true : false;
 
     // Retries if applicable
     for (let x = 0; x <= this.relayRetries; x++) { 
@@ -303,13 +324,72 @@ export class PocketRelayer {
       application.gatewayAAT.applicationSignature,
     );
 
+    const pocketConfiguration = new Configuration(
+      0,
+      100000,
+      0,
+      120000,
+      false,
+      this.pocketSessionBlockFrequency,
+      this.pocketBlockTime,
+      undefined,
+      undefined,
+      false,
+    );
+
+    let pocketJS: PocketType;
+    // Check master pocketJSInstances for app's instance
+    if (this.pocketJSInstances[application.id])
+    {
+      pocketJS = this.pocketJSInstances[application.id];
+    }
+    else 
+    {
+      // Does not exist, create and store this app's pocketJS
+      // Create the Pocket instance
+      const dispatchers = [];
+
+      if (this.dispatchURL.indexOf(",")) {
+        const dispatcherArray = this.dispatchURL.split(",");
+        dispatcherArray.forEach(function(dispatcher) {
+          dispatchers.push(new URL(dispatcher));
+        });
+      } else {
+        dispatchers.push(new URL(this.dispatchURL));
+      }
+      const rpcProvider = new HttpRpcProvider(dispatchers);
+      pocketJS = new Pocket(dispatchers, rpcProvider, pocketConfiguration);
+      this.pocketJSInstances[application.id] = pocketJS;
+
+      // Unlock primary client account for relay signing
+      try {
+        const importAccount = await pocketJS.keybase.importAccount(
+          Buffer.from(this.clientPrivateKey, 'hex'),
+          this.clientPassphrase,
+        );
+        if (importAccount instanceof Account) {
+          await pocketJS.keybase.unlockAccount(
+            importAccount.addressHex,
+            this.clientPassphrase,
+            0,
+          );
+        }
+      } catch (e) {
+        logger.log('error', e);
+        throw new HttpErrors.InternalServerError(
+          'Unable to import or unlock base client account',
+        );
+      }
+    }
+
+    // This will be cherry-picked
     let node;
 
     // Pull the session so we can get a list of nodes and cherry pick which one to use
-    const pocketSession = await this.pocket.sessionManager.getCurrentSession(
+    const pocketSession = await pocketJS.sessionManager.getCurrentSession(
       pocketAAT,
       blockchain,
-      this.pocketConfiguration,
+      pocketConfiguration,
     );
     if (pocketSession instanceof Session) {
       node = await this.cherryPicker.cherryPickNode(application, pocketSession, blockchain, requestID);
@@ -320,13 +400,13 @@ export class PocketRelayer {
     }
 
     // Adjust Pocket Configuration for a custom requestTimeOut
-    let relayConfiguration = this.pocketConfiguration;
+    let relayConfiguration = pocketConfiguration;
     if (requestTimeOut) {
-      relayConfiguration = this.updateConfiguration(requestTimeOut);
+      relayConfiguration = this.updateConfiguration(pocketConfiguration, requestTimeOut);
     }
     
     // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
-    const relayResponse = await this.pocket.sendRelay(
+    const relayResponse = await pocketJS.sendRelay(
       data,
       blockchain,
       pocketAAT,
@@ -391,18 +471,18 @@ export class PocketRelayer {
     return method;
   }
 
-  updateConfiguration(requestTimeOut: number) {
+  updateConfiguration(pocketConfiguration: ConfigurationType, requestTimeOut: number) {
     return new Configuration(
-      this.pocketConfiguration.maxDispatchers,
-      this.pocketConfiguration.maxSessions,
-      this.pocketConfiguration.consensusNodeCount,
+      pocketConfiguration.maxDispatchers,
+      pocketConfiguration.maxSessions,
+      pocketConfiguration.consensusNodeCount,
       requestTimeOut,
-      this.pocketConfiguration.acceptDisputedResponses,
-      this.pocketConfiguration.sessionBlockFrequency,
-      this.pocketConfiguration.blockTime,
-      this.pocketConfiguration.maxSessionRefreshRetries,
-      this.pocketConfiguration.validateRelayResponses,
-      this.pocketConfiguration.rejectSelfSignedCertificates
+      pocketConfiguration.acceptDisputedResponses,
+      pocketConfiguration.sessionBlockFrequency,
+      pocketConfiguration.blockTime,
+      pocketConfiguration.maxSessionRefreshRetries,
+      pocketConfiguration.validateRelayResponses,
+      pocketConfiguration.rejectSelfSignedCertificates
     );
   }
 

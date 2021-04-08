@@ -1,6 +1,7 @@
 import {inject} from '@loopback/context';
 import {
   FindRoute,
+  HttpErrors,
   InvokeMethod,
   ParseParams,
   Reject,
@@ -10,11 +11,18 @@ import {
   SequenceHandler,
 } from '@loopback/rest';
 
+const logger = require('./services/logger');
+
 const shortID = require('shortid');
 const SequenceActions = RestBindings.SequenceActions;
 
 export class GatewaySequence implements SequenceHandler {
   constructor(
+    @inject('dispatchURL') private dispatchURL: string,
+    @inject('pocketSessionBlockFrequency') private pocketSessionBlockFrequency: number,
+    @inject('pocketBlockTime') private pocketBlockTime: number,
+    @inject('clientPrivateKey') private clientPrivateKey: string,
+    @inject('clientPassphrase') private clientPassphrase: string,
     @inject(SequenceActions.FIND_ROUTE) protected findRoute: FindRoute,
     @inject(SequenceActions.PARSE_PARAMS) protected parseParams: ParseParams,
     @inject(SequenceActions.INVOKE_METHOD) protected invoke: InvokeMethod,
