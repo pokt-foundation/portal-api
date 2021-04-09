@@ -218,7 +218,7 @@ class PocketRelayer {
             }
         }
         // Error
-        else if (relayResponse instanceof pocket_js_1.RpcError) {
+        else if (relayResponse instanceof Error) {
             return new relay_error_1.RelayError(relayResponse.message, 500, node === null || node === void 0 ? void 0 : node.publicKey);
         }
         // ConsensusNode

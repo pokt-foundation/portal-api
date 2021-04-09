@@ -362,7 +362,7 @@ export class PocketRelayer {
       }
     }
     // Error
-    else if (relayResponse instanceof RpcError) {
+    else if (relayResponse instanceof Error) {
       return new RelayError(relayResponse.message, 500, node?.publicKey);
     }
     // ConsensusNode
