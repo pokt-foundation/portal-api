@@ -107,12 +107,12 @@ export class MetricsRecorder {
           const metricsQuery = pgFormat('INSERT INTO relay VALUES %L', bulkData);
           this.pgPool.connect((err, client, release) => {
             if (err) {
-              logger.log('Error acquiring client', err.stack);
+              logger.log('error', 'Error acquiring client ' + err.stack);
             }
               client.query(metricsQuery, (err, result) => {
               release();
               if (err) {
-                logger.log(error, 'Error executing query ' + metricsQuery);
+                logger.log('error', 'Error executing query ' + metricsQuery + ' ' + err.stack);
               }
             });
           });
