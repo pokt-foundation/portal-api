@@ -2018,7 +2018,7 @@
         "signature": "31144e89641fa4f6971297473b5cf0357e3d6417dd569aded8db5fedb2c92b8a"
       },
       "./src/services/metrics-recorder.ts": {
-        "version": "9a6e18892f573da271c5034bb3fe9e98f875ce17e0bc60ef61b486daafa1cd6b",
+        "version": "7743fa43577c609872a071b80af41b3fbc61e74b6aa2184a07c51603451efb7b",
         "signature": "b9c3fb3feb8af8c219d54e8910625440fe0e38c4f71ad3036d5c148f65158318"
       },
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": {
@@ -2062,7 +2062,7 @@
         "signature": "4268ae77fea3dfd44b681677cb8ba998d21463a10d37e5286651c07e8659d183"
       },
       "./src/services/pocket-relayer.ts": {
-        "version": "0a7eff68daf2543d12e37a1b951a4aef958ba46160835dd127b7cec97241bd67",
+        "version": "0c4d65a8c73b348c2a12aa38e1aaadaf1bf7dc4d5186845ee637e4e3aafb756b",
         "signature": "a8b6a427746cba489f0d90ecbd2895237000c72e71e92e9c693ceda98f4a9b46"
       },
       "./src/controllers/v1.controller.ts": {
@@ -9627,7 +9627,6 @@
       "./node_modules/strong-cryptor/dist/decryptor.d.ts",
       "./node_modules/strong-cryptor/dist/index.d.ts",
       "./src/errors/relay-error.ts",
-      "./src/services/pocket-relayer.ts",
       "./src/controllers/v1.controller.ts",
       "./src/controllers/index.ts",
       "./src/services/logger.ts",
@@ -9650,7 +9649,8 @@
       "./node_modules/@types/prettier/index.d.ts",
       "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
-      "./src/services/metrics-recorder.ts"
+      "./src/services/metrics-recorder.ts",
+      "./src/services/pocket-relayer.ts"
     ]
   },
   "version": "3.8.3"
