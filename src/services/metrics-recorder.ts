@@ -101,7 +101,9 @@ export class MetricsRecorder {
         const bulkData = [metricsValues];
         for (let count = 0; count < redisListSize; count++) {
           const redisRecord = await this.redis.lpop(redisMetricsKey);
-          bulkData.push(JSON.parse(redisRecord));
+          if (redisRecord) {
+            bulkData.push(JSON.parse(redisRecord));
+          }
         }
         if (bulkData.length > 0) {
           const metricsQuery = pgFormat('INSERT INTO relay VALUES %L', bulkData);
