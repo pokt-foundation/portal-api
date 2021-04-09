@@ -91,7 +91,7 @@ class PocketRelayer {
                 }
                 return relayResponse.payload;
             }
-            else if (relayResponse instanceof relay_error_1.RelayError) {
+            else if (relayResponse instanceof relay_error_1.RelayError) { // THIS IS WRONG
                 // Record failure metric, retry if possible or fallback
                 // If this is the last retry and fallback is available, mark the error not delivered
                 const errorDelivered = (x === this.relayRetries && fallbackAvailable) ? false : true;
