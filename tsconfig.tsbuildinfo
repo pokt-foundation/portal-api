@@ -2018,7 +2018,7 @@
         "signature": "31144e89641fa4f6971297473b5cf0357e3d6417dd569aded8db5fedb2c92b8a"
       },
       "./src/services/metrics-recorder.ts": {
-        "version": "7405ae84037d736e5b61cbb8ed5912e5bc7901c97091534c26c18ff837d3c70e",
+        "version": "9a6e18892f573da271c5034bb3fe9e98f875ce17e0bc60ef61b486daafa1cd6b",
         "signature": "b9c3fb3feb8af8c219d54e8910625440fe0e38c4f71ad3036d5c148f65158318"
       },
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": {
