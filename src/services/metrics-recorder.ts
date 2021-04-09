@@ -112,7 +112,7 @@ export class MetricsRecorder {
               client.query(metricsQuery, (err, result) => {
               release();
               if (err) {
-                logger.log('Error executing query', err.stack);
+                logger.log(error, 'Error executing query ' + metricsQuery);
               }
             });
           });
