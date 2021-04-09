@@ -105,7 +105,17 @@ export class MetricsRecorder {
         }
         if (bulkData.length > 0) {
           const metricsQuery = pgFormat('INSERT INTO relay VALUES %L', bulkData);
-          this.pgPool.query(metricsQuery);
+          this.pgPool.connect((err, client, release) => {
+            if (err) {
+              logger.log('Error acquiring client', err.stack);
+            }
+              client.query(metricsQuery, (err, result) => {
+              release();
+              if (err) {
+                logger.log('Error executing query', err.stack);
+              }
+            });
+          });
         }
       } else {
         await this.redis.rpush(redisMetricsKey, JSON.stringify(metricsValues));
