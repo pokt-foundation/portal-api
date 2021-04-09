@@ -52,8 +52,10 @@ class MetricsRecorder {
                     const redisRecord = await this.redis.lpop(redisMetricsKey);
                     bulkData.push(JSON.parse(redisRecord));
                 }
-                const metricsQuery = pgFormat('INSERT INTO relay VALUES %L', bulkData);
-                this.pgPool.query(metricsQuery);
+                if (bulkData.length > 0) {
+                    const metricsQuery = pgFormat('INSERT INTO relay VALUES %L', bulkData);
+                    this.pgPool.query(metricsQuery);
+                }
             }
             else {
                 await this.redis.rpush(redisMetricsKey, JSON.stringify(metricsValues));
