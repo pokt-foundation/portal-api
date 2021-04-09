@@ -37,37 +37,59 @@ class MetricsRecorder {
                 bytes,
                 method,
             ];
-            // Store metrics in redis and every 10 seconds, push to postgres
+            // Store metrics in redis and every 5 seconds, push to Timescale
             const redisMetricsKey = 'metrics-' + this.processUID;
             const redisListAge = await this.redis.get('age-' + redisMetricsKey);
-            const redisListSize = await this.redis.llen(redisMetricsKey);
             const currentTimestamp = Math.floor(new Date().getTime() / 1000);
-            // List has been started in redis and needs to be pushed as timestamp is > 10 seconds old
+            // List has been started in redis and needs to be pushed as timestamp is > 5 seconds old
             if (redisListAge &&
-                redisListSize > 0 &&
-                currentTimestamp > parseInt(redisListAge) + 10) {
+                currentTimestamp > parseInt(redisListAge) + 5) {
+                // Set new ttl for the list age
                 await this.redis.set('age-' + redisMetricsKey, currentTimestamp);
+                // Load the bulk data with our current request
                 const bulkData = [metricsValues];
-                for (let count = 0; count < redisListSize; count++) {
-                    const redisRecord = await this.redis.lpop(redisMetricsKey);
-                    bulkData.push(JSON.parse(redisRecord));
-                }
-                if (bulkData.length > 0) {
-                    const metricsQuery = pgFormat('INSERT INTO relay VALUES %L', bulkData);
-                    this.pgPool.connect((err, client, release) => {
-                        if (err) {
-                            logger.log('Error acquiring client', err.stack);
+                // Redis atomic request:
+                // Load all items of the metrics list from redis
+                // Delete the array
+                // Push them into bulk data
+                this.redis.multi().lrange(redisMetricsKey, 0, -1)
+                    .del(redisMetricsKey)
+                    .exec(async (err, metrics) => {
+                    if (err) {
+                        logger.log('error', 'Error retreiving metrics ' + err.stack);
+                    }
+                    else {
+                        if (metrics.length > 0) {
+                            metrics.forEach((metric) => {
+                                if (typeof metric === "string") {
+                                    bulkData.push(JSON.parse(metric));
+                                }
+                            });
+                            // Push bulk insert to metrics DB
+                            const metricsQuery = pgFormat('INSERT INTO relay VALUES %L', bulkData);
+                            this.pgPool.connect((err, client, release) => {
+                                if (err) {
+                                    logger.log('error', 'Error acquiring client ' + err.stack);
+                                }
+                                else {
+                                    client.query(metricsQuery, (err, result) => {
+                                        release();
+                                        if (err) {
+                                            logger.log('error', 'Error executing query ' + metricsQuery + ' ' + err.stack);
+                                        }
+                                    });
+                                }
+                            });
                         }
-                        client.query(metricsQuery, (err, result) => {
-                            release();
-                            if (err) {
-                                logger.log('Error executing query', err.stack);
-                            }
-                        });
-                    });
-                }
+                        else {
+                            // Store this current request for later as another thread pushed in the metrics
+                            await this.redis.rpush(redisMetricsKey, JSON.stringify(metricsValues));
+                        }
+                    }
+                });
             }
             else {
+                // Not ready for batching, insert current value into redis list
                 await this.redis.rpush(redisMetricsKey, JSON.stringify(metricsValues));
             }
             if (!redisListAge) {
