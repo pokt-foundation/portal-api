@@ -114,7 +114,6 @@ export class PocketGatewayApplication extends BootMixin(
       undefined,
       undefined,
       true,
-      true,
     );
     const rpcProvider = new HttpRpcProvider(dispatchers);
     const pocket = new Pocket(dispatchers, rpcProvider, configuration);
