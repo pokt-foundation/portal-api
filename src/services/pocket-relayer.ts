@@ -330,7 +330,7 @@ export class PocketRelayer {
           );
       
           if (relayResponse instanceof RelayResponse) {
-            logger.log('info', 'CLIENT CHECK', relayResponse.payload, {requestID: requestID, relayType: '', typeID: '', serviceNode: nodeCheck.publicKey});
+            logger.log('info', 'CLIENT CHECK ' + relayResponse.payload, {requestID: requestID, relayType: '', typeID: '', serviceNode: nodeCheck.publicKey});
             await this.redis.set(
               blockchain + '-' + nodeCheck.publicKey + '-clientType',
               relayResponse.payload,
