@@ -37,6 +37,7 @@ export declare class PocketRelayer {
     });
     sendRelay(rawData: object, relayPath: string, httpMethod: HTTPMethod, application: Applications, requestID: string, requestTimeOut?: number, overallTimeOut?: number, relayRetries?: number): Promise<string | Error>;
     _sendRelay(data: string, relayPath: string, httpMethod: HTTPMethod, requestID: string, application: Applications, requestTimeOut: number | undefined, blockchain: string, blockchainEnforceResult: string): Promise<RelayResponse | Error>;
+    fetchClientTypeLog(blockchain: string, id: string | undefined): Promise<string | null>;
     parseMethod(parsedRawData: any): string;
     updateConfiguration(requestTimeOut: number): Configuration;
     loadBlockchain(): Promise<string[]>;

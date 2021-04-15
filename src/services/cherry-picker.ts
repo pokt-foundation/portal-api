@@ -138,6 +138,17 @@ export class CherryPicker {
     );
     return rawFailureLog;
   }
+  
+  // Fetch node client type if Ethereum based
+  async fetchClientTypeLog(
+    blockchain: string,
+    id: string | undefined,
+  ): Promise<string | null> {
+    const clientTypeLog = await this.redis.get(
+      blockchain + '-' + id + '-clientType',
+    );
+    return clientTypeLog;
+  }
 
   // Record app & node service quality in redis for future selection weight
   // { id: { results: { 200: x, 500: y, ... }, averageSuccessLatency: z }
@@ -282,6 +293,12 @@ export class CherryPicker {
     let successRate = 0;
     let averageSuccessLatency = 0;
     let failure = false;
+
+    // Mark OpenEth nodes as failures due to Berlin bug
+    const clientTypeLog = await this.fetchClientTypeLog(blockchain, id);
+    if (!clientTypeLog) {
+      
+    }
 
     // Check here to see if it was shelved the last time it was in a session
     // If so, mark it in the service log
