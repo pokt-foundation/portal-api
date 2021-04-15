@@ -293,11 +293,13 @@ export class CherryPicker {
     let successRate = 0;
     let averageSuccessLatency = 0;
     let failure = false;
+    let clientType = '';
 
     // Mark OpenEth nodes as failures due to Berlin bug
     const clientTypeLog = await this.fetchClientTypeLog(blockchain, id);
-    if (!clientTypeLog) {
-      
+    if (clientTypeLog && clientTypeLog.includes('OpenEthereum')) {
+        logger.log('info', 'OPENETHEREUM MARKED', {requestID: '', relayType: '', typeID: '', serviceNode: id});
+        clientType = 'OpenEthereum';
     }
 
     // Check here to see if it was shelved the last time it was in a session
@@ -340,6 +342,14 @@ export class CherryPicker {
           parseFloat(parsedLog.averageSuccessLatency).toFixed(5),
         );
       }
+    }
+
+    // Temp remove OpenEthereum
+    if (clientType === 'OpenEthereum') {
+      logger.log('info', 'OPENETHEREUM REMOVED', {requestID: '', relayType: '', typeID: '', serviceNode: id});
+      successRate = 0;
+      attempts = 100;
+      failure = true;
     }
     return {
       id: id,
