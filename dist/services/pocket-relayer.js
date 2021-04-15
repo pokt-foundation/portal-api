@@ -182,6 +182,18 @@ class PocketRelayer {
         // Pull the session so we can get a list of nodes and cherry pick which one to use
         const pocketSession = await this.pocket.sessionManager.getCurrentSession(pocketAAT, blockchain, this.pocketConfiguration);
         if (pocketSession instanceof pocket_js_1.Session) {
+            // Temporarily remove OpenEth
+            for (const nodeCheck of pocketSession.sessionNodes) {
+                // Check client type in redis
+                const clientTypeLog = await this.fetchClientTypeLog(blockchain, nodeCheck.publicKey);
+                if (!clientTypeLog) {
+                    const relayResponse = await this.pocket.sendRelay('{"method":"web3_clientVersion","id":1,"jsonrpc":"2.0"}', blockchain, pocketAAT, this.pocketConfiguration, undefined, 'POST', undefined);
+                    if (relayResponse instanceof pocket_js_1.RelayResponse) {
+                        logger.log('info', 'CLIENT CHECK', relayResponse.payload, { requestID: requestID, relayType: '', typeID: '', serviceNode: nodeCheck.publicKey });
+                        await this.redis.set(blockchain + '-' + nodeCheck.publicKey + '-clientType', relayResponse.payload, 'EX', (60 * 60 * 24));
+                    }
+                }
+            }
             node = await this.cherryPicker.cherryPickNode(application, pocketSession, blockchain, requestID);
         }
         if (this.checkDebug) {
@@ -226,6 +238,11 @@ class PocketRelayer {
             // TODO: ConsensusNode is a possible return
             return new Error('relayResponse is undefined');
         }
+    }
+    // Fetch node client type if Ethereum based
+    async fetchClientTypeLog(blockchain, id) {
+        const clientTypeLog = await this.redis.get(blockchain + '-' + id + '-clientType');
+        return clientTypeLog;
     }
     parseMethod(parsedRawData) {
         // Method recording for metrics
