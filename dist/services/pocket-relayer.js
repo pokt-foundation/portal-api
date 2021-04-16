@@ -91,7 +91,7 @@ class PocketRelayer {
                 }
                 return relayResponse.payload;
             }
-            else if (relayResponse instanceof relay_error_1.RelayError) { // THIS IS WRONG
+            else if (relayResponse instanceof relay_error_1.RelayError) {
                 // Record failure metric, retry if possible or fallback
                 // If this is the last retry and fallback is available, mark the error not delivered
                 const errorDelivered = (x === this.relayRetries && fallbackAvailable) ? false : true;
@@ -239,8 +239,9 @@ class PocketRelayer {
             // relay result is not in the correct format, this was not a successful relay.
             if (blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
                 blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON // and
-                !this.checkEnforcementJSON(relayResponse.payload) // the relay response is not valid JSON
-            ) {
+                (!this.checkEnforcementJSON(relayResponse.payload) || // the relay response is not valid JSON // or 
+                    relayResponse.payload.startsWith('{"error"') // the full payload is an error
+                )) {
                 // then this result is invalid
                 return new relay_error_1.RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey);
             }
