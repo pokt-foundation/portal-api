@@ -312,8 +312,11 @@ export class PocketRelayer {
       this.pocketConfiguration,
     );
     if (pocketSession instanceof Session) {
-
-      // Temporarily remove OpenEth
+      /*
+      Client check filtering: 
+      This was added to temporarily filter out OpenEth but may be used in the future, 
+      for example to exclude Geth clients from the 0028 chain of eth-archival-trace
+      
       for (const nodeCheck of pocketSession.sessionNodes) {
         // Check client type in redis
         const clientTypeLog = await this.fetchClientTypeLog(blockchain, nodeCheck.publicKey);
@@ -340,6 +343,7 @@ export class PocketRelayer {
           }
         }
       }
+      */
       node = await this.cherryPicker.cherryPickNode(application, pocketSession, blockchain, requestID);
     }
 
