@@ -181,10 +181,21 @@ class CherryPicker {
         let successRate = 0;
         let averageSuccessLatency = 0;
         let failure = false;
-        // Mark OpenEth nodes as failures due to Berlin bug
+        /*
+        Client Type filtering:
+        
+        let clientType = '';
+    
+        // Pull client type for any necessary filtering
         const clientTypeLog = await this.fetchClientTypeLog(blockchain, id);
-        if (!clientTypeLog) {
+    
+        Sample Filter:
+        if (clientTypeLog && clientTypeLog.includes('OpenEthereum')) {
+            logger.log('info', 'OPENETHEREUM MARKED', {requestID: '', relayType: '', typeID: '', serviceNode: id});
+            clientType = 'OpenEthereum';
         }
+        Before the return, mark this client with 0 success rate and 100 attempts so it is excluded completely.
+        */
         // Check here to see if it was shelved the last time it was in a session
         // If so, mark it in the service log
         const failureLog = await this.fetchRawFailureLog(blockchain, id);

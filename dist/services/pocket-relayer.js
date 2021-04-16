@@ -182,18 +182,38 @@ class PocketRelayer {
         // Pull the session so we can get a list of nodes and cherry pick which one to use
         const pocketSession = await this.pocket.sessionManager.getCurrentSession(pocketAAT, blockchain, this.pocketConfiguration);
         if (pocketSession instanceof pocket_js_1.Session) {
-            // Temporarily remove OpenEth
+            /*
+            Client check filtering:
+            This was added to temporarily filter out OpenEth but may be used in the future,
+            for example to exclude Geth clients from the 0028 chain of eth-archival-trace
+            
             for (const nodeCheck of pocketSession.sessionNodes) {
-                // Check client type in redis
-                const clientTypeLog = await this.fetchClientTypeLog(blockchain, nodeCheck.publicKey);
-                if (!clientTypeLog) {
-                    const relayResponse = await this.pocket.sendRelay('{"method":"web3_clientVersion","id":1,"jsonrpc":"2.0"}', blockchain, pocketAAT, this.pocketConfiguration, undefined, 'POST', undefined);
-                    if (relayResponse instanceof pocket_js_1.RelayResponse) {
-                        logger.log('info', 'CLIENT CHECK', relayResponse.payload, { requestID: requestID, relayType: '', typeID: '', serviceNode: nodeCheck.publicKey });
-                        await this.redis.set(blockchain + '-' + nodeCheck.publicKey + '-clientType', relayResponse.payload, 'EX', (60 * 60 * 24));
-                    }
+              // Check client type in redis
+              const clientTypeLog = await this.fetchClientTypeLog(blockchain, nodeCheck.publicKey);
+              if (!clientTypeLog)
+              {
+                const relayResponse = await this.pocket.sendRelay(
+                  '{"method":"web3_clientVersion","id":1,"jsonrpc":"2.0"}',
+                  blockchain,
+                  pocketAAT,
+                  this.pocketConfiguration,
+                  undefined,
+                  'POST' as HTTPMethod,
+                  undefined
+                );
+            
+                if (relayResponse instanceof RelayResponse) {
+                  logger.log('info', 'CLIENT CHECK ' + relayResponse.payload, {requestID: requestID, relayType: '', typeID: '', serviceNode: nodeCheck.publicKey});
+                  await this.redis.set(
+                    blockchain + '-' + nodeCheck.publicKey + '-clientType',
+                    relayResponse.payload,
+                    'EX',
+                    (60 * 60 * 24),
+                  );
                 }
+              }
             }
+            */
             node = await this.cherryPicker.cherryPickNode(application, pocketSession, blockchain, requestID);
         }
         if (this.checkDebug) {
