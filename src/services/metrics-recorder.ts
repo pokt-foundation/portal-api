@@ -66,7 +66,7 @@ export class MetricsRecorder {
       }
 
       if (result === 200) {
-        logger.log('info', 'SUCCESS' + fallbackTag, {requestID, relayType: 'APP', typeID: applicationID, serviceNode, elapsedTime, error: undefined);
+        logger.log('info', 'SUCCESS' + fallbackTag, {requestID, relayType: 'APP', typeID: applicationID, serviceNode, elapsedTime, error: undefined});
       } else if (result === 500) {
         logger.log('error', 'FAILURE' + fallbackTag, {requestID, relayType: 'APP', typeID: applicationID, serviceNode, elapsedTime, error});
       } else if (result === 503) {
