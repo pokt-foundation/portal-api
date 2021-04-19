@@ -65,8 +65,8 @@ var jsonFormat = format.combine(
   format.json()
 );
 
-const consoleFormat = printf(({ level, message, requestID, relayType, typeID, serviceNode }: Log) => {
-  return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] ${message}`;
+const consoleFormat = printf(({ level, message, requestID, relayType, typeID, serviceNode, error, elapsedTime }: Log) => {
+  return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${error}] [${elapsedTime}] ${message}`;
 });
 
 const debugFilter = format((log:Log, opts:any) => {
@@ -141,6 +141,8 @@ interface Log {
   relayType: string;
   typeID: string;
   serviceNode: string;
+  error: string | undefined;
+  elapsedTime: number;
 }
 
 module.exports = createLogger({
