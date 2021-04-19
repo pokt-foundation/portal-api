@@ -95,16 +95,30 @@ export class MetricsRecorder {
         redisListAge &&
         redisListSize > 0 &&
         currentTimestamp > parseInt(redisListAge) + 10
-      ) {
+        ) {
         await this.redis.set('age-' + redisMetricsKey, currentTimestamp);
 
         const bulkData = [metricsValues];
         for (let count = 0; count < redisListSize; count++) {
           const redisRecord = await this.redis.lpop(redisMetricsKey);
-          bulkData.push(JSON.parse(redisRecord));
+          if (redisRecord) {
+            bulkData.push(JSON.parse(redisRecord));
+          }
         }
-        const metricsQuery = pgFormat('INSERT INTO relay VALUES %L', bulkData);
-        this.pgPool.query(metricsQuery);
+        if (bulkData.length > 0) {
+          const metricsQuery = pgFormat('INSERT INTO relay VALUES %L', bulkData);
+          this.pgPool.connect((err, client, release) => {
+            if (err) {
+              logger.log('error', 'Error acquiring client ' + err.stack);
+            }
+              client.query(metricsQuery, (err, result) => {
+              release();
+              if (err) {
+                logger.log('error', 'Error executing query ' + metricsQuery + ' ' + err.stack);
+              }
+            });
+          });
+        }
       } else {
         await this.redis.rpush(redisMetricsKey, JSON.stringify(metricsValues));
       }

@@ -4,9 +4,13 @@ import {RepositoryMixin} from '@loopback/repository';
 import {RestApplication, HttpErrors} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import {GatewaySequence} from './sequence';
+import {Account} from '@pokt-network/pocket-js/dist/keybase/models/account';
 
 import path from 'path';
 const logger = require('./services/logger');
+
+const pocketJS = require('@pokt-network/pocket-js');
+const {Pocket, Configuration, HttpRpcProvider} = pocketJS;
 
 const Redis = require('ioredis');
 const crypto = require('crypto');
@@ -14,12 +18,6 @@ const os = require('os');
 const process = require('process');
 const pg = require('pg');
 const got = require('got');
-
-import {Pocket} from '@pokt-network/pocket-js';
-
-export interface pocketJSInstances {
-  [index:string]: Pocket;
-};
 
 require('log-timestamp');
 require('dotenv').config();
@@ -42,7 +40,7 @@ export class PocketGatewayApplication extends BootMixin(
     };
   }
 
-  async loadApp(): Promise<void> {
+  async loadPocket(): Promise<void> {
     // Requirements; for Production these are stored in GitHub repo secrets
     //
     // For Dev, you need to pass them in via .env file
@@ -93,14 +91,59 @@ export class PocketGatewayApplication extends BootMixin(
       );
     }
 
-    this.bind('dispatchURL').to(dispatchURL);
-    this.bind('pocketSessionBlockFrequency').to(pocketSessionBlockFrequency);
-    this.bind('pocketBlockTime').to(pocketBlockTime);
-    this.bind('clientPrivateKey').to(clientPrivateKey);
-    this.bind('clientPassphrase').to(clientPassphrase);
+    // Create the Pocket instance
+    const dispatchers = [];
+
+    if (dispatchURL.indexOf(",")) {
+      const dispatcherArray = dispatchURL.split(",");
+      dispatcherArray.forEach(function(dispatcher) {
+        dispatchers.push(new URL(dispatcher));
+      });
+    } else {
+      dispatchers.push(new URL(dispatchURL));
+    }
+
+    const configuration = new Configuration(
+      50,
+      100000,
+      0,
+      120000,
+      false,
+      pocketSessionBlockFrequency,
+      pocketBlockTime,
+      undefined,
+      undefined,
+      true,
+    );
+    const rpcProvider = new HttpRpcProvider(dispatchers);
+    const pocket = new Pocket(dispatchers, rpcProvider, configuration);
+    
+    // Bind to application context for shared re-use
+    this.bind('pocketInstance').to(pocket);
+    this.bind('pocketConfiguration').to(configuration);
     this.bind('relayRetries').to(relayRetries);
     this.bind('fallbackURL').to(fallbackURL);
     this.bind('logger').to(logger);
+
+    // Unlock primary client account for relay signing
+    try {
+      const importAccount = await pocket.keybase.importAccount(
+        Buffer.from(clientPrivateKey, 'hex'),
+        clientPassphrase,
+      );
+      if (importAccount instanceof Account) {
+        await pocket.keybase.unlockAccount(
+          importAccount.addressHex,
+          clientPassphrase,
+          0,
+        );
+      }
+    } catch (e) {
+      logger.log('error', e);
+      throw new HttpErrors.InternalServerError(
+        'Unable to import or unlock base client account',
+      );
+    }
 
     // Load Redis for cache
     const redisEndpoint: string = process.env.REDIS_ENDPOINT || '';
@@ -160,9 +203,5 @@ export class PocketGatewayApplication extends BootMixin(
     const parts = [os.hostname(), process.pid, +new Date()];
     const hash = crypto.createHash('md5').update(parts.join(''));
     this.bind('processUID').to(hash.digest('hex'));
-
-    // Load an empty array to store PocketJS instances
-    const pocketJSInstances = {} as pocketJSInstances;
-    this.bind('pocketJSInstances').to(pocketJSInstances);
   }
 }

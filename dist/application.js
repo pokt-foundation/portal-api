@@ -6,15 +6,17 @@ const repository_1 = require("@loopback/repository");
 const rest_1 = require("@loopback/rest");
 const service_proxy_1 = require("@loopback/service-proxy");
 const sequence_1 = require("./sequence");
+const account_1 = require("@pokt-network/pocket-js/dist/keybase/models/account");
 const path_1 = tslib_1.__importDefault(require("path"));
 const logger = require('./services/logger');
+const pocketJS = require('@pokt-network/pocket-js');
+const { Pocket, Configuration, HttpRpcProvider } = pocketJS;
 const Redis = require('ioredis');
 const crypto = require('crypto');
 const os = require('os');
 const process = require('process');
 const pg = require('pg');
 const got = require('got');
-;
 require('log-timestamp');
 require('dotenv').config();
 class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceMixin(repository_1.RepositoryMixin(rest_1.RestApplication))) {
@@ -31,7 +33,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
             },
         };
     }
-    async loadApp() {
+    async loadPocket() {
         var _a, _b, _c, _d, _e, _f, _g, _h;
         // Requirements; for Production these are stored in GitHub repo secrets
         //
@@ -65,14 +67,37 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         if (!databaseEncryptionKey) {
             throw new rest_1.HttpErrors.InternalServerError('DATABASE_ENCRYPTION_KEY required in ENV');
         }
-        this.bind('dispatchURL').to(dispatchURL);
-        this.bind('pocketSessionBlockFrequency').to(pocketSessionBlockFrequency);
-        this.bind('pocketBlockTime').to(pocketBlockTime);
-        this.bind('clientPrivateKey').to(clientPrivateKey);
-        this.bind('clientPassphrase').to(clientPassphrase);
+        // Create the Pocket instance
+        const dispatchers = [];
+        if (dispatchURL.indexOf(",")) {
+            const dispatcherArray = dispatchURL.split(",");
+            dispatcherArray.forEach(function (dispatcher) {
+                dispatchers.push(new URL(dispatcher));
+            });
+        }
+        else {
+            dispatchers.push(new URL(dispatchURL));
+        }
+        const configuration = new Configuration(50, 100000, 0, 120000, false, pocketSessionBlockFrequency, pocketBlockTime, undefined, undefined, true);
+        const rpcProvider = new HttpRpcProvider(dispatchers);
+        const pocket = new Pocket(dispatchers, rpcProvider, configuration);
+        // Bind to application context for shared re-use
+        this.bind('pocketInstance').to(pocket);
+        this.bind('pocketConfiguration').to(configuration);
         this.bind('relayRetries').to(relayRetries);
         this.bind('fallbackURL').to(fallbackURL);
         this.bind('logger').to(logger);
+        // Unlock primary client account for relay signing
+        try {
+            const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase);
+            if (importAccount instanceof account_1.Account) {
+                await pocket.keybase.unlockAccount(importAccount.addressHex, clientPassphrase, 0);
+            }
+        }
+        catch (e) {
+            logger.log('error', e);
+            throw new rest_1.HttpErrors.InternalServerError('Unable to import or unlock base client account');
+        }
         // Load Redis for cache
         const redisEndpoint = process.env.REDIS_ENDPOINT || '';
         const redisPort = process.env.REDIS_PORT || '';
@@ -122,9 +147,6 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         const parts = [os.hostname(), process.pid, +new Date()];
         const hash = crypto.createHash('md5').update(parts.join(''));
         this.bind('processUID').to(hash.digest('hex'));
-        // Load an empty array to store PocketJS instances
-        const pocketJSInstances = {};
-        this.bind('pocketJSInstances').to(pocketJSInstances);
     }
 }
 exports.PocketGatewayApplication = PocketGatewayApplication;

@@ -7,13 +7,12 @@ import {
   BlockchainsRepository,
   LoadBalancersRepository,
 } from '../repositories';
-import {HTTPMethod} from '@pokt-network/pocket-js';
+import {Pocket, Configuration, HTTPMethod} from '@pokt-network/pocket-js';
 import {Redis} from 'ioredis';
 import {Pool as PGPool} from 'pg';
 import {CherryPicker} from '../services/cherry-picker';
 import {MetricsRecorder} from '../services/metrics-recorder';
 import {PocketRelayer} from '../services/pocket-relayer';
-import {pocketJSInstances} from '../application';
 
 const logger = require('../services/logger');
 
@@ -31,12 +30,8 @@ export class V1Controller {
     @inject('httpMethod') private httpMethod: HTTPMethod,
     @inject('relayPath') private relayPath: string,
     @inject('relayRetries') private relayRetries: number,
-    @inject('dispatchURL') private dispatchURL: string,
-    @inject('pocketSessionBlockFrequency') private pocketSessionBlockFrequency: number,
-    @inject('pocketBlockTime') private pocketBlockTime: number,
-    @inject('clientPrivateKey') private clientPrivateKey: string,
-    @inject('clientPassphrase') private clientPassphrase: string,
-    @inject('pocketJSInstances') private pocketJSInstances: pocketJSInstances,
+    @inject('pocketInstance') private pocket: Pocket,
+    @inject('pocketConfiguration') private pocketConfiguration: Configuration,
     @inject('redisInstance') private redis: Redis,
     @inject('pgPool') private pgPool: PGPool,
     @inject('databaseEncryptionKey') private databaseEncryptionKey: string,
@@ -64,6 +59,8 @@ export class V1Controller {
       host: this.host,
       origin: this.origin,
       userAgent: this.userAgent,
+      pocket: this.pocket,
+      pocketConfiguration: this.pocketConfiguration,
       cherryPicker: this.cherryPicker,
       metricsRecorder: this.metricsRecorder,
       redis: this.redis,
@@ -73,12 +70,6 @@ export class V1Controller {
       blockchainsRepository: this.blockchainsRepository,
       checkDebug: this.checkDebug(),
       fallbackURL: this.fallbackURL,
-      dispatchURL: this.dispatchURL,
-      pocketSessionBlockFrequency: this.pocketSessionBlockFrequency,
-      pocketBlockTime: this.pocketBlockTime,
-      clientPrivateKey: this.clientPrivateKey,
-      clientPassphrase: this.clientPassphrase,
-      pocketJSInstances: this.pocketJSInstances,
     });
   }
 

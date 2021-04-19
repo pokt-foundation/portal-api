@@ -74,6 +74,11 @@ class CherryPicker {
         const rawFailureLog = await this.redis.get(blockchain + '-' + id + '-failure');
         return rawFailureLog;
     }
+    // Fetch node client type if Ethereum based
+    async fetchClientTypeLog(blockchain, id) {
+        const clientTypeLog = await this.redis.get(blockchain + '-' + id + '-clientType');
+        return clientTypeLog;
+    }
     // Record app & node service quality in redis for future selection weight
     // { id: { results: { 200: x, 500: y, ... }, averageSuccessLatency: z }
     async updateServiceQuality(blockchain, applicationID, serviceNode, elapsedTime, result) {
@@ -176,6 +181,21 @@ class CherryPicker {
         let successRate = 0;
         let averageSuccessLatency = 0;
         let failure = false;
+        /*
+        Client Type filtering:
+        
+        let clientType = '';
+    
+        // Pull client type for any necessary filtering
+        const clientTypeLog = await this.fetchClientTypeLog(blockchain, id);
+    
+        Sample Filter:
+        if (clientTypeLog && clientTypeLog.includes('OpenEthereum')) {
+            logger.log('info', 'OPENETHEREUM MARKED', {requestID: '', relayType: '', typeID: '', serviceNode: id});
+            clientType = 'OpenEthereum';
+        }
+        Before the return, mark this client with 0 success rate and 100 attempts so it is excluded completely.
+        */
         // Check here to see if it was shelved the last time it was in a session
         // If so, mark it in the service log
         const failureLog = await this.fetchRawFailureLog(blockchain, id);

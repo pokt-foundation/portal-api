@@ -1,9 +1,5 @@
 import { ApplicationConfig } from '@loopback/core';
 import { RestApplication } from '@loopback/rest';
-import { Pocket } from '@pokt-network/pocket-js';
-export interface pocketJSInstances {
-    [index: string]: Pocket;
-}
 declare const PocketGatewayApplication_base: (new (...args: any[]) => {
     projectRoot: string;
     bootOptions?: import("@loopback/boot").BootOptions | undefined;
@@ -248,6 +244,6 @@ declare const PocketGatewayApplication_base: (new (...args: any[]) => {
 }) & typeof RestApplication;
 export declare class PocketGatewayApplication extends PocketGatewayApplication_base {
     constructor(options?: ApplicationConfig);
-    loadApp(): Promise<void>;
+    loadPocket(): Promise<void>;
 }
 export {};
