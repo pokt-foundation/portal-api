@@ -182,8 +182,13 @@ export class PocketRelayer {
         await this.redis.incr(blockchain + '-' + relayResponse.servicer_node + '-errors');
         await this.redis.expire(blockchain + '-' + relayResponse.servicer_node + '-errors', 3600);
 
+        let error = relayResponse.message;
+        if (typeof relayResponse.message === 'object') {
+          error = JSON.stringify(relayResponse.message);
+        }
+
         await this.metricsRecorder.recordMetric({
-          requestID: requestID,
+          requestID,
           applicationID: application.id,
           appPubKey: application.gatewayAAT.applicationPublicKey,
           blockchain,
@@ -193,8 +198,8 @@ export class PocketRelayer {
           bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
           delivered: errorDelivered,
           fallback: false,
-          method: method,
-          error: relayResponse.message,
+          method,
+          error,
         });
       }
     }
