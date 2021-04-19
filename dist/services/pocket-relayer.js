@@ -4,19 +4,18 @@ const strong_cryptor_1 = require("strong-cryptor");
 const rest_1 = require("@loopback/rest");
 const pocket_js_1 = require("@pokt-network/pocket-js");
 const relay_error_1 = require("../errors/relay-error");
-const account_1 = require("@pokt-network/pocket-js/dist/keybase/models/account");
 const logger = require('../services/logger');
-const pocketJS = require('@pokt-network/pocket-js');
-const { Pocket, Configuration, HttpRpcProvider } = pocketJS;
 ;
 ;
 ;
 ;
 class PocketRelayer {
-    constructor({ host, origin, userAgent, cherryPicker, metricsRecorder, redis, databaseEncryptionKey, secretKey, relayRetries, blockchainsRepository, checkDebug, fallbackURL, dispatchURL, pocketSessionBlockFrequency, pocketBlockTime, clientPrivateKey, clientPassphrase, pocketJSInstances }) {
+    constructor({ host, origin, userAgent, pocket, pocketConfiguration, cherryPicker, metricsRecorder, redis, databaseEncryptionKey, secretKey, relayRetries, blockchainsRepository, checkDebug, fallbackURL, }) {
         this.host = host;
         this.origin = origin;
         this.userAgent = userAgent;
+        this.pocket = pocket;
+        this.pocketConfiguration = pocketConfiguration;
         this.cherryPicker = cherryPicker;
         this.metricsRecorder = metricsRecorder;
         this.redis = redis;
@@ -25,12 +24,6 @@ class PocketRelayer {
         this.relayRetries = relayRetries;
         this.blockchainsRepository = blockchainsRepository;
         this.checkDebug = checkDebug;
-        this.dispatchURL = dispatchURL;
-        this.pocketSessionBlockFrequency = pocketSessionBlockFrequency;
-        this.pocketBlockTime = pocketBlockTime;
-        this.clientPrivateKey = clientPrivateKey;
-        this.clientPassphrase = clientPassphrase;
-        this.pocketJSInstances = pocketJSInstances;
         // Create the array of fallback relayers as last resort
         const fallbacks = [];
         if (fallbackURL.indexOf(",")) {
@@ -58,7 +51,7 @@ class PocketRelayer {
         const parsedRawData = JSON.parse(rawData.toString());
         const data = JSON.stringify(parsedRawData);
         const method = this.parseMethod(parsedRawData);
-        const fallbackAvailable = (this.fallbacks.length > 0) ? true : false;
+        const fallbackAvailable = (this.fallbacks.length > 0 && this.pocket !== undefined) ? true : false;
         // Retries if applicable
         for (let x = 0; x <= this.relayRetries; x++) {
             let relayStart = process.hrtime();
@@ -125,7 +118,7 @@ class PocketRelayer {
         if (fallbackAvailable) {
             let relayStart = process.hrtime();
             const [blockchain, blockchainEnforceResult] = await this.loadBlockchain();
-            const fallbackChoice = new HttpRpcProvider(this.fallbacks[Math.floor(Math.random() * this.fallbacks.length)]);
+            const fallbackChoice = new pocket_js_1.HttpRpcProvider(this.fallbacks[Math.floor(Math.random() * this.fallbacks.length)]);
             const fallbackPayload = { data: rawData.toString(), method: httpMethod, path: relayPath, headers: null };
             const fallbackMeta = { block_height: 0 };
             const fallbackProof = { blockchain: blockchain };
@@ -185,57 +178,54 @@ class PocketRelayer {
         }
         // Checks pass; create AAT
         const pocketAAT = new pocket_js_1.PocketAAT(application.gatewayAAT.version, application.gatewayAAT.clientPublicKey, application.gatewayAAT.applicationPublicKey, application.gatewayAAT.applicationSignature);
-        const pocketConfiguration = new Configuration(0, 100000, 0, 120000, false, this.pocketSessionBlockFrequency, this.pocketBlockTime, undefined, undefined, false);
-        let pocketJS;
-        // Check master pocketJSInstances for app's instance
-        if (this.pocketJSInstances[application.id]) {
-            pocketJS = this.pocketJSInstances[application.id];
-        }
-        else {
-            // Does not exist, create and store this app's pocketJS
-            // Create the Pocket instance
-            const dispatchers = [];
-            if (this.dispatchURL.indexOf(",")) {
-                const dispatcherArray = this.dispatchURL.split(",");
-                dispatcherArray.forEach(function (dispatcher) {
-                    dispatchers.push(new URL(dispatcher));
-                });
-            }
-            else {
-                dispatchers.push(new URL(this.dispatchURL));
-            }
-            const rpcProvider = new HttpRpcProvider(dispatchers);
-            pocketJS = new Pocket(dispatchers, rpcProvider, pocketConfiguration);
-            this.pocketJSInstances[application.id] = pocketJS;
-            // Unlock primary client account for relay signing
-            try {
-                const importAccount = await pocketJS.keybase.importAccount(Buffer.from(this.clientPrivateKey, 'hex'), this.clientPassphrase);
-                if (importAccount instanceof account_1.Account) {
-                    await pocketJS.keybase.unlockAccount(importAccount.addressHex, this.clientPassphrase, 0);
-                }
-            }
-            catch (e) {
-                logger.log('error', e);
-                throw new rest_1.HttpErrors.InternalServerError('Unable to import or unlock base client account');
-            }
-        }
-        // This will be cherry-picked
         let node;
         // Pull the session so we can get a list of nodes and cherry pick which one to use
-        const pocketSession = await pocketJS.sessionManager.getCurrentSession(pocketAAT, blockchain, pocketConfiguration);
+        const pocketSession = await this.pocket.sessionManager.getCurrentSession(pocketAAT, blockchain, this.pocketConfiguration);
         if (pocketSession instanceof pocket_js_1.Session) {
+            /*
+            Client check filtering:
+            This was added to temporarily filter out OpenEth but may be used in the future,
+            for example to exclude Geth clients from the 0028 chain of eth-archival-trace
+            
+            for (const nodeCheck of pocketSession.sessionNodes) {
+              // Check client type in redis
+              const clientTypeLog = await this.fetchClientTypeLog(blockchain, nodeCheck.publicKey);
+              if (!clientTypeLog)
+              {
+                const relayResponse = await this.pocket.sendRelay(
+                  '{"method":"web3_clientVersion","id":1,"jsonrpc":"2.0"}',
+                  blockchain,
+                  pocketAAT,
+                  this.pocketConfiguration,
+                  undefined,
+                  'POST' as HTTPMethod,
+                  undefined
+                );
+            
+                if (relayResponse instanceof RelayResponse) {
+                  logger.log('info', 'CLIENT CHECK ' + relayResponse.payload, {requestID: requestID, relayType: '', typeID: '', serviceNode: nodeCheck.publicKey});
+                  await this.redis.set(
+                    blockchain + '-' + nodeCheck.publicKey + '-clientType',
+                    relayResponse.payload,
+                    'EX',
+                    (60 * 60 * 24),
+                  );
+                }
+              }
+            }
+            */
             node = await this.cherryPicker.cherryPickNode(application, pocketSession, blockchain, requestID);
         }
         if (this.checkDebug) {
             logger.log('debug', JSON.stringify(pocketSession), { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: node === null || node === void 0 ? void 0 : node.publicKey });
         }
         // Adjust Pocket Configuration for a custom requestTimeOut
-        let relayConfiguration = pocketConfiguration;
+        let relayConfiguration = this.pocketConfiguration;
         if (requestTimeOut) {
-            relayConfiguration = this.updateConfiguration(pocketConfiguration, requestTimeOut);
+            relayConfiguration = this.updateConfiguration(requestTimeOut);
         }
         // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
-        const relayResponse = await pocketJS.sendRelay(data, blockchain, pocketAAT, relayConfiguration, undefined, httpMethod, relayPath, node);
+        const relayResponse = await this.pocket.sendRelay(data, blockchain, pocketAAT, relayConfiguration, undefined, httpMethod, relayPath, node);
         if (this.checkDebug) {
             logger.log('debug', JSON.stringify(relayConfiguration), { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: node === null || node === void 0 ? void 0 : node.publicKey });
             logger.log('debug', JSON.stringify(relayResponse), { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: node === null || node === void 0 ? void 0 : node.publicKey });
@@ -249,8 +239,9 @@ class PocketRelayer {
             // relay result is not in the correct format, this was not a successful relay.
             if (blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
                 blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON // and
-                !this.checkEnforcementJSON(relayResponse.payload) // the relay response is not valid JSON
-            ) {
+                (!this.checkEnforcementJSON(relayResponse.payload) || // the relay response is not valid JSON // or 
+                    relayResponse.payload.startsWith('{"error"') // the full payload is an error
+                )) {
                 // then this result is invalid
                 return new relay_error_1.RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey);
             }
@@ -260,7 +251,7 @@ class PocketRelayer {
             }
         }
         // Error
-        else if (relayResponse instanceof pocket_js_1.RpcError) {
+        else if (relayResponse instanceof Error) {
             return new relay_error_1.RelayError(relayResponse.message, 500, node === null || node === void 0 ? void 0 : node.publicKey);
         }
         // ConsensusNode
@@ -268,6 +259,11 @@ class PocketRelayer {
             // TODO: ConsensusNode is a possible return
             return new Error('relayResponse is undefined');
         }
+    }
+    // Fetch node client type if Ethereum based
+    async fetchClientTypeLog(blockchain, id) {
+        const clientTypeLog = await this.redis.get(blockchain + '-' + id + '-clientType');
+        return clientTypeLog;
     }
     parseMethod(parsedRawData) {
         // Method recording for metrics
@@ -288,8 +284,8 @@ class PocketRelayer {
         }
         return method;
     }
-    updateConfiguration(pocketConfiguration, requestTimeOut) {
-        return new Configuration(pocketConfiguration.maxDispatchers, pocketConfiguration.maxSessions, pocketConfiguration.consensusNodeCount, requestTimeOut, pocketConfiguration.acceptDisputedResponses, pocketConfiguration.sessionBlockFrequency, pocketConfiguration.blockTime, pocketConfiguration.maxSessionRefreshRetries, pocketConfiguration.validateRelayResponses, pocketConfiguration.rejectSelfSignedCertificates);
+    updateConfiguration(requestTimeOut) {
+        return new pocket_js_1.Configuration(this.pocketConfiguration.maxDispatchers, this.pocketConfiguration.maxSessions, this.pocketConfiguration.consensusNodeCount, requestTimeOut, this.pocketConfiguration.acceptDisputedResponses, this.pocketConfiguration.sessionBlockFrequency, this.pocketConfiguration.blockTime, this.pocketConfiguration.maxSessionRefreshRetries, this.pocketConfiguration.validateRelayResponses, this.pocketConfiguration.rejectSelfSignedCertificates);
     }
     // Load requested blockchain by parsing the URL
     async loadBlockchain() {
