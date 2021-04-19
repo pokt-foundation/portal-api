@@ -46,8 +46,8 @@ class TimestampFirst {
 var jsonFormat = format.combine(format.timestamp({
     format: 'YYYY-MM-DD HH:mm:ss.SSS'
 }), new TimestampFirst(true), format.json());
-const consoleFormat = printf(({ level, message, requestID, relayType, typeID, serviceNode }) => {
-    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] ${message}`;
+const consoleFormat = printf(({ level, message, requestID, relayType, typeID, serviceNode, error, elapsedTime }) => {
+    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${error}] [${elapsedTime}] ${message}`;
 });
 const debugFilter = format((log, opts) => {
     return log.level === 'debug' ? log : false;
