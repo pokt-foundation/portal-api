@@ -27,6 +27,7 @@ export class SyncChecker {
           syncedNodes.push(node);
         }
       }
+      logger.log('info', 'SYNC CHECK: ' + syncedNodes.length + ' nodes returned');
       return syncedNodes;
     }
 
