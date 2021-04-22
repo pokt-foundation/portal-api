@@ -65,6 +65,12 @@ tslib_1.__decorate([
     }),
     tslib_1.__metadata("design:type", Boolean)
 ], Blockchains.prototype, "active", void 0);
+tslib_1.__decorate([
+    repository_1.property({
+        type: 'string',
+    }),
+    tslib_1.__metadata("design:type", String)
+], Blockchains.prototype, "syncCheck", void 0);
 Blockchains = tslib_1.__decorate([
     repository_1.model({ settings: { strict: false } }),
     tslib_1.__metadata("design:paramtypes", [Object])

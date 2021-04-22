@@ -1,4 +1,4 @@
-import { Node, Session } from '@pokt-network/pocket-js';
+import { Node } from '@pokt-network/pocket-js';
 import { Redis } from 'ioredis';
 import { Applications } from '../models';
 export declare class CherryPicker {
@@ -9,7 +9,7 @@ export declare class CherryPicker {
         checkDebug: boolean;
     });
     cherryPickApplication(loadBalancerID: string, applications: Array<string>, blockchain: string, requestID: string): Promise<string>;
-    cherryPickNode(application: Applications, pocketSession: Session, blockchain: string, requestID: string): Promise<Node>;
+    cherryPickNode(application: Applications, nodes: Node[], blockchain: string, requestID: string): Promise<Node>;
     fetchRawServiceLog(blockchain: string, id: string | undefined): Promise<string | null>;
     fetchRawFailureLog(blockchain: string, id: string | undefined): Promise<string | null>;
     fetchClientTypeLog(blockchain: string, id: string | undefined): Promise<string | null>;

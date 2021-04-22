@@ -52,7 +52,10 @@ export class Blockchains extends Entity {
   })
   active: boolean;
 
-  // Define well-known properties here
+  @property({
+    type: 'string',
+  })
+  syncCheck?: string;
 
   // Indexer property to allow additional data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
