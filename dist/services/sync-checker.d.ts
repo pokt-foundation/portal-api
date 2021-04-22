@@ -4,4 +4,5 @@ export declare class SyncChecker {
     redis: Redis;
     constructor(redis: Redis);
     consensusFilter(nodes: Node[], syncCheck: string, blockchain: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<Node[]>;
+    updateConfigurationConsensus(pocketConfiguration: Configuration): Configuration;
 }
