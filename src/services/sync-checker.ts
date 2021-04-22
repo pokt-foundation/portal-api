@@ -27,7 +27,7 @@ export class SyncChecker {
           syncedNodes.push(node);
         }
       }
-      logger.log('info', 'SYNC CHECK: ' + syncedNodes.length + ' nodes returned');
+      // logger.log('info', 'SYNC CHECK: ' + syncedNodes.length + ' nodes returned');
       return syncedNodes;
     }
 
@@ -48,8 +48,6 @@ export class SyncChecker {
     // Check sync of nodes with consensus
     for (const node of nodes) {
       // Pull the current block from each node using the blockchain's syncCheck as the relay
-      
-      logger.log('info', 'SYNC CHECK: request ' + syncCheck, {requestID: '', relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: ''});
       const relayResponse = await pocket.sendRelay(
         syncCheck,
         blockchain,
@@ -122,7 +120,35 @@ export class SyncChecker {
     // If one or more nodes of this session are not in sync, fire a consensus relay with the same check.
     // This will penalize the out-of-sync nodes and cause them to get slashed for reporting incorrect data.
     // Fire this off synchronously so we don't have to wait for the results.
+    if (syncedNodes.length < 5) {
+      const consensusResponse = await pocket.sendRelay(
+        syncCheck,
+        blockchain,
+        pocketAAT,
+        this.updateConfigurationConsensus(pocketConfiguration),
+        undefined,
+        'POST' as HTTPMethod,
+        undefined
+      );
+      logger.log('info', 'SYNC CHECK CHALLENGE: ' + JSON.stringify(consensusResponse), {requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: ''});
+    }
+
     return syncedNodes;
+  }
+
+  updateConfigurationConsensus(pocketConfiguration: Configuration) {
+    return new Configuration(
+      pocketConfiguration.maxDispatchers,
+      pocketConfiguration.maxSessions,
+      5,
+      pocketConfiguration.requestTimeOut,
+      pocketConfiguration.acceptDisputedResponses,
+      pocketConfiguration.sessionBlockFrequency,
+      pocketConfiguration.blockTime,
+      pocketConfiguration.maxSessionRefreshRetries,
+      pocketConfiguration.validateRelayResponses,
+      pocketConfiguration.rejectSelfSignedCertificates
+    );
   }
 }
 
