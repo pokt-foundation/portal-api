@@ -68,7 +68,7 @@ export class CherryPicker {
   // Rank and weight them for node choice
   async cherryPickNode(
     application: Applications,
-    pocketSession: Session,
+    nodes: Node[],
     blockchain: string,
     requestID: string,
   ): Promise<Node> {
@@ -82,7 +82,7 @@ export class CherryPicker {
       failure: boolean;
     }[];
 
-    for (const node of pocketSession.sessionNodes) {
+    for (const node of nodes) {
       rawNodes[node.publicKey] = node;
       rawNodeIDs.push(node.publicKey);
       const rawServiceLog = await this.fetchRawServiceLog(blockchain, node.publicKey);
