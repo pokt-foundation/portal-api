@@ -14,7 +14,7 @@ export class SyncChecker {
   async consensusFilter(nodes: Node[], syncCheck: string, blockchain: string, pocket: Pocket, pocketConfiguration: Configuration): Promise<Node[]> {
     let syncedNodes: Node[] = [];
 
-    // Key is blockchain - a hash of the nodes sorted by public key
+    // Key is "blockchain - a hash of the nodes sorted by public key"
     const syncedNodesKey = blockchain + '-' + crypto.createHash('sha256').update(JSON.stringify(nodes.sort((a,b) => (a.publicKey > b.publicKey) ? 1 : ((b.publicKey > a.publicKey) ? -1 : 0)), (k, v) => k != 'publicKey' ? v : undefined)).digest('hex');
     const syncedNodesCache = await this.redis.get(syncedNodesKey);
 
