@@ -466,7 +466,7 @@ export class PocketRelayer {
       }
       // Sync Check to determine current blockheight
       if (blockchainFilter[0].syncCheck) {
-        blockchainSyncCheck = blockchainFilter[0].syncCheck;
+        blockchainSyncCheck = blockchainFilter[0].syncCheck.replace(/\\"/g, '"');
       }
       return Promise.resolve([blockchain, blockchainEnforceResult, blockchainSyncCheck]);
     } else {
