@@ -1,4 +1,4 @@
-import {Configuration, Node, Pocket} from '@pokt-network/pocket-js';
+import {Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse} from '@pokt-network/pocket-js';
 import {Redis} from 'ioredis';
 var crypto = require('crypto');
 
@@ -11,7 +11,7 @@ export class SyncChecker {
     this.redis = redis;
   }
 
-  async consensusFilter(nodes: Node[], syncCheck: string, blockchain: string, pocket: Pocket, pocketConfiguration: Configuration): Promise<Node[]> {
+  async consensusFilter(nodes: Node[], syncCheck: string, blockchain: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<Node[]> {
     let syncedNodes: Node[] = [];
     let syncedNodesList: String[] = [];
 
@@ -44,27 +44,30 @@ export class SyncChecker {
 
     // Check sync of nodes with consensus
     for (const node of nodes) {
-      /*
+      // Pull the current block from each node using the blockchain's syncCheck as the relay
+      
       const relayResponse = await pocket.sendRelay(
-        '{"method":"web3_clientVersion","id":1,"jsonrpc":"2.0"}',
+        syncCheck,
         blockchain,
         pocketAAT,
-        this.pocketConfiguration,
+        pocketConfiguration,
         undefined,
         'POST' as HTTPMethod,
         undefined
       );
   
       if (relayResponse instanceof RelayResponse) {
-        logger.log('info', 'CLIENT CHECK ' + relayResponse.payload, {requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey});
-        await this.redis.set(
-          blockchain + '-' + node.publicKey + '-clientType',
-          relayResponse.payload,
-          'EX',
-          (60 * 60 * 24),
-        );
+        logger.log('info', 'SYNC CHECK: payload ' + relayResponse.payload, {requestID: '', relayType: '', typeID: '', serviceNode: node.publicKey});
       }
-      */
+      
+      // Create a NodeSyncLog for each node with current block
+      const nodeSyncLog = {node: node, blockchain: blockchain, blockHeight: 1} as NodeSyncLog;
+
+      // Sort NodeSyncLogs by blockHeight
+
+      // Make sure at least 2 nodes agree on current highest block to prevent one node from being wildly off
+
+      // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
       syncedNodes.push(node);
       syncedNodesList.push(node.publicKey);
     }
@@ -83,5 +86,5 @@ type NodeSyncLog = {
   node: Node;
   blockchain: string;
   blockHeight: Number;
-  sync: boolean;
+  sync?: boolean;
 }
