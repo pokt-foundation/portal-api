@@ -7,6 +7,7 @@ import { Pool as PGPool } from 'pg';
 import { CherryPicker } from '../services/cherry-picker';
 import { MetricsRecorder } from '../services/metrics-recorder';
 import { PocketRelayer } from '../services/pocket-relayer';
+import { SyncChecker } from '../services/sync-checker';
 export declare class V1Controller {
     private secretKey;
     private host;
@@ -30,6 +31,7 @@ export declare class V1Controller {
     cherryPicker: CherryPicker;
     metricsRecorder: MetricsRecorder;
     pocketRelayer: PocketRelayer;
+    syncChecker: SyncChecker;
     constructor(secretKey: string, host: string, origin: string, userAgent: string, contentType: string, httpMethod: HTTPMethod, relayPath: string, relayRetries: number, pocket: Pocket, pocketConfiguration: Configuration, redis: Redis, pgPool: PGPool, databaseEncryptionKey: string, processUID: string, fallbackURL: string, requestID: string, applicationsRepository: ApplicationsRepository, blockchainsRepository: BlockchainsRepository, loadBalancersRepository: LoadBalancersRepository);
     /**
      * Load Balancer Relay
