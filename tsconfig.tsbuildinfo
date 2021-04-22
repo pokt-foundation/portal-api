@@ -2058,8 +2058,8 @@
         "signature": "b9c3fb3feb8af8c219d54e8910625440fe0e38c4f71ad3036d5c148f65158318"
       },
       "./src/services/sync-checker.ts": {
-        "version": "cff738fcb191f3b61edddd4e6a5410838bb654f79874e642521d553d37064228",
-        "signature": "6963ed357991c0597f70b98dddead7b2689b6c2061198d92b0dca6c6eb12ecc8"
+        "version": "02b1d8130d247384771b4e0a249fc9886add336fd8eb59e273cd79cc0e82314a",
+        "signature": "a220e9014eb4f2f3cf509314b6b37e84ecd9502891eddb0638f61c97882e9ec9"
       },
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": {
         "version": "26c75550bc4cbb1bd5663346ce36097ba9ac7b7a5f8e78c4f3997df6ce664d05",
@@ -9814,9 +9814,6 @@
       "./node_modules/strong-cryptor/dist/decryptor.d.ts",
       "./node_modules/strong-cryptor/dist/index.d.ts",
       "./src/errors/relay-error.ts",
-      "./src/services/pocket-relayer.ts",
-      "./src/controllers/v1.controller.ts",
-      "./src/controllers/index.ts",
       "./src/services/logger.ts",
       "./node_modules/@types/aes-js/index.d.ts",
       "./node_modules/@types/keyv/index.d.ts",
@@ -9838,7 +9835,10 @@
       "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
       "./node_modules/@types/varint/index.d.ts",
-      "./src/services/sync-checker.ts"
+      "./src/services/sync-checker.ts",
+      "./src/controllers/v1.controller.ts",
+      "./src/services/pocket-relayer.ts",
+      "./src/controllers/index.ts"
     ]
   },
   "version": "3.8.3"
