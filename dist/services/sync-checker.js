@@ -39,7 +39,7 @@ class SyncChecker {
         // Check sync of nodes with consensus
         for (const node of nodes) {
             // Pull the current block from each node using the blockchain's syncCheck as the relay
-            const relayResponse = await pocket.sendRelay(syncCheck, blockchain, pocketAAT, pocketConfiguration, undefined, 'POST', undefined);
+            const relayResponse = await pocket.sendRelay(syncCheck, blockchain, pocketAAT, pocketConfiguration, undefined, 'POST', undefined, node);
             if (relayResponse instanceof pocket_js_1.RelayResponse) {
                 const payload = JSON.parse(relayResponse.payload);
                 // Create a NodeSyncLog for each node with current block
@@ -66,7 +66,7 @@ class SyncChecker {
             return nodes;
         }
         // Make sure at least 2 nodes agree on current highest block to prevent one node from being wildly off
-        if (nodeSyncLogs[0].blockHeight != nodeSyncLogs[1].blockHeight) {
+        if (nodeSyncLogs[0].blockHeight > (nodeSyncLogs[1].blockHeight + 1)) {
             logger.log('error', 'SYNC CHECK ERROR: two highest nodes could not agree on sync', { requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
             return nodes;
         }
