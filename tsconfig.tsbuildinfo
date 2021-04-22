@@ -2058,7 +2058,7 @@
         "signature": "b9c3fb3feb8af8c219d54e8910625440fe0e38c4f71ad3036d5c148f65158318"
       },
       "./src/services/sync-checker.ts": {
-        "version": "c10a42c0f18ea07c1e76ab1f526b6c6e13d9a19d859b738ba4070ac3224588e4",
+        "version": "3fdac5fbc02594207ee2985c8fb4c3de61f3cf8c5f5e0d90b5c50d1ad3bf2ad5",
         "signature": "c9828238a074cef8178af1ebe8f0bf2029d7fe8e9686e7222badb974efd3ab10"
       },
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": {
@@ -2102,7 +2102,7 @@
         "signature": "4268ae77fea3dfd44b681677cb8ba998d21463a10d37e5286651c07e8659d183"
       },
       "./src/services/pocket-relayer.ts": {
-        "version": "a2b2ab49393b3a7d84e06d9baf9db378ccc2b964b9e6624afa0941f2f281e1d0",
+        "version": "e118240bc1461021cc9b0375a7f593ca1f1ff9c9e89e06d16624aced5b8636b2",
         "signature": "ad65d9326d5067bf7ab46068d21ec91864a00f671837c961050af3928f6d1035"
       },
       "./src/controllers/v1.controller.ts": {
@@ -9813,6 +9813,8 @@
       "./node_modules/strong-cryptor/dist/decryptor.d.ts",
       "./node_modules/strong-cryptor/dist/index.d.ts",
       "./src/errors/relay-error.ts",
+      "./src/controllers/v1.controller.ts",
+      "./src/controllers/index.ts",
       "./src/services/logger.ts",
       "./node_modules/@types/aes-js/index.d.ts",
       "./node_modules/@types/keyv/index.d.ts",
@@ -9835,9 +9837,7 @@
       "./node_modules/@types/type-is/index.d.ts",
       "./node_modules/@types/varint/index.d.ts",
       "./src/services/sync-checker.ts",
-      "./src/controllers/v1.controller.ts",
-      "./src/services/pocket-relayer.ts",
-      "./src/controllers/index.ts"
+      "./src/services/pocket-relayer.ts"
     ]
   },
   "version": "3.8.3"
