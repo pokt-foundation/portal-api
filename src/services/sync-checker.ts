@@ -55,7 +55,8 @@ export class SyncChecker {
         pocketConfiguration,
         undefined,
         'POST' as HTTPMethod,
-        undefined
+        undefined,
+        node
       );
   
       if (relayResponse instanceof RelayResponse) {
@@ -92,7 +93,7 @@ export class SyncChecker {
     }
 
     // Make sure at least 2 nodes agree on current highest block to prevent one node from being wildly off
-    if (nodeSyncLogs[0].blockHeight != nodeSyncLogs[1].blockHeight) {
+    if (nodeSyncLogs[0].blockHeight > (nodeSyncLogs[1].blockHeight + 1)) {
       logger.log('error', 'SYNC CHECK ERROR: two highest nodes could not agree on sync', {requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: ''});
       return nodes;
     }
