@@ -2058,8 +2058,8 @@
         "signature": "b9c3fb3feb8af8c219d54e8910625440fe0e38c4f71ad3036d5c148f65158318"
       },
       "./src/services/sync-checker.ts": {
-        "version": "ab9aa85f060b54766400578cadac15ef38f8ea2f005a385867064f3886a82c37",
-        "signature": "c24b16e3145ed6123e214b9417ca0154f34321ceddaea5e71696a65b3f57d2ef"
+        "version": "c10a42c0f18ea07c1e76ab1f526b6c6e13d9a19d859b738ba4070ac3224588e4",
+        "signature": "c9828238a074cef8178af1ebe8f0bf2029d7fe8e9686e7222badb974efd3ab10"
       },
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": {
         "version": "26c75550bc4cbb1bd5663346ce36097ba9ac7b7a5f8e78c4f3997df6ce664d05",
@@ -2102,7 +2102,7 @@
         "signature": "4268ae77fea3dfd44b681677cb8ba998d21463a10d37e5286651c07e8659d183"
       },
       "./src/services/pocket-relayer.ts": {
-        "version": "716877f98fcfef131f319f2adda5b5813207abfbcf02f6aff36409ac756ededa",
+        "version": "a2b2ab49393b3a7d84e06d9baf9db378ccc2b964b9e6624afa0941f2f281e1d0",
         "signature": "ad65d9326d5067bf7ab46068d21ec91864a00f671837c961050af3928f6d1035"
       },
       "./src/controllers/v1.controller.ts": {
@@ -9103,6 +9103,10 @@
         "./node_modules/@types/pg/index.d.ts",
         "./src/services/cherry-picker.ts"
       ],
+      "./src/services/sync-checker.ts": [
+        "./node_modules/@types/ioredis/index.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/index.d.ts"
+      ],
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": [
         "./node_modules/strong-cryptor/dist/typings/index.d.ts",
         "./node_modules/@types/node/util.d.ts",
@@ -9283,10 +9287,6 @@
         "./node_modules/@types/node/ts3.7/index.d.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
-      "./src/services/sync-checker.ts": [
-        "./node_modules/@types/ioredis/index.d.ts",
-        "./node_modules/@pokt-network/pocket-js/dist/index.d.ts"
       ]
     },
     "semanticDiagnosticsPerFile": [
@@ -9644,10 +9644,17 @@
       "./src/__tests__/acceptance/test-helper.ts",
       "./src/__tests__/acceptance/home-page.acceptance.ts",
       "./src/__tests__/acceptance/ping.controller.acceptance.ts",
+      "./src/models/blockchains.model.ts",
       "./src/models/applications.model.ts",
       "./src/models/load-balancers.model.ts",
+      "./src/models/index.ts",
       "./src/datasources/gateway.datasource.ts",
       "./src/datasources/index.ts",
+      "./src/repositories/blockchains.repository.ts",
+      "./src/repositories/applications.repository.ts",
+      "./src/repositories/load-balancers.repository.ts",
+      "./src/repositories/index.ts",
+      "./src/controllers/blockchains.controller.ts",
       "./src/controllers/ping.controller.ts",
       "./node_modules/@pokt-network/pocket-js/dist/config/configuration.d.ts",
       "./node_modules/@pokt-network/pocket-js/dist/config/index.d.ts",
@@ -9795,6 +9802,8 @@
       "./node_modules/@types/ioredis/index.d.ts",
       "./node_modules/pg-types/index.d.ts",
       "./node_modules/@types/pg/index.d.ts",
+      "./src/services/cherry-picker.ts",
+      "./src/services/metrics-recorder.ts",
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts",
       "./node_modules/strong-cryptor/dist/typings/index.d.ts",
       "./node_modules/strong-cryptor/dist/v2/decryptor.d.ts",
@@ -9826,18 +9835,9 @@
       "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
       "./node_modules/@types/varint/index.d.ts",
-      "./src/models/blockchains.model.ts",
-      "./src/models/index.ts",
-      "./src/services/cherry-picker.ts",
-      "./src/services/pocket-relayer.ts",
-      "./src/services/metrics-recorder.ts",
       "./src/services/sync-checker.ts",
-      "./src/repositories/blockchains.repository.ts",
-      "./src/repositories/applications.repository.ts",
-      "./src/repositories/load-balancers.repository.ts",
-      "./src/repositories/index.ts",
-      "./src/controllers/blockchains.controller.ts",
       "./src/controllers/v1.controller.ts",
+      "./src/services/pocket-relayer.ts",
       "./src/controllers/index.ts"
     ]
   },
