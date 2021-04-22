@@ -2058,8 +2058,8 @@
         "signature": "b9c3fb3feb8af8c219d54e8910625440fe0e38c4f71ad3036d5c148f65158318"
       },
       "./src/services/sync-checker.ts": {
-        "version": "3fdac5fbc02594207ee2985c8fb4c3de61f3cf8c5f5e0d90b5c50d1ad3bf2ad5",
-        "signature": "c9828238a074cef8178af1ebe8f0bf2029d7fe8e9686e7222badb974efd3ab10"
+        "version": "9ca4e83f042cef26efb2c1380fad7cfc72f394c4a9f1471b37a24485cc55e004",
+        "signature": "6963ed357991c0597f70b98dddead7b2689b6c2061198d92b0dca6c6eb12ecc8"
       },
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": {
         "version": "26c75550bc4cbb1bd5663346ce36097ba9ac7b7a5f8e78c4f3997df6ce664d05",
@@ -2102,7 +2102,7 @@
         "signature": "4268ae77fea3dfd44b681677cb8ba998d21463a10d37e5286651c07e8659d183"
       },
       "./src/services/pocket-relayer.ts": {
-        "version": "e118240bc1461021cc9b0375a7f593ca1f1ff9c9e89e06d16624aced5b8636b2",
+        "version": "8c9fe9e8e8d55c5a75cd6693b4775276a797f2327700bed3c8ccc50af49e4d31",
         "signature": "ad65d9326d5067bf7ab46068d21ec91864a00f671837c961050af3928f6d1035"
       },
       "./src/controllers/v1.controller.ts": {
@@ -9813,8 +9813,6 @@
       "./node_modules/strong-cryptor/dist/decryptor.d.ts",
       "./node_modules/strong-cryptor/dist/index.d.ts",
       "./src/errors/relay-error.ts",
-      "./src/controllers/v1.controller.ts",
-      "./src/controllers/index.ts",
       "./src/services/logger.ts",
       "./node_modules/@types/aes-js/index.d.ts",
       "./node_modules/@types/keyv/index.d.ts",
@@ -9837,7 +9835,9 @@
       "./node_modules/@types/type-is/index.d.ts",
       "./node_modules/@types/varint/index.d.ts",
       "./src/services/sync-checker.ts",
-      "./src/services/pocket-relayer.ts"
+      "./src/controllers/v1.controller.ts",
+      "./src/services/pocket-relayer.ts",
+      "./src/controllers/index.ts"
     ]
   },
   "version": "3.8.3"

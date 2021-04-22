@@ -46,6 +46,7 @@ export class SyncChecker {
     for (const node of nodes) {
       // Pull the current block from each node using the blockchain's syncCheck as the relay
       
+      logger.log('info', 'SYNC CHECK: request ' + syncCheck, {requestID: '', relayType: '', typeID: '', serviceNode: node.publicKey});
       const relayResponse = await pocket.sendRelay(
         syncCheck,
         blockchain,
