@@ -62,10 +62,10 @@ export class SyncChecker {
             
         // Create a NodeSyncLog for each node with current block
         const nodeSyncLog = {node: node, blockchain: blockchain, blockHeight: parseInt(payload.result, 16)} as NodeSyncLog;
-        logger.log('info', 'SYNC CHECK RESULT: ' + nodeSyncLog, {requestID: '', relayType: '', typeID: '', serviceNode: node.publicKey});
+        logger.log('info', 'SYNC CHECK RESULT: ' + JSON.stringify(nodeSyncLog), {requestID: '', relayType: '', typeID: '', serviceNode: node.publicKey});
       }
       else {
-        logger.log('error', 'SYNC CHECK ERROR: ' + relayResponse, {requestID: '', relayType: '', typeID: '', serviceNode: node.publicKey});
+        logger.log('error', 'SYNC CHECK ERROR: ' + JSON.stringify(relayResponse), {requestID: '', relayType: '', typeID: '', serviceNode: node.publicKey});
       }
 
       // Sort NodeSyncLogs by blockHeight
