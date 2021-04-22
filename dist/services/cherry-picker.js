@@ -36,11 +36,11 @@ class CherryPicker {
     // Record the latency and success rate of each node, 1 hour TTL
     // When selecting a node, pull the stats for each node in the session
     // Rank and weight them for node choice
-    async cherryPickNode(application, pocketSession, blockchain, requestID) {
+    async cherryPickNode(application, nodes, blockchain, requestID) {
         const rawNodes = {};
         const rawNodeIDs = [];
         let sortedLogs = [];
-        for (const node of pocketSession.sessionNodes) {
+        for (const node of nodes) {
             rawNodes[node.publicKey] = node;
             rawNodeIDs.push(node.publicKey);
             const rawServiceLog = await this.fetchRawServiceLog(blockchain, node.publicKey);
