@@ -143,7 +143,7 @@ export class SyncChecker {
       pocketConfiguration.maxSessions,
       5,
       pocketConfiguration.requestTimeOut,
-      pocketConfiguration.acceptDisputedResponses,
+      false,
       pocketConfiguration.sessionBlockFrequency,
       pocketConfiguration.blockTime,
       pocketConfiguration.maxSessionRefreshRetries,
