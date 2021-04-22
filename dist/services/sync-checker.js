@@ -1,12 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const pocket_js_1 = require("@pokt-network/pocket-js");
 var crypto = require('crypto');
 const logger = require('../services/logger');
 class SyncChecker {
     constructor(redis) {
         this.redis = redis;
     }
-    async consensusFilter(nodes, syncCheck, blockchain, pocket, pocketConfiguration) {
+    async consensusFilter(nodes, syncCheck, blockchain, pocket, pocketAAT, pocketConfiguration) {
         let syncedNodes = [];
         let syncedNodesList = [];
         // Key is "blockchain - a hash of the all the nodes in this session, sorted by public key"
@@ -20,6 +21,7 @@ class SyncChecker {
                     syncedNodes.push(node);
                 }
             }
+            logger.log('info', 'SYNC CHECK: ' + syncedNodes.length + ' nodes returned');
             return syncedNodes;
         }
         // Cache is stale, start a new cache fill
@@ -34,27 +36,16 @@ class SyncChecker {
         }
         // Check sync of nodes with consensus
         for (const node of nodes) {
-            /*
-            const relayResponse = await pocket.sendRelay(
-              '{"method":"web3_clientVersion","id":1,"jsonrpc":"2.0"}',
-              blockchain,
-              pocketAAT,
-              this.pocketConfiguration,
-              undefined,
-              'POST' as HTTPMethod,
-              undefined
-            );
-        
-            if (relayResponse instanceof RelayResponse) {
-              logger.log('info', 'CLIENT CHECK ' + relayResponse.payload, {requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey});
-              await this.redis.set(
-                blockchain + '-' + node.publicKey + '-clientType',
-                relayResponse.payload,
-                'EX',
-                (60 * 60 * 24),
-              );
+            // Pull the current block from each node using the blockchain's syncCheck as the relay
+            const relayResponse = await pocket.sendRelay(syncCheck, blockchain, pocketAAT, pocketConfiguration, undefined, 'POST', undefined);
+            if (relayResponse instanceof pocket_js_1.RelayResponse) {
+                logger.log('info', 'SYNC CHECK: payload ' + relayResponse.payload, { requestID: '', relayType: '', typeID: '', serviceNode: node.publicKey });
             }
-            */
+            // Create a NodeSyncLog for each node with current block
+            const nodeSyncLog = { node: node, blockchain: blockchain, blockHeight: 1 };
+            // Sort NodeSyncLogs by blockHeight
+            // Make sure at least 2 nodes agree on current highest block to prevent one node from being wildly off
+            // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
             syncedNodes.push(node);
             syncedNodesList.push(node.publicKey);
         }
