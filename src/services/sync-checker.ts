@@ -13,16 +13,25 @@ export class SyncChecker {
 
   async consensusFilter(nodes: Node[], syncCheck: string, blockchain: string, pocket: Pocket, pocketConfiguration: Configuration): Promise<Node[]> {
     let syncedNodes: Node[] = [];
+    let syncedNodesList: String[] = [];
 
-    // Key is "blockchain - a hash of the nodes sorted by public key"
+    // Key is "blockchain - a hash of the all the nodes in this session, sorted by public key"
+    // Value is an array of node public keys that have passed sync checks for this session in the past 5 minutes
     const syncedNodesKey = blockchain + '-' + crypto.createHash('sha256').update(JSON.stringify(nodes.sort((a,b) => (a.publicKey > b.publicKey) ? 1 : ((b.publicKey > a.publicKey) ? -1 : 0)), (k, v) => k != 'publicKey' ? v : undefined)).digest('hex');
-    const syncedNodesCache = await this.redis.get(syncedNodesKey);
+    const syncedNodesCached = await this.redis.get(syncedNodesKey);
 
-    if (syncedNodesCache) {
-      return JSON.parse(syncedNodesCache);
+    if (syncedNodesCached) {
+      syncedNodesList = JSON.parse(syncedNodesCached);
+      for (const node of nodes) {
+        if (syncedNodesList.includes(node.publicKey)) {
+          syncedNodes.push(node);
+        }
+      }
+      return syncedNodes;
     }
 
-    // Check lock key; if lock key exists, return full node set
+    // Cache is stale, start a new cache fill
+    // First check cache lock key; if lock key exists, return full node set
     const syncLock = await this.redis.get('lock-' + syncedNodesKey);
     if (syncLock) {
       return nodes;
@@ -56,11 +65,12 @@ export class SyncChecker {
       }
       */
       syncedNodes.push(node);
+      syncedNodesList.push(node.publicKey);
     }
     logger.log('info', 'SYNC CHECK: writing sync status ' + syncedNodesKey);
     await this.redis.set(
       syncedNodesKey,
-      JSON.stringify(syncedNodes),
+      JSON.stringify(syncedNodesList),
       'EX',
       300,
     );
