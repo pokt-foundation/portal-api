@@ -324,9 +324,9 @@ export class PocketRelayer {
     );
     if (pocketSession instanceof Session) {
       let nodes: Node[] = pocketSession.sessionNodes;
-      // if (blockchainSyncCheck) {
-        // nodes = await this.syncChecker.consensusFilter(pocketSession.sessionNodes, blockchainSyncCheck, blockchain, this.pocket, this.pocketConfiguration);
-      // }           
+      if (blockchainSyncCheck) {
+        nodes = await this.syncChecker.consensusFilter(pocketSession.sessionNodes, blockchainSyncCheck, blockchain, this.pocket, this.pocketConfiguration);
+      }           
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchain, requestID);
     }
 
