@@ -187,9 +187,9 @@ class PocketRelayer {
         const pocketSession = await this.pocket.sessionManager.getCurrentSession(pocketAAT, blockchain, this.pocketConfiguration);
         if (pocketSession instanceof pocket_js_1.Session) {
             let nodes = pocketSession.sessionNodes;
-            // if (blockchainSyncCheck) {
-            // nodes = await this.syncChecker.consensusFilter(pocketSession.sessionNodes, blockchainSyncCheck, blockchain, this.pocket, this.pocketConfiguration);
-            // }           
+            if (blockchainSyncCheck) {
+                nodes = await this.syncChecker.consensusFilter(pocketSession.sessionNodes, blockchainSyncCheck, blockchain, this.pocket, pocketAAT, this.pocketConfiguration);
+            }
             node = await this.cherryPicker.cherryPickNode(application, nodes, blockchain, requestID);
         }
         if (this.checkDebug) {
