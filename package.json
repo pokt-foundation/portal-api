@@ -39,6 +39,7 @@
     "start:watch": "tsnodemon -x 'node -r source-map-support/register .'",
     "services:db:up": "docker-compose -f stacks/local.yml up db",
     "services:all:up": "docker-compose -f stacks/local.yml up --build",
+    "services:all:down": "docker-compose -f stacks/local.yml down",
     "tasks:db:download-production-data": "docker-compose -f stacks/tasks.yml up download-production-data",
     "tasks:db:persist-production-data": "docker-compose -f stacks/tasks.yml up persist-production-data"
   },

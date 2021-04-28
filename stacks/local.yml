@@ -9,9 +9,6 @@ services:
     command: npm run start:watch
     env_file:
       - ../.env
-    environment:
-      - WATCH=${WATCH:-true}
-      - NODE_ENV=development
     ports:
       - 3000:3000
     volumes:

@@ -2,10 +2,11 @@
 FROM node:10-slim
 
 # Bind to all network interfaces so that it can be mapped to the host OS
-ENV NODE_ENV=production
+ENV NODE_ENV=development
 ENV WATCH=true
 ENV HOST=0.0.0.0
 ENV PORT=3000
+ENV PATH="${PATH}:/usr/src/gateway/node_modules/.bin"
 
 RUN apt-get update && \
     apt-get upgrade -y && \
