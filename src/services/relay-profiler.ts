@@ -23,15 +23,15 @@ export class RelayProfiler extends BaseProfiler {
 
   flushResults(requestID: string, functionName: string, results: ProfileResult[]): void {
 
-    const bulkData: { request_id: string; function: string; block_key: string; elapsed_time: number; }[] = [];
+    const bulkData: any[] = [];
     results.forEach((result) => {
       bulkData.push(
-        {
-          "request_id": requestID,
-          "function": functionName,
-          "block_key": result.blockKey,
-          "elapsed_time": result.timeElapsed
-        }
+        [
+          requestID,
+          functionName,
+          result.blockKey,
+          result.timeElapsed,
+        ]
       );
     });
     
