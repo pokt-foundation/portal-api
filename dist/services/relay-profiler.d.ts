@@ -7,5 +7,5 @@ export declare class RelayProfiler extends BaseProfiler {
     }[];
     pgPool: PGPool;
     constructor(pgPool: PGPool);
-    flushResults(requestID: string, functionName: string, results: ProfileResult[]): void;
+    flushResults(requestID: string, functionName: string, results: ProfileResult[]): Promise<void>;
 }
