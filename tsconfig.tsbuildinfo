@@ -1914,8 +1914,8 @@
         "signature": "ce3c16bd239d4345a1ffabff3dcbb5025d281292742f4cfa5a29398b815bbb60"
       },
       "./src/services/relay-profiler.ts": {
-        "version": "c9ae83fbc226fc8bba47639e1247fe15336b1fbd53d5238b5ea9efeb05259c12",
-        "signature": "153d38ed1b7d631cbca26009e543d78ddb488b29d09199ad2ffb3877442b0d1e"
+        "version": "e8cc5ab9c556a1c3d61777e132811d15f5088645a0919899e2cdeee236e06764",
+        "signature": "fc398043c90db739b2d0c3b9c1bab419c78198657a067dc60e661ac95eb4782a"
       },
       "./src/application.ts": {
         "version": "e4bc3ed578d253450fb1164d59d0f4942921f6c1964b4fd92b42c34a76a22594",
@@ -9847,7 +9847,6 @@
       "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
       "./node_modules/pg-types/index.d.ts",
       "./node_modules/@types/pg/index.d.ts",
-      "./src/application.ts",
       "./src/index.ts",
       "./src/migrate.ts",
       "./node_modules/@types/cookiejar/index.d.ts",
@@ -9922,7 +9921,8 @@
       "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
       "./node_modules/@types/varint/index.d.ts",
-      "./src/services/relay-profiler.ts"
+      "./src/services/relay-profiler.ts",
+      "./src/application.ts"
     ]
   },
   "version": "3.8.3"
