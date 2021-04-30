@@ -1914,7 +1914,7 @@
         "signature": "ce3c16bd239d4345a1ffabff3dcbb5025d281292742f4cfa5a29398b815bbb60"
       },
       "./src/services/relay-profiler.ts": {
-        "version": "34107db87367684ac2eafb3c11a63f272aaf2a79ca35b186e43e2d5d916dc37f",
+        "version": "7c5b0d087baee8212e543562fc8719aef24e49eeaca0779a5fccfb31e6e7b640",
         "signature": "cbadd349f4b650f3f734561fec202a296eec5a5b17c0e5240191e08d5be34e74"
       },
       "./src/application.ts": {
