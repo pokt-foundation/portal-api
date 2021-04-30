@@ -12,12 +12,12 @@ class RelayProfiler extends pocket_js_1.BaseProfiler {
     flushResults(requestID, functionName, results) {
         const bulkData = [];
         results.forEach((result) => {
-            bulkData.push({
-                "request_id": requestID,
-                "function": functionName,
-                "block_key": result.blockKey,
-                "elapsed_time": result.timeElapsed
-            });
+            bulkData.push([
+                requestID,
+                functionName,
+                result.blockKey,
+                result.timeElapsed,
+            ]);
         });
         logger.log('info', 'FLUSHING BULK: ' + bulkData.length, { requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
         if (bulkData.length > 0) {
