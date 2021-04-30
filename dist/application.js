@@ -7,6 +7,7 @@ const rest_1 = require("@loopback/rest");
 const service_proxy_1 = require("@loopback/service-proxy");
 const sequence_1 = require("./sequence");
 const account_1 = require("@pokt-network/pocket-js/dist/keybase/models/account");
+const relay_profiler_1 = require("./services/relay-profiler");
 const path_1 = tslib_1.__importDefault(require("path"));
 const logger = require('./services/logger');
 const pocketJS = require('@pokt-network/pocket-js');
@@ -80,7 +81,8 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         }
         const configuration = new Configuration(0, 100000, 0, 120000, false, pocketSessionBlockFrequency, pocketBlockTime, 1, undefined, true);
         const rpcProvider = new HttpRpcProvider(dispatchers);
-        const pocket = new Pocket(dispatchers, rpcProvider, configuration);
+        const relayProfiler = new relay_profiler_1.RelayProfiler();
+        const pocket = new Pocket(dispatchers, rpcProvider, configuration, undefined, relayProfiler);
         // Bind to application context for shared re-use
         this.bind('pocketInstance').to(pocket);
         this.bind('pocketConfiguration').to(configuration);
