@@ -12,11 +12,7 @@ export class RelayProfiler extends BaseProfiler {
   public data: {key: string, time_elapsed: number | undefined}[] = []
   pgPool: PGPool;
 
-  constructor({
-    pgPool,
-  }: {
-    pgPool: PGPool;
-  }) {
+  constructor(pgPool: PGPool) {
     super();
     this.pgPool = pgPool;
   }
@@ -45,9 +41,9 @@ export class RelayProfiler extends BaseProfiler {
       
       this.pgPool.connect((err, client, release) => {
         if (err) {
-          logger.log('error', 'Error acquiring client ' + err.stack);
+          logger.log('error', 'FLUSHING Error acquiring client ' + err.stack);
         }
-          client.query(metricsQuery, (err, result) => {          
+        client.query(metricsQuery, (err, result) => {          
           release();
           if (err) {
             logger.log('error', 'FLUSHING Error executing query ' + metricsQuery + ' ' + err.stack);
