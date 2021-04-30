@@ -350,6 +350,8 @@ export class PocketRelayer {
       httpMethod,
       relayPath,
       node,
+      undefined,
+      requestID,
     );
 
     if (this.checkDebug) {
