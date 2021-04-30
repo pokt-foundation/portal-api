@@ -48,12 +48,12 @@ class SyncChecker {
                 // logger.log('info', 'SYNC CHECK RESULT: ' + JSON.stringify(nodeSyncLog), {requestID: '', relayType: '', typeID: '', serviceNode: node.publicKey});
             }
             else {
-                logger.log('error', 'SYNC CHECK ERROR: ' + JSON.stringify(relayResponse), { requestID: '', relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
+                logger.log('error', 'SYNC CHECK ERROR: ' + JSON.stringify(relayResponse), { requestID: 'synccheck', relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
             }
         }
         // This should never happen
         if (nodeSyncLogs.length <= 2) {
-            logger.log('error', 'SYNC CHECK ERROR: fewer than 3 nodes returned sync', { requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
+            logger.log('error', 'SYNC CHECK ERROR: fewer than 3 nodes returned sync', { requestID: 'synccheck', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
             return nodes;
         }
         // Sort NodeSyncLogs by blockHeight
@@ -67,7 +67,7 @@ class SyncChecker {
         }
         // Make sure at least 2 nodes agree on current highest block to prevent one node from being wildly off
         if (nodeSyncLogs[0].blockHeight > (nodeSyncLogs[1].blockHeight + 1)) {
-            logger.log('error', 'SYNC CHECK ERROR: two highest nodes could not agree on sync', { requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
+            logger.log('error', 'SYNC CHECK ERROR: two highest nodes could not agree on sync', { requestID: 'synccheck', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
             return nodes;
         }
         const currentBlockHeight = nodeSyncLogs[0].blockHeight;
@@ -79,19 +79,22 @@ class SyncChecker {
                 syncedNodesList.push(nodeSyncLog.node.publicKey);
             }
         }
-        logger.log('info', 'SYNC CHECK COMPLETE: ' + syncedNodes.length + ' nodes in sync', { requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
+        logger.log('info', 'SYNC CHECK COMPLETE: ' + syncedNodes.length + ' nodes in sync', { requestID: 'synccheck', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
         await this.redis.set(syncedNodesKey, JSON.stringify(syncedNodesList), 'EX', 300);
         // If one or more nodes of this session are not in sync, fire a consensus relay with the same check.
         // This will penalize the out-of-sync nodes and cause them to get slashed for reporting incorrect data.
         // Fire this off synchronously so we don't have to wait for the results.
         if (syncedNodes.length < 5) {
-            const consensusResponse = await pocket.sendRelay(syncCheck, blockchain, pocketAAT, this.updateConfigurationConsensus(pocketConfiguration), undefined, 'POST', undefined);
-            logger.log('info', 'SYNC CHECK CHALLENGE: ' + JSON.stringify(consensusResponse), { requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
+            const consensusResponse = await pocket.sendRelay(syncCheck, blockchain, pocketAAT, this.updateConfigurationConsensus(pocketConfiguration), undefined, 'POST', undefined, undefined, true, 'syncheck');
+            logger.log('info', 'SYNC CHECK CHALLENGE: ' + JSON.stringify(consensusResponse), { requestID: 'synccheck', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
         }
         return syncedNodes;
     }
     updateConfigurationConsensus(pocketConfiguration) {
-        return new pocket_js_1.Configuration(pocketConfiguration.maxDispatchers, pocketConfiguration.maxSessions, 5, pocketConfiguration.requestTimeOut, false, pocketConfiguration.sessionBlockFrequency, pocketConfiguration.blockTime, pocketConfiguration.maxSessionRefreshRetries, pocketConfiguration.validateRelayResponses, pocketConfiguration.rejectSelfSignedCertificates);
+        return new pocket_js_1.Configuration(pocketConfiguration.maxDispatchers, pocketConfiguration.maxSessions, 5, 2000, false, pocketConfiguration.sessionBlockFrequency, pocketConfiguration.blockTime, pocketConfiguration.maxSessionRefreshRetries, pocketConfiguration.validateRelayResponses, pocketConfiguration.rejectSelfSignedCertificates);
+    }
+    updateConfigurationTimeout(pocketConfiguration) {
+        return new pocket_js_1.Configuration(pocketConfiguration.maxDispatchers, pocketConfiguration.maxSessions, pocketConfiguration.consensusNodeCount, 2000, pocketConfiguration.acceptDisputedResponses, pocketConfiguration.sessionBlockFrequency, pocketConfiguration.blockTime, pocketConfiguration.maxSessionRefreshRetries, pocketConfiguration.validateRelayResponses, pocketConfiguration.rejectSelfSignedCertificates);
     }
 }
 exports.SyncChecker = SyncChecker;
