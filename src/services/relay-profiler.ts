@@ -3,22 +3,51 @@ import {
   ProfileResult,
 } from '@pokt-network/pocket-js';
 
+import {Pool as PGPool} from 'pg';
+
+const pgFormat = require('pg-format');
 const logger = require('../services/logger');
 
 export class RelayProfiler extends BaseProfiler {
   public data: {key: string, time_elapsed: number | undefined}[] = []
+  pgPool: PGPool;
 
-  flushResults(functionName: string, results: ProfileResult[]): void {
-    const resultsJSON: object[] = [];
-    results.forEach(function(result) {
-        resultsJSON.push(result.toJSON());
-    })
+  constructor({
+    pgPool,
+  }: {
+    pgPool: PGPool;
+  }) {
+    super();
+    this.pgPool = pgPool;
+  }
 
-    const obj = {
-        function_name: functionName,
-        results: resultsJSON
-    };
+  flushResults(requestID: string, functionName: string, results: ProfileResult[]): void {
 
-    logger.log('debug', JSON.stringify(obj), {requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: ''});
+    const bulkData: { request_id: string; function: string; block_key: string; elapsed_time: number; }[] = [];
+    results.forEach((result) => {
+      bulkData.push(
+        {
+          "request_id": requestID,
+          "function": functionName,
+          "block_key": result.blockKey,
+          "elapsed_time": result.timeElapsed
+        }
+      );
+    });
+
+    if (bulkData.length > 0) {
+      const metricsQuery = pgFormat('INSERT INTO profile VALUES %L', bulkData);
+      this.pgPool.connect((err, client, release) => {
+        if (err) {
+          logger.log('error', 'Error acquiring client ' + err.stack);
+        }
+          client.query(metricsQuery, (err, result) => {
+          release();
+          if (err) {
+            logger.log('error', 'Error executing query ' + metricsQuery + ' ' + err.stack);
+          }
+        });
+      });
+    }
   }
 }

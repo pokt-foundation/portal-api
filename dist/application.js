@@ -68,38 +68,6 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         if (!databaseEncryptionKey) {
             throw new rest_1.HttpErrors.InternalServerError('DATABASE_ENCRYPTION_KEY required in ENV');
         }
-        // Create the Pocket instance
-        const dispatchers = [];
-        if (dispatchURL.indexOf(",")) {
-            const dispatcherArray = dispatchURL.split(",");
-            dispatcherArray.forEach(function (dispatcher) {
-                dispatchers.push(new URL(dispatcher));
-            });
-        }
-        else {
-            dispatchers.push(new URL(dispatchURL));
-        }
-        const configuration = new Configuration(0, 100000, 0, 120000, false, pocketSessionBlockFrequency, pocketBlockTime, 1, undefined, true);
-        const rpcProvider = new HttpRpcProvider(dispatchers);
-        const relayProfiler = new relay_profiler_1.RelayProfiler();
-        const pocket = new Pocket(dispatchers, rpcProvider, configuration, undefined, relayProfiler);
-        // Bind to application context for shared re-use
-        this.bind('pocketInstance').to(pocket);
-        this.bind('pocketConfiguration').to(configuration);
-        this.bind('relayRetries').to(relayRetries);
-        this.bind('fallbackURL').to(fallbackURL);
-        this.bind('logger').to(logger);
-        // Unlock primary client account for relay signing
-        try {
-            const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase);
-            if (importAccount instanceof account_1.Account) {
-                await pocket.keybase.unlockAccount(importAccount.addressHex, clientPassphrase, 0);
-            }
-        }
-        catch (e) {
-            logger.log('error', e);
-            throw new rest_1.HttpErrors.InternalServerError('Unable to import or unlock base client account');
-        }
         // Load Redis for cache
         const redisEndpoint = process.env.REDIS_ENDPOINT || '';
         const redisPort = process.env.REDIS_PORT || '';
@@ -145,6 +113,38 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         });
         this.bind('pgPool').to(pgPool);
         this.bind('databaseEncryptionKey').to(databaseEncryptionKey);
+        // Create the Pocket instance
+        const dispatchers = [];
+        if (dispatchURL.indexOf(",")) {
+            const dispatcherArray = dispatchURL.split(",");
+            dispatcherArray.forEach(function (dispatcher) {
+                dispatchers.push(new URL(dispatcher));
+            });
+        }
+        else {
+            dispatchers.push(new URL(dispatchURL));
+        }
+        const configuration = new Configuration(0, 100000, 0, 120000, false, pocketSessionBlockFrequency, pocketBlockTime, 1, undefined, true);
+        const rpcProvider = new HttpRpcProvider(dispatchers);
+        const relayProfiler = new relay_profiler_1.RelayProfiler(pgPool);
+        const pocket = new Pocket(dispatchers, rpcProvider, configuration, undefined, relayProfiler);
+        // Bind to application context for shared re-use
+        this.bind('pocketInstance').to(pocket);
+        this.bind('pocketConfiguration').to(configuration);
+        this.bind('relayRetries').to(relayRetries);
+        this.bind('fallbackURL').to(fallbackURL);
+        this.bind('logger').to(logger);
+        // Unlock primary client account for relay signing
+        try {
+            const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase);
+            if (importAccount instanceof account_1.Account) {
+                await pocket.keybase.unlockAccount(importAccount.addressHex, clientPassphrase, 0);
+            }
+        }
+        catch (e) {
+            logger.log('error', e);
+            throw new rest_1.HttpErrors.InternalServerError('Unable to import or unlock base client account');
+        }
         // Create a UID for this process
         const parts = [os.hostname(), process.pid, +new Date()];
         const hash = crypto.createHash('md5').update(parts.join(''));
