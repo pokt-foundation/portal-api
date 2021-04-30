@@ -7,7 +7,7 @@ import {GatewaySequence} from './sequence';
 import {Account} from '@pokt-network/pocket-js/dist/keybase/models/account';
 import {RelayProfiler} from './services/relay-profiler';
 
-import path from 'path';
+import * as path from 'path';
 const logger = require('./services/logger');
 
 const pocketJS = require('@pokt-network/pocket-js');

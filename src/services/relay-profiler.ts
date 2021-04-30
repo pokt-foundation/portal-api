@@ -28,24 +28,22 @@ export class RelayProfiler extends BaseProfiler {
           requestID,
           functionName,
           result.blockKey,
-          result.timeElapsed,
+          (result.timeElapsed !== 0 ? result.timeElapsed / 1000 : 0),
         ]
       );
     });
 
     if (bulkData.length > 0) {
       const metricsQuery = pgFormat('INSERT INTO profile VALUES %L', bulkData);
-
-      logger.log('info', 'FLUSHING QUERY: ' + JSON.stringify(metricsQuery), {requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: ''});
       
       this.pgPool.connect((err, client, release) => {
         if (err) {
-          logger.log('info', 'FLUSHING ERROR acquiring client ' + err.stack);
+          logger.log('error', 'FLUSHING ERROR acquiring client ' + err.stack);
         }
         client.query(metricsQuery, (err, result) => {          
           release();
           if (err) {
-            logger.log('info', 'FLUSHING ERROR executing query ' + metricsQuery + ' ' + err.stack);
+            logger.log('error', 'FLUSHING ERROR executing query ' + metricsQuery + ' ' + err.stack);
           }
         });
       });
