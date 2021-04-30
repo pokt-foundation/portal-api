@@ -39,7 +39,7 @@ class SyncChecker {
         // Check sync of nodes with consensus
         for (const node of nodes) {
             // Pull the current block from each node using the blockchain's syncCheck as the relay
-            const relayResponse = await pocket.sendRelay(syncCheck, blockchain, pocketAAT, pocketConfiguration, undefined, 'POST', undefined, node);
+            const relayResponse = await pocket.sendRelay(syncCheck, blockchain, pocketAAT, this.updateConfigurationTimeout(pocketConfiguration), undefined, 'POST', undefined, node, true, 'syncheck');
             if (relayResponse instanceof pocket_js_1.RelayResponse) {
                 const payload = JSON.parse(relayResponse.payload);
                 // Create a NodeSyncLog for each node with current block
