@@ -1914,7 +1914,7 @@
         "signature": "ce3c16bd239d4345a1ffabff3dcbb5025d281292742f4cfa5a29398b815bbb60"
       },
       "./src/services/relay-profiler.ts": {
-        "version": "4921f7c73c8aa4e01547a225e09205707ffcd1a822154d8956844c2df17f1273",
+        "version": "34107db87367684ac2eafb3c11a63f272aaf2a79ca35b186e43e2d5d916dc37f",
         "signature": "cbadd349f4b650f3f734561fec202a296eec5a5b17c0e5240191e08d5be34e74"
       },
       "./src/application.ts": {
@@ -9847,7 +9847,6 @@
       "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
       "./node_modules/pg-types/index.d.ts",
       "./node_modules/@types/pg/index.d.ts",
-      "./src/services/relay-profiler.ts",
       "./src/application.ts",
       "./src/index.ts",
       "./src/migrate.ts",
@@ -9899,6 +9898,7 @@
       "./node_modules/strong-cryptor/dist/decryptor.d.ts",
       "./node_modules/strong-cryptor/dist/index.d.ts",
       "./src/errors/relay-error.ts",
+      "./src/services/pocket-relayer.ts",
       "./src/controllers/v1.controller.ts",
       "./src/controllers/index.ts",
       "./src/services/logger.ts",
@@ -9922,7 +9922,7 @@
       "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
       "./node_modules/@types/varint/index.d.ts",
-      "./src/services/pocket-relayer.ts"
+      "./src/services/relay-profiler.ts"
     ]
   },
   "version": "3.8.3"
