@@ -52,11 +52,13 @@ export class SyncChecker {
         syncCheck,
         blockchain,
         pocketAAT,
-        pocketConfiguration,
+        this.updateConfigurationTimeout(pocketConfiguration),
         undefined,
         'POST' as HTTPMethod,
         undefined,
-        node
+        node,
+        true,
+        'syncheck'
       );
   
       if (relayResponse instanceof RelayResponse) {
