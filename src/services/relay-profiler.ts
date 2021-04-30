@@ -15,9 +15,13 @@ export class RelayProfiler extends BaseProfiler {
   constructor(pgPool: PGPool) {
     super();
     this.pgPool = pgPool;
+    console.log(this.pgPool);
   }
 
   flushResults(requestID: string, functionName: string, results: ProfileResult[]): void {
+
+    console.log(this.pgPool);
+    logger.log('info', 'FLUSHING pool: ' + JSON.stringify(this.pgPool), {requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: ''});
 
     const bulkData: any[] = [];
     const timestamp = new Date();
