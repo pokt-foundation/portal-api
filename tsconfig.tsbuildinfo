@@ -1690,8 +1690,8 @@
         "signature": "2c79a4f53b84ee8fe3fd2cce134f93c882dda71bf6e31df5821f144531c5faad"
       },
       "./node_modules/@pokt-network/pocket-js/dist/utils/base-profiler.d.ts": {
-        "version": "816ff4185cce8fb029f92ec1eda4b602dcad237881137126f3e9d9c1657d2ddc",
-        "signature": "816ff4185cce8fb029f92ec1eda4b602dcad237881137126f3e9d9c1657d2ddc"
+        "version": "de44fd9929e09b52016d249bdf418a0790ef3bdf2726ad7a88075f0a2ddb4da7",
+        "signature": "de44fd9929e09b52016d249bdf418a0790ef3bdf2726ad7a88075f0a2ddb4da7"
       },
       "./node_modules/@pokt-network/pocket-js/dist/pocket.d.ts": {
         "version": "9e38c0018b54319bcd4c2196d89893052d0c96207eee1ff54b01791179e8b065",
@@ -1882,8 +1882,8 @@
         "signature": "d416bca7efa797d11d0b5d165f4a5e122b8724c073a5a592fe9a3a02381c8891"
       },
       "./node_modules/@pokt-network/pocket-js/dist/utils/no-op-profiler.d.ts": {
-        "version": "5d786cf9a829794a583cba3c03d85a068555970f8612dffe8f7ba015a3f87dc6",
-        "signature": "5d786cf9a829794a583cba3c03d85a068555970f8612dffe8f7ba015a3f87dc6"
+        "version": "822e2ee68dee96b6accaf6953716ca19b620121d5943baeb426c736d9aea89b7",
+        "signature": "822e2ee68dee96b6accaf6953716ca19b620121d5943baeb426c736d9aea89b7"
       },
       "./node_modules/@pokt-network/pocket-js/dist/utils/type-guard.d.ts": {
         "version": "1ecc6d639b8943315d964e4926ed36343a9bc8c937af929593a3c8730a1f32f0",
@@ -1914,11 +1914,11 @@
         "signature": "ce3c16bd239d4345a1ffabff3dcbb5025d281292742f4cfa5a29398b815bbb60"
       },
       "./src/services/relay-profiler.ts": {
-        "version": "e8cc5ab9c556a1c3d61777e132811d15f5088645a0919899e2cdeee236e06764",
+        "version": "50d03d780319ad302bbfd7a0aceab0f559061412ce5bb18c5cf1e6f6cff1213c",
         "signature": "fc398043c90db739b2d0c3b9c1bab419c78198657a067dc60e661ac95eb4782a"
       },
       "./src/application.ts": {
-        "version": "e4bc3ed578d253450fb1164d59d0f4942921f6c1964b4fd92b42c34a76a22594",
+        "version": "660e97aaa6cc0a72af6ae731db5aa4f2a548a16b6b599ea5366c3336827f1f59",
         "signature": "f4b295f6c43ea9ebb0fb3113c36874d56119f89d425fcf1f49e6be31cd2dd130"
       },
       "./src/index.ts": {
@@ -9846,6 +9846,7 @@
       "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
       "./node_modules/pg-types/index.d.ts",
       "./node_modules/@types/pg/index.d.ts",
+      "./src/services/relay-profiler.ts",
       "./src/index.ts",
       "./src/migrate.ts",
       "./node_modules/@types/cookiejar/index.d.ts",
@@ -9920,7 +9921,6 @@
       "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
       "./node_modules/@types/varint/index.d.ts",
-      "./src/services/relay-profiler.ts",
       "./src/application.ts"
     ]
   },
