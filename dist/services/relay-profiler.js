@@ -8,10 +8,9 @@ class RelayProfiler extends pocket_js_1.BaseProfiler {
         super();
         this.data = [];
         this.pgPool = pgPool;
-        console.log(this.pgPool);
+        logger.log('info', 'FLUSHING pool: ' + JSON.stringify(this.pgPool), { requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
     }
     flushResults(requestID, functionName, results) {
-        console.log(this.pgPool);
         logger.log('info', 'FLUSHING pool: ' + JSON.stringify(this.pgPool), { requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
         const bulkData = [];
         const timestamp = new Date();
