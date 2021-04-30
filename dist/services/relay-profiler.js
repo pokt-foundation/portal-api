@@ -4,7 +4,7 @@ const pocket_js_1 = require("@pokt-network/pocket-js");
 const pgFormat = require('pg-format');
 const logger = require('../services/logger');
 class RelayProfiler extends pocket_js_1.BaseProfiler {
-    constructor({ pgPool, }) {
+    constructor(pgPool) {
         super();
         this.data = [];
         this.pgPool = pgPool;
@@ -26,7 +26,7 @@ class RelayProfiler extends pocket_js_1.BaseProfiler {
             logger.log('info', 'FLUSHING QUERY: ' + JSON.stringify(metricsQuery), { requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
             this.pgPool.connect((err, client, release) => {
                 if (err) {
-                    logger.log('error', 'Error acquiring client ' + err.stack);
+                    logger.log('error', 'FLUSHING Error acquiring client ' + err.stack);
                 }
                 client.query(metricsQuery, (err, result) => {
                     release();
