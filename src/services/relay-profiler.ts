@@ -24,9 +24,12 @@ export class RelayProfiler extends BaseProfiler {
   flushResults(requestID: string, functionName: string, results: ProfileResult[]): void {
 
     const bulkData: any[] = [];
+    const timestamp = new Date();
+
     results.forEach((result) => {
       bulkData.push(
         [
+          timestamp,
           requestID,
           functionName,
           result.blockKey,
@@ -34,8 +37,6 @@ export class RelayProfiler extends BaseProfiler {
         ]
       );
     });
-    
-    logger.log('info', 'FLUSHING BULK: ' + bulkData.length, {requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: ''});
 
     if (bulkData.length > 0) {
       const metricsQuery = pgFormat('INSERT INTO profile VALUES %L', bulkData);
@@ -46,13 +47,10 @@ export class RelayProfiler extends BaseProfiler {
         if (err) {
           logger.log('error', 'Error acquiring client ' + err.stack);
         }
-          client.query(metricsQuery, (err, result) => {
-
-          logger.log('info', 'FLUSHING RESULT: ' + JSON.stringify(result), {requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: ''});
-          
+          client.query(metricsQuery, (err, result) => {          
           release();
           if (err) {
-            logger.log('error', 'Error executing query ' + metricsQuery + ' ' + err.stack);
+            logger.log('error', 'FLUSHING Error executing query ' + metricsQuery + ' ' + err.stack);
           }
         });
       });
