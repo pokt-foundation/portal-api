@@ -8,7 +8,7 @@ const service_proxy_1 = require("@loopback/service-proxy");
 const sequence_1 = require("./sequence");
 const account_1 = require("@pokt-network/pocket-js/dist/keybase/models/account");
 const relay_profiler_1 = require("./services/relay-profiler");
-const path_1 = tslib_1.__importDefault(require("path"));
+const path = tslib_1.__importStar(require("path"));
 const logger = require('./services/logger');
 const pocketJS = require('@pokt-network/pocket-js');
 const { Pocket, Configuration, HttpRpcProvider } = pocketJS;
@@ -24,7 +24,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
     constructor(options = {}) {
         super(options);
         this.sequence(sequence_1.GatewaySequence);
-        this.static('/', path_1.default.join(__dirname, '../public'));
+        this.static('/', path.join(__dirname, '../public'));
         this.projectRoot = __dirname;
         this.bootOptions = {
             controllers: {
