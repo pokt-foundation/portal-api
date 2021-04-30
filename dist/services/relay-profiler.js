@@ -8,10 +8,8 @@ class RelayProfiler extends pocket_js_1.BaseProfiler {
         super();
         this.data = [];
         this.pgPool = pgPool;
-        logger.log('info', 'FLUSHING pool: ' + JSON.stringify(this.pgPool), { requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
     }
-    flushResults(requestID, functionName, results) {
-        logger.log('info', 'FLUSHING pool: ' + JSON.stringify(this.pgPool), { requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
+    async flushResults(requestID, functionName, results) {
         const bulkData = [];
         const timestamp = new Date();
         results.forEach((result) => {
@@ -28,12 +26,12 @@ class RelayProfiler extends pocket_js_1.BaseProfiler {
             logger.log('info', 'FLUSHING QUERY: ' + JSON.stringify(metricsQuery), { requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
             this.pgPool.connect((err, client, release) => {
                 if (err) {
-                    logger.log('error', 'FLUSHING Error acquiring client ' + err.stack);
+                    logger.log('info', 'FLUSHING ERROR acquiring client ' + err.stack);
                 }
                 client.query(metricsQuery, (err, result) => {
                     release();
                     if (err) {
-                        logger.log('error', 'FLUSHING Error executing query ' + metricsQuery + ' ' + err.stack);
+                        logger.log('info', 'FLUSHING ERROR executing query ' + metricsQuery + ' ' + err.stack);
                     }
                 });
             });
