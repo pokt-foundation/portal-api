@@ -6,8 +6,6 @@ export declare class RelayProfiler extends BaseProfiler {
         time_elapsed: number | undefined;
     }[];
     pgPool: PGPool;
-    constructor({ pgPool, }: {
-        pgPool: PGPool;
-    });
+    constructor(pgPool: PGPool);
     flushResults(requestID: string, functionName: string, results: ProfileResult[]): void;
 }
