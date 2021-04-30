@@ -15,13 +15,9 @@ export class RelayProfiler extends BaseProfiler {
   constructor(pgPool: PGPool) {
     super();
     this.pgPool = pgPool;
-    logger.log('info', 'FLUSHING pool: ' + JSON.stringify(this.pgPool), {requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: ''});
   }
 
-  flushResults(requestID: string, functionName: string, results: ProfileResult[]): void {
-
-    logger.log('info', 'FLUSHING pool: ' + JSON.stringify(this.pgPool), {requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: ''});
-
+  async flushResults(requestID: string, functionName: string, results: ProfileResult[]): Promise<void> {
     const bulkData: any[] = [];
     const timestamp = new Date();
 
@@ -44,12 +40,12 @@ export class RelayProfiler extends BaseProfiler {
       
       this.pgPool.connect((err, client, release) => {
         if (err) {
-          logger.log('error', 'FLUSHING Error acquiring client ' + err.stack);
+          logger.log('info', 'FLUSHING ERROR acquiring client ' + err.stack);
         }
         client.query(metricsQuery, (err, result) => {          
           release();
           if (err) {
-            logger.log('error', 'FLUSHING Error executing query ' + metricsQuery + ' ' + err.stack);
+            logger.log('info', 'FLUSHING ERROR executing query ' + metricsQuery + ' ' + err.stack);
           }
         });
       });
