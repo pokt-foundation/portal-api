@@ -17,7 +17,7 @@ export class RelayProfiler extends BaseProfiler {
     this.pgPool = pgPool;
   }
 
-  async flushResults(requestID: string, functionName: string, results: ProfileResult[]): Promise<void> {
+  async flushResults(requestID: string, blockchain: string, functionName: string, results: ProfileResult[]): Promise<void> {
     const bulkData: any[] = [];
     const timestamp = new Date();
 
@@ -26,6 +26,7 @@ export class RelayProfiler extends BaseProfiler {
         [
           timestamp,
           requestID,
+          blockchain,
           functionName,
           result.blockKey,
           (result.timeElapsed !== 0 ? result.timeElapsed / 1000 : 0),
