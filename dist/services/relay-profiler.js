@@ -9,13 +9,14 @@ class RelayProfiler extends pocket_js_1.BaseProfiler {
         this.data = [];
         this.pgPool = pgPool;
     }
-    async flushResults(requestID, functionName, results) {
+    async flushResults(requestID, blockchain, functionName, results) {
         const bulkData = [];
         const timestamp = new Date();
         results.forEach((result) => {
             bulkData.push([
                 timestamp,
                 requestID,
+                blockchain,
                 functionName,
                 result.blockKey,
                 (result.timeElapsed !== 0 ? result.timeElapsed / 1000 : 0),
