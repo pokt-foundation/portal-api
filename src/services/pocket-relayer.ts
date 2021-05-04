@@ -121,7 +121,12 @@ export class PocketRelayer {
       ) {
       this.relayRetries = relayRetries;
     }
-    const {blockchain, blockchainEnforceResult, blockchainSyncCheck, blockchainSyncAllowance} = await this.loadBlockchain();
+    const blockchainDetails = await this.loadBlockchain();
+    const blockchain = blockchainDetails.blockchain;
+    const blockchainEnforceResult = blockchainDetails.blockchainEnforceResult;
+    const blockchainSyncCheck = blockchainDetails.blockchainSyncCheck;
+    const blockchainSyncAllowance = blockchainDetails.blockchainSyncAllowance;
+    
     const overallStart = process.hrtime();
 
     // This converts the raw data into formatted JSON then back to a string for relaying.
