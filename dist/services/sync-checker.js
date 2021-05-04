@@ -78,7 +78,7 @@ class SyncChecker {
             return nodes;
         }
         // Sort NodeSyncLogs by blockHeight
-        nodeSyncLogs.sort((a, b) => (a.blockHeight > b.blockHeight) ? 1 : ((b.blockHeight > a.blockHeight) ? -1 : 0));
+        nodeSyncLogs.sort((a, b) => b.blockHeight - a.blockHeight);
         // If top node is still 0, or not a number, return all nodes due to check failure
         if (nodeSyncLogs[0].blockHeight === 0 ||
             typeof nodeSyncLogs[0].blockHeight !== 'number' ||
