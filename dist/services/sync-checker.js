@@ -39,13 +39,13 @@ class SyncChecker {
         // Check sync of nodes with consensus
         for (const node of nodes) {
             // Pull the current block from each node using the blockchain's syncCheck as the relay
-            const relayResponse = await pocket.sendRelay(syncCheck, blockchain, pocketAAT, this.updateConfigurationTimeout(pocketConfiguration), undefined, 'POST', undefined, node, true, 'syncheck');
+            const relayResponse = await pocket.sendRelay(syncCheck, blockchain, pocketAAT, this.updateConfigurationTimeout(pocketConfiguration), undefined, 'POST', undefined, node, false, 'synccheck');
             if (relayResponse instanceof pocket_js_1.RelayResponse) {
                 const payload = JSON.parse(relayResponse.payload);
                 // Create a NodeSyncLog for each node with current block
                 const nodeSyncLog = { node: node, blockchain: blockchain, blockHeight: parseInt(payload.result, 16) };
                 nodeSyncLogs.push(nodeSyncLog);
-                // logger.log('info', 'SYNC CHECK RESULT: ' + JSON.stringify(nodeSyncLog), {requestID: '', relayType: '', typeID: '', serviceNode: node.publicKey});
+                logger.log('info', 'SYNC CHECK RESULT: ' + JSON.stringify(nodeSyncLog), { requestID: '', relayType: '', typeID: '', serviceNode: node.publicKey });
             }
             else {
                 logger.log('error', 'SYNC CHECK ERROR: ' + JSON.stringify(relayResponse), { requestID: 'synccheck', relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
@@ -73,7 +73,7 @@ class SyncChecker {
         const currentBlockHeight = nodeSyncLogs[0].blockHeight;
         // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
         for (const nodeSyncLog of nodeSyncLogs) {
-            logger.log('info', 'SYNC CHECK RESULT: ' + nodeSyncLog.node.address + ' height: ' + nodeSyncLog.blockHeight, { requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
+            logger.log('info', 'SYNC CHECK RESULT: ' + nodeSyncLog.node.publicKey + ' height: ' + nodeSyncLog.blockHeight, { requestID: '', relayType: '', typeID: '', serviceNode: nodeSyncLog.node.publicKey, error: '', elapsedTime: '' });
             if ((nodeSyncLog.blockHeight + 1) >= currentBlockHeight) {
                 syncedNodes.push(nodeSyncLog.node);
                 syncedNodesList.push(nodeSyncLog.node.publicKey);
