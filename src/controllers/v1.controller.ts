@@ -57,7 +57,7 @@ export class V1Controller {
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
     });
-    this.syncChecker = new SyncChecker(this.redis);
+    this.syncChecker = new SyncChecker(this.redis, this.metricsRecorder);
     this.pocketRelayer = new PocketRelayer({
       host: this.host,
       origin: this.origin,
