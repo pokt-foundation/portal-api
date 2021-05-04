@@ -57,8 +57,8 @@ export class SyncChecker {
         'POST' as HTTPMethod,
         undefined,
         node,
-        true,
-        'syncheck'
+        false,
+        'synccheck'
       );
   
       if (relayResponse instanceof RelayResponse) {
@@ -67,7 +67,7 @@ export class SyncChecker {
         // Create a NodeSyncLog for each node with current block
         const nodeSyncLog = {node: node, blockchain: blockchain, blockHeight: parseInt(payload.result, 16)} as NodeSyncLog;
         nodeSyncLogs.push(nodeSyncLog);
-        // logger.log('info', 'SYNC CHECK RESULT: ' + JSON.stringify(nodeSyncLog), {requestID: '', relayType: '', typeID: '', serviceNode: node.publicKey});
+        logger.log('info', 'SYNC CHECK RESULT: ' + JSON.stringify(nodeSyncLog), {requestID: '', relayType: '', typeID: '', serviceNode: node.publicKey});
       }
       else {
         logger.log('error', 'SYNC CHECK ERROR: ' + JSON.stringify(relayResponse), {requestID: 'synccheck', relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: ''});
@@ -104,7 +104,7 @@ export class SyncChecker {
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
     for (const nodeSyncLog of nodeSyncLogs) {
-      logger.log('info', 'SYNC CHECK RESULT: ' + nodeSyncLog.node.address + ' height: ' + nodeSyncLog.blockHeight, {requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: ''});
+      logger.log('info', 'SYNC CHECK RESULT: ' + nodeSyncLog.node.publicKey + ' height: ' + nodeSyncLog.blockHeight, {requestID: '', relayType: '', typeID: '', serviceNode: nodeSyncLog.node.publicKey, error: '', elapsedTime: ''});
 
       if ((nodeSyncLog.blockHeight + 1) >= currentBlockHeight) {
         syncedNodes.push(nodeSyncLog.node);
