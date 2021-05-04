@@ -2122,12 +2122,12 @@
         "signature": "4268ae77fea3dfd44b681677cb8ba998d21463a10d37e5286651c07e8659d183"
       },
       "./src/services/pocket-relayer.ts": {
-        "version": "3000b3bdc1bfdaf2472ae46536d31ea6bdf81f2f3da23debc9413aa6c355e610",
-        "signature": "ad65d9326d5067bf7ab46068d21ec91864a00f671837c961050af3928f6d1035"
+        "version": "9b768c045ce870f40c9d405462f645495c8b7ef026c2a1620737a14c61e76d80",
+        "signature": "d633295c7934c94dca5b46754d300374d5c810f92524a108b5ec2f1c30aa0df2"
       },
       "./src/controllers/v1.controller.ts": {
-        "version": "1a6936c11f89fdfaf6a64585476c4fad60346f8ece55110fe64b4aa5c815a956",
-        "signature": "b979a064d33dfbc129080d75e96878069a06e655117951631af770f57d67ed4d"
+        "version": "2f77a3e2511fee9813148d364b4f14b9db4173f7a458f9078c5ba95f991ca3c8",
+        "signature": "21c1ef603381b80febf9c0bc62e2bd167cf9ac152bb223bc3c8b98c5c8a9adef"
       },
       "./src/controllers/index.ts": {
         "version": "c27d67de5b5b7aecde13ca899c3197d3c1538b964251fa91a055cb19fb0b6ce7",
@@ -9241,7 +9241,7 @@
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
       "./src/services/pocket-relayer.ts": [
-        "../pocket-js/dist/index.d.ts",
+        "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
         "./src/services/cherry-picker.ts",
         "./src/services/metrics-recorder.ts",
         "./src/services/sync-checker.ts",
@@ -9901,8 +9901,6 @@
       "./node_modules/strong-cryptor/dist/decryptor.d.ts",
       "./node_modules/strong-cryptor/dist/index.d.ts",
       "./src/errors/relay-error.ts",
-      "./src/controllers/v1.controller.ts",
-      "./src/controllers/index.ts",
       "./src/services/logger.ts",
       "./node_modules/@types/aes-js/index.d.ts",
       "./node_modules/@types/keyv/index.d.ts",
@@ -9924,7 +9922,9 @@
       "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
       "./node_modules/@types/varint/index.d.ts",
-      "./src/services/pocket-relayer.ts"
+      "./src/services/pocket-relayer.ts",
+      "./src/controllers/v1.controller.ts",
+      "./src/controllers/index.ts"
     ]
   },
   "version": "3.8.3"
