@@ -40,6 +40,7 @@ class SyncChecker {
         const nodeSyncLogs = [];
         // Check sync of nodes with consensus
         for (const node of nodes) {
+            logger.log('info', 'SYNC CHECK START', { requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
             // Pull the current block from each node using the blockchain's syncCheck as the relay
             let relayStart = process.hrtime();
             const relayResponse = await pocket.sendRelay(syncCheck, blockchain, pocketAAT, this.updateConfigurationTimeout(pocketConfiguration), undefined, 'POST', undefined, node, false, 'synccheck');
@@ -70,6 +71,9 @@ class SyncChecker {
                     method: 'synccheck',
                     error,
                 });
+            }
+            else {
+                logger.log('error', 'SYNC CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), { requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
             }
         }
         // This should never happen
