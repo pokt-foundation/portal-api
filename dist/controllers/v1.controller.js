@@ -44,7 +44,7 @@ let V1Controller = class V1Controller {
             cherryPicker: this.cherryPicker,
             processUID: this.processUID,
         });
-        this.syncChecker = new sync_checker_1.SyncChecker(this.redis);
+        this.syncChecker = new sync_checker_1.SyncChecker(this.redis, this.metricsRecorder);
         this.pocketRelayer = new pocket_relayer_1.PocketRelayer({
             host: this.host,
             origin: this.origin,
