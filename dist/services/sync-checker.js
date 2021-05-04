@@ -9,7 +9,7 @@ class SyncChecker {
         this.redis = redis;
         this.metricsRecorder = metricsRecorder;
     }
-    async consensusFilter(nodes, syncCheck, syncAllowance = 1, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration) {
+    async consensusFilter(nodes, requestID, syncCheck, syncAllowance = 1, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration) {
         let syncedNodes = [];
         let syncedNodesList = [];
         // Key is "blockchain - a hash of the all the nodes in this session, sorted by public key"
@@ -48,16 +48,16 @@ class SyncChecker {
                 // Create a NodeSyncLog for each node with current block
                 const nodeSyncLog = { node: node, blockchain: blockchain, blockHeight: parseInt(payload.result, 16) };
                 nodeSyncLogs.push(nodeSyncLog);
-                logger.log('info', 'SYNC CHECK RESULT: ' + JSON.stringify(nodeSyncLog), { requestID: '', relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
+                logger.log('info', 'SYNC CHECK RESULT: ' + JSON.stringify(nodeSyncLog), { requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
             }
             else if (relayResponse instanceof relay_error_1.RelayError) {
-                logger.log('error', 'SYNC CHECK ERROR: ' + JSON.stringify(relayResponse), { requestID: 'synccheck', relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
+                logger.log('error', 'SYNC CHECK ERROR: ' + JSON.stringify(relayResponse), { requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
                 let error = relayResponse.message;
                 if (typeof relayResponse.message === 'object') {
                     error = JSON.stringify(relayResponse.message);
                 }
                 await this.metricsRecorder.recordMetric({
-                    requestID: 'synccheck',
+                    requestID: requestID,
                     applicationID: applicationID,
                     appPubKey: applicationPublicKey,
                     blockchain,
@@ -74,7 +74,7 @@ class SyncChecker {
         }
         // This should never happen
         if (nodeSyncLogs.length <= 2) {
-            logger.log('error', 'SYNC CHECK ERROR: fewer than 3 nodes returned sync', { requestID: 'synccheck', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
+            logger.log('error', 'SYNC CHECK ERROR: fewer than 3 nodes returned sync', { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
             return nodes;
         }
         // Sort NodeSyncLogs by blockHeight
@@ -83,27 +83,27 @@ class SyncChecker {
         if (nodeSyncLogs[0].blockHeight === 0 ||
             typeof nodeSyncLogs[0].blockHeight !== 'number' ||
             (nodeSyncLogs[0].blockHeight % 1) !== 0) {
-            logger.log('error', 'SYNC CHECK ERROR: top synced node result is invalid ' + nodeSyncLogs[0].blockHeight, { requestID: '', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
+            logger.log('error', 'SYNC CHECK ERROR: top synced node result is invalid ' + nodeSyncLogs[0].blockHeight, { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
             return nodes;
         }
         // Make sure at least 2 nodes agree on current highest block to prevent one node from being wildly off
         if (nodeSyncLogs[0].blockHeight > (nodeSyncLogs[1].blockHeight + 1)) {
-            logger.log('error', 'SYNC CHECK ERROR: two highest nodes could not agree on sync', { requestID: 'synccheck', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
+            logger.log('error', 'SYNC CHECK ERROR: two highest nodes could not agree on sync', { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
             return nodes;
         }
         const currentBlockHeight = nodeSyncLogs[0].blockHeight;
         // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
         for (const nodeSyncLog of nodeSyncLogs) {
             if ((nodeSyncLog.blockHeight + syncAllowance) >= currentBlockHeight) {
-                logger.log('info', 'SYNC CHECK IN-SYNC: ' + nodeSyncLog.node.publicKey + ' height: ' + nodeSyncLog.blockHeight, { requestID: '', relayType: '', typeID: '', serviceNode: nodeSyncLog.node.publicKey, error: '', elapsedTime: '' });
+                logger.log('info', 'SYNC CHECK IN-SYNC: ' + nodeSyncLog.node.publicKey + ' height: ' + nodeSyncLog.blockHeight, { requestID: requestID, relayType: '', typeID: '', serviceNode: nodeSyncLog.node.publicKey, error: '', elapsedTime: '' });
                 // In-sync: add to nodes list
                 syncedNodes.push(nodeSyncLog.node);
                 syncedNodesList.push(nodeSyncLog.node.publicKey);
             }
             else {
-                logger.log('info', 'SYNC CHECK BEHIND: ' + nodeSyncLog.node.publicKey + ' height: ' + nodeSyncLog.blockHeight, { requestID: '', relayType: '', typeID: '', serviceNode: nodeSyncLog.node.publicKey, error: '', elapsedTime: '' });
+                logger.log('info', 'SYNC CHECK BEHIND: ' + nodeSyncLog.node.publicKey + ' height: ' + nodeSyncLog.blockHeight, { requestID: requestID, relayType: '', typeID: '', serviceNode: nodeSyncLog.node.publicKey, error: '', elapsedTime: '' });
                 await this.metricsRecorder.recordMetric({
-                    requestID: 'synccheck',
+                    requestID: requestID,
                     applicationID: applicationID,
                     appPubKey: applicationPublicKey,
                     blockchain,
@@ -118,14 +118,14 @@ class SyncChecker {
                 });
             }
         }
-        logger.log('info', 'SYNC CHECK COMPLETE: ' + syncedNodes.length + ' nodes in sync', { requestID: 'synccheck', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
+        logger.log('info', 'SYNC CHECK COMPLETE: ' + syncedNodes.length + ' nodes in sync', { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
         await this.redis.set(syncedNodesKey, JSON.stringify(syncedNodesList), 'EX', 300);
         // If one or more nodes of this session are not in sync, fire a consensus relay with the same check.
         // This will penalize the out-of-sync nodes and cause them to get slashed for reporting incorrect data.
         // Fire this off synchronously so we don't have to wait for the results.
         if (syncedNodes.length < 5) {
             const consensusResponse = await pocket.sendRelay(syncCheck, blockchain, pocketAAT, this.updateConfigurationConsensus(pocketConfiguration), undefined, 'POST', undefined, undefined, true, 'syncheck');
-            logger.log('info', 'SYNC CHECK CHALLENGE: ' + JSON.stringify(consensusResponse), { requestID: 'synccheck', relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
+            logger.log('info', 'SYNC CHECK CHALLENGE: ' + JSON.stringify(consensusResponse), { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
         }
         return syncedNodes;
     }

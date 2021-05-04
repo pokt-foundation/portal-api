@@ -5,7 +5,7 @@ export declare class SyncChecker {
     redis: Redis;
     metricsRecorder: MetricsRecorder;
     constructor(redis: Redis, metricsRecorder: MetricsRecorder);
-    consensusFilter(nodes: Node[], syncCheck: string, syncAllowance: number | undefined, blockchain: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<Node[]>;
+    consensusFilter(nodes: Node[], requestID: string, syncCheck: string, syncAllowance: number | undefined, blockchain: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<Node[]>;
     updateConfigurationConsensus(pocketConfiguration: Configuration): Configuration;
     updateConfigurationTimeout(pocketConfiguration: Configuration): Configuration;
 }

@@ -2082,8 +2082,8 @@
         "signature": "4268ae77fea3dfd44b681677cb8ba998d21463a10d37e5286651c07e8659d183"
       },
       "./src/services/sync-checker.ts": {
-        "version": "dd3550d23b7e4b412937ad2807b01b2b039d06e39fb85ae15fa333c3c7aecb95",
-        "signature": "5c005b9aea2622594fd46f9f06a0c69efaf75190fdf51cd7c37de0809e600d69"
+        "version": "6347e9fcc636e68fbaba81dbbb80424137f72015693cd8fac86e25a1bb617c3e",
+        "signature": "753515ee4fb0ca28b04bcbc0ee7c7cf6a74257bf2ca62b11ff8a78be0f15c2a4"
       },
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": {
         "version": "26c75550bc4cbb1bd5663346ce36097ba9ac7b7a5f8e78c4f3997df6ce664d05",
@@ -2122,7 +2122,7 @@
         "signature": "75b8b059a00b6b8f090be39f69fbf84018c53ef865cd8146173a6f5eeec058f0"
       },
       "./src/services/pocket-relayer.ts": {
-        "version": "8e8c5d4bf9418a441386da7a5d15622826c27e27ba458fa081923693ea1cdec9",
+        "version": "7ec3eb6ac8afd8f26f190be3049cde68371bd1222391d243aa68e086d581d9ac",
         "signature": "ad65d9326d5067bf7ab46068d21ec91864a00f671837c961050af3928f6d1035"
       },
       "./src/controllers/v1.controller.ts": {
