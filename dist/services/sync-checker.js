@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const pocket_js_1 = require("@pokt-network/pocket-js");
-const relay_error_1 = require("../errors/relay-error");
 var crypto = require('crypto');
 const logger = require('../services/logger');
 class SyncChecker {
@@ -51,7 +50,7 @@ class SyncChecker {
                 nodeSyncLogs.push(nodeSyncLog);
                 logger.log('info', 'SYNC CHECK RESULT: ' + JSON.stringify(nodeSyncLog), { requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
             }
-            else if (relayResponse instanceof relay_error_1.RelayError) {
+            else if (relayResponse instanceof Error) {
                 logger.log('error', 'SYNC CHECK ERROR: ' + JSON.stringify(relayResponse), { requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
                 let error = relayResponse.message;
                 if (typeof relayResponse.message === 'object') {
