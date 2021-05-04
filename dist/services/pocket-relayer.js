@@ -43,7 +43,7 @@ class PocketRelayer {
             relayRetries >= 0) {
             this.relayRetries = relayRetries;
         }
-        const [blockchain, blockchainEnforceResult, blockchainSyncCheck] = await this.loadBlockchain();
+        const { blockchain, blockchainEnforceResult, blockchainSyncCheck, blockchainSyncAllowance } = await this.loadBlockchain();
         const overallStart = process.hrtime();
         // This converts the raw data into formatted JSON then back to a string for relaying.
         // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
@@ -65,7 +65,7 @@ class PocketRelayer {
                 return new rest_1.HttpErrors.GatewayTimeout('Overall Timeout exceeded: ' + overallTimeOut);
             }
             // Send this relay attempt
-            const relayResponse = await this._sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult, blockchainSyncCheck);
+            const relayResponse = await this._sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult, blockchainSyncCheck, blockchainSyncAllowance);
             if (!(relayResponse instanceof Error)) {
                 // Record success metric
                 await this.metricsRecorder.recordMetric({
@@ -166,7 +166,7 @@ class PocketRelayer {
         return new rest_1.HttpErrors.GatewayTimeout('Relay attempts exhausted');
     }
     // Private function to allow relay retries
-    async _sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult, blockchainSyncCheck) {
+    async _sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult, blockchainSyncCheck, blockchainSyncAllowance) {
         logger.log('info', 'RELAYING ' + blockchain + ' req: ' + data, { requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: '' });
         // Secret key check
         if (!this.checkSecretKey(application)) {
@@ -188,7 +188,7 @@ class PocketRelayer {
         if (pocketSession instanceof pocket_js_1.Session) {
             let nodes = pocketSession.sessionNodes;
             if (blockchainSyncCheck) {
-                nodes = await this.syncChecker.consensusFilter(pocketSession.sessionNodes, requestID, blockchainSyncCheck, 2, blockchain, application.id, application.gatewayAAT.applicationPublicKey, this.pocket, pocketAAT, this.pocketConfiguration);
+                nodes = await this.syncChecker.consensusFilter(pocketSession.sessionNodes, requestID, blockchainSyncCheck, blockchainSyncAllowance, blockchain, application.id, application.gatewayAAT.applicationPublicKey, this.pocket, pocketAAT, this.pocketConfiguration);
             }
             node = await this.cherryPicker.cherryPickNode(application, nodes, blockchain, requestID);
         }
@@ -281,6 +281,7 @@ class PocketRelayer {
         if (blockchainFilter[0]) {
             let blockchainEnforceResult = '';
             let blockchainSyncCheck = '';
+            let blockchainSyncAllowance = 0;
             const blockchain = blockchainFilter[0].hash;
             // Record the necessary format for the result; example: JSON
             if (blockchainFilter[0].enforceResult) {
@@ -290,7 +291,13 @@ class PocketRelayer {
             if (blockchainFilter[0].syncCheck) {
                 blockchainSyncCheck = blockchainFilter[0].syncCheck.replace(/\\"/g, '"');
             }
-            return Promise.resolve([blockchain, blockchainEnforceResult, blockchainSyncCheck]);
+            // Allowance of blocks a data node can be behind
+            if (blockchainFilter[0].syncAllowance &&
+                blockchainFilter[0].syncAllowance.isInteger() &&
+                blockchainFilter[0].syncAllowance > 0) {
+                blockchainSyncAllowance = blockchainFilter[0].syncAllowance;
+            }
+            return Promise.resolve({ blockchain, blockchainEnforceResult, blockchainSyncCheck, blockchainSyncAllowance });
         }
         else {
             throw new rest_1.HttpErrors.BadRequest('Incorrect blockchain: ' + this.host);
