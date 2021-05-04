@@ -28,6 +28,7 @@ export class V1Controller {
     @inject('host') private host: string,
     @inject('origin') private origin: string,
     @inject('userAgent') private userAgent: string,
+    @inject('contentType') private contentType: string,
     @inject('httpMethod') private httpMethod: HTTPMethod,
     @inject('relayPath') private relayPath: string,
     @inject('relayRetries') private relayRetries: number,
@@ -122,9 +123,7 @@ export class V1Controller {
       const loadBalancer = await this.fetchLoadBalancer(id, filter);
       if (loadBalancer?.id) {
         // eslint-disable-next-line 
-        const blockchainDetails = await this.pocketRelayer.loadBlockchain();
-        const blockchain = blockchainDetails.blockchain;
-
+        const [blockchain, _enforceResult, _syncCheck] = await this.pocketRelayer.loadBlockchain();
         // Fetch applications contained in this Load Balancer. Verify they exist and choose
         // one randomly for the relay.
         const application = await this.fetchLoadBalancerApplication(
