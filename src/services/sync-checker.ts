@@ -1,7 +1,6 @@
 import {Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse} from '@pokt-network/pocket-js';
 import {MetricsRecorder} from '../services/metrics-recorder';
 import {Redis} from 'ioredis';
-import { RelayError } from '../errors/relay-error';
 var crypto = require('crypto');
 
 const logger = require('../services/logger');
@@ -78,7 +77,7 @@ export class SyncChecker {
         nodeSyncLogs.push(nodeSyncLog);
         logger.log('info', 'SYNC CHECK RESULT: ' + JSON.stringify(nodeSyncLog), {requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: ''});
       } 
-      else if (relayResponse instanceof RelayError) {
+      else if (relayResponse instanceof Error) {
         logger.log('error', 'SYNC CHECK ERROR: ' + JSON.stringify(relayResponse), {requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: ''});
 
         let error = relayResponse.message;
