@@ -2082,7 +2082,7 @@
         "signature": "4268ae77fea3dfd44b681677cb8ba998d21463a10d37e5286651c07e8659d183"
       },
       "./src/services/sync-checker.ts": {
-        "version": "afe7c2cfa10da3d1921f02bd061a1fb2d0e70679c4e36106c34e90a5ac520168",
+        "version": "61b70118c92d4f29b1379747293cb23d92689f8e9b2d5076184dde0beda4c1d6",
         "signature": "753515ee4fb0ca28b04bcbc0ee7c7cf6a74257bf2ca62b11ff8a78be0f15c2a4"
       },
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": {
