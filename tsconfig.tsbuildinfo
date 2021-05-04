@@ -2077,12 +2077,8 @@
         "version": "e75fbc25675ab999f7582defddf2c4674f6a38a86b0dd5e5f89df35a613b9185",
         "signature": "b9c3fb3feb8af8c219d54e8910625440fe0e38c4f71ad3036d5c148f65158318"
       },
-      "./src/errors/relay-error.ts": {
-        "version": "254d378be372d09f656549daca80ef8c2946e1464d31631e29fdd512ae32f38c",
-        "signature": "4268ae77fea3dfd44b681677cb8ba998d21463a10d37e5286651c07e8659d183"
-      },
       "./src/services/sync-checker.ts": {
-        "version": "61b70118c92d4f29b1379747293cb23d92689f8e9b2d5076184dde0beda4c1d6",
+        "version": "71a65642e587199694e2139367263826e181bfa98f7499ae1ac58018448a9c32",
         "signature": "753515ee4fb0ca28b04bcbc0ee7c7cf6a74257bf2ca62b11ff8a78be0f15c2a4"
       },
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": {
@@ -2120,6 +2116,10 @@
       "./node_modules/strong-cryptor/dist/index.d.ts": {
         "version": "75b8b059a00b6b8f090be39f69fbf84018c53ef865cd8146173a6f5eeec058f0",
         "signature": "75b8b059a00b6b8f090be39f69fbf84018c53ef865cd8146173a6f5eeec058f0"
+      },
+      "./src/errors/relay-error.ts": {
+        "version": "254d378be372d09f656549daca80ef8c2946e1464d31631e29fdd512ae32f38c",
+        "signature": "4268ae77fea3dfd44b681677cb8ba998d21463a10d37e5286651c07e8659d183"
       },
       "./src/services/pocket-relayer.ts": {
         "version": "7ec3eb6ac8afd8f26f190be3049cde68371bd1222391d243aa68e086d581d9ac",
@@ -5641,15 +5641,10 @@
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
-      "./src/errors/relay-error.ts": [
-        "./node_modules/@types/node/util.d.ts",
-        "./node_modules/@types/node/ts3.2/util.d.ts"
-      ],
       "./src/services/sync-checker.ts": [
         "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
         "./src/services/metrics-recorder.ts",
         "./node_modules/@types/ioredis/index.d.ts",
-        "./src/errors/relay-error.ts",
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -5702,6 +5697,10 @@
         "./node_modules/strong-cryptor/dist/utils.d.ts",
         "./node_modules/strong-cryptor/dist/encryptor.d.ts",
         "./node_modules/strong-cryptor/dist/decryptor.d.ts",
+        "./node_modules/@types/node/util.d.ts",
+        "./node_modules/@types/node/ts3.2/util.d.ts"
+      ],
+      "./src/errors/relay-error.ts": [
         "./node_modules/@types/node/util.d.ts",
         "./node_modules/@types/node/ts3.2/util.d.ts"
       ],
@@ -9890,7 +9889,6 @@
       "./node_modules/@types/ioredis/index.d.ts",
       "./src/services/cherry-picker.ts",
       "./src/services/metrics-recorder.ts",
-      "./src/errors/relay-error.ts",
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts",
       "./node_modules/strong-cryptor/dist/typings/index.d.ts",
       "./node_modules/strong-cryptor/dist/v2/decryptor.d.ts",
@@ -9900,6 +9898,7 @@
       "./node_modules/strong-cryptor/dist/encryptor.d.ts",
       "./node_modules/strong-cryptor/dist/decryptor.d.ts",
       "./node_modules/strong-cryptor/dist/index.d.ts",
+      "./src/errors/relay-error.ts",
       "./src/services/pocket-relayer.ts",
       "./src/controllers/v1.controller.ts",
       "./src/controllers/index.ts",
