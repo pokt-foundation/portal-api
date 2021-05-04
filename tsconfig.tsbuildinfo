@@ -1914,7 +1914,7 @@
         "signature": "ce3c16bd239d4345a1ffabff3dcbb5025d281292742f4cfa5a29398b815bbb60"
       },
       "./src/services/relay-profiler.ts": {
-        "version": "c023266caf69f5238d80de472efbe61b379c6569918e413c131536180fb2e958",
+        "version": "6d8d4173c7fa9d08655e8ccf350b3eb30877cf4b6fa4df09ef923552f3219217",
         "signature": "ff8e9b000db6b9db543b5c807908b2de8a24d1616379e7419d949d6b4e8a33bd"
       },
       "./src/application.ts": {
@@ -9846,7 +9846,6 @@
       "./node_modules/@pokt-network/pocket-js/dist/index.d.ts",
       "./node_modules/pg-types/index.d.ts",
       "./node_modules/@types/pg/index.d.ts",
-      "./src/services/relay-profiler.ts",
       "./src/application.ts",
       "./src/index.ts",
       "./src/migrate.ts",
@@ -9887,6 +9886,7 @@
       "./node_modules/@types/ioredis/index.d.ts",
       "./src/services/cherry-picker.ts",
       "./src/services/metrics-recorder.ts",
+      "./src/services/sync-checker.ts",
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts",
       "./node_modules/strong-cryptor/dist/typings/index.d.ts",
       "./node_modules/strong-cryptor/dist/v2/decryptor.d.ts",
@@ -9921,7 +9921,7 @@
       "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
       "./node_modules/@types/varint/index.d.ts",
-      "./src/services/sync-checker.ts"
+      "./src/services/relay-profiler.ts"
     ]
   },
   "version": "3.8.3"
