@@ -13,6 +13,7 @@ export declare class V1Controller {
     private host;
     private origin;
     private userAgent;
+    private contentType;
     private httpMethod;
     private relayPath;
     private relayRetries;
@@ -31,7 +32,7 @@ export declare class V1Controller {
     metricsRecorder: MetricsRecorder;
     pocketRelayer: PocketRelayer;
     syncChecker: SyncChecker;
-    constructor(secretKey: string, host: string, origin: string, userAgent: string, httpMethod: HTTPMethod, relayPath: string, relayRetries: number, pocket: Pocket, pocketConfiguration: Configuration, redis: Redis, pgPool: PGPool, databaseEncryptionKey: string, processUID: string, fallbackURL: string, requestID: string, applicationsRepository: ApplicationsRepository, blockchainsRepository: BlockchainsRepository, loadBalancersRepository: LoadBalancersRepository);
+    constructor(secretKey: string, host: string, origin: string, userAgent: string, contentType: string, httpMethod: HTTPMethod, relayPath: string, relayRetries: number, pocket: Pocket, pocketConfiguration: Configuration, redis: Redis, pgPool: PGPool, databaseEncryptionKey: string, processUID: string, fallbackURL: string, requestID: string, applicationsRepository: ApplicationsRepository, blockchainsRepository: BlockchainsRepository, loadBalancersRepository: LoadBalancersRepository);
     /**
      * Load Balancer Relay
      *

@@ -14,11 +14,12 @@ const pocket_relayer_1 = require("../services/pocket-relayer");
 const sync_checker_1 = require("../services/sync-checker");
 const logger = require('../services/logger');
 let V1Controller = class V1Controller {
-    constructor(secretKey, host, origin, userAgent, httpMethod, relayPath, relayRetries, pocket, pocketConfiguration, redis, pgPool, databaseEncryptionKey, processUID, fallbackURL, requestID, applicationsRepository, blockchainsRepository, loadBalancersRepository) {
+    constructor(secretKey, host, origin, userAgent, contentType, httpMethod, relayPath, relayRetries, pocket, pocketConfiguration, redis, pgPool, databaseEncryptionKey, processUID, fallbackURL, requestID, applicationsRepository, blockchainsRepository, loadBalancersRepository) {
         this.secretKey = secretKey;
         this.host = host;
         this.origin = origin;
         this.userAgent = userAgent;
+        this.contentType = contentType;
         this.httpMethod = httpMethod;
         this.relayPath = relayPath;
         this.relayRetries = relayRetries;
@@ -80,7 +81,7 @@ let V1Controller = class V1Controller {
             const loadBalancer = await this.fetchLoadBalancer(id, filter);
             if (loadBalancer === null || loadBalancer === void 0 ? void 0 : loadBalancer.id) {
                 // eslint-disable-next-line 
-                const { blockchain } = await this.pocketRelayer.loadBlockchain();
+                const [blockchain, _enforceResult, _syncCheck] = await this.pocketRelayer.loadBlockchain();
                 // Fetch applications contained in this Load Balancer. Verify they exist and choose
                 // one randomly for the relay.
                 const application = await this.fetchLoadBalancerApplication(loadBalancer.id, loadBalancer.applicationIDs, blockchain, filter);
@@ -246,21 +247,22 @@ V1Controller = tslib_1.__decorate([
     tslib_1.__param(1, context_1.inject('host')),
     tslib_1.__param(2, context_1.inject('origin')),
     tslib_1.__param(3, context_1.inject('userAgent')),
-    tslib_1.__param(4, context_1.inject('httpMethod')),
-    tslib_1.__param(5, context_1.inject('relayPath')),
-    tslib_1.__param(6, context_1.inject('relayRetries')),
-    tslib_1.__param(7, context_1.inject('pocketInstance')),
-    tslib_1.__param(8, context_1.inject('pocketConfiguration')),
-    tslib_1.__param(9, context_1.inject('redisInstance')),
-    tslib_1.__param(10, context_1.inject('pgPool')),
-    tslib_1.__param(11, context_1.inject('databaseEncryptionKey')),
-    tslib_1.__param(12, context_1.inject('processUID')),
-    tslib_1.__param(13, context_1.inject('fallbackURL')),
-    tslib_1.__param(14, context_1.inject('requestID')),
-    tslib_1.__param(15, repository_1.repository(repositories_1.ApplicationsRepository)),
-    tslib_1.__param(16, repository_1.repository(repositories_1.BlockchainsRepository)),
-    tslib_1.__param(17, repository_1.repository(repositories_1.LoadBalancersRepository)),
-    tslib_1.__metadata("design:paramtypes", [String, String, String, String, String, String, Number, pocket_js_1.Pocket,
+    tslib_1.__param(4, context_1.inject('contentType')),
+    tslib_1.__param(5, context_1.inject('httpMethod')),
+    tslib_1.__param(6, context_1.inject('relayPath')),
+    tslib_1.__param(7, context_1.inject('relayRetries')),
+    tslib_1.__param(8, context_1.inject('pocketInstance')),
+    tslib_1.__param(9, context_1.inject('pocketConfiguration')),
+    tslib_1.__param(10, context_1.inject('redisInstance')),
+    tslib_1.__param(11, context_1.inject('pgPool')),
+    tslib_1.__param(12, context_1.inject('databaseEncryptionKey')),
+    tslib_1.__param(13, context_1.inject('processUID')),
+    tslib_1.__param(14, context_1.inject('fallbackURL')),
+    tslib_1.__param(15, context_1.inject('requestID')),
+    tslib_1.__param(16, repository_1.repository(repositories_1.ApplicationsRepository)),
+    tslib_1.__param(17, repository_1.repository(repositories_1.BlockchainsRepository)),
+    tslib_1.__param(18, repository_1.repository(repositories_1.LoadBalancersRepository)),
+    tslib_1.__metadata("design:paramtypes", [String, String, String, String, String, String, String, Number, pocket_js_1.Pocket,
         pocket_js_1.Configuration, Object, pg_1.Pool, String, String, String, String, repositories_1.ApplicationsRepository,
         repositories_1.BlockchainsRepository,
         repositories_1.LoadBalancersRepository])
