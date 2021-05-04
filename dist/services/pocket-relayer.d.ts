@@ -39,19 +39,12 @@ export declare class PocketRelayer {
         fallbackURL: string;
     });
     sendRelay(rawData: object, relayPath: string, httpMethod: HTTPMethod, application: Applications, requestID: string, requestTimeOut?: number, overallTimeOut?: number, relayRetries?: number): Promise<string | Error>;
-    _sendRelay(data: string, relayPath: string, httpMethod: HTTPMethod, requestID: string, application: Applications, requestTimeOut: number | undefined, blockchain: string, blockchainEnforceResult: string, blockchainSyncCheck: string, blockchainSyncAllowance: number): Promise<RelayResponse | Error>;
+    _sendRelay(data: string, relayPath: string, httpMethod: HTTPMethod, requestID: string, application: Applications, requestTimeOut: number | undefined, blockchain: string, blockchainEnforceResult: string, blockchainSyncCheck: string): Promise<RelayResponse | Error>;
     fetchClientTypeLog(blockchain: string, id: string | undefined): Promise<string | null>;
     parseMethod(parsedRawData: any): string;
     updateConfiguration(requestTimeOut: number): Configuration;
-    loadBlockchain(): Promise<BlockchainDetails>;
+    loadBlockchain(): Promise<string[]>;
     checkEnforcementJSON(test: string): boolean;
     checkSecretKey(application: Applications): boolean;
     checkWhitelist(tests: string[], check: string, type: string): boolean;
 }
-interface BlockchainDetails {
-    blockchain: string;
-    blockchainEnforceResult: string;
-    blockchainSyncCheck: string;
-    blockchainSyncAllowance: number;
-}
-export {};

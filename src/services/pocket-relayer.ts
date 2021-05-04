@@ -121,12 +121,7 @@ export class PocketRelayer {
       ) {
       this.relayRetries = relayRetries;
     }
-    const blockchainDetails = await this.loadBlockchain();
-    const blockchain = blockchainDetails.blockchain;
-    const blockchainEnforceResult = blockchainDetails.blockchainEnforceResult;
-    const blockchainSyncCheck = blockchainDetails.blockchainSyncCheck;
-    const blockchainSyncAllowance = blockchainDetails.blockchainSyncAllowance;
-    
+    const [blockchain, blockchainEnforceResult, blockchainSyncCheck] = await this.loadBlockchain();
     const overallStart = process.hrtime();
 
     // This converts the raw data into formatted JSON then back to a string for relaying.
@@ -154,7 +149,7 @@ export class PocketRelayer {
       }
       
       // Send this relay attempt
-      const relayResponse = await this._sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult, blockchainSyncCheck, blockchainSyncAllowance);
+      const relayResponse = await this._sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult, blockchainSyncCheck);
       
       if (!(relayResponse instanceof Error)) {
         // Record success metric
@@ -277,7 +272,6 @@ export class PocketRelayer {
     blockchain: string,
     blockchainEnforceResult: string,
     blockchainSyncCheck: string,
-    blockchainSyncAllowance: number,
   ): Promise<RelayResponse | Error> {
     logger.log('info', 'RELAYING ' + blockchain + ' req: ' + data, {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
     
@@ -331,7 +325,7 @@ export class PocketRelayer {
     if (pocketSession instanceof Session) {
       let nodes: Node[] = pocketSession.sessionNodes;
       if (blockchainSyncCheck) {
-        nodes = await this.syncChecker.consensusFilter(pocketSession.sessionNodes, requestID, blockchainSyncCheck, blockchainSyncAllowance, blockchain, application.id, application.gatewayAAT.applicationPublicKey, this.pocket, pocketAAT, this.pocketConfiguration);
+        nodes = await this.syncChecker.consensusFilter(pocketSession.sessionNodes, requestID, blockchainSyncCheck, 2, blockchain, application.id, application.gatewayAAT.applicationPublicKey, this.pocket, pocketAAT, this.pocketConfiguration);
       }           
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchain, requestID);
     }
@@ -444,7 +438,7 @@ export class PocketRelayer {
   }
 
   // Load requested blockchain by parsing the URL
-  async loadBlockchain(): Promise<BlockchainDetails> {
+  async loadBlockchain(): Promise<string[]> {
     // Load the requested blockchain
     const cachedBlockchains = await this.redis.get('blockchains');
     let blockchains;
@@ -466,8 +460,6 @@ export class PocketRelayer {
     if (blockchainFilter[0]) {
       let blockchainEnforceResult = '';
       let blockchainSyncCheck = '';
-      let blockchainSyncAllowance = 0;
-
       const blockchain = blockchainFilter[0].hash as string;
       
       // Record the necessary format for the result; example: JSON
@@ -478,15 +470,7 @@ export class PocketRelayer {
       if (blockchainFilter[0].syncCheck) {
         blockchainSyncCheck = blockchainFilter[0].syncCheck.replace(/\\"/g, '"');
       }
-      // Allowance of blocks a data node can be behind
-      if (blockchainFilter[0].syncAllowance && 
-          blockchainFilter[0].syncAllowance.isInteger() && 
-          blockchainFilter[0].syncAllowance > 0
-          ) {
-        blockchainSyncAllowance = blockchainFilter[0].syncAllowance;
-      }
-
-      return Promise.resolve({blockchain, blockchainEnforceResult, blockchainSyncCheck, blockchainSyncAllowance});
+      return Promise.resolve([blockchain, blockchainEnforceResult, blockchainSyncCheck]);
     } else {
       throw new HttpErrors.BadRequest('Incorrect blockchain: ' + this.host);
     }
@@ -551,11 +535,4 @@ export class PocketRelayer {
     }
     return false;
   }
-}
-
-interface BlockchainDetails {
-  blockchain: string;
-  blockchainEnforceResult: string;
-  blockchainSyncCheck: string;
-  blockchainSyncAllowance: number;
 }
