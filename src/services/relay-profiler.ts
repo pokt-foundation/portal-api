@@ -18,6 +18,7 @@ export class RelayProfiler extends BaseProfiler {
   }
 
   async flushResults(requestID: string, blockchain: string, functionName: string, results: ProfileResult[]): Promise<void> {
+    /*
     const bulkData: any[] = [];
     const timestamp = new Date();
 
@@ -49,5 +50,6 @@ export class RelayProfiler extends BaseProfiler {
         });
       });
     }
+    */
   }
 }
