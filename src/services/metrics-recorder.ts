@@ -57,8 +57,13 @@ export class MetricsRecorder {
     error: string | undefined;
   }): Promise<void> {
     try {
-      const relayEnd = process.hrtime(relayStart);
-      const elapsedTime = (relayEnd[0] * 1e9 + relayEnd[1]) / 1e9;
+      let elapsedTime = 0;
+
+      if (relayStart !== [0,0]) {
+        const relayEnd = process.hrtime(relayStart);
+        elapsedTime = (relayEnd[0] * 1e9 + relayEnd[1]) / 1e9;
+      }
+
       let fallbackTag = '';
 
       if (fallback) {
