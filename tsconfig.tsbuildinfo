@@ -2078,7 +2078,7 @@
         "signature": "b9c3fb3feb8af8c219d54e8910625440fe0e38c4f71ad3036d5c148f65158318"
       },
       "./src/services/sync-checker.ts": {
-        "version": "4bb739ea20b9363e26378f0589a982da407b5ffba68ac44e2e915080c80d5f02",
+        "version": "ceca8c10e02d43dfd420f9df4f8ea28020ff3efd5b5fb4613b874cc53af3ce73",
         "signature": "753515ee4fb0ca28b04bcbc0ee7c7cf6a74257bf2ca62b11ff8a78be0f15c2a4"
       },
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": {
@@ -9902,6 +9902,7 @@
       "./src/controllers/ping.controller.ts",
       "./node_modules/@types/ioredis/index.d.ts",
       "./src/services/cherry-picker.ts",
+      "./src/services/metrics-recorder.ts",
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts",
       "./node_modules/strong-cryptor/dist/typings/index.d.ts",
       "./node_modules/strong-cryptor/dist/v2/decryptor.d.ts",
@@ -9937,7 +9938,6 @@
       "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
       "./node_modules/@types/varint/index.d.ts",
-      "./src/services/metrics-recorder.ts",
       "./src/services/sync-checker.ts"
     ]
   },
