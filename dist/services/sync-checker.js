@@ -36,47 +36,7 @@ class SyncChecker {
             // If any major errors happen below, it will retry the sync check every 60 seconds.
             await this.redis.set('lock-' + syncedNodesKey, 'true', 'EX', 60);
         }
-        const nodeSyncLogs = [];
-        // Check sync of nodes with consensus
-        for (const node of nodes) {
-            logger.log('info', 'SYNC CHECK START', { requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
-            // Pull the current block from each node using the blockchain's syncCheck as the relay
-            let relayStart = process.hrtime();
-            const relayResponse = await pocket.sendRelay(syncCheck, blockchain, pocketAAT, this.updateConfigurationTimeout(pocketConfiguration), undefined, 'POST', undefined, node, false, 'synccheck');
-            if (relayResponse instanceof pocket_js_1.RelayResponse) {
-                const payload = JSON.parse(relayResponse.payload);
-                // Create a NodeSyncLog for each node with current block
-                const nodeSyncLog = { node: node, blockchain: blockchain, blockHeight: parseInt(payload.result, 16) };
-                nodeSyncLogs.push(nodeSyncLog);
-                logger.log('info', 'SYNC CHECK RESULT: ' + JSON.stringify(nodeSyncLog), { requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
-            }
-            else if (relayResponse instanceof Error) {
-                logger.log('error', 'SYNC CHECK ERROR: ' + JSON.stringify(relayResponse), { requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
-                let error = relayResponse.message;
-                if (typeof relayResponse.message === 'object') {
-                    error = JSON.stringify(relayResponse.message);
-                }
-                if (error !== 'Provided Node is not part of the current session for this application, check your PocketAAT') {
-                    await this.metricsRecorder.recordMetric({
-                        requestID: requestID,
-                        applicationID: applicationID,
-                        appPubKey: applicationPublicKey,
-                        blockchain,
-                        serviceNode: node.publicKey,
-                        relayStart,
-                        result: 500,
-                        bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
-                        delivered: false,
-                        fallback: false,
-                        method: 'synccheck',
-                        error,
-                    });
-                }
-            }
-            else {
-                logger.log('error', 'SYNC CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), { requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
-            }
-        }
+        const nodeSyncLogs = await this.getNodeSyncLogs(nodes, requestID, syncCheck, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration);
         // This should never happen
         if (nodeSyncLogs.length <= 2) {
             logger.log('error', 'SYNC CHECK ERROR: fewer than 3 nodes returned sync', { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
@@ -134,6 +94,59 @@ class SyncChecker {
             logger.log('info', 'SYNC CHECK CHALLENGE: ' + JSON.stringify(consensusResponse), { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
         }
         return syncedNodes;
+    }
+    async getNodeSyncLogs(nodes, requestID, syncCheck, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration) {
+        const nodeSyncLogs = [];
+        for (const node of nodes) {
+            const nodeSyncLog = await this.getNodeSyncLog(node, requestID, syncCheck, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration);
+            if (nodeSyncLog.blockHeight > 0) {
+                nodeSyncLogs.push(nodeSyncLog);
+            }
+        }
+        return nodeSyncLogs;
+    }
+    async getNodeSyncLog(node, requestID, syncCheck, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration) {
+        logger.log('info', 'SYNC CHECK START', { requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
+        // Pull the current block from each node using the blockchain's syncCheck as the relay
+        let relayStart = process.hrtime();
+        const relayResponse = await pocket.sendRelay(syncCheck, blockchain, pocketAAT, this.updateConfigurationTimeout(pocketConfiguration), undefined, 'POST', undefined, node, false, 'synccheck');
+        if (relayResponse instanceof pocket_js_1.RelayResponse) {
+            const payload = JSON.parse(relayResponse.payload);
+            // Create a NodeSyncLog for each node with current block
+            const nodeSyncLog = { node: node, blockchain: blockchain, blockHeight: parseInt(payload.result, 16) };
+            logger.log('info', 'SYNC CHECK RESULT: ' + JSON.stringify(nodeSyncLog), { requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
+            // Success
+            return nodeSyncLog;
+        }
+        else if (relayResponse instanceof Error) {
+            logger.log('error', 'SYNC CHECK ERROR: ' + JSON.stringify(relayResponse), { requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
+            let error = relayResponse.message;
+            if (typeof relayResponse.message === 'object') {
+                error = JSON.stringify(relayResponse.message);
+            }
+            if (error !== 'Provided Node is not part of the current session for this application, check your PocketAAT') {
+                await this.metricsRecorder.recordMetric({
+                    requestID: requestID,
+                    applicationID: applicationID,
+                    appPubKey: applicationPublicKey,
+                    blockchain,
+                    serviceNode: node.publicKey,
+                    relayStart,
+                    result: 500,
+                    bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
+                    delivered: false,
+                    fallback: false,
+                    method: 'synccheck',
+                    error,
+                });
+            }
+        }
+        else {
+            logger.log('error', 'SYNC CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), { requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: '' });
+        }
+        // Failed
+        const nodeSyncLog = { node: node, blockchain: blockchain, blockHeight: 0 };
+        return nodeSyncLog;
     }
     updateConfigurationConsensus(pocketConfiguration) {
         return new pocket_js_1.Configuration(pocketConfiguration.maxDispatchers, pocketConfiguration.maxSessions, 5, 2000, false, pocketConfiguration.sessionBlockFrequency, pocketConfiguration.blockTime, pocketConfiguration.maxSessionRefreshRetries, pocketConfiguration.validateRelayResponses, pocketConfiguration.rejectSelfSignedCertificates);
