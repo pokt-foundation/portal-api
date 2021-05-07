@@ -99,11 +99,14 @@ class SyncChecker {
         const nodeSyncLogs = [];
         const promiseStack = [];
         let rawNodeSyncLogs = [0, 0, 0, 0, 0];
+        logger.log('info', 'SYNC CHECK RAW 1: ' + JSON.stringify(rawNodeSyncLogs), { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
         for (const node of nodes) {
+            logger.log('info', 'SYNC CHECK RAW 2: ' + JSON.stringify(node), { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
             promiseStack.push(this.getNodeSyncLog(node, requestID, syncCheck, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration));
         }
-        [rawNodeSyncLogs[0], rawNodeSyncLogs[1], rawNodeSyncLogs[2], rawNodeSyncLogs[3], rawNodeSyncLogs[4]] = await Promise.allSettled(promiseStack);
-        logger.log('info', 'SYNC CHECK RAW: ' + JSON.stringify(rawNodeSyncLogs), { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
+        logger.log('info', 'SYNC CHECK RAW 3', { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
+        [rawNodeSyncLogs[0], rawNodeSyncLogs[1], rawNodeSyncLogs[2], rawNodeSyncLogs[3], rawNodeSyncLogs[4]] = await Promise.all(promiseStack);
+        logger.log('info', 'SYNC CHECK RAW 4: ' + JSON.stringify(rawNodeSyncLogs), { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
         for (const rawNodeSyncLog of rawNodeSyncLogs) {
             if (typeof rawNodeSyncLog === 'object' &&
                 rawNodeSyncLog.blockHeight > 0) {
