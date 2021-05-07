@@ -2078,7 +2078,7 @@
         "signature": "b9c3fb3feb8af8c219d54e8910625440fe0e38c4f71ad3036d5c148f65158318"
       },
       "./src/services/sync-checker.ts": {
-        "version": "c0e389baabddb1aa21713648d6e76cd19e7caa9c25d767ef36b19c4aabbcec02",
+        "version": "771bc05a3d9c0030d1b7ce56aae5950b58d88d52c2edf3b09f0383cea04903d8",
         "signature": "ce2b6b58fc40f38365fd88f61a8fdac1ba912c997b05f7d0e0dab3e74396e9b7"
       },
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": {
