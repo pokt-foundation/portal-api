@@ -139,11 +139,21 @@ export class SyncChecker {
 
   async getNodeSyncLogs(nodes: Node[], requestID: string, syncCheck: string, blockchain: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<NodeSyncLog[]> {
     const nodeSyncLogs: NodeSyncLog[] = [];
+    const promiseStack: Promise<NodeSyncLog>[] = [];
     
+    let rawNodeSyncLogs: any[] = [];
     for (const node of nodes) {
-      const nodeSyncLog = await this.getNodeSyncLog(node, requestID, syncCheck, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration);
-      if (nodeSyncLog.blockHeight > 0) {
-        nodeSyncLogs.push(nodeSyncLog);
+      promiseStack.push(
+        this.getNodeSyncLog(node, requestID, syncCheck, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration)
+      );
+    }
+
+    [ rawNodeSyncLogs[0], rawNodeSyncLogs[1], rawNodeSyncLogs[2], rawNodeSyncLogs[3], rawNodeSyncLogs[4] ] = await Promise.allSettled(promiseStack);
+
+    for (const rawNodeSyncLog of rawNodeSyncLogs) {
+      logger.log('info', 'SYNC CHECK RAW: ' + JSON.stringify(rawNodeSyncLog), {requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: ''});
+      if (rawNodeSyncLog.blockHeight > 0) {
+        nodeSyncLogs.push(rawNodeSyncLog);
       }
     }
     return nodeSyncLogs;
