@@ -36,6 +36,7 @@ class SyncChecker {
             // If any major errors happen below, it will retry the sync check every 60 seconds.
             await this.redis.set('lock-' + syncedNodesKey, 'true', 'EX', 60);
         }
+        // Fires all 5 sync checks synchronously then assembles the results
         const nodeSyncLogs = await this.getNodeSyncLogs(nodes, requestID, syncCheck, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration);
         // This should never happen
         if (nodeSyncLogs.length <= 2) {
@@ -88,7 +89,6 @@ class SyncChecker {
         await this.redis.set(syncedNodesKey, JSON.stringify(syncedNodesList), 'EX', 300);
         // If one or more nodes of this session are not in sync, fire a consensus relay with the same check.
         // This will penalize the out-of-sync nodes and cause them to get slashed for reporting incorrect data.
-        // Fire this off synchronously so we don't have to wait for the results.
         if (syncedNodes.length < 5) {
             const consensusResponse = await pocket.sendRelay(syncCheck, blockchain, pocketAAT, this.updateConfigurationConsensus(pocketConfiguration), undefined, 'POST', undefined, undefined, true, 'synccheck');
             logger.log('info', 'SYNC CHECK CHALLENGE: ' + JSON.stringify(consensusResponse), { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
@@ -98,15 +98,12 @@ class SyncChecker {
     async getNodeSyncLogs(nodes, requestID, syncCheck, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration) {
         const nodeSyncLogs = [];
         const promiseStack = [];
+        // Set to junk values first so that the Promise stack can fill them later
         let rawNodeSyncLogs = [0, 0, 0, 0, 0];
-        logger.log('info', 'SYNC CHECK RAW 1: ' + JSON.stringify(rawNodeSyncLogs), { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
         for (const node of nodes) {
-            logger.log('info', 'SYNC CHECK RAW 2: ' + JSON.stringify(node), { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
             promiseStack.push(this.getNodeSyncLog(node, requestID, syncCheck, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration));
         }
-        logger.log('info', 'SYNC CHECK RAW 3', { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
         [rawNodeSyncLogs[0], rawNodeSyncLogs[1], rawNodeSyncLogs[2], rawNodeSyncLogs[3], rawNodeSyncLogs[4]] = await Promise.all(promiseStack);
-        logger.log('info', 'SYNC CHECK RAW 4: ' + JSON.stringify(rawNodeSyncLogs), { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
         for (const rawNodeSyncLog of rawNodeSyncLogs) {
             if (typeof rawNodeSyncLog === 'object' &&
                 rawNodeSyncLog.blockHeight > 0) {
