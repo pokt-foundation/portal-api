@@ -2074,11 +2074,11 @@
         "signature": "959d3f2caa2da492155ce4ae96ca106171b0101dca7bd654fb8b41d8afc50bda"
       },
       "./src/services/metrics-recorder.ts": {
-        "version": "3d591e66346176b997785334f89c1a261e186255e1eb11c9c9b35f235320a1ad",
+        "version": "003370c1d684e14e029547269dad6d74a1956a537c6552249d002a1a7d92538f",
         "signature": "b9c3fb3feb8af8c219d54e8910625440fe0e38c4f71ad3036d5c148f65158318"
       },
       "./src/services/sync-checker.ts": {
-        "version": "963ed6b2a6343e4969da83542976cf437d6878839471faa382b30626b2f7e4e3",
+        "version": "4bb739ea20b9363e26378f0589a982da407b5ffba68ac44e2e915080c80d5f02",
         "signature": "753515ee4fb0ca28b04bcbc0ee7c7cf6a74257bf2ca62b11ff8a78be0f15c2a4"
       },
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": {
@@ -9902,7 +9902,6 @@
       "./src/controllers/ping.controller.ts",
       "./node_modules/@types/ioredis/index.d.ts",
       "./src/services/cherry-picker.ts",
-      "./src/services/sync-checker.ts",
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts",
       "./node_modules/strong-cryptor/dist/typings/index.d.ts",
       "./node_modules/strong-cryptor/dist/v2/decryptor.d.ts",
@@ -9938,7 +9937,8 @@
       "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
       "./node_modules/@types/varint/index.d.ts",
-      "./src/services/metrics-recorder.ts"
+      "./src/services/metrics-recorder.ts",
+      "./src/services/sync-checker.ts"
     ]
   },
   "version": "3.8.3"

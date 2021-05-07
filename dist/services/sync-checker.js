@@ -99,6 +99,7 @@ class SyncChecker {
         const currentBlockHeight = nodeSyncLogs[0].blockHeight;
         // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
         for (const nodeSyncLog of nodeSyncLogs) {
+            let relayStart = process.hrtime();
             if ((nodeSyncLog.blockHeight + syncAllowance) >= currentBlockHeight) {
                 logger.log('info', 'SYNC CHECK IN-SYNC: ' + nodeSyncLog.node.publicKey + ' height: ' + nodeSyncLog.blockHeight, { requestID: requestID, relayType: '', typeID: '', serviceNode: nodeSyncLog.node.publicKey, error: '', elapsedTime: '' });
                 // In-sync: add to nodes list
@@ -113,7 +114,7 @@ class SyncChecker {
                     appPubKey: applicationPublicKey,
                     blockchain,
                     serviceNode: nodeSyncLog.node.publicKey,
-                    relayStart: [0, 0],
+                    relayStart,
                     result: 500,
                     bytes: Buffer.byteLength('OUT OF SYNC', 'utf8'),
                     delivered: false,
@@ -129,7 +130,7 @@ class SyncChecker {
         // This will penalize the out-of-sync nodes and cause them to get slashed for reporting incorrect data.
         // Fire this off synchronously so we don't have to wait for the results.
         if (syncedNodes.length < 5) {
-            const consensusResponse = await pocket.sendRelay(syncCheck, blockchain, pocketAAT, this.updateConfigurationConsensus(pocketConfiguration), undefined, 'POST', undefined, undefined, true, 'syncheck');
+            const consensusResponse = await pocket.sendRelay(syncCheck, blockchain, pocketAAT, this.updateConfigurationConsensus(pocketConfiguration), undefined, 'POST', undefined, undefined, true, 'synccheck');
             logger.log('info', 'SYNC CHECK CHALLENGE: ' + JSON.stringify(consensusResponse), { requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: '' });
         }
         return syncedNodes;
@@ -138,7 +139,7 @@ class SyncChecker {
         return new pocket_js_1.Configuration(pocketConfiguration.maxDispatchers, pocketConfiguration.maxSessions, 5, 2000, false, pocketConfiguration.sessionBlockFrequency, pocketConfiguration.blockTime, pocketConfiguration.maxSessionRefreshRetries, pocketConfiguration.validateRelayResponses, pocketConfiguration.rejectSelfSignedCertificates);
     }
     updateConfigurationTimeout(pocketConfiguration) {
-        return new pocket_js_1.Configuration(pocketConfiguration.maxDispatchers, pocketConfiguration.maxSessions, pocketConfiguration.consensusNodeCount, 5000, pocketConfiguration.acceptDisputedResponses, pocketConfiguration.sessionBlockFrequency, pocketConfiguration.blockTime, pocketConfiguration.maxSessionRefreshRetries, pocketConfiguration.validateRelayResponses, pocketConfiguration.rejectSelfSignedCertificates);
+        return new pocket_js_1.Configuration(pocketConfiguration.maxDispatchers, pocketConfiguration.maxSessions, pocketConfiguration.consensusNodeCount, 10000, pocketConfiguration.acceptDisputedResponses, pocketConfiguration.sessionBlockFrequency, pocketConfiguration.blockTime, pocketConfiguration.maxSessionRefreshRetries, pocketConfiguration.validateRelayResponses, pocketConfiguration.rejectSelfSignedCertificates);
     }
 }
 exports.SyncChecker = SyncChecker;
