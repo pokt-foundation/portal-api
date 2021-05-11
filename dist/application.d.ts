@@ -1,4 +1,4 @@
-import { ApplicationConfig, BindingScope } from '@loopback/core';
+import { ApplicationConfig } from '@loopback/core';
 import { RestApplication } from '@loopback/rest';
 declare const PocketGatewayApplication_base: (new (...args: any[]) => {
     projectRoot: string;
@@ -27,7 +27,7 @@ declare const PocketGatewayApplication_base: (new (...args: any[]) => {
     interceptor: (interceptor: import("@loopback/core").Interceptor | import("@loopback/core").Constructor<import("@loopback/core").Provider<import("@loopback/core").Interceptor>>, nameOrOptions?: string | import("@loopback/core").InterceptorBindingOptions | undefined) => import("@loopback/boot").Binding<import("@loopback/core").Interceptor>;
     readonly name: string;
     readonly subscriptionManager: import("@loopback/core").ContextSubscriptionManager;
-    scope: BindingScope;
+    scope: import("@loopback/core").BindingScope;
     readonly parent: import("@loopback/core").Context | undefined;
     emitEvent: <T_6 extends import("@loopback/core").ContextEvent>(type: string, event: T_6) => void;
     emitError: (err: unknown) => void;
@@ -46,7 +46,7 @@ declare const PocketGatewayApplication_base: (new (...args: any[]) => {
     contains: (key: import("@loopback/core").BindingAddress<unknown>) => boolean;
     isBound: (key: import("@loopback/core").BindingAddress<unknown>) => boolean;
     getOwnerContext: (keyOrBinding: import("@loopback/core").BindingAddress<unknown> | Readonly<import("@loopback/boot").Binding<unknown>>) => import("@loopback/core").Context | undefined;
-    getScopedContext: (scope: BindingScope.APPLICATION | BindingScope.SERVER | BindingScope.REQUEST) => import("@loopback/core").Context | undefined;
+    getScopedContext: (scope: import("@loopback/core").BindingScope.APPLICATION | import("@loopback/core").BindingScope.SERVER | import("@loopback/core").BindingScope.REQUEST) => import("@loopback/core").Context | undefined;
     getResolutionContext: (binding: Readonly<import("@loopback/boot").Binding<unknown>>) => import("@loopback/core").Context | undefined;
     isVisibleTo: (ctx: import("@loopback/core").Context) => boolean;
     find: <ValueType_1 = any>(pattern?: string | RegExp | import("@loopback/core").BindingFilter | undefined) => Readonly<import("@loopback/boot").Binding<ValueType_1>>[];
@@ -112,7 +112,7 @@ declare const PocketGatewayApplication_base: (new (...args: any[]) => {
     interceptor: (interceptor: import("@loopback/core").Interceptor | import("@loopback/core").Constructor<import("@loopback/core").Provider<import("@loopback/core").Interceptor>>, nameOrOptions?: string | import("@loopback/core").InterceptorBindingOptions | undefined) => import("@loopback/boot").Binding<import("@loopback/core").Interceptor>;
     readonly name: string;
     readonly subscriptionManager: import("@loopback/core").ContextSubscriptionManager;
-    scope: BindingScope;
+    scope: import("@loopback/core").BindingScope;
     readonly parent: import("@loopback/core").Context | undefined;
     emitEvent: <T_6_1 extends import("@loopback/core").ContextEvent>(type: string, event: T_6_1) => void;
     emitError: (err: unknown) => void;
@@ -131,7 +131,7 @@ declare const PocketGatewayApplication_base: (new (...args: any[]) => {
     contains: (key: import("@loopback/core").BindingAddress<unknown>) => boolean;
     isBound: (key: import("@loopback/core").BindingAddress<unknown>) => boolean;
     getOwnerContext: (keyOrBinding: import("@loopback/core").BindingAddress<unknown> | Readonly<import("@loopback/boot").Binding<unknown>>) => import("@loopback/core").Context | undefined;
-    getScopedContext: (scope: BindingScope.APPLICATION | BindingScope.SERVER | BindingScope.REQUEST) => import("@loopback/core").Context | undefined;
+    getScopedContext: (scope: import("@loopback/core").BindingScope.APPLICATION | import("@loopback/core").BindingScope.SERVER | import("@loopback/core").BindingScope.REQUEST) => import("@loopback/core").Context | undefined;
     getResolutionContext: (binding: Readonly<import("@loopback/boot").Binding<unknown>>) => import("@loopback/core").Context | undefined;
     isVisibleTo: (ctx: import("@loopback/core").Context) => boolean;
     find: <ValueType_1_1 = any>(pattern?: string | RegExp | import("@loopback/core").BindingFilter | undefined) => Readonly<import("@loopback/boot").Binding<ValueType_1_1>>[];
@@ -202,7 +202,7 @@ declare const PocketGatewayApplication_base: (new (...args: any[]) => {
     interceptor: (interceptor: import("@loopback/core").Interceptor | import("@loopback/core").Constructor<import("@loopback/core").Provider<import("@loopback/core").Interceptor>>, nameOrOptions?: string | import("@loopback/core").InterceptorBindingOptions | undefined) => import("@loopback/boot").Binding<import("@loopback/core").Interceptor>;
     readonly name: string;
     readonly subscriptionManager: import("@loopback/core").ContextSubscriptionManager;
-    scope: BindingScope;
+    scope: import("@loopback/core").BindingScope;
     readonly parent: import("@loopback/core").Context | undefined;
     emitEvent: <T_6_2 extends import("@loopback/core").ContextEvent>(type: string, event: T_6_2) => void;
     emitError: (err: unknown) => void;
@@ -221,7 +221,7 @@ declare const PocketGatewayApplication_base: (new (...args: any[]) => {
     contains: (key: import("@loopback/core").BindingAddress<unknown>) => boolean;
     isBound: (key: import("@loopback/core").BindingAddress<unknown>) => boolean;
     getOwnerContext: (keyOrBinding: import("@loopback/core").BindingAddress<unknown> | Readonly<import("@loopback/boot").Binding<unknown>>) => import("@loopback/core").Context | undefined;
-    getScopedContext: (scope: BindingScope.APPLICATION | BindingScope.SERVER | BindingScope.REQUEST) => import("@loopback/core").Context | undefined;
+    getScopedContext: (scope: import("@loopback/core").BindingScope.APPLICATION | import("@loopback/core").BindingScope.SERVER | import("@loopback/core").BindingScope.REQUEST) => import("@loopback/core").Context | undefined;
     getResolutionContext: (binding: Readonly<import("@loopback/boot").Binding<unknown>>) => import("@loopback/core").Context | undefined;
     isVisibleTo: (ctx: import("@loopback/core").Context) => boolean;
     find: <ValueType_1_2 = any>(pattern?: string | RegExp | import("@loopback/core").BindingFilter | undefined) => Readonly<import("@loopback/boot").Binding<ValueType_1_2>>[];
