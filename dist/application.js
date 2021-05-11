@@ -1,7 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.PocketGatewayApplication = void 0;
 const tslib_1 = require("tslib");
 const boot_1 = require("@loopback/boot");
+const core_1 = require("@loopback/core");
 const repository_1 = require("@loopback/repository");
 const rest_1 = require("@loopback/rest");
 const service_proxy_1 = require("@loopback/service-proxy");
@@ -129,7 +131,7 @@ class PocketGatewayApplication extends boot_1.BootMixin(service_proxy_1.ServiceM
         const relayProfiler = new relay_profiler_1.RelayProfiler(pgPool);
         const pocket = new Pocket(dispatchers, rpcProvider, configuration, undefined, relayProfiler);
         // Bind to application context for shared re-use
-        this.bind('pocketInstance').to(pocket);
+        this.bind('pocketInstance').to(pocket).inScope(core_1.BindingScope.SINGLETON);
         this.bind('pocketConfiguration').to(configuration);
         this.bind('relayRetries').to(relayRetries);
         this.bind('fallbackURL').to(fallbackURL);

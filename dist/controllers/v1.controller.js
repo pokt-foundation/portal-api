@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.V1Controller = void 0;
 const tslib_1 = require("tslib");
 const context_1 = require("@loopback/context");
 const repository_1 = require("@loopback/repository");
@@ -243,6 +244,7 @@ tslib_1.__decorate([
     tslib_1.__metadata("design:returntype", Promise)
 ], V1Controller.prototype, "applicationRelay", null);
 V1Controller = tslib_1.__decorate([
+    context_1.injectable({ scope: context_1.BindingScope.SINGLETON }),
     tslib_1.__param(0, context_1.inject('secretKey')),
     tslib_1.__param(1, context_1.inject('host')),
     tslib_1.__param(2, context_1.inject('origin')),
