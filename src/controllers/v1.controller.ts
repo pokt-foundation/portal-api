@@ -1,4 +1,4 @@
-import {BindingScope, inject, injectable} from '@loopback/context';
+import {inject} from '@loopback/context';
 import {FilterExcludingWhere, repository} from '@loopback/repository';
 import {post, param, requestBody, HttpErrors} from '@loopback/rest';
 import {Applications, LoadBalancers} from '../models';

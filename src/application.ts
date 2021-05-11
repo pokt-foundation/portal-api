@@ -1,5 +1,5 @@
 import {BootMixin} from '@loopback/boot';
-import {ApplicationConfig, BindingScope} from '@loopback/core';
+import {ApplicationConfig} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
 import {RestApplication, HttpErrors} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
@@ -175,7 +175,7 @@ export class PocketGatewayApplication extends BootMixin(
     const pocket = new Pocket(dispatchers, rpcProvider, configuration, undefined, relayProfiler);
     
     // Bind to application context for shared re-use
-    this.bind('pocketInstance').to(pocket).inScope(BindingScope.SINGLETON);
+    this.bind('pocketInstance').to(pocket);
     this.bind('pocketConfiguration').to(configuration);
     this.bind('relayRetries').to(relayRetries);
     this.bind('fallbackURL').to(fallbackURL);
