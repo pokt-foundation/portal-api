@@ -17,7 +17,7 @@ import {SyncChecker} from '../services/sync-checker';
 
 const logger = require('../services/logger');
 
-@injectable({scope: BindingScope.SINGLETON})
+@injectable((binding) => {binding.inScope(BindingScope.SINGLETON).tag('pocketInstance')} )
 export class V1Controller {
   cherryPicker: CherryPicker;
   metricsRecorder: MetricsRecorder;

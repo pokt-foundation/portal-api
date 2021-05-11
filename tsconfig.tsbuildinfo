@@ -2712,7 +2712,7 @@
         "affectsGlobalScope": false
       },
       "./src/controllers/v1.controller.ts": {
-        "version": "b792a8b24910f02b6f3a314e5355476abea62d8a9adedf55074ebad4ce823595",
+        "version": "3180bb66c4f775d8e5c77534c1298397fdbc7e2a3ce1d9ce9ccb5d7d86833f0a",
         "signature": "b979a064d33dfbc129080d75e96878069a06e655117951631af770f57d67ed4d",
         "affectsGlobalScope": false
       },
