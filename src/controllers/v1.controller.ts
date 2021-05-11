@@ -1,4 +1,4 @@
-import {inject} from '@loopback/context';
+import {BindingScope, inject, injectable} from '@loopback/context';
 import {FilterExcludingWhere, repository} from '@loopback/repository';
 import {post, param, requestBody, HttpErrors} from '@loopback/rest';
 import {Applications, LoadBalancers} from '../models';
@@ -17,6 +17,7 @@ import {SyncChecker} from '../services/sync-checker';
 
 const logger = require('../services/logger');
 
+@injectable({scope: BindingScope.SINGLETON})
 export class V1Controller {
   cherryPicker: CherryPicker;
   metricsRecorder: MetricsRecorder;

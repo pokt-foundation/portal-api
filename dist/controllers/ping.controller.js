@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.PingController = void 0;
 const tslib_1 = require("tslib");
 const rest_1 = require("@loopback/rest");
 const context_1 = require("@loopback/context");

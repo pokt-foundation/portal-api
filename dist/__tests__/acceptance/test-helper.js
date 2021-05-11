@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.setupApplication = void 0;
 const __1 = require("../..");
 const testlab_1 = require("@loopback/testlab");
 async function setupApplication() {

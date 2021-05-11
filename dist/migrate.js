@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.migrate = void 0;
 const application_1 = require("./application");
 async function migrate(args) {
     const existingSchema = args.includes('--rebuild') ? 'drop' : 'alter';
