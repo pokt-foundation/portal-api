@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PocketRelayer = void 0;
 const strong_cryptor_1 = require("strong-cryptor");
 const rest_1 = require("@loopback/rest");
 const pocket_js_1 = require("@pokt-network/pocket-js");
