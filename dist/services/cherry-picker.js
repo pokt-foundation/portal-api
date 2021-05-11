@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.CherryPicker = void 0;
 const logger = require('../services/logger');
 class CherryPicker {
     constructor({ redis, checkDebug }) {

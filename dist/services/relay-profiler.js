@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.RelayProfiler = void 0;
 const pocket_js_1 = require("@pokt-network/pocket-js");
 const pgFormat = require('pg-format');
 const logger = require('../services/logger');
