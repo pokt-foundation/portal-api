@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.V1Controller = void 0;
 const tslib_1 = require("tslib");
 const context_1 = require("@loopback/context");
 const repository_1 = require("@loopback/repository");

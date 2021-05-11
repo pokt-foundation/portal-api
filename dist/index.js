@@ -1,8 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.main = exports.PocketGatewayApplication = void 0;
 const application_1 = require("./application");
-Object.defineProperty(exports, "PocketGatewayApplication", { enumerable: true, get: function () { return application_1.PocketGatewayApplication; } });
+exports.PocketGatewayApplication = application_1.PocketGatewayApplication;
 const logger = require('./services/logger');
 async function main(options = {}) {
     const app = new application_1.PocketGatewayApplication(options);

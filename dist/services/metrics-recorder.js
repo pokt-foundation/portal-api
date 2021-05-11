@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MetricsRecorder = void 0;
 const pgFormat = require('pg-format');
 const logger = require('../services/logger');
 class MetricsRecorder {

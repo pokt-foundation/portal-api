@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SyncChecker = void 0;
 const pocket_js_1 = require("@pokt-network/pocket-js");
 var crypto = require('crypto');
 const logger = require('../services/logger');
