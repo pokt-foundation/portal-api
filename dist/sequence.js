@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.GatewaySequence = void 0;
 const tslib_1 = require("tslib");
 const context_1 = require("@loopback/context");
 const rest_1 = require("@loopback/rest");
