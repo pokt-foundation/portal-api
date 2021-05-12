@@ -11,6 +11,7 @@ const pg_1 = require("pg");
 const cherry_picker_1 = require("../services/cherry-picker");
 const metrics_recorder_1 = require("../services/metrics-recorder");
 const pocket_relayer_1 = require("../services/pocket-relayer");
+const sync_checker_1 = require("../services/sync-checker");
 const logger = require('../services/logger');
 let V1Controller = class V1Controller {
     constructor(secretKey, host, origin, userAgent, contentType, httpMethod, relayPath, relayRetries, pocket, pocketConfiguration, redis, pgPool, databaseEncryptionKey, processUID, fallbackURL, requestID, applicationsRepository, blockchainsRepository, loadBalancersRepository) {
@@ -43,6 +44,7 @@ let V1Controller = class V1Controller {
             cherryPicker: this.cherryPicker,
             processUID: this.processUID,
         });
+        this.syncChecker = new sync_checker_1.SyncChecker(this.redis, this.metricsRecorder);
         this.pocketRelayer = new pocket_relayer_1.PocketRelayer({
             host: this.host,
             origin: this.origin,
@@ -51,6 +53,7 @@ let V1Controller = class V1Controller {
             pocketConfiguration: this.pocketConfiguration,
             cherryPicker: this.cherryPicker,
             metricsRecorder: this.metricsRecorder,
+            syncChecker: this.syncChecker,
             redis: this.redis,
             databaseEncryptionKey: this.databaseEncryptionKey,
             secretKey: this.secretKey,
@@ -78,7 +81,7 @@ let V1Controller = class V1Controller {
             const loadBalancer = await this.fetchLoadBalancer(id, filter);
             if (loadBalancer === null || loadBalancer === void 0 ? void 0 : loadBalancer.id) {
                 // eslint-disable-next-line 
-                const [blockchain, _] = await this.pocketRelayer.loadBlockchain();
+                const [blockchain, _enforceResult, _syncCheck] = await this.pocketRelayer.loadBlockchain();
                 // Fetch applications contained in this Load Balancer. Verify they exist and choose
                 // one randomly for the relay.
                 const application = await this.fetchLoadBalancerApplication(loadBalancer.id, loadBalancer.applicationIDs, blockchain, filter);

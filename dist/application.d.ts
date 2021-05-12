@@ -58,7 +58,7 @@ declare const PocketGatewayApplication_base: (new (...args: any[]) => {
         } | undefined): import("@loopback/boot").Binding<ValueType_8> | undefined;
     };
     findOrCreateBinding: <T_8>(key: import("@loopback/core").BindingAddress<T_8>, policy?: import("@loopback/core").BindingCreationPolicy | undefined) => import("@loopback/boot").Binding<T_8>;
-    getValueOrPromise: <ValueType_9>(keyWithPath: import("@loopback/core").BindingAddress<ValueType_9>, optionsOrSession?: import("@loopback/core").ResolutionOptions | import("@loopback/core").ResolutionSession | undefined) => import("@loopback/core").ValueOrPromise<ValueType_9 | undefined>;
+    getValueOrPromise: <ValueType_9>(keyWithPath: import("@loopback/core").BindingAddress<ValueType_9>, optionsOrSession?: import("@loopback/core").ResolutionSession | import("@loopback/core").ResolutionOptions | undefined) => import("@loopback/core").ValueOrPromise<ValueType_9 | undefined>;
     toJSON: () => import("@loopback/core").JSONObject;
     inspect: (options?: import("@loopback/core").ContextInspectOptions | undefined) => import("@loopback/core").JSONObject;
     on: {
@@ -135,7 +135,7 @@ declare const PocketGatewayApplication_base: (new (...args: any[]) => {
         } | undefined): import("@loopback/boot").Binding<ValueType_8_1> | undefined;
     };
     findOrCreateBinding: <T_10>(key: import("@loopback/core").BindingAddress<T_10>, policy?: import("@loopback/core").BindingCreationPolicy | undefined) => import("@loopback/boot").Binding<T_10>;
-    getValueOrPromise: <ValueType_9_1>(keyWithPath: import("@loopback/core").BindingAddress<ValueType_9_1>, optionsOrSession?: import("@loopback/core").ResolutionOptions | import("@loopback/core").ResolutionSession | undefined) => import("@loopback/core").ValueOrPromise<ValueType_9_1 | undefined>;
+    getValueOrPromise: <ValueType_9_1>(keyWithPath: import("@loopback/core").BindingAddress<ValueType_9_1>, optionsOrSession?: import("@loopback/core").ResolutionSession | import("@loopback/core").ResolutionOptions | undefined) => import("@loopback/core").ValueOrPromise<ValueType_9_1 | undefined>;
     toJSON: () => import("@loopback/core").JSONObject;
     inspect: (options?: import("@loopback/core").ContextInspectOptions | undefined) => import("@loopback/core").JSONObject;
     on: {
@@ -217,7 +217,7 @@ declare const PocketGatewayApplication_base: (new (...args: any[]) => {
         } | undefined): import("@loopback/boot").Binding<ValueType_8_2> | undefined;
     };
     findOrCreateBinding: <T_8_2>(key: import("@loopback/core").BindingAddress<T_8_2>, policy?: import("@loopback/core").BindingCreationPolicy | undefined) => import("@loopback/boot").Binding<T_8_2>;
-    getValueOrPromise: <ValueType_9_2>(keyWithPath: import("@loopback/core").BindingAddress<ValueType_9_2>, optionsOrSession?: import("@loopback/core").ResolutionOptions | import("@loopback/core").ResolutionSession | undefined) => import("@loopback/core").ValueOrPromise<ValueType_9_2 | undefined>;
+    getValueOrPromise: <ValueType_9_2>(keyWithPath: import("@loopback/core").BindingAddress<ValueType_9_2>, optionsOrSession?: import("@loopback/core").ResolutionSession | import("@loopback/core").ResolutionOptions | undefined) => import("@loopback/core").ValueOrPromise<ValueType_9_2 | undefined>;
     toJSON: () => import("@loopback/core").JSONObject;
     inspect: (options?: import("@loopback/core").ContextInspectOptions | undefined) => import("@loopback/core").JSONObject;
     on: {
