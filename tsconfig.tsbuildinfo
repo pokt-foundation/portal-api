@@ -2122,7 +2122,7 @@
         "signature": "4268ae77fea3dfd44b681677cb8ba998d21463a10d37e5286651c07e8659d183"
       },
       "./src/services/pocket-relayer.ts": {
-        "version": "3000b3bdc1bfdaf2472ae46536d31ea6bdf81f2f3da23debc9413aa6c355e610",
+        "version": "7eff72e4b928a20494e2f3238d1094d868432d6b2996a87c5c5ecd76a8c835fd",
         "signature": "ad65d9326d5067bf7ab46068d21ec91864a00f671837c961050af3928f6d1035"
       },
       "./src/controllers/v1.controller.ts": {
@@ -6670,6 +6670,15 @@
       "./src/controllers/web3index.controller.ts": [
         "./node_modules/@types/pg/index.d.ts"
       ],
+      "./node_modules/winston-transport/index.d.ts": [
+        "./node_modules/@types/node/stream.d.ts",
+        "./node_modules/logform/index.d.ts",
+        "./node_modules/@types/node/index.d.ts"
+      ],
+      "./node_modules/winston-logzio/lib/winston-logzio.d.ts": [
+        "./node_modules/logzio-nodejs/lib/logzio-nodejs.d.ts",
+        "./node_modules/winston-transport/index.d.ts"
+      ],
       "./node_modules/@types/keyv/index.d.ts": [
         "./node_modules/@types/node/events.d.ts",
         "./node_modules/@types/node/index.d.ts"
@@ -6709,15 +6718,6 @@
         "./node_modules/@types/node/index.d.ts"
       ],
       "./node_modules/@types/varint/index.d.ts": [
-        "./node_modules/@types/node/index.d.ts"
-      ],
-      "./node_modules/winston-logzio/lib/winston-logzio.d.ts": [
-        "./node_modules/logzio-nodejs/lib/logzio-nodejs.d.ts",
-        "./node_modules/winston-transport/index.d.ts"
-      ],
-      "./node_modules/winston-transport/index.d.ts": [
-        "./node_modules/@types/node/stream.d.ts",
-        "./node_modules/logform/index.d.ts",
         "./node_modules/@types/node/index.d.ts"
       ]
     },
@@ -7252,10 +7252,14 @@
       "./node_modules/strong-cryptor/dist/decryptor.d.ts",
       "./node_modules/strong-cryptor/dist/index.d.ts",
       "./src/errors/relay-error.ts",
-      "./src/services/pocket-relayer.ts",
       "./src/controllers/v1.controller.ts",
       "./src/controllers/index.ts",
       "./src/controllers/web3index.controller.ts",
+      "./node_modules/logzio-nodejs/lib/logzio-nodejs.d.ts",
+      "./node_modules/logform/index.d.ts",
+      "./node_modules/winston-transport/index.d.ts",
+      "./node_modules/winston-logzio/lib/winston-logzio.d.ts",
+      "./src/services/logger.ts",
       "./node_modules/@types/aes-js/index.d.ts",
       "./node_modules/@types/keyv/index.d.ts",
       "./node_modules/@types/http-cache-semantics/index.d.ts",
@@ -7275,11 +7279,7 @@
       "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
       "./node_modules/@types/varint/index.d.ts",
-      "./node_modules/logzio-nodejs/lib/logzio-nodejs.d.ts",
-      "./node_modules/logform/index.d.ts",
-      "./node_modules/winston-transport/index.d.ts",
-      "./node_modules/winston-logzio/lib/winston-logzio.d.ts",
-      "./src/services/logger.ts"
+      "./src/services/pocket-relayer.ts"
     ]
   },
   "version": "3.8.3"
