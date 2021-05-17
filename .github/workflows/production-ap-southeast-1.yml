@@ -2,7 +2,7 @@ name: Production Deployment ap-southeast-1
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master-off ]
 
 jobs:
   deploy:
@@ -33,11 +33,7 @@ jobs:
         envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_PRODUCTION_ENCRYPTION_KEY }}
         envkey_PG_CONNECTION: ${{ secrets.PG_PRODUCTION_CONNECTION }}
         envkey_PG_CERTIFICATE: ${{ secrets.PG_PRODUCTION_CERTIFICATE }}
-        envkey_AWS_S3_ACCESS_KEY_ID: ${{ secrets.AWS_S3_ACCESS_KEY_ID }}
-        envkey_AWS_S3_SECRET_ACCESS_KEY: ${{ secrets.AWS_S3_SECRET_ACCESS_KEY }}
-        envkey_AWS_S3_LOGS_BUCKET: pocket-gateway
-        envkey_AWS_S3_LOGS_FOLDER: logs/mainnet
-        envkey_AWS_S3_LOGS_REGION: us-west-2
+        envkey_LOGZ_TOKEN: ${{ secrets.LOGZ_TOKEN }}
         envkey_DISPATCH_URL: https://node1.mainnet.pokt.network,https://node2.mainnet.pokt.network,https://node3.mainnet.pokt.network,https://node4.mainnet.pokt.network,https://node5.mainnet.pokt.network,https://node6.mainnet.pokt.network,https://node7.mainnet.pokt.network,https://node8.mainnet.pokt.network,https://node9.mainnet.pokt.network,https://node10.mainnet.pokt.network,https://node11.mainnet.pokt.network,https://node12.mainnet.pokt.network,https://node13.mainnet.pokt.network,https://node14.mainnet.pokt.network,https://node15.mainnet.pokt.network,https://node16.mainnet.pokt.network,https://node17.mainnet.pokt.network,https://node18.mainnet.pokt.network,https://node19.mainnet.pokt.network,https://node20.mainnet.pokt.network
         envkey_FALLBACK_URL: https://alt1.mainnet.pokt.network,https://alt2.mainnet.pokt.network,https://alt3.mainnet.pokt.network,https://alt4.mainnet.pokt.network,https://alt5.mainnet.pokt.network,https://alt6.mainnet.pokt.network,https://alt7.mainnet.pokt.network,https://alt8.mainnet.pokt.network,https://alt9.mainnet.pokt.network,https://alt10.mainnet.pokt.network
         envkey_REDIS_ENDPOINT: dashboard.y2p8qe.ng.0001.apse1.cache.amazonaws.com:6379
