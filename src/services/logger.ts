@@ -19,29 +19,6 @@ const timestampUTC = () => {
   return timestamp.toISOString();
 };
 
-class TimestampFirst {
-  enabled: boolean;
-  constructor(enabled = true) {
-      this.enabled = enabled;
-  }
-  transform(obj: { timestamp: string; }) {
-      if (this.enabled) {
-          return Object.assign({
-              timestamp: obj.timestamp
-          }, obj);
-      }
-      return obj;
-  }
-}
-
-var jsonFormat = format.combine(
-  format.timestamp({
-      format: 'YYYY-MM-DD HH:mm:ss.SSS'
-  }),
-  new TimestampFirst(true),
-  format.json()
-);
-
 const consoleFormat = printf(({ level, message, requestID, relayType, typeID, serviceNode, error, elapsedTime }: Log) => {
   return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${error}] [${elapsedTime}] ${message}`;
 });
@@ -85,9 +62,7 @@ interface Log {
 }
 
 module.exports = createLogger({
-  format: format.combine(
-    jsonFormat,
-  ),
+  format: format.json(),
   transports: [
     new transports.Console(options.console),
     logzioWinstonTransport,
