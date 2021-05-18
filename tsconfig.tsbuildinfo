@@ -2078,7 +2078,7 @@
         "signature": "b9c3fb3feb8af8c219d54e8910625440fe0e38c4f71ad3036d5c148f65158318"
       },
       "./src/services/sync-checker.ts": {
-        "version": "30aa14afb32c5bea0c94762f8b341e6085378f8b7debc7ac236b7ec11bb69a66",
+        "version": "08001c7853af9ca166d9d5a6858dd9af1a3b904bea1c2f310cace4768b166e9d",
         "signature": "ce2b6b58fc40f38365fd88f61a8fdac1ba912c997b05f7d0e0dab3e74396e9b7"
       },
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts": {
@@ -2154,7 +2154,7 @@
         "signature": "22c94d01a276ae597e56132a1c88936b95ef3f9a7fca8807e42963d8ceade501"
       },
       "./src/services/logger.ts": {
-        "version": "4032562f229bdcb95b001e38c12df0139213e53b22807acddbce0717d5e97ad9",
+        "version": "d4a22658a3360525e54e18f2b14bd2a0bb60e70af63f5f86061d49625c36898f",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
       },
       "./node_modules/@types/aes-js/index.d.ts": {
@@ -7240,7 +7240,6 @@
       "./node_modules/@types/ioredis/index.d.ts",
       "./src/services/cherry-picker.ts",
       "./src/services/metrics-recorder.ts",
-      "./src/services/sync-checker.ts",
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts",
       "./node_modules/strong-cryptor/dist/typings/index.d.ts",
       "./node_modules/strong-cryptor/dist/v2/decryptor.d.ts",
@@ -7251,6 +7250,7 @@
       "./node_modules/strong-cryptor/dist/decryptor.d.ts",
       "./node_modules/strong-cryptor/dist/index.d.ts",
       "./src/errors/relay-error.ts",
+      "./src/services/pocket-relayer.ts",
       "./src/controllers/v1.controller.ts",
       "./src/controllers/index.ts",
       "./src/controllers/web3index.controller.ts",
@@ -7258,7 +7258,6 @@
       "./node_modules/logform/index.d.ts",
       "./node_modules/winston-transport/index.d.ts",
       "./node_modules/winston-logzio/lib/winston-logzio.d.ts",
-      "./src/services/logger.ts",
       "./node_modules/@types/aes-js/index.d.ts",
       "./node_modules/@types/keyv/index.d.ts",
       "./node_modules/@types/http-cache-semantics/index.d.ts",
@@ -7278,7 +7277,8 @@
       "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
       "./node_modules/@types/varint/index.d.ts",
-      "./src/services/pocket-relayer.ts"
+      "./src/services/sync-checker.ts",
+      "./src/services/logger.ts"
     ]
   },
   "version": "3.8.3"
