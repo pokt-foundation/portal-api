@@ -22,7 +22,7 @@ class SyncChecker {
                     syncedNodes.push(node);
                 }
             }
-            logger.log('info', 'SYNC CHECK CACHE: ' + syncedNodes.length + ' nodes returned');
+            // logger.log('info', 'SYNC CHECK CACHE: ' + syncedNodes.length + ' nodes returned');
             return syncedNodes;
         }
         // Cache is stale, start a new cache fill
