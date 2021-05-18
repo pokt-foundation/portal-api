@@ -15,22 +15,6 @@ const timestampUTC = () => {
     const timestamp = new Date();
     return timestamp.toISOString();
 };
-class TimestampFirst {
-    constructor(enabled = true) {
-        this.enabled = enabled;
-    }
-    transform(obj) {
-        if (this.enabled) {
-            return Object.assign({
-                timestamp: obj.timestamp
-            }, obj);
-        }
-        return obj;
-    }
-}
-var jsonFormat = format.combine(format.timestamp({
-    format: 'YYYY-MM-DD HH:mm:ss.SSS'
-}), new TimestampFirst(true), format.json());
 const consoleFormat = printf(({ level, message, requestID, relayType, typeID, serviceNode, error, elapsedTime }) => {
     return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${error}] [${elapsedTime}] ${message}`;
 });
@@ -54,7 +38,7 @@ const options = {
     },
 };
 module.exports = createLogger({
-    format: format.combine(jsonFormat),
+    format: format.json(),
     transports: [
         new transports.Console(options.console),
         logzioWinstonTransport,
