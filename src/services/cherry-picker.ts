@@ -94,7 +94,7 @@ export class CherryPicker {
 
     // Iterate through sorted logs and form in to a weighted list 
     // If you fail your first relay in the session, go to the back of the line
-    let rankedItems = await this.rankItems(blockchain, sortedLogs, 1);    
+    let rankedItems = await this.rankItems(blockchain, sortedLogs, 3);    
 
     // If we have no nodes left because all 5 are failures, ¯\_(ツ)_/¯
     if (rankedItems.length === 0) {
