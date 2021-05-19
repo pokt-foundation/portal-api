@@ -2070,7 +2070,7 @@
         "signature": "da0d877bc22bd961aa9aec36bc0d02524f21abb08b645eb9335ce0079426c24a"
       },
       "./src/services/cherry-picker.ts": {
-        "version": "6d6ab1cff2b80bf9a5a128e2a82580ed0a80ca0f1389dd92c6f8c74559a82ed2",
+        "version": "d7d98bb1098c80475b344605239f86e0c8b5fa028bcaf9b7d0c36e8bb70316ea",
         "signature": "959d3f2caa2da492155ce4ae96ca106171b0101dca7bd654fb8b41d8afc50bda"
       },
       "./src/services/metrics-recorder.ts": {
@@ -7238,8 +7238,8 @@
       "./src/controllers/blockchains.controller.ts",
       "./src/controllers/ping.controller.ts",
       "./node_modules/@types/ioredis/index.d.ts",
-      "./src/services/cherry-picker.ts",
       "./src/services/metrics-recorder.ts",
+      "./src/services/sync-checker.ts",
       "./node_modules/strong-cryptor/dist/typings/interface/index.d.ts",
       "./node_modules/strong-cryptor/dist/typings/index.d.ts",
       "./node_modules/strong-cryptor/dist/v2/decryptor.d.ts",
@@ -7258,6 +7258,7 @@
       "./node_modules/logform/index.d.ts",
       "./node_modules/winston-transport/index.d.ts",
       "./node_modules/winston-logzio/lib/winston-logzio.d.ts",
+      "./src/services/logger.ts",
       "./node_modules/@types/aes-js/index.d.ts",
       "./node_modules/@types/keyv/index.d.ts",
       "./node_modules/@types/http-cache-semantics/index.d.ts",
@@ -7277,8 +7278,7 @@
       "./node_modules/@types/scrypt-js/index.d.ts",
       "./node_modules/@types/type-is/index.d.ts",
       "./node_modules/@types/varint/index.d.ts",
-      "./src/services/sync-checker.ts",
-      "./src/services/logger.ts"
+      "./src/services/cherry-picker.ts"
     ]
   },
   "version": "3.8.3"
