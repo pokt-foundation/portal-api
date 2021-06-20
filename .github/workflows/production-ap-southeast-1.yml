@@ -2,7 +2,7 @@ name: Production Deployment ap-southeast-1
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master-off ]
 
 jobs:
   deploy:
