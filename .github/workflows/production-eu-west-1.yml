@@ -2,7 +2,7 @@ name: Production Deployment eu-west-1
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master-off ]
 
 jobs:
   deploy:
@@ -23,7 +23,7 @@ jobs:
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
-    
+
     - name: Make envfile eu-west-1
       uses: SpicyPizza/create-envfile@v1
       with:
