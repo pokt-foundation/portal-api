@@ -2,7 +2,7 @@ name: Staging Deployment us-west-2
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master-off ]
 
 jobs:
   deploy:
@@ -23,7 +23,7 @@ jobs:
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
-    
+
     - name: Make envfile us-west-2
       uses: SpicyPizza/create-envfile@v1
       with:
