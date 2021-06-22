@@ -1,5 +1,6 @@
 import {CherryPicker} from '../services/cherry-picker';
 import {MetricsRecorder} from '../services/metrics-recorder';
+import {SyncChecker} from '../services/sync-checker';
 import {Decryptor} from 'strong-cryptor';
 import {HttpErrors} from '@loopback/rest';
 import {
@@ -11,6 +12,7 @@ import {
   RpcError,
   HttpRpcProvider,
   HTTPMethod,
+  Node,
 } from '@pokt-network/pocket-js';
 import {Redis} from 'ioredis';
 import {BlockchainsRepository} from '../repositories';
@@ -32,6 +34,7 @@ export class PocketRelayer {
   pocketConfiguration: Configuration;
   cherryPicker: CherryPicker;
   metricsRecorder: MetricsRecorder;
+  syncChecker: SyncChecker;
   redis: Redis;
   databaseEncryptionKey: string;
   secretKey: string;
@@ -48,6 +51,7 @@ export class PocketRelayer {
     pocketConfiguration,
     cherryPicker,
     metricsRecorder,
+    syncChecker,
     redis,
     databaseEncryptionKey,
     secretKey,
@@ -63,6 +67,7 @@ export class PocketRelayer {
     pocketConfiguration: Configuration;
     cherryPicker: CherryPicker;
     metricsRecorder: MetricsRecorder;
+    syncChecker: SyncChecker;
     redis: Redis;
     databaseEncryptionKey: string;
     secretKey: string;
@@ -78,6 +83,7 @@ export class PocketRelayer {
     this.pocketConfiguration = pocketConfiguration;
     this.cherryPicker = cherryPicker;
     this.metricsRecorder = metricsRecorder;
+    this.syncChecker = syncChecker;
     this.redis = redis;
     this.databaseEncryptionKey = databaseEncryptionKey;
     this.secretKey = secretKey;
@@ -115,7 +121,7 @@ export class PocketRelayer {
       ) {
       this.relayRetries = relayRetries;
     }
-    const [blockchain, blockchainEnforceResult] = await this.loadBlockchain();
+    const [blockchain, blockchainEnforceResult, blockchainSyncCheck] = await this.loadBlockchain();
     const overallStart = process.hrtime();
 
     // This converts the raw data into formatted JSON then back to a string for relaying.
@@ -128,9 +134,9 @@ export class PocketRelayer {
     const fallbackAvailable = (this.fallbacks.length > 0 && this.pocket !== undefined) ? true : false;
 
     // Retries if applicable
-    for (let x = 0; x <= this.relayRetries; x++) { 
+    for (let x = 0; x <= this.relayRetries; x++) {
       let relayStart = process.hrtime();
-      
+
       // Compute the overall time taken on this LB request
       const overallCurrent = process.hrtime(overallStart);
       const overallCurrentElasped = Math.round((overallCurrent[0] * 1e9 + overallCurrent[1]) / 1e6);
@@ -141,10 +147,10 @@ export class PocketRelayer {
         logger.log('error', 'Overall Timeout exceeded: ' + overallTimeOut, {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
         return new HttpErrors.GatewayTimeout('Overall Timeout exceeded: ' + overallTimeOut);
       }
-      
+
       // Send this relay attempt
-      const relayResponse = await this._sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult);
-      
+      const relayResponse = await this._sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult, blockchainSyncCheck);
+
       if (!(relayResponse instanceof Error)) {
         // Record success metric
         await this.metricsRecorder.recordMetric({
@@ -161,6 +167,10 @@ export class PocketRelayer {
           method: method,
           error: undefined
         });
+
+        // Clear error log
+        await this.redis.del(blockchain + '-' + relayResponse.proof.servicerPubKey + '-errors');
+
         // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
         if (
           blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
@@ -169,13 +179,22 @@ export class PocketRelayer {
           return JSON.parse(relayResponse.payload);
         }
         return relayResponse.payload;
-      } else if (relayResponse instanceof RelayError) { 
+      } else if (relayResponse instanceof RelayError) {
         // Record failure metric, retry if possible or fallback
         // If this is the last retry and fallback is available, mark the error not delivered
         const errorDelivered = (x === this.relayRetries && fallbackAvailable) ? false : true;
 
+        // Increment error log
+        await this.redis.incr(blockchain + '-' + relayResponse.servicer_node + '-errors');
+        await this.redis.expire(blockchain + '-' + relayResponse.servicer_node + '-errors', 3600);
+
+        let error = relayResponse.message;
+        if (typeof relayResponse.message === 'object') {
+          error = JSON.stringify(relayResponse.message);
+        }
+
         await this.metricsRecorder.recordMetric({
-          requestID: requestID,
+          requestID,
           applicationID: application.id,
           appPubKey: application.gatewayAAT.applicationPublicKey,
           blockchain,
@@ -185,16 +204,15 @@ export class PocketRelayer {
           bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
           delivered: errorDelivered,
           fallback: false,
-          method: method,
-          error: relayResponse.message,
+          method,
+          error,
         });
       }
     }
     // Exhausted relay attempts; use fallback
-    if (fallbackAvailable) {      
+    if (fallbackAvailable) {
       let relayStart = process.hrtime();
-      const [blockchain, blockchainEnforceResult] = await this.loadBlockchain();
-      
+
       const fallbackChoice = new HttpRpcProvider(this.fallbacks[Math.floor(Math.random() * this.fallbacks.length)]);
       const fallbackPayload : FallbackPayload = {data: rawData.toString(), method: httpMethod, path: relayPath,  headers: null};
       const fallbackMeta: FallbackMeta = {block_height: 0};
@@ -202,7 +220,7 @@ export class PocketRelayer {
       const fallbackRelay: FallbackRelay = {payload: fallbackPayload, meta: fallbackMeta, proof: fallbackProof};
 
       const fallbackResponse = await fallbackChoice.send("/v1/client/relay", JSON.stringify(fallbackRelay), 1200000, false);
-      
+
       if (this.checkDebug) {
         logger.log('debug', JSON.stringify(fallbackChoice), {requestID: requestID, relayType: 'FALLBACK', typeID: application.id, serviceNode: 'fallback:'+fallbackChoice.baseURL});
         logger.log('debug', JSON.stringify(fallbackRelay), {requestID: requestID, relayType: 'FALLBACK', typeID: application.id, serviceNode: 'fallback:'+fallbackChoice.baseURL});
@@ -252,10 +270,11 @@ export class PocketRelayer {
     application: Applications,
     requestTimeOut: number | undefined,
     blockchain: string,
-    blockchainEnforceResult: string
+    blockchainEnforceResult: string,
+    blockchainSyncCheck: string,
   ): Promise<RelayResponse | Error> {
     logger.log('info', 'RELAYING ' + blockchain + ' req: ' + data, {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
-    
+
     // Secret key check
     if (!this.checkSecretKey(application)) {
       throw new HttpErrors.Forbidden('SecretKey does not match');
@@ -304,7 +323,11 @@ export class PocketRelayer {
       this.pocketConfiguration,
     );
     if (pocketSession instanceof Session) {
-      node = await this.cherryPicker.cherryPickNode(application, pocketSession, blockchain, requestID);
+      let nodes: Node[] = pocketSession.sessionNodes;
+      if (blockchainSyncCheck) {
+        nodes = await this.syncChecker.consensusFilter(pocketSession.sessionNodes, requestID, blockchainSyncCheck, 3, blockchain, application.id, application.gatewayAAT.applicationPublicKey, this.pocket, pocketAAT, this.pocketConfiguration);
+      }           
+      node = await this.cherryPicker.cherryPickNode(application, nodes, blockchain, requestID);
     }
 
     if (this.checkDebug) {
@@ -327,6 +350,8 @@ export class PocketRelayer {
       httpMethod,
       relayPath,
       node,
+      undefined,
+      requestID,
     );
 
     if (this.checkDebug) {
@@ -344,7 +369,10 @@ export class PocketRelayer {
       if (
         blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
         blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON // and
-        !this.checkEnforcementJSON(relayResponse.payload) // the relay response is not valid JSON
+        (
+          !this.checkEnforcementJSON(relayResponse.payload) || // the relay response is not valid JSON // or 
+          relayResponse.payload.startsWith('{"error"') // the full payload is an error
+        )
       ) {
         // then this result is invalid
         return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey);
@@ -354,7 +382,7 @@ export class PocketRelayer {
       }
     }
     // Error
-    else if (relayResponse instanceof RpcError) {
+    else if (relayResponse instanceof Error) {
       return new RelayError(relayResponse.message, 500, node?.publicKey);
     }
     // ConsensusNode
@@ -362,6 +390,17 @@ export class PocketRelayer {
       // TODO: ConsensusNode is a possible return
       return new Error('relayResponse is undefined');
     }
+  }
+
+  // Fetch node client type if Ethereum based
+  async fetchClientTypeLog(
+    blockchain: string,
+    id: string | undefined,
+  ): Promise<string | null> {
+    const clientTypeLog = await this.redis.get(
+      blockchain + '-' + id + '-clientType',
+    );
+    return clientTypeLog;
   }
 
   parseMethod(parsedRawData: any) {
@@ -420,12 +459,18 @@ export class PocketRelayer {
 
     if (blockchainFilter[0]) {
       let blockchainEnforceResult = '';
-      const blockchain = blockchainFilter[0].hash;
+      let blockchainSyncCheck = '';
+      const blockchain = blockchainFilter[0].hash as string;
+      
       // Record the necessary format for the result; example: JSON
       if (blockchainFilter[0].enforceResult) {
         blockchainEnforceResult = blockchainFilter[0].enforceResult;
       }
-      return Promise.resolve([blockchain, blockchainEnforceResult]);
+      // Sync Check to determine current blockheight
+      if (blockchainFilter[0].syncCheck) {
+        blockchainSyncCheck = blockchainFilter[0].syncCheck.replace(/\\"/g, '"');
+      }
+      return Promise.resolve([blockchain, blockchainEnforceResult, blockchainSyncCheck]);
     } else {
       throw new HttpErrors.BadRequest('Incorrect blockchain: ' + this.host);
     }
