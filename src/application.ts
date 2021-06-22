@@ -5,8 +5,9 @@ import {RestApplication, HttpErrors} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import {GatewaySequence} from './sequence';
 import {Account} from '@pokt-network/pocket-js/dist/keybase/models/account';
+import {RelayProfiler} from './services/relay-profiler';
 
-import path from 'path';
+import * as path from 'path';
 const logger = require('./services/logger');
 
 const pocketJS = require('@pokt-network/pocket-js');
@@ -90,61 +91,7 @@ export class PocketGatewayApplication extends BootMixin(
         'DATABASE_ENCRYPTION_KEY required in ENV',
       );
     }
-
-    // Create the Pocket instance
-    const dispatchers = [];
-
-    if (dispatchURL.indexOf(",")) {
-      const dispatcherArray = dispatchURL.split(",");
-      dispatcherArray.forEach(function(dispatcher) {
-        dispatchers.push(new URL(dispatcher));
-      });
-    } else {
-      dispatchers.push(new URL(dispatchURL));
-    }
-
-    const configuration = new Configuration(
-      0,
-      100000,
-      0,
-      120000,
-      false,
-      pocketSessionBlockFrequency,
-      pocketBlockTime,
-      undefined,
-      undefined,
-      false,
-    );
-    const rpcProvider = new HttpRpcProvider(dispatchers);
-    const pocket = new Pocket(dispatchers, rpcProvider, configuration);
     
-    // Bind to application context for shared re-use
-    this.bind('pocketInstance').to(pocket);
-    this.bind('pocketConfiguration').to(configuration);
-    this.bind('relayRetries').to(relayRetries);
-    this.bind('fallbackURL').to(fallbackURL);
-    this.bind('logger').to(logger);
-
-    // Unlock primary client account for relay signing
-    try {
-      const importAccount = await pocket.keybase.importAccount(
-        Buffer.from(clientPrivateKey, 'hex'),
-        clientPassphrase,
-      );
-      if (importAccount instanceof Account) {
-        await pocket.keybase.unlockAccount(
-          importAccount.addressHex,
-          clientPassphrase,
-          0,
-        );
-      }
-    } catch (e) {
-      logger.log('error', e);
-      throw new HttpErrors.InternalServerError(
-        'Unable to import or unlock base client account',
-      );
-    }
-
     // Load Redis for cache
     const redisEndpoint: string = process.env.REDIS_ENDPOINT || '';
     const redisPort: string = process.env.REDIS_PORT || '';
@@ -198,6 +145,61 @@ export class PocketGatewayApplication extends BootMixin(
     });
     this.bind('pgPool').to(pgPool);
     this.bind('databaseEncryptionKey').to(databaseEncryptionKey);
+
+    // Create the Pocket instance
+    const dispatchers = [];
+
+    if (dispatchURL.indexOf(",")) {
+      const dispatcherArray = dispatchURL.split(",");
+      dispatcherArray.forEach(function(dispatcher) {
+        dispatchers.push(new URL(dispatcher));
+      });
+    } else {
+      dispatchers.push(new URL(dispatchURL));
+    }
+
+    const configuration = new Configuration(
+      0,
+      100000,
+      0,
+      120000,
+      false,
+      pocketSessionBlockFrequency,
+      pocketBlockTime,
+      1,
+      undefined,
+      true,
+    );
+    const rpcProvider = new HttpRpcProvider(dispatchers);
+    const relayProfiler = new RelayProfiler(pgPool);
+    const pocket = new Pocket(dispatchers, rpcProvider, configuration, undefined, relayProfiler);
+    
+    // Bind to application context for shared re-use
+    this.bind('pocketInstance').to(pocket);
+    this.bind('pocketConfiguration').to(configuration);
+    this.bind('relayRetries').to(relayRetries);
+    this.bind('fallbackURL').to(fallbackURL);
+    this.bind('logger').to(logger);
+
+    // Unlock primary client account for relay signing
+    try {
+      const importAccount = await pocket.keybase.importAccount(
+        Buffer.from(clientPrivateKey, 'hex'),
+        clientPassphrase,
+      );
+      if (importAccount instanceof Account) {
+        await pocket.keybase.unlockAccount(
+          importAccount.addressHex,
+          clientPassphrase,
+          0,
+        );
+      }
+    } catch (e) {
+      logger.log('error', e);
+      throw new HttpErrors.InternalServerError(
+        'Unable to import or unlock base client account',
+      );
+    }
 
     // Create a UID for this process
     const parts = [os.hostname(), process.pid, +new Date()];
