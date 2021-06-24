@@ -7,7 +7,7 @@ for collection in "Applications" "Blockchains" "CronJobData" "LoadBalancers" "No
     echo "Downloading $collection..."; \
 
     mongoexport \
-        --uri mongodb+srv://$MONGO_SRC_USER:$MONGO_SRC_PW@$MONGO_SRC_HOST/$MONGO_SRC_DB \
+        --uri $MONGO_PROTOCOL://$MONGO_SRC_USER:$MONGO_SRC_PW@$MONGO_SRC_HOST/$MONGO_SRC_DB \
         --collection "$collection" \
         --type json \
         --out /data/$collection; \

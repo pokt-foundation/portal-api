@@ -13,9 +13,9 @@ echo "Persisting production collections";
 for collection in "Applications" "Blockchains" "CronJobData" "LoadBalancers" "Nodes" "PaymentHistory" "PaymentMethods" "PendingTransactions" "Users"; \
   do \
     echo "Persisting $collection collection..."; \
-   
+
     mongoimport \
-        --uri mongodb://$MONGO_DEST_USER:$MONGO_DEST_PW@$MONGO_DEST_HOST/$MONGO_DEST_DB?authSource=admin \
+        --uri $MONGO_PROTOCOL://$MONGO_DEST_USER:$MONGO_DEST_PW@$MONGO_DEST_HOST/$MONGO_DEST_DB \
         --collection "$collection" \
         --type json \
         --file /data/$collection; \
