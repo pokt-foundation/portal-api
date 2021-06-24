@@ -5,6 +5,7 @@ import {RestApplication, HttpErrors} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import {GatewaySequence} from './sequence';
 import {Account} from '@pokt-network/pocket-js/dist/keybase/models/account';
+import {RelayProfiler} from './services/relay-profiler';
 
 import path from 'path';
 import AatPlans from './config/aat-plans.json';
@@ -98,8 +99,6 @@ export class PocketGatewayApplication extends BootMixin(
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan');
     }
 
-    console.log('Are we up?')
-    // Create the Pocket instance
     const dispatchers = [];
 
     if (dispatchURL.indexOf(',')) {

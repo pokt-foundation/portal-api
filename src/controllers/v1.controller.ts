@@ -13,6 +13,7 @@ import {Pool as PGPool} from 'pg';
 import {CherryPicker} from '../services/cherry-picker';
 import {MetricsRecorder} from '../services/metrics-recorder';
 import {PocketRelayer} from '../services/pocket-relayer';
+import {SyncChecker} from '../services/sync-checker';
 
 const logger = require('../services/logger');
 
@@ -20,6 +21,7 @@ export class V1Controller {
   cherryPicker: CherryPicker;
   metricsRecorder: MetricsRecorder;
   pocketRelayer: PocketRelayer;
+  syncChecker: SyncChecker;
 
   constructor(
     @inject('secretKey') private secretKey: string,
@@ -56,6 +58,7 @@ export class V1Controller {
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
     });
+    this.syncChecker = new SyncChecker(this.redis, this.metricsRecorder);
     this.pocketRelayer = new PocketRelayer({
       host: this.host,
       origin: this.origin,
@@ -64,6 +67,7 @@ export class V1Controller {
       pocketConfiguration: this.pocketConfiguration,
       cherryPicker: this.cherryPicker,
       metricsRecorder: this.metricsRecorder,
+      syncChecker: this.syncChecker,
       redis: this.redis,
       databaseEncryptionKey: this.databaseEncryptionKey,
       secretKey: this.secretKey,
@@ -124,8 +128,8 @@ export class V1Controller {
     try {
       const loadBalancer = await this.fetchLoadBalancer(id, filter);
       if (loadBalancer?.id) {
-        // eslint-disable-next-line
-        const [blockchain, _] = await this.pocketRelayer.loadBlockchain();
+        // eslint-disable-next-line 
+        const [blockchain, _enforceResult, _syncCheck] = await this.pocketRelayer.loadBlockchain();
         // Fetch applications contained in this Load Balancer. Verify they exist and choose
         // one randomly for the relay.
         const application = await this.fetchLoadBalancerApplication(

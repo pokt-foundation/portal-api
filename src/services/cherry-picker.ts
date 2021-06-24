@@ -75,7 +75,7 @@ export class CherryPicker {
   // Rank and weight them for node choice
   async cherryPickNode(
     application: Applications,
-    pocketSession: Session,
+    nodes: Node[],
     blockchain: string,
     requestID: string,
   ): Promise<Node> {
@@ -89,7 +89,7 @@ export class CherryPicker {
       failure: boolean;
     }[];
 
-    for (const node of pocketSession.sessionNodes) {
+    for (const node of nodes) {
       rawNodes[node.publicKey] = node;
       rawNodeIDs.push(node.publicKey);
       const rawServiceLog = await this.fetchRawServiceLog(blockchain, node.publicKey);
@@ -101,7 +101,7 @@ export class CherryPicker {
 
     // Iterate through sorted logs and form in to a weighted list 
     // If you fail your first relay in the session, go to the back of the line
-    let rankedItems = await this.rankItems(blockchain, sortedLogs, 1);    
+    let rankedItems = await this.rankItems(blockchain, sortedLogs, 3);    
 
     // If we have no nodes left because all 5 are failures, ¯\_(ツ)_/¯
     if (rankedItems.length === 0) {

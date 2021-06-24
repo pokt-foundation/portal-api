@@ -57,8 +57,10 @@ export class MetricsRecorder {
     error: string | undefined;
   }): Promise<void> {
     try {
+      let elapsedTime = 0
       const relayEnd = process.hrtime(relayStart);
-      const elapsedTime = (relayEnd[0] * 1e9 + relayEnd[1]) / 1e9;
+      elapsedTime = (relayEnd[0] * 1e9 + relayEnd[1]) / 1e9;
+
       let fallbackTag = '';
 
       if (fallback) {
@@ -66,26 +68,11 @@ export class MetricsRecorder {
       }
 
       if (result === 200) {
-        logger.log('info', 'SUCCESS' + fallbackTag, {
-          requestID: requestID,
-          relayType: 'APP',
-          typeID: applicationID,
-          serviceNode: serviceNode,
-        });
+        logger.log('info', 'SUCCESS' + fallbackTag, {requestID, relayType: 'APP', typeID: applicationID, serviceNode, elapsedTime, error: undefined});
       } else if (result === 500) {
-        logger.log('error', 'FAILURE' + fallbackTag + ' ' + error, {
-          requestID: requestID,
-          relayType: 'APP',
-          typeID: applicationID,
-          serviceNode: serviceNode,
-        });
+        logger.log('error', 'FAILURE' + fallbackTag, {requestID, relayType: 'APP', typeID: applicationID, serviceNode, elapsedTime, error});
       } else if (result === 503) {
-        logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' ' + error, {
-          requestID: requestID,
-          relayType: 'APP',
-          typeID: applicationID,
-          serviceNode: serviceNode,
-        });
+        logger.log('error', 'INVALID RESPONSE' + fallbackTag, {requestID, relayType: 'APP', typeID: applicationID, serviceNode, elapsedTime, error});
       }
 
       const metricsValues = [

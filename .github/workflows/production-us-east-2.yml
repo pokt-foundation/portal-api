@@ -2,7 +2,7 @@ name: Production Deployment us-east-2
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master-off ]
 
 jobs:
   deploy:
@@ -23,7 +23,7 @@ jobs:
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
-    
+
     - name: Make envfile us-east-2
       uses: SpicyPizza/create-envfile@v1
       with:
@@ -33,6 +33,7 @@ jobs:
         envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_PRODUCTION_ENCRYPTION_KEY }}
         envkey_PG_CONNECTION: ${{ secrets.PG_PRODUCTION_CONNECTION }}
         envkey_PG_CERTIFICATE: ${{ secrets.PG_PRODUCTION_CERTIFICATE }}
+        envkey_LOGZ_TOKEN: ${{ secrets.LOGZ_TOKEN }}
         envkey_AWS_S3_ACCESS_KEY_ID: ${{ secrets.AWS_S3_ACCESS_KEY_ID }}
         envkey_AWS_S3_SECRET_ACCESS_KEY: ${{ secrets.AWS_S3_SECRET_ACCESS_KEY }}
         envkey_AWS_S3_LOGS_BUCKET: pocket-gateway

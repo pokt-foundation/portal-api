@@ -1,1 +1,0 @@
-{"version":3,"file":"relay-error.js","sourceRoot":"","sources":["../../src/errors/relay-error.ts"],"names":[],"mappings":";;AAAA;;GAEG;AACH,MAAa,UAAW,SAAQ,KAAK;IAGnC,YACE,OAAe,EACf,IAAY,EACZ,aAAiC;QAEjC,KAAK,CAAC,OAAO,CAAC,CAAC;QACf,IAAI,CAAC,IAAI,GAAG,YAAY,CAAC;QACzB,IAAI,CAAC,IAAI,GAAG,IAAI,CAAC;QACjB,IAAI,CAAC,aAAa,GAAG,aAAa,CAAC;IACrC,CAAC;CACF;AAbD,gCAaC"}
