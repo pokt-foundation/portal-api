@@ -25,8 +25,17 @@ export class GatewaySequence implements SequenceHandler {
   async handle(context: RequestContext) {
     try {
       const {request, response} = context;
+      // Just a HACK for now for local development
+      // I will subsitute with local development proxy
+      // If you are reviewing, donate one bagel for good cause
+      if ((process.env.NODE_ENV = 'development')) {
+        request.headers[
+          'host'
+        ] = `${request.headers['blockchain-subdomain']}.${request.headers['host']}`;
+      }
 
       // Record the host, user-agent, and origin for processing
+      context.bind('headers').to(request.headers);
       context.bind('host').to(request.headers['host']);
       context.bind('userAgent').to(request.headers['user-agent']);
       context.bind('origin').to(request.headers['origin']);
@@ -53,20 +62,20 @@ export class GatewaySequence implements SequenceHandler {
       context.bind('requestID').to(shortID.generate());
 
       // Custom routing for blockchain paths:
-      // If it finds an extra path on the end of the request, slice off the path 
+      // If it finds an extra path on the end of the request, slice off the path
       // and convert the slashes to tildes for processing in the v1.controller
       if (
-        request.method === "POST" &&
-        (
-          // Matches either /v1/lb/LOADBALANCER_ID or /v1/APPLICATION_ID
-          request.url.match(/^\/v1\/lb\//) ||
-          request.url.match(/^\/v1\/[0-9a-zA-Z]{24}\//)
-        )
+        request.method === 'POST' &&
+        // Matches either /v1/lb/LOADBALANCER_ID or /v1/APPLICATION_ID
+        (request.url.match(/^\/v1\/lb\//) ||
+          request.url.match(/^\/v1\/[0-9a-zA-Z]{24}\//))
       ) {
         if (request.url.match(/^\/v1\/lb\//)) {
           request.url = `/v1/lb/${request.url.slice(7).replace(/\//gi, '~')}`;
         } else if (request.url.match(/^\/v1\/[0-9a-z]{24}\//)) {
-          request.url = `${request.url.slice(0,28)}${request.url.slice(28).replace(/\//gi, '~')}`;
+          request.url = `${request.url.slice(0, 28)}${request.url
+            .slice(28)
+            .replace(/\//gi, '~')}`;
         }
       }
 

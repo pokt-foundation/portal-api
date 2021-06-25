@@ -1310,7 +1310,7 @@
         "signature": "a15b48b01a590689bbbf03aac6a5291a8dddf77477a46d9e0037adfcc07942b8"
       },
       "./src/sequence.ts": {
-        "version": "3ca657bd7d02de2c508fdd5f6abf6551e07281a5af60e458932175e6a251627d",
+        "version": "ee2cbbce995b7cf23419137c952e598fbf4eeb2428016ece3cd4097e16b078bf",
         "signature": "8721cf11eb4936ffee74356179ce18d3cc7ff99cbc861af322c1a9cfb31c4609"
       },
       "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts": {
@@ -1917,12 +1917,16 @@
         "version": "2ecd3c570607156ce3122b4524e56e34d17ff0575f2a602437d3b13a3a36b30a",
         "signature": "ff8e9b000db6b9db543b5c807908b2de8a24d1616379e7419d949d6b4e8a33bd"
       },
+      "./src/config/aat-plans.json": {
+        "version": "8675f03f6b52c25246a959648c99dc22ced1225b4dff2b7ef455639cd6aca64a",
+        "signature": "80d773cafa7cc0bc05bd7572db1e4f966b8a56be1cfc1301d105f9900c32222a"
+      },
       "./src/application.ts": {
-        "version": "660e97aaa6cc0a72af6ae731db5aa4f2a548a16b6b599ea5366c3336827f1f59",
+        "version": "05f58ce975bea69559f879c45e3daff42075e068c327b8fe4c2db43fb5086d79",
         "signature": "c2691ebf44256a356633c3fb9bfc9de4bd429fe80a8c2a70ac76a37493ca7257"
       },
       "./src/index.ts": {
-        "version": "e00e68920bdc16e2b77b5f3d5b575d98864f2220414d3a61dfa4189f76552082",
+        "version": "f48e68b2d9ae0255a861ef5351bf2fd9e3ad07f85c5334b08d407fc23591fd6a",
         "signature": "2c1e64b6cdfbeb152eb10a597e4d5a1b27e04726fb02f95b0699101fedddf3ed"
       },
       "./src/migrate.ts": {
@@ -2070,7 +2074,7 @@
         "signature": "da0d877bc22bd961aa9aec36bc0d02524f21abb08b645eb9335ce0079426c24a"
       },
       "./src/services/cherry-picker.ts": {
-        "version": "d7d98bb1098c80475b344605239f86e0c8b5fa028bcaf9b7d0c36e8bb70316ea",
+        "version": "45fac5fb6732c0f4d976c7e262c5e29a3920230c812ecac5a39fedd1de1471f8",
         "signature": "959d3f2caa2da492155ce4ae96ca106171b0101dca7bd654fb8b41d8afc50bda"
       },
       "./src/services/metrics-recorder.ts": {
@@ -2118,16 +2122,16 @@
         "signature": "75b8b059a00b6b8f090be39f69fbf84018c53ef865cd8146173a6f5eeec058f0"
       },
       "./src/errors/relay-error.ts": {
-        "version": "254d378be372d09f656549daca80ef8c2946e1464d31631e29fdd512ae32f38c",
+        "version": "70b2a9de2c4e344aa70d4adb0f5a083169ac0e2b2a0fec6b15521be3339e7661",
         "signature": "4268ae77fea3dfd44b681677cb8ba998d21463a10d37e5286651c07e8659d183"
       },
       "./src/services/pocket-relayer.ts": {
-        "version": "fa5a8ac782376808780fb0bdf6541128bb531725e803efa85c21ae16aa6181ce",
-        "signature": "ad65d9326d5067bf7ab46068d21ec91864a00f671837c961050af3928f6d1035"
+        "version": "e29401e3fa03d36b1f7acf3041daa6899a0c1f4b18d8621be8f62bb321fb5dc1",
+        "signature": "a6ae5c00995511c2b2b79293e0e5f838084481cf6125b0f22fe084103e5f08c8"
       },
       "./src/controllers/v1.controller.ts": {
-        "version": "1a6936c11f89fdfaf6a64585476c4fad60346f8ece55110fe64b4aa5c815a956",
-        "signature": "b979a064d33dfbc129080d75e96878069a06e655117951631af770f57d67ed4d"
+        "version": "b860c8f33dc7d911cd8a40a85f7f053536746f7d7537c6a84c5df796504a1327",
+        "signature": "75c259ea0d13f009302bd9925bbf8ece4db06e7bbd4babfe2cde09f556c7c5d6"
       },
       "./src/controllers/index.ts": {
         "version": "c27d67de5b5b7aecde13ca899c3197d3c1538b964251fa91a055cb19fb0b6ce7",
@@ -2150,7 +2154,7 @@
         "signature": "22c94d01a276ae597e56132a1c88936b95ef3f9a7fca8807e42963d8ceade501"
       },
       "./src/services/logger.ts": {
-        "version": "d4a22658a3360525e54e18f2b14bd2a0bb60e70af63f5f86061d49625c36898f",
+        "version": "f97900892110725090fe076a4ffcbb0c3440764c8a98e0c4beeb1f5f237bc5d1",
         "signature": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
       },
       "./node_modules/@types/aes-js/index.d.ts": {
@@ -4217,7 +4221,8 @@
         "./src/sequence.ts",
         "./node_modules/@pokt-network/pocket-js/dist/keybase/models/account.d.ts",
         "./src/services/relay-profiler.ts",
-        "./node_modules/@types/node/path.d.ts"
+        "./node_modules/@types/node/path.d.ts",
+        "./src/config/aat-plans.json"
       ],
       "./src/index.ts": [
         "./src/application.ts",
@@ -4421,7 +4426,8 @@
         "./node_modules/@types/ioredis/index.d.ts",
         "./src/repositories/index.ts",
         "./src/models/index.ts",
-        "./src/errors/relay-error.ts"
+        "./src/errors/relay-error.ts",
+        "./src/config/aat-plans.json"
       ],
       "./src/controllers/v1.controller.ts": [
         "./node_modules/@loopback/context/dist/index.d.ts",
@@ -7151,6 +7157,7 @@
       "./node_modules/pg-types/index.d.ts",
       "./node_modules/@types/pg/index.d.ts",
       "./src/services/relay-profiler.ts",
+      "./src/config/aat-plans.json",
       "./src/application.ts",
       "./src/index.ts",
       "./src/migrate.ts",
