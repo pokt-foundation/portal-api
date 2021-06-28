@@ -15,7 +15,20 @@ describe('PingController', () => {
   });
 
   it('invokes GET /ping', async () => {
-    const res = await client.get('/ping?msg=world').expect(200);
-    expect(res.body).to.containEql({greeting: 'Hello from LoopBack'});
+    const res = await client
+      .get('/ping')
+      .expect(200);
+
+    expect(res.body)
+      .to.have.property('greeting', 'Pocket Network Gateway is saying hello and welcome onboard!');
+
+    expect(res.body)
+      .to.have.property('url');
+
+    expect(res.body)
+      .to.have.property('date');
+
+    expect(res.body)
+      .to.have.property('headers');
   });
 });
