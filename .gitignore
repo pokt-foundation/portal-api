@@ -25,3 +25,6 @@ dist
 # env files
 .env
 .tasks.env
+
+# ts configs
+tsconfig.tsbuildinfo
