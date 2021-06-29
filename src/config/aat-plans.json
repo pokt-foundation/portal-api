@@ -1,0 +1,5 @@
+{
+  "PREMIUM": "premium",
+  "FREEMIUM": "freemium",
+  "values": ["premium", "freemium"]
+}

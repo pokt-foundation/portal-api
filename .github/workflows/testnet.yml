@@ -2,7 +2,7 @@ name: Testnet Deployment
 
 on:
   push:
-    branches: [ staging-off ]
+    branches: [ testnet ]
 
 jobs:
   deploy:
@@ -41,6 +41,7 @@ jobs:
         envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
         envkey_POCKET_BLOCK_TIME: 900000
         envkey_POCKET_RELAY_RETRIES: 5
+        envkey_AAT_PLAN: 'premium'
         file_name: .env
 
     - name: Build, tag, and push image to Amazon ECR

@@ -1,0 +1,31 @@
+version: "3.5"
+
+services:
+
+  download-production-data:
+    image: mongo:latest
+    command: /scripts/export-production-data.sh
+    volumes:
+      - ~/.pocket/production_data:/data/
+      - "../scripts:/scripts"
+    env_file:
+      - ../.tasks.env
+    networks:
+      - portalnet
+
+  persist-production-data:
+    image: mongo:latest
+    command: /scripts/import-production-data.sh
+    volumes:
+      - ~/.pocket/production_data:/data/
+      - "../scripts:/scripts"
+      - ~/.pocket/mongodb:/data/db
+    env_file:
+      - ../.tasks.env
+    networks:
+      - portalnet
+  # add pocket account creation
+
+networks:
+  portalnet:
+    driver: bridge
