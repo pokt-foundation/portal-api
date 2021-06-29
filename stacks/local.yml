@@ -3,6 +3,7 @@ version: "3.5"
 services:
   gateway:
     image: pocket-network/gateway
+    container_name: gateway
     build:
       context: ..
       dockerfile: ./Dockerfile
@@ -18,7 +19,8 @@ services:
       - pocket
 
   db:
-    image: mongo:latest
+    image: mongo:4.2.14
+    container_name: db
     env_file:
       - ../.tasks.env
     volumes: 
@@ -30,6 +32,7 @@ services:
   
   cache:
     image: "redis:alpine"
+    container_name: cache
     command: redis-server
     ports:
       - "6379:6379"
@@ -39,6 +42,7 @@ services:
       - pocket
 
   metricsdb:
+    container_name: metricsdb
     image: timescale/timescaledb:2.0.2-pg12
     environment:
       - POSTGRES_USER=pguser
@@ -47,16 +51,7 @@ services:
     ports:
       - 5432:5432
     networks:
-      - pocket    
-
-  s3:
-    image: minio/minio
-    command: server /data
-    ports:
-      - '9000:9000'
-    environment:
-      MINIO_ACCESS_KEY: gatewayS3AccessKeyId
-      MINIO_SECRET_KEY: gatewayS3SecretAccessKey
+      - pocket
 
 networks:
   pocket:
