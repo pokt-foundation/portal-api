@@ -15,6 +15,10 @@ services:
     volumes:
       - "../src:/usr/src/gateway/src"
       - "../dist:/usr/src/gateway/dist"
+    depends_on:
+      - db
+      - cache
+      - metricsdb
     networks:
       - pocket
 
