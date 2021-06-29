@@ -5,13 +5,8 @@ echo "Downloading production collections";
 for collection in "Applications" "Blockchains" "CronJobData" "LoadBalancers" "Nodes" "PaymentHistory" "PaymentMethods" "PendingTransactions" "Users"; \
   do \
     echo "Downloading $collection..."; \
-    echo "--uri $MONGO_SRC_PROTOCOL://$MONGO_SRC_USER:$MONGO_SRC_PW@$MONGO_SRC_HOST/$MONGO_SRC_DB"; \
 
-    mongoexport \
-        --uri $MONGO_PROTOCOL://$MONGO_SRC_USER:$MONGO_SRC_PW@$MONGO_SRC_HOST/$MONGO_SRC_DB \
-        --collection "$collection" \
-        --type json \
-        --out /data/$collection; \
+    mongoexport --uri=$MONGO_SRC_CONNECTION --collection=$collection --type=json --out=/data/$collection \
 
-    echo "Downloaded $collection..."; \
+    echo "Done $collection..."; \
 done;

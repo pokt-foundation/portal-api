@@ -13,7 +13,7 @@ services:
     networks:
       - portalnet
 
-  persist-production-data:
+  import-production-data:
     image: mongo:4.2.14
     command: /scripts/import-production-data.sh
     volumes:
@@ -24,7 +24,6 @@ services:
       - ../.tasks.env
     networks:
       - portalnet
-  # add pocket account creation
 
 networks:
   portalnet:
