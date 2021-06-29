@@ -3,7 +3,7 @@ version: "3.5"
 services:
 
   download-production-data:
-    image: mongo:latest
+    image: mongo:4.2.14
     command: /scripts/export-production-data.sh
     volumes:
       - ~/.pocket/production_data:/data/
@@ -14,7 +14,7 @@ services:
       - portalnet
 
   persist-production-data:
-    image: mongo:latest
+    image: mongo:4.2.14
     command: /scripts/import-production-data.sh
     volumes:
       - ~/.pocket/production_data:/data/
