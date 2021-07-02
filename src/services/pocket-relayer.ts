@@ -231,7 +231,7 @@ export class PocketRelayer {
       let axiosConfig = {};
 
       // Add relay path to URL
-      const altruistURL = (relayPath === undefined) ? this.altruists[blockchain] : this.altruists[blockchain] + '/' + relayPath;
+      const altruistURL = (relayPath === undefined || relayPath === "") ? this.altruists[blockchain] : this.altruists[blockchain] + '/' + relayPath;
 
       // Remove user/pass from the altruist URL
       const redactedAltruistURL = String(this.altruists[blockchain])!.replace(/\/[^\/]*@/g, '');
