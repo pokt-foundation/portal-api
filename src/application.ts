@@ -49,7 +49,7 @@ export class PocketGatewayApplication extends BootMixin(
     // For Dev, you need to pass them in via .env file
     const environment: string = process.env.NODE_ENV || 'production';
     const dispatchURL: string = process.env.DISPATCH_URL ?? '';
-    const fallbackURL: string = process.env.FALLBACK_URL ?? '';
+    const altruists: string = process.env.ALTRUISTS ?? '';
     const clientPrivateKey: string =
       process.env.GATEWAY_CLIENT_PRIVATE_KEY ?? '';
     const clientPassphrase: string =
@@ -67,8 +67,8 @@ export class PocketGatewayApplication extends BootMixin(
     if (!dispatchURL) {
       throw new HttpErrors.InternalServerError('DISPATCH_URL required in ENV');
     }
-    if (!fallbackURL) {
-      throw new HttpErrors.InternalServerError('FALLBACK_URL required in ENV');
+    if (!altruists) {
+      throw new HttpErrors.InternalServerError('ALTRUISTS required in ENV');
     }
     if (!clientPrivateKey) {
       throw new HttpErrors.InternalServerError(
@@ -129,7 +129,7 @@ export class PocketGatewayApplication extends BootMixin(
     this.bind('pocketInstance').to(pocket);
     this.bind('pocketConfiguration').to(configuration);
     this.bind('relayRetries').to(relayRetries);
-    this.bind('fallbackURL').to(fallbackURL);
+    this.bind('altruists').to(altruists);
     this.bind('logger').to(logger);
 
     // Unlock primary client account for relay signing

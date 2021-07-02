@@ -38,7 +38,7 @@ export class V1Controller {
     @inject('pgPool') private pgPool: PGPool,
     @inject('databaseEncryptionKey') private databaseEncryptionKey: string,
     @inject('processUID') private processUID: string,
-    @inject('fallbackURL') private fallbackURL: string,
+    @inject('altruists') private altruists: string,
     @inject('requestID') private requestID: string,
     @inject('aatPlan') private aatPlan: string,
     @repository(ApplicationsRepository)
@@ -74,7 +74,7 @@ export class V1Controller {
       relayRetries: this.relayRetries,
       blockchainsRepository: this.blockchainsRepository,
       checkDebug: this.checkDebug(),
-      fallbackURL: this.fallbackURL,
+      altruists: this.altruists,
       aatPlan: this.aatPlan,
     });
   }

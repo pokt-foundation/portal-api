@@ -71,6 +71,7 @@
     "@pokt-network/pocket-js": "0.6.13-rc",
     "@types/ioredis": "^4.16.2",
     "@types/pg": "^7.14.3",
+    "axios": "^0.21.1",
     "dotenv": "^8.2.0",
     "got": "^11.1.4",
     "ioredis": "^4.16.3",

@@ -10,7 +10,6 @@ import {
   Pocket,
   Configuration,
   RpcError,
-  HttpRpcProvider,
   HTTPMethod,
   Node,
 } from '@pokt-network/pocket-js';
@@ -18,10 +17,12 @@ import {Redis} from 'ioredis';
 import {BlockchainsRepository} from '../repositories';
 import {Applications} from '../models';
 import {RelayError} from '../errors/relay-error';
-
 import AatPlans from '../config/aat-plans.json';
 
+import { JSONObject } from '@loopback/context';
+
 const logger = require('../services/logger');
+const axios = require('axios');
 
 interface FallbackRelay {
   payload: FallbackPayload;
@@ -56,7 +57,7 @@ export class PocketRelayer {
   relayRetries: number;
   blockchainsRepository: BlockchainsRepository;
   checkDebug: boolean;
-  fallbacks: Array<URL>;
+  altruists: JSONObject;
   aatPlan: string;
 
   constructor({
@@ -74,7 +75,7 @@ export class PocketRelayer {
     relayRetries,
     blockchainsRepository,
     checkDebug,
-    fallbackURL,
+    altruists,
     aatPlan,
   }: {
     host: string;
@@ -91,7 +92,7 @@ export class PocketRelayer {
     relayRetries: number;
     blockchainsRepository: BlockchainsRepository;
     checkDebug: boolean;
-    fallbackURL: string;
+    altruists: string;
     aatPlan: string;
   }) {
     this.host = host;
@@ -110,18 +111,8 @@ export class PocketRelayer {
     this.checkDebug = checkDebug;
     this.aatPlan = aatPlan;
 
-    // Create the array of fallback relayers as last resort
-    const fallbacks = [];
-
-    if (fallbackURL.indexOf(',')) {
-      const fallbackArray = fallbackURL.split(',');
-      fallbackArray.forEach(function (fallback) {
-        fallbacks.push(new URL(fallback));
-      });
-    } else {
-      fallbacks.push(new URL(fallbackURL));
-    }
-    this.fallbacks = fallbacks;
+    // Create the array of altruist relayers as last resort
+    this.altruists = JSON.parse(altruists);
   }
 
   async sendRelay(
@@ -150,8 +141,7 @@ export class PocketRelayer {
       : JSON.stringify(rawData);
     const data = JSON.stringify(parsedRawData);
     const method = this.parseMethod(parsedRawData);
-    const fallbackAvailable =
-      this.fallbacks.length > 0 && this.pocket !== undefined ? true : false;
+    const fallbackAvailable = this.altruists[blockchain] !== undefined ? true : false;
     // Retries if applicable
     for (let x = 0; x <= this.relayRetries; x++) {
       let relayStart = process.hrtime();
@@ -235,82 +225,76 @@ export class PocketRelayer {
         });
       }
     }
-    // Exhausted relay attempts; use fallback
+    // Exhausted network relay attempts; use fallback
     if (fallbackAvailable) {
       let relayStart = process.hrtime();
+      let axiosConfig = {};
 
-      const fallbackChoice = new HttpRpcProvider(this.fallbacks[Math.floor(Math.random() * this.fallbacks.length)]);
-      const fallbackPayload : FallbackPayload = {data: rawData.toString(), method: httpMethod, path: relayPath,  headers: null};
-      const fallbackMeta: FallbackMeta = {block_height: 0};
-      const fallbackProof: FallbackProof = {blockchain: blockchain};
-      const fallbackRelay: FallbackRelay = {
-        payload: fallbackPayload,
-        meta: fallbackMeta,
-        proof: fallbackProof,
-      };
+      // Add relay path to URL
+      const altruistURL = (relayPath === undefined) ? this.altruists[blockchain] : this.altruists[blockchain] + '/' + relayPath;
 
-      const fallbackResponse = await fallbackChoice.send(
-        '/v1/client/relay',
-        JSON.stringify(fallbackRelay),
-        1200000,
-        false,
-      );
+      // Remove user/pass from the altruist URL
+      const redactedAltruistURL = String(this.altruists[blockchain])!.replace(/\/[^\/]*@/g, '');
+
+      if (httpMethod === 'POST') {
+        axiosConfig = {
+          method: 'POST',
+          url: altruistURL,
+          data: rawData.toString(),
+          headers: {'Content-Type': 'application/json'}
+        };
+      } else {
+        axiosConfig = {
+          method: httpMethod,
+          url: altruistURL,
+          data: rawData.toString()
+        };
+      }
+      const fallbackResponse = await axios(axiosConfig);
 
       if (this.checkDebug) {
-        logger.log('debug', JSON.stringify(fallbackChoice), {
-          requestID: requestID,
-          relayType: 'FALLBACK',
-          typeID: application.id,
-          serviceNode: 'fallback:' + fallbackChoice.baseURL,
-        });
-        logger.log('debug', JSON.stringify(fallbackRelay), {
-          requestID: requestID,
-          relayType: 'FALLBACK',
-          typeID: application.id,
-          serviceNode: 'fallback:' + fallbackChoice.baseURL,
-        });
         logger.log('debug', JSON.stringify(fallbackResponse), {
           requestID: requestID,
           relayType: 'FALLBACK',
           typeID: application.id,
-          serviceNode: 'fallback:' + fallbackChoice.baseURL,
+          serviceNode: 'fallback:' + redactedAltruistURL,
         });
       }
-      if (!(fallbackResponse instanceof RpcError)) {
-        const responseParsed = JSON.parse(fallbackResponse);
 
+      if (!(fallbackResponse instanceof Error)) {
+        const responseParsed = JSON.stringify(fallbackResponse.data);
+        
         await this.metricsRecorder.recordMetric({
           requestID: requestID,
           applicationID: application.id,
           appPubKey: application.gatewayAAT.applicationPublicKey,
           blockchain,
-          serviceNode: 'fallback:' + fallbackChoice.baseURL,
+          serviceNode: 'fallback:' + redactedAltruistURL,
           relayStart,
           result: 200,
-          bytes: Buffer.byteLength(responseParsed.response, 'utf8'),
+          bytes: Buffer.byteLength(responseParsed, 'utf8'),
           delivered: false,
           fallback: true,
           method: method,
           error: undefined,
         });
+        
         // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
         if (
-          blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
-          blockchainEnforceResult.toLowerCase() === 'json' // the check is for JSON
-        ) {
-          return typeof responseParsed.response === 'string' &&
-            responseParsed.response.match('{')
-            ? JSON.parse(responseParsed.response)
-            : responseParsed.response;
-        } else {
-          return responseParsed.response;
+            blockchainEnforceResult && // Is this blockchain marked for result enforcement and
+            blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON
+            typeof responseParsed === 'string' && 
+            (responseParsed.match('{') || responseParsed.match('[{')) // and it matches JSON
+        ) { 
+            return JSON.parse(responseParsed);
         }
+        return responseParsed; 
       } else {
         logger.log('error', JSON.stringify(fallbackResponse), {
           requestID: requestID,
           relayType: 'FALLBACK',
           typeID: application.id,
-          serviceNode: 'fallback:' + fallbackChoice.baseURL,
+          serviceNode: 'fallback:' + redactedAltruistURL,
         });
       }
     }
