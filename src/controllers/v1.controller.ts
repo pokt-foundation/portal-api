@@ -143,13 +143,13 @@ export class V1Controller {
         }
       }
     } catch (e) {
-      logger.log('error', 'Load balancer not found', {
+      logger.log('error', e.message, {
         requestID: this.requestID,
         relayType: 'LB',
         typeID: id,
         serviceNode: '',
       });
-      return new HttpErrors.InternalServerError('Load balancer not found');
+      return new HttpErrors.InternalServerError(e.message);
     }
 
     logger.log('error', 'Load balancer configuration error', {
@@ -215,13 +215,13 @@ export class V1Controller {
         return this.pocketRelayer.sendRelay(rawData, this.relayPath, this.httpMethod, application, this.requestID);
       }
     } catch (e) {
-      logger.log('error', 'Application not found', {
+      logger.log('error', e.message, {
         requestID: this.requestID,
         relayType: 'APP',
         typeID: id,
         serviceNode: '',
       });
-      return new HttpErrors.InternalServerError('Application not found');
+      return new HttpErrors.InternalServerError(e.message);
     }
     logger.log('error', 'Application not found', {
       requestID: this.requestID,
