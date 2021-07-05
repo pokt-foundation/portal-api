@@ -46,9 +46,8 @@ export class PocketGatewayApplication extends BootMixin(
     // Requirements; for Production these are stored in GitHub repo secrets
     //
     // For Dev, you need to pass them in via .env file
-    console.log(process.env);
     let environment: string = process.env.NODE_ENV ?? 'production';
-    console.log(environment);
+    logger.log('info', 'Environment: ' + environment);
 
     const dispatchURL: string = process.env.DISPATCH_URL ?? '';
     const altruists: string = process.env.ALTRUISTS ?? '';
@@ -64,7 +63,7 @@ export class PocketGatewayApplication extends BootMixin(
       parseInt(process.env.POCKET_RELAY_RETRIES) ?? 0;
     const databaseEncryptionKey: string =
       process.env.DATABASE_ENCRYPTION_KEY ?? '';
-    const aatPlan = process.env.AAT_PLAN || AatPlans.PREMIUM;
+    const aatPlan = process.env.AAT_PLAN ?? AatPlans.PREMIUM;
 
     if (!dispatchURL) {
       throw new HttpErrors.InternalServerError('DISPATCH_URL required in ENV');
@@ -213,8 +212,6 @@ export class PocketGatewayApplication extends BootMixin(
       connectionString: pgConnection,
       ssl,
     };
-    console.log("pgconfig");
-    console.log(pgConfig);
     const pgPool = new pg.Pool(pgConfig);
 
     this.bind('pgPool').to(pgPool);
