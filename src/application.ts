@@ -5,7 +5,6 @@ import {RestApplication, HttpErrors} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import {GatewaySequence} from './sequence';
 import {Account} from '@pokt-network/pocket-js/dist/keybase/models/account';
-import {RelayProfiler} from './services/relay-profiler';
 
 import path from 'path';
 import AatPlans from './config/aat-plans.json';
@@ -173,6 +172,9 @@ export class PocketGatewayApplication extends BootMixin(
 
     if (!pgConnection) {
       throw new HttpErrors.InternalServerError('PG_CONNECTION required in ENV');
+    }
+    else {
+      logger.log('info', pgConnection);
     }
 
     if (!pgCertificate && environment !== 'development') {
