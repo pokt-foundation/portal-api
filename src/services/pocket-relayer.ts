@@ -234,7 +234,7 @@ export class PocketRelayer {
       const altruistURL = (relayPath === undefined || relayPath === "") ? this.altruists[blockchain] : this.altruists[blockchain] + '/' + relayPath;
 
       // Remove user/pass from the altruist URL
-      const redactedAltruistURL = String(this.altruists[blockchain])!.replace(/\/[^\/]*@/g, '');
+      const redactedAltruistURL = String(this.altruists[blockchain])!.replace(/[\w]*:\/\/[^\/]*@/g, '');
 
       if (httpMethod === 'POST') {
         axiosConfig = {
@@ -250,47 +250,57 @@ export class PocketRelayer {
           data: rawData.toString()
         };
       }
-      const fallbackResponse = await axios(axiosConfig);
+      try {
+        const fallbackResponse = await axios(axiosConfig);
 
-      if (this.checkDebug) {
-        logger.log('debug', JSON.stringify(fallbackResponse), {
-          requestID: requestID,
-          relayType: 'FALLBACK',
-          typeID: application.id,
-          serviceNode: 'fallback:' + redactedAltruistURL,
-        });
-      }
-
-      if (!(fallbackResponse instanceof Error)) {
-        const responseParsed = JSON.stringify(fallbackResponse.data);
-        
-        await this.metricsRecorder.recordMetric({
-          requestID: requestID,
-          applicationID: application.id,
-          appPubKey: application.gatewayAAT.applicationPublicKey,
-          blockchain,
-          serviceNode: 'fallback:' + redactedAltruistURL,
-          relayStart,
-          result: 200,
-          bytes: Buffer.byteLength(responseParsed, 'utf8'),
-          delivered: false,
-          fallback: true,
-          method: method,
-          error: undefined,
-        });
-        
-        // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
-        if (
-            blockchainEnforceResult && // Is this blockchain marked for result enforcement and
-            blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON
-            typeof responseParsed === 'string' && 
-            (responseParsed.match('{') || responseParsed.match('[{')) // and it matches JSON
-        ) { 
-            return JSON.parse(responseParsed);
+        if (this.checkDebug) {
+          logger.log('debug', JSON.stringify(fallbackResponse.data), {
+            requestID: requestID,
+            relayType: 'FALLBACK',
+            typeID: application.id,
+            serviceNode: 'fallback:' + redactedAltruistURL,
+          });
         }
-        return responseParsed; 
-      } else {
-        logger.log('error', JSON.stringify(fallbackResponse), {
+
+        if (!(fallbackResponse instanceof Error)) {
+          const responseParsed = JSON.stringify(fallbackResponse.data);
+          
+          await this.metricsRecorder.recordMetric({
+            requestID: requestID,
+            applicationID: application.id,
+            appPubKey: application.gatewayAAT.applicationPublicKey,
+            blockchain,
+            serviceNode: 'fallback:' + redactedAltruistURL,
+            relayStart,
+            result: 200,
+            bytes: Buffer.byteLength(responseParsed, 'utf8'),
+            delivered: false,
+            fallback: true,
+            method: method,
+            error: undefined,
+          });
+          
+          // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
+          if (
+              blockchainEnforceResult && // Is this blockchain marked for result enforcement and
+              blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON
+              typeof responseParsed === 'string' && 
+              (responseParsed.match('{') || responseParsed.match('[{')) // and it matches JSON
+          ) { 
+              return JSON.parse(responseParsed);
+          }
+          return responseParsed; 
+        } else {
+          logger.log('error', JSON.stringify(fallbackResponse), {
+            requestID: requestID,
+            relayType: 'FALLBACK',
+            typeID: application.id,
+            serviceNode: 'fallback:' + redactedAltruistURL,
+          });
+        }
+      }
+      catch (e) {
+        logger.log('error', e.message, {
           requestID: requestID,
           relayType: 'FALLBACK',
           typeID: application.id,
