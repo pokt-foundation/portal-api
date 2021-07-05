@@ -9,7 +9,6 @@ import {
   RelayResponse,
   Pocket,
   Configuration,
-  RpcError,
   HTTPMethod,
   Node,
 } from '@pokt-network/pocket-js';
@@ -23,24 +22,6 @@ import { JSONObject } from '@loopback/context';
 
 const logger = require('../services/logger');
 const axios = require('axios');
-
-interface FallbackRelay {
-  payload: FallbackPayload;
-  meta: FallbackMeta;
-  proof: FallbackProof;
-}
-interface FallbackPayload {
-  data: String;
-  method: String;
-  path: String;
-  headers: null;
-}
-interface FallbackMeta {
-  block_height: number;
-}
-interface FallbackProof {
-  blockchain: String;
-}
 
 export class PocketRelayer {
   host: string;
@@ -405,17 +386,6 @@ export class PocketRelayer {
       relayConfiguration = this.updateConfiguration(requestTimeOut);
     }
 
-    logger.log('info', JSON.stringify({
-      data,
-      blockchain,
-      relayConfiguration,
-      httpMethod,
-      relayPath,
-      node,
-    }))
-    logger.info('info', 'sending:'+JSON.stringify({
-      pocketAAT, data, application
-    }))
     // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
     const relayResponse = await this.pocket.sendRelay(
       data,

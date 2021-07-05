@@ -210,7 +210,6 @@ export class V1Controller {
 
     try {
       const application = await this.fetchApplication(id, filter);
-      logger.log('info', 'application' + JSON.stringify(application))
       if (application?.id) {
         return this.pocketRelayer.sendRelay(rawData, this.relayPath, this.httpMethod, application, this.requestID);
       }
