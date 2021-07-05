@@ -25,14 +25,6 @@ export class GatewaySequence implements SequenceHandler {
   async handle(context: RequestContext) {
     try {
       const {request, response} = context;
-      // Just a HACK for now for local development
-      // I will subsitute with local development proxy
-      // If you are reviewing, donate one bagel for good cause
-      if ((process.env.NODE_ENV = 'development')) {
-        request.headers[
-          'host'
-        ] = `${request.headers['blockchain-subdomain']}.${request.headers['host']}`;
-      }
 
       // Record the host, user-agent, and origin for processing
       context.bind('headers').to(request.headers);
