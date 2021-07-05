@@ -173,9 +173,6 @@ export class PocketGatewayApplication extends BootMixin(
     if (!pgConnection) {
       throw new HttpErrors.InternalServerError('PG_CONNECTION required in ENV');
     }
-    else {
-      logger.log('info', pgConnection);
-    }
 
     if (!pgCertificate && environment !== 'development') {
       throw new HttpErrors.InternalServerError(
@@ -213,7 +210,8 @@ export class PocketGatewayApplication extends BootMixin(
       connectionString: pgConnection,
       ssl,
     };
-
+    console.log("pgconfig");
+    console.log(pgConfig);
     const pgPool = new pg.Pool(pgConfig);
 
     this.bind('pgPool').to(pgPool);
