@@ -35,13 +35,9 @@ const consoleFormat = printf(({ level, message, requestID, relayType, typeID, se
   return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${error}] [${elapsedTime}] ${message}`;
 });
 
-const debugFilter = format((log: Log, opts: any) => {
-  return log.level === 'debug' ? log : false;
-});
-
 const options = {
   console: {
-    level: 'info',
+    level: 'debug',
     handleExceptions: true,
     colorize: true,
     format: format.combine(
@@ -54,7 +50,7 @@ const options = {
     ),
   },
   logzio: {
-    level: 'info',
+    level: 'debug',
     name: 'winston_logzio',
     token: logzToken,
     host: 'listener-uk.logz.io',

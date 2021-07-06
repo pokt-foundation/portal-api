@@ -38,7 +38,7 @@ export class V1Controller {
     @inject('pgPool') private pgPool: PGPool,
     @inject('databaseEncryptionKey') private databaseEncryptionKey: string,
     @inject('processUID') private processUID: string,
-    @inject('fallbackURL') private fallbackURL: string,
+    @inject('altruists') private altruists: string,
     @inject('requestID') private requestID: string,
     @inject('aatPlan') private aatPlan: string,
     @repository(ApplicationsRepository)
@@ -74,7 +74,7 @@ export class V1Controller {
       relayRetries: this.relayRetries,
       blockchainsRepository: this.blockchainsRepository,
       checkDebug: this.checkDebug(),
-      fallbackURL: this.fallbackURL,
+      altruists: this.altruists,
       aatPlan: this.aatPlan,
     });
   }
@@ -143,13 +143,13 @@ export class V1Controller {
         }
       }
     } catch (e) {
-      logger.log('error', 'Load balancer not found', {
+      logger.log('error', e.message, {
         requestID: this.requestID,
         relayType: 'LB',
         typeID: id,
         serviceNode: '',
       });
-      return new HttpErrors.InternalServerError('Load balancer not found');
+      return new HttpErrors.InternalServerError(e.message);
     }
 
     logger.log('error', 'Load balancer configuration error', {
@@ -210,18 +210,17 @@ export class V1Controller {
 
     try {
       const application = await this.fetchApplication(id, filter);
-      logger.log('info', 'application' + JSON.stringify(application))
       if (application?.id) {
         return this.pocketRelayer.sendRelay(rawData, this.relayPath, this.httpMethod, application, this.requestID);
       }
     } catch (e) {
-      logger.log('error', 'Application not found', {
+      logger.log('error', e.message, {
         requestID: this.requestID,
         relayType: 'APP',
         typeID: id,
         serviceNode: '',
       });
-      return new HttpErrors.InternalServerError('Application not found');
+      return new HttpErrors.InternalServerError(e.message);
     }
     logger.log('error', 'Application not found', {
       requestID: this.requestID,
