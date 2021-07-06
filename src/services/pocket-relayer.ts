@@ -20,7 +20,7 @@ import AatPlans from '../config/aat-plans.json';
 
 import { JSONObject } from '@loopback/context';
 
-import logger from '../services/logger';
+const logger = require('../services/logger');
 import axios from 'axios';
 
 export class PocketRelayer {

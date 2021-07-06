@@ -14,12 +14,12 @@ const logger = require('./services/logger');
 const pocketJS = require('@pokt-network/pocket-js');
 const {Pocket, Configuration, HttpRpcProvider} = pocketJS;
 
-const Redis = require('ioredis');
-const crypto = require('crypto');
-const os = require('os');
-const process = require('process');
-const pg = require('pg');
-const got = require('got');
+import Redis from 'ioredis';
+import crypto from 'crypto';
+import os from 'os';
+import process from 'process';
+import pg from 'pg';
+import got from 'got';
 
 require('log-timestamp');
 require('dotenv').config();
@@ -55,12 +55,12 @@ export class PocketGatewayApplication extends BootMixin(
       process.env.GATEWAY_CLIENT_PRIVATE_KEY ?? '';
     const clientPassphrase: string =
       process.env.GATEWAY_CLIENT_PASSPHRASE ?? '';
-    const pocketSessionBlockFrequency: number =
-      parseInt(process.env.POCKET_SESSION_BLOCK_FREQUENCY) ?? 0;
-    const pocketBlockTime: number =
-      parseInt(process.env.POCKET_BLOCK_TIME) ?? 0;
-    const relayRetries: number =
-      parseInt(process.env.POCKET_RELAY_RETRIES) ?? 0;
+    const pocketSessionBlockFrequency: string =
+      process.env.POCKET_SESSION_BLOCK_FREQUENCY ?? '';
+    const pocketBlockTime: string =
+      process.env.POCKET_BLOCK_TIME ?? '';
+    const relayRetries: string =
+      process.env.POCKET_RELAY_RETRIES ?? '';
     const databaseEncryptionKey: string =
       process.env.DATABASE_ENCRYPTION_KEY ?? '';
     const aatPlan = process.env.AAT_PLAN ?? AatPlans.PREMIUM;
@@ -81,12 +81,12 @@ export class PocketGatewayApplication extends BootMixin(
         'GATEWAY_CLIENT_PASSPHRASE required in ENV',
       );
     }
-    if (!pocketSessionBlockFrequency || pocketSessionBlockFrequency === 0) {
+    if (!pocketSessionBlockFrequency || pocketSessionBlockFrequency === '') {
       throw new HttpErrors.InternalServerError(
         'POCKET_SESSION_BLOCK_FREQUENCY required in ENV',
       );
     }
-    if (!pocketBlockTime || pocketBlockTime === 0) {
+    if (!pocketBlockTime || pocketBlockTime === '') {
       throw new HttpErrors.InternalServerError(
         'POCKET_BLOCK_TIME required in ENV',
       );
@@ -117,19 +117,19 @@ export class PocketGatewayApplication extends BootMixin(
       0,
       120000,
       false,
-      pocketSessionBlockFrequency,
-      pocketBlockTime,
+      parseInt(pocketSessionBlockFrequency),
+      parseInt(pocketBlockTime),
       undefined,
       undefined,
       false,
     );
-    const rpcProvider = new HttpRpcProvider(dispatchers);
+    const rpcProvider = new HttpRpcProvider(dispatchers[0]);
     const pocket = new Pocket(dispatchers, rpcProvider, configuration);
 
     // Bind to application context for shared re-use
     this.bind('pocketInstance').to(pocket);
     this.bind('pocketConfiguration').to(configuration);
-    this.bind('relayRetries').to(relayRetries);
+    this.bind('relayRetries').to(parseInt(relayRetries));
     this.bind('altruists').to(altruists);
     this.bind('logger').to(logger);
 
@@ -165,7 +165,7 @@ export class PocketGatewayApplication extends BootMixin(
     if (!redisPort) {
       throw new HttpErrors.InternalServerError('REDIS_PORT required in ENV');
     }
-    const redis = new Redis(redisPort, redisEndpoint);
+    const redis = new Redis(parseInt(redisPort), redisEndpoint);
     this.bind('redisInstance').to(redis);
 
     // Load Postgres for TimescaleDB metrics

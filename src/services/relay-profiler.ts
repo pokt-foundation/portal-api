@@ -6,7 +6,7 @@ import {
 import {Pool as PGPool} from 'pg';
 
 // import pgFormat from 'pg-format';
-// import logger from '../services/logger';
+// const logger = require('../services/logger');
 
 export class RelayProfiler extends BaseProfiler {
   public data: {key: string, time_elapsed: number | undefined}[] = []

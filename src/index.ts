@@ -1,7 +1,7 @@
 import {PocketGatewayApplication} from './application';
 import {ApplicationConfig} from '@loopback/core';
 
-import logger from './services/logger';
+const logger = require('./services/logger');
 
 export {PocketGatewayApplication};
 

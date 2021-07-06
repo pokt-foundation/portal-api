@@ -15,7 +15,7 @@ import {MetricsRecorder} from '../services/metrics-recorder';
 import {PocketRelayer} from '../services/pocket-relayer';
 import {SyncChecker} from '../services/sync-checker';
 
-import logger from '../services/logger';
+const logger = require('../services/logger');
 
 export class V1Controller {
   cherryPicker: CherryPicker;

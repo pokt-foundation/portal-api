@@ -3,7 +3,7 @@ import {MetricsRecorder} from '../services/metrics-recorder';
 import {Redis} from 'ioredis';
 var crypto = require('crypto');
 
-import logger from '../services/logger';
+const logger = require('../services/logger');
 
 export class SyncChecker {
   redis: Redis;

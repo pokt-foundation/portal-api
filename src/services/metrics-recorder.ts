@@ -3,7 +3,7 @@ import {Pool as PGPool} from 'pg';
 import {CherryPicker} from './cherry-picker';
 
 import pgFormat from 'pg-format';
-import logger from '../services/logger';
+const logger = require('../services/logger');
 
 export class MetricsRecorder {
   redis: Redis;
