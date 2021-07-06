@@ -72,7 +72,9 @@ export class GatewaySequence implements SequenceHandler {
       }
       
       response.header('Access-Control-Allow-Origin', '*');
-      response.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+      response.header('Access-Control-Allow-Methods','*');
+      response.header('Access-Control-Allow-Credentials', 'true');
+      response.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Authorization, Accept');
             
       const route = this.findRoute(request);
       const args = await this.parseParams(request, route);
