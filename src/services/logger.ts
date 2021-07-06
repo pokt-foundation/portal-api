@@ -1,12 +1,24 @@
 import {HttpErrors} from '@loopback/rest';
 import LogzioWinstonTransport from 'winston-logzio';
 
-require("dotenv").config();
+require('dotenv').config();
 
-const { createLogger, format, transports } = require('winston');
+const { createLogger, format, transports: winstonTransports } = require('winston');
 const { printf } = format;
 
+interface Log {
+  level: string;
+  message: string;
+  requestID: string;
+  relayType: string;
+  typeID: string;
+  serviceNode: string;
+  error: string | undefined;
+  elapsedTime: number;
+}
+
 const logzToken: string = process.env.LOGZ_TOKEN ?? '';
+const environment: string = process.env.NODE_ENV ?? 'production';
 
 if (!logzToken) {
   throw new HttpErrors.InternalServerError(
@@ -23,20 +35,9 @@ const consoleFormat = printf(({ level, message, requestID, relayType, typeID, se
   return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${error}] [${elapsedTime}] ${message}`;
 });
 
-const debugFilter = format((log:Log, opts:any) => {
-  return log.level === 'debug' ? log : false;
-});
-
-const logzioWinstonTransport = new LogzioWinstonTransport({
-  level: 'info',
-  name: 'winston_logzio',
-  token: logzToken,
-  host: 'listener-uk.logz.io',
-});
-
 const options = {
   console: {
-    level: 'info',
+    level: 'debug',
     handleExceptions: true,
     colorize: true,
     format: format.combine(
@@ -48,24 +49,24 @@ const options = {
       consoleFormat,
     ),
   },
+  logzio: {
+    level: 'debug',
+    name: 'winston_logzio',
+    token: logzToken,
+    host: 'listener-uk.logz.io',
+  }
 };
 
-interface Log {
-  level: string;
-  message: string;
-  requestID: string;
-  relayType: string;
-  typeID: string;
-  serviceNode: string;
-  error: string | undefined;
-  elapsedTime: number;
-}
+const logzioWinstonTransport = new LogzioWinstonTransport(options.logzio);
+const consoleWinstonTransport = new winstonTransports.Console(options.console);
+
+const perEnvTransports =
+  environment === 'production'
+    ? [consoleWinstonTransport, logzioWinstonTransport]
+    : [consoleWinstonTransport]
 
 module.exports = createLogger({
   format: format.json(),
-  transports: [
-    new transports.Console(options.console),
-    logzioWinstonTransport,
-  ],
+  transports: perEnvTransports,
   exitOnError: false,
 });

@@ -14,3 +14,17 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 node_modules
+
+# editor files
+*.swp
+*/**/*.swp
+
+# build artifacts
+dist
+
+# env files
+.env
+.tasks.env
+
+# ts configs
+tsconfig.tsbuildinfo

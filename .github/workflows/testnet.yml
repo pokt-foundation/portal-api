@@ -2,7 +2,7 @@ name: Testnet Deployment
 
 on:
   push:
-    branches: [ staging-off ]
+    branches: [ testnet ]
 
 jobs:
   deploy:
@@ -35,12 +35,13 @@ jobs:
         envkey_PG_CERTIFICATE: ${{ secrets.PG_TESTNET_CERTIFICATE }}
         envkey_LOGZ_TOKEN: ${{ secrets.LOGZ_TOKEN }}
         envkey_DISPATCH_URL: https://node1.testnet.pokt.network,https://node2.testnet.pokt.network,https://node3.testnet.pokt.network
-        envkey_FALLBACK_URL: https://node1.testnet.pokt.network,https://node2.testnet.pokt.network,https://node3.testnet.pokt.network
+        envkey_ALTRUISTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_ALTRUISTS }}
         envkey_REDIS_ENDPOINT: dashboard-testnet.js6zbp.ng.0001.usw2.cache.amazonaws.com
         envkey_REDIS_PORT: 6379
         envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
         envkey_POCKET_BLOCK_TIME: 900000
         envkey_POCKET_RELAY_RETRIES: 5
+        envkey_AAT_PLAN: 'premium'
         file_name: .env
 
     - name: Build, tag, and push image to Amazon ECR

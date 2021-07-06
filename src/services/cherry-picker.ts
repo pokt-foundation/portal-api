@@ -1,6 +1,6 @@
 import {Node, Session} from '@pokt-network/pocket-js';
 import {Redis} from 'ioredis';
-import { Applications } from '../models';
+import {Applications} from '../models';
 
 const logger = require('../services/logger');
 
@@ -38,13 +38,18 @@ export class CherryPicker {
     // Sort application logs by highest success rate, then by lowest latency
     sortedLogs = this.sortLogs(sortedLogs, requestID, 'LB', loadBalancerID);
 
-    // Iterate through sorted logs and form in to a weighted list 
+    // Iterate through sorted logs and form in to a weighted list
     // 15 failures per 15 minutes allowed on apps (all 5 nodes failed 3 times)
     let rankedItems = await this.rankItems(blockchain, sortedLogs, 15);  
 
     // If we have no applications left because all are failures, ¯\_(ツ)_/¯
     if (rankedItems.length === 0) {
-      logger.log('warn', 'Cherry picking failure -- apps', {requestID: requestID, relayType: 'LB', typeID: loadBalancerID, serviceNode: ''});
+      logger.log('warn', 'Cherry picking failure -- apps', {
+        requestID: requestID,
+        relayType: 'LB',
+        typeID: loadBalancerID,
+        serviceNode: '',
+      });
       rankedItems = applications;
     }
 
@@ -54,11 +59,13 @@ export class CherryPicker {
       logger.log(
         'debug',
         'Number of weighted applications for selection: ' + rankedItems.length,
-        {requestID: requestID, relayType: 'LB', typeID: loadBalancerID});
+        {requestID: requestID, relayType: 'LB', typeID: loadBalancerID},
+      );
       logger.log(
         'debug',
         'Selected ' + selectedApplication + ' : ' + application,
-        {requestID: requestID, relayType: 'LB', typeID: loadBalancerID});
+        {requestID: requestID, relayType: 'LB', typeID: loadBalancerID},
+      );
     }
     return application;
   }
@@ -98,7 +105,12 @@ export class CherryPicker {
 
     // If we have no nodes left because all 5 are failures, ¯\_(ツ)_/¯
     if (rankedItems.length === 0) {
-      logger.log('warn', 'Cherry picking failure -- nodes', {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
+      logger.log('warn', 'Cherry picking failure -- nodes', {
+        requestID: requestID,
+        relayType: 'APP',
+        typeID: application.id,
+        serviceNode: '',
+      });
       rankedItems = rawNodeIDs;
     }
 
@@ -108,11 +120,19 @@ export class CherryPicker {
       logger.log(
         'debug',
         'Number of weighted nodes for selection: ' + rankedItems.length,
-        {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
-      logger.log(
-        'debug',
-        'Selected ' + selectedNode + ' : ' + node.publicKey,
-        {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
+        {
+          requestID: requestID,
+          relayType: 'APP',
+          typeID: application.id,
+          serviceNode: '',
+        },
+      );
+      logger.log('debug', 'Selected ' + selectedNode + ' : ' + node.publicKey, {
+        requestID: requestID,
+        relayType: 'APP',
+        typeID: application.id,
+        serviceNode: '',
+      });
     }
     return node;
   }
@@ -164,7 +184,7 @@ export class CherryPicker {
       applicationID,
       elapsedTime,
       result,
-      900
+      900,
     );
     await this._updateServiceQuality(
       blockchain,
@@ -180,7 +200,7 @@ export class CherryPicker {
     id: string,
     elapsedTime: number,
     result: number,
-    ttl: number
+    ttl: number,
   ): Promise<void> {
     const serviceLog = await this.fetchRawServiceLog(blockchain, id);
 
@@ -361,8 +381,13 @@ export class CherryPicker {
     };
   }
 
-  sortLogs(array: ServiceLog[], requestID: string, relayType: string, typeID: string): ServiceLog[]{ 
-    const sortedLogs =  array.sort((a: ServiceLog, b: ServiceLog) => {
+  sortLogs(
+    array: ServiceLog[],
+    requestID: string,
+    relayType: string,
+    typeID: string,
+  ): ServiceLog[] {
+    const sortedLogs = array.sort((a: ServiceLog, b: ServiceLog) => {
       if (a.successRate < b.successRate) {
         return 1;
       } else if (a.successRate > b.successRate) {
@@ -379,13 +404,15 @@ export class CherryPicker {
       return 0;
     });
     if (this.checkDebug) {
-      logger.log(
-        'debug',
-        'Sorted logs: ' + JSON.stringify(sortedLogs),
-        {requestID: requestID, relayType: relayType, typeID: typeID, serviceNode: ''});
+      logger.log('debug', 'Sorted logs: ' + JSON.stringify(sortedLogs), {
+        requestID: requestID,
+        relayType: relayType,
+        typeID: typeID,
+        serviceNode: '',
+      });
     }
     return sortedLogs;
-  };
+  }
 }
 
 type ServiceLog = { id: string; attempts: number; successRate: number; averageSuccessLatency: number; failure: boolean; }
