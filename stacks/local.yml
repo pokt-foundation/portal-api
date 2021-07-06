@@ -56,7 +56,9 @@ services:
       - 5432:5432
     networks:
       - pocket
-
+    volumes:
+      - ./local.init.sql:/docker-entrypoint-initdb.d/init.sql
+   
 networks:
   pocket:
     driver: bridge
