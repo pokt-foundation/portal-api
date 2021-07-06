@@ -10,7 +10,7 @@ import {
   SequenceHandler,
 } from '@loopback/rest';
 
-const shortID = require('shortid');
+import shortID from 'shortid';
 const SequenceActions = RestBindings.SequenceActions;
 
 export class GatewaySequence implements SequenceHandler {
