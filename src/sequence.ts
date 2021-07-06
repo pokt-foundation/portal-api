@@ -71,16 +71,18 @@ export class GatewaySequence implements SequenceHandler {
         }
       }
       
-      response.header('Vary', 'Access-Control-Request-Headers');
       response.header('Access-Control-Allow-Origin', '*');
-      response.header('Access-Control-Allow-Methods','GET,HEAD,PUT,PATCH,POST,DELETE');
       response.header('Access-Control-Allow-Credentials', 'true');
+      response.header('Access-Control-Allow-Methods','GET,HEAD,PUT,PATCH,POST,DELETE');
+      response.header('Vary', 'Access-Control-Request-Headers');
+      response.header('Access-Control-Allow-Headers', 'blockchain-subdomain,content-type');
       response.header('Access-Control-Max-Age', '86400');
-      response.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Authorization, Accept');
+      response.header('Content-Type', '');
+      response.header('Content-Length', '');
       
       if (request.method == 'OPTIONS') {
         response.status(200)
-        this.send(response, 'ok');
+        this.send(response, 'Connection established');
       } else { 
         const route = this.findRoute(request);
         const args = await this.parseParams(request, route);
