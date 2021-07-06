@@ -73,8 +73,9 @@ export class GatewaySequence implements SequenceHandler {
       
       response.header('Vary', 'Access-Control-Request-Headers');
       response.header('Access-Control-Allow-Origin', '*');
-      response.header('Access-Control-Allow-Methods','*');
+      response.header('Access-Control-Allow-Methods','GET,HEAD,PUT,PATCH,POST,DELETE');
       response.header('Access-Control-Allow-Credentials', 'true');
+      response.header('Access-Control-Max-Age', '86400');
       response.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Authorization, Accept');
       
       if (request.method == 'OPTIONS') {
