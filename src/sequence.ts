@@ -10,7 +10,7 @@ import {
   SequenceHandler,
 } from '@loopback/rest';
 
-const shortID = require('shortid');
+import shortID from 'shortid';
 const SequenceActions = RestBindings.SequenceActions;
 
 export class GatewaySequence implements SequenceHandler {
@@ -25,13 +25,6 @@ export class GatewaySequence implements SequenceHandler {
   async handle(context: RequestContext) {
     try {
       const {request, response} = context;
-
-      // Development specification of blockchain subdomain
-      if (process.env.NODE_ENV === 'development' && request.headers['blockchain-subdomain']) {
-        request.headers[
-          'host'
-        ] = `${request.headers['blockchain-subdomain']}.${request.headers['host']}`;
-      }
 
       // Record the host, user-agent, and origin for processing
       context.bind('headers').to(request.headers);
@@ -77,11 +70,23 @@ export class GatewaySequence implements SequenceHandler {
             .replace(/\//gi, '~')}`;
         }
       }
+      
+      response.header('Access-Control-Allow-Origin', '*');
+      response.header('Access-Control-Allow-Credentials', 'true');
+      response.header('Access-Control-Allow-Methods','GET,HEAD,PUT,PATCH,POST,DELETE');
+      response.header('Vary', 'Access-Control-Request-Headers');
+      response.header('Access-Control-Allow-Headers', 'content-type');
+      response.header('Access-Control-Max-Age', '86400');
 
-      const route = this.findRoute(request);
-      const args = await this.parseParams(request, route);
-      const result = await this.invoke(route, args);
-      this.send(response, result);
+      if (request.method == 'OPTIONS') {
+        response.status(200)
+        this.send(response, '');
+      } else { 
+        const route = this.findRoute(request);
+        const args = await this.parseParams(request, route);
+        const result = await this.invoke(route, args);
+        this.send(response, result);
+      }
     } catch (err) {
       this.reject(context, err);
     }

@@ -2,7 +2,7 @@ name: Production Deployment us-west-2
 
 on:
   push:
-    branches: [ master-off ]
+    branches: [ master ]
 
 jobs:
   deploy:
@@ -33,21 +33,16 @@ jobs:
         envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_PRODUCTION_ENCRYPTION_KEY }}
         envkey_PG_CONNECTION: ${{ secrets.PG_PRODUCTION_CONNECTION }}
         envkey_PG_CERTIFICATE: ${{ secrets.PG_PRODUCTION_CERTIFICATE }}
-
         envkey_LOGZ_TOKEN: ${{ secrets.LOGZ_TOKEN }}
-        envkey_AWS_S3_ACCESS_KEY_ID: ${{ secrets.AWS_S3_ACCESS_KEY_ID }}
-        envkey_AWS_S3_SECRET_ACCESS_KEY: ${{ secrets.AWS_S3_SECRET_ACCESS_KEY }}
-        envkey_AWS_S3_LOGS_BUCKET: pocket-gateway
-        envkey_AWS_S3_LOGS_FOLDER: logs/mainnet
-        envkey_AWS_S3_LOGS_REGION: us-west-2
-        envkey_DISPATCH_URL: https://node1.mainnet.pokt.network,https://node2.mainnet.pokt.network,https://node3.mainnet.pokt.network,https://node4.mainnet.pokt.network,https://node5.mainnet.pokt.network,https://node6.mainnet.pokt.network,https://node7.mainnet.pokt.network,https://node8.mainnet.pokt.network,https://node9.mainnet.pokt.network,https://node10.mainnet.pokt.network,https://node11.mainnet.pokt.network,https://node12.mainnet.pokt.network,https://node13.mainnet.pokt.network,https://node14.mainnet.pokt.network,https://node15.mainnet.pokt.network,https://node16.mainnet.pokt.network,https://node17.mainnet.pokt.network,https://node18.mainnet.pokt.network,https://node19.mainnet.pokt.network,https://node20.mainnet.pokt.network
-        envkey_FALLBACK_URL: https://alt1.mainnet.pokt.network,https://alt2.mainnet.pokt.network,https://alt3.mainnet.pokt.network,https://alt4.mainnet.pokt.network,https://alt5.mainnet.pokt.network,https://alt6.mainnet.pokt.network,https://alt7.mainnet.pokt.network,https://alt8.mainnet.pokt.network,https://alt9.mainnet.pokt.network,https://alt10.mainnet.pokt.network
+        envkey_DISPATCH_URL: https://mainnet-1.nodes.pokt.network:4201,https://mainnet-2.nodes.pokt.network:4202,https://mainnet-3.nodes.pokt.network:4203,https://mainnet-4.nodes.pokt.network:4204,https://mainnet-5.nodes.pokt.network:4205,https://mainnet-6.nodes.pokt.network:4206,https://mainnet-7.nodes.pokt.network:4207,https://mainnet-8.nodes.pokt.network:4208,https://mainnet-9.nodes.pokt.network:4209,https://mainnet-10.nodes.pokt.network:4210,https://mainnet-11.nodes.pokt.network:4211,https://mainnet-12.nodes.pokt.network:4212,https://mainnet-13.nodes.pokt.network:4213,https://mainnet-14.nodes.pokt.network:4214,https://mainnet-15.nodes.pokt.network:4215,https://mainnet-16.nodes.pokt.network:4216,https://mainnet-17.nodes.pokt.network:4217,https://mainnet-18.nodes.pokt.network:4218,https://mainnet-19.nodes.pokt.network:4219,https://mainnet-20.nodes.pokt.network:4220,https://mainnet-21.nodes.pokt.network:4221,https://mainnet-22.nodes.pokt.network:4222,https://mainnet-23.nodes.pokt.network:4223,https://mainnet-24.nodes.pokt.network:4224
+        envkey_ALTRUISTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_ALTRUISTS }}
         envkey_REDIS_ENDPOINT: dashboard.js6zbp.ng.0001.usw2.cache.amazonaws.com
         envkey_REDIS_PORT: 6379
         envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
         envkey_POCKET_BLOCK_TIME: 1038000
         envkey_POCKET_RELAY_RETRIES: 0
         envkey_AAT_PLAN: 'premium'
+        envkey_NODE_ENV: 'production'
         file_name: .env
 
     - name: Build, tag, and push image to Amazon ECR
