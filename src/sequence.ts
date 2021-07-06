@@ -75,11 +75,9 @@ export class GatewaySequence implements SequenceHandler {
       response.header('Access-Control-Allow-Credentials', 'true');
       response.header('Access-Control-Allow-Methods','GET,HEAD,PUT,PATCH,POST,DELETE');
       response.header('Vary', 'Access-Control-Request-Headers');
-      response.header('Access-Control-Allow-Headers', 'blockchain-subdomain,content-type');
+      response.header('Access-Control-Allow-Headers', 'content-type');
       response.header('Access-Control-Max-Age', '86400');
-      response.header('Content-Type', '');
-      response.header('Content-Length', '');
-      
+
       if (request.method == 'OPTIONS') {
         response.status(200)
         this.send(response, '');

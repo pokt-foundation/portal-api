@@ -65,7 +65,7 @@ const perEnvTransports =
     ? [consoleWinstonTransport, logzioWinstonTransport]
     : [consoleWinstonTransport]
 
-module.exports = createLogger({
+export default createLogger({
   format: format.json(),
   transports: perEnvTransports,
   exitOnError: false,

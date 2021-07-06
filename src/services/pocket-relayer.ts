@@ -20,8 +20,8 @@ import AatPlans from '../config/aat-plans.json';
 
 import { JSONObject } from '@loopback/context';
 
-const logger = require('../services/logger');
-const axios = require('axios');
+import logger from '../services/logger';
+import axios from 'axios';
 
 export class PocketRelayer {
   host: string;
@@ -212,7 +212,7 @@ export class PocketRelayer {
       let axiosConfig = {};
 
       // Add relay path to URL
-      const altruistURL = (relayPath === undefined || relayPath === "") ? this.altruists[blockchain] : this.altruists[blockchain] + '/' + relayPath;
+      const altruistURL = (relayPath === undefined || relayPath === "") ? this.altruists[blockchain] : `${this.altruists[blockchain]}/${relayPath}`;
 
       // Remove user/pass from the altruist URL
       const redactedAltruistURL = String(this.altruists[blockchain])!.replace(/[\w]*:\/\/[^\/]*@/g, '');

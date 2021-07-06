@@ -2,8 +2,8 @@ import {Redis} from 'ioredis';
 import {Pool as PGPool} from 'pg';
 import {CherryPicker} from './cherry-picker';
 
-const pgFormat = require('pg-format');
-const logger = require('../services/logger');
+import pgFormat from 'pg-format';
+import logger from '../services/logger';
 
 export class MetricsRecorder {
   redis: Redis;

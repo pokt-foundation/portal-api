@@ -2,7 +2,7 @@ import {Node, Session} from '@pokt-network/pocket-js';
 import {Redis} from 'ioredis';
 import {Applications} from '../models';
 
-const logger = require('../services/logger');
+import logger from '../services/logger';
 
 export class CherryPicker {
   checkDebug: boolean;

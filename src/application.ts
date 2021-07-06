@@ -46,7 +46,7 @@ export class PocketGatewayApplication extends BootMixin(
     // Requirements; for Production these are stored in GitHub repo secrets
     //
     // For Dev, you need to pass them in via .env file
-    let environment: string = process.env.NODE_ENV ?? 'production';
+    const environment: string = process.env.NODE_ENV ?? 'production';
     logger.log('info', 'Environment: ' + environment);
 
     const dispatchURL: string = process.env.DISPATCH_URL ?? '';
