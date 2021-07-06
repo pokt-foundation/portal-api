@@ -82,7 +82,7 @@ export class GatewaySequence implements SequenceHandler {
       
       if (request.method == 'OPTIONS') {
         response.status(200)
-        this.send(response, 'Connection established');
+        this.send(response, '');
       } else { 
         const route = this.findRoute(request);
         const args = await this.parseParams(request, route);
