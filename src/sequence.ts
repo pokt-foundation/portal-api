@@ -70,7 +70,10 @@ export class GatewaySequence implements SequenceHandler {
             .replace(/\//gi, '~')}`;
         }
       }
-
+      
+      response.header('Access-Control-Allow-Origin', '*');
+      response.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+            
       const route = this.findRoute(request);
       const args = await this.parseParams(request, route);
       const result = await this.invoke(route, args);
