@@ -4,6 +4,7 @@ import {Redis} from 'ioredis';
 var crypto = require('crypto');
 
 const logger = require('../services/logger');
+import axios from 'axios';
 
 export class SyncChecker {
   redis: Redis;
@@ -14,7 +15,7 @@ export class SyncChecker {
     this.metricsRecorder = metricsRecorder;
   }
 
-  async consensusFilter(nodes: Node[], requestID: string, syncCheck: string, syncAllowance: number = 1, blockchain: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<Node[]> {
+  async consensusFilter(nodes: Node[], requestID: string, syncCheck: string, syncAllowance: number = 1, blockchain: string, blockchainSyncBackup: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<Node[]> {
     let syncedNodes: Node[] = [];
     let syncedNodesList: String[] = [];
 
@@ -48,34 +49,53 @@ export class SyncChecker {
 
     // Fires all 5 sync checks synchronously then assembles the results
     const nodeSyncLogs = await this.getNodeSyncLogs(nodes, requestID, syncCheck, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration);
-    
+    let errorState = false;
+
     // This should never happen
     if (nodeSyncLogs.length <= 2) {
       logger.log('error', 'SYNC CHECK ERROR: fewer than 3 nodes returned sync', {requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: ''});
-      return nodes;
+      errorState = true;
     }
+
+    let currentBlockHeight = 0;
 
     // Sort NodeSyncLogs by blockHeight
     nodeSyncLogs.sort((a, b) => b.blockHeight - a.blockHeight);
-
+    
     // If top node is still 0, or not a number, return all nodes due to check failure
     if (
+      nodeSyncLogs.length === 0 ||
       nodeSyncLogs[0].blockHeight === 0 ||
       typeof nodeSyncLogs[0].blockHeight !== 'number' ||
       (nodeSyncLogs[0].blockHeight %1 ) !== 0
     )
     { 
-      logger.log('error', 'SYNC CHECK ERROR: top synced node result is invalid ' + nodeSyncLogs[0].blockHeight, {requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: ''});
-      return nodes;
+      logger.log('error', 'SYNC CHECK ERROR: top synced node result is invalid ' + JSON.stringify(nodeSyncLogs), {requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: ''});
+      errorState = true;
+    } else {
+      currentBlockHeight = nodeSyncLogs[0].blockHeight;
     }
 
     // Make sure at least 2 nodes agree on current highest block to prevent one node from being wildly off
-    if (nodeSyncLogs[0].blockHeight > (nodeSyncLogs[1].blockHeight + syncAllowance)) {
+    if (
+        !errorState && 
+        nodeSyncLogs[0].blockHeight > (nodeSyncLogs[1].blockHeight + syncAllowance)
+      ) {
       logger.log('error', 'SYNC CHECK ERROR: two highest nodes could not agree on sync', {requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: ''});
-      return nodes;
+      errorState = true;
     }
 
-    const currentBlockHeight = nodeSyncLogs[0].blockHeight;
+    if (errorState) {
+      // Consult Altruist for sync source of truth
+      currentBlockHeight = await this.getSyncFromAltruist(syncCheck, blockchainSyncBackup);
+      if (currentBlockHeight === 0) {
+        // Failure to find sync from consensus and altruist
+        logger.log('info', 'SYNC CHECK ALTRUIST FAILURE: ' + currentBlockHeight, {requestID: requestID, relayType: '', typeID: '', serviceNode: 'ALTRUIST', error: '', elapsedTime: ''});
+        return nodes;
+      } else {
+        logger.log('info', 'SYNC CHECK ALTRUIST CHECK: ' + currentBlockHeight, {requestID: requestID, relayType: '', typeID: '', serviceNode: 'ALTRUIST', error: '', elapsedTime: ''});
+      }
+    } 
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
     for (const nodeSyncLog of nodeSyncLogs) {        
@@ -113,7 +133,7 @@ export class SyncChecker {
       syncedNodesKey,
       JSON.stringify(syncedNodesList),
       'EX',
-      300,
+      (syncedNodes.length > 0) ? 300 : 30, // will retry sync check every 30 seconds if no nodes are in sync
     );
 
     // If one or more nodes of this session are not in sync, fire a consensus relay with the same check.
@@ -133,8 +153,36 @@ export class SyncChecker {
       );
       logger.log('info', 'SYNC CHECK CHALLENGE: ' + JSON.stringify(consensusResponse), {requestID: requestID, relayType: '', typeID: '', serviceNode: '', error: '', elapsedTime: ''});
     }
-
     return syncedNodes;
+  }
+
+  async getSyncFromAltruist(syncCheck: string, blockchainSyncBackup: string): Promise<number> {
+    // Remove user/pass from the altruist URL
+    const redactedAltruistURL = blockchainSyncBackup.replace(/[\w]*:\/\/[^\/]*@/g, '');
+
+    try {
+      const syncResponse = await axios({
+        method: 'POST',
+        url: blockchainSyncBackup,
+        data: syncCheck,
+        headers: {'Content-Type': 'application/json'}
+      });
+
+      if (!(syncResponse instanceof Error)) {
+        // Return decimal version of hex result as blockHeight
+        return parseInt(syncResponse.data.result, 16);
+      }
+      return 0;
+    }
+    catch (e) {
+      logger.log('error', e.message, {
+        requestID: '',
+        relayType: 'FALLBACK',
+        typeID: '',
+        serviceNode: 'fallback:' + redactedAltruistURL,
+      });
+    }
+    return 0;
   }
 
   async getNodeSyncLogs(nodes: Node[], requestID: string, syncCheck: string, blockchain: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<NodeSyncLog[]> {
