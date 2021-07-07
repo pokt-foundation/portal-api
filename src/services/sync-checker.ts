@@ -17,6 +17,7 @@ export class SyncChecker {
   }
 
   async consensusFilter(nodes: Node[], requestID: string, syncCheck: string, syncCheckPath: string, syncAllowance: number = 1, blockchain: string, blockchainSyncBackup: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<Node[]> {
+
     let syncedNodes: Node[] = [];
     let syncedNodesList: String[] = [];
 
@@ -50,6 +51,7 @@ export class SyncChecker {
 
     // Fires all 5 sync checks synchronously then assembles the results
     const nodeSyncLogs = await this.getNodeSyncLogs(nodes, requestID, syncCheck, syncCheckPath, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration);
+
     let errorState = false;
 
     // This should never happen
@@ -89,6 +91,7 @@ export class SyncChecker {
     if (errorState) {
       // Consult Altruist for sync source of truth
       currentBlockHeight = await this.getSyncFromAltruist(syncCheck, syncCheckPath, blockchainSyncBackup);
+
       if (currentBlockHeight === 0) {
         // Failure to find sync from consensus and altruist
         logger.log('info', 'SYNC CHECK ALTRUIST FAILURE: ' + currentBlockHeight, {requestID: requestID, relayType: '', typeID: '', serviceNode: 'ALTRUIST', error: '', elapsedTime: ''});
@@ -158,6 +161,7 @@ export class SyncChecker {
   }
 
   async getSyncFromAltruist(syncCheck: string, syncCheckPath: string, blockchainSyncBackup: string): Promise<number> {
+
     // Remove user/pass from the altruist URL
     const redactedAltruistURL = blockchainSyncBackup.replace(/[\w]*:\/\/[^\/]*@/g, '');
 
@@ -187,6 +191,7 @@ export class SyncChecker {
   }
 
   async getNodeSyncLogs(nodes: Node[], requestID: string, syncCheck: string, syncCheckPath: string, blockchain: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<NodeSyncLog[]> {
+
     const nodeSyncLogs: NodeSyncLog[] = [];
     const promiseStack: Promise<NodeSyncLog>[] = [];
     

@@ -370,6 +370,7 @@ export class PocketRelayer {
       let nodes: Node[] = pocketSession.sessionNodes;
       if (blockchainSyncCheck) {
         nodes = await this.syncChecker.consensusFilter(pocketSession.sessionNodes, requestID, blockchainSyncCheck, blockchainSyncCheckPath, 3, blockchain, blockchainSyncBackup, application.id, application.gatewayAAT.applicationPublicKey, this.pocket, pocketAAT, this.pocketConfiguration);
+
         if (nodes.length === 0) {
           return new Error('Sync check failure; using fallbacks');
         }
