@@ -63,7 +63,7 @@
 	  }
 	],
 	"placementConstraints": [],
-	"memory": "2048",
+	"memory": "4096",
 	"taskRoleArn": null,
 	"family": "gateway",
 	"pidMode": null,
