@@ -1,6 +1,7 @@
 import {Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse} from '@pokt-network/pocket-js';
 import {MetricsRecorder} from '../services/metrics-recorder';
 import {Redis} from 'ioredis';
+import {checkEnforcementJSON} from '../utils';
 var crypto = require('crypto');
 
 const logger = require('../services/logger');
@@ -15,13 +16,13 @@ export class SyncChecker {
     this.metricsRecorder = metricsRecorder;
   }
 
-  async consensusFilter(nodes: Node[], requestID: string, syncCheck: string, syncAllowance: number = 1, blockchain: string, blockchainSyncBackup: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<Node[]> {
+  async consensusFilter(nodes: Node[], requestID: string, syncCheck: string, syncCheckPath: string, syncAllowance: number = 1, blockchain: string, blockchainSyncBackup: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<Node[]> {
     let syncedNodes: Node[] = [];
     let syncedNodesList: String[] = [];
 
     // Key is "blockchain - a hash of the all the nodes in this session, sorted by public key"
     // Value is an array of node public keys that have passed sync checks for this session in the past 5 minutes
-    const syncedNodesKey = blockchain + '-' + crypto.createHash('sha256').update(JSON.stringify(nodes.sort((a,b) => (a.publicKey > b.publicKey) ? 1 : ((b.publicKey > a.publicKey) ? -1 : 0)), (k, v) => k != 'publicKey' ? v : undefined)).digest('hex');
+    const syncedNodesKey = blockchain + String(Math.round()) + '-' + crypto.createHash('sha256').update(JSON.stringify(nodes.sort((a,b) => (a.publicKey > b.publicKey) ? 1 : ((b.publicKey > a.publicKey) ? -1 : 0)), (k, v) => k != 'publicKey' ? v : undefined)).digest('hex');
     const syncedNodesCached = await this.redis.get(syncedNodesKey);
 
     if (syncedNodesCached) {
@@ -48,7 +49,7 @@ export class SyncChecker {
     }
 
     // Fires all 5 sync checks synchronously then assembles the results
-    const nodeSyncLogs = await this.getNodeSyncLogs(nodes, requestID, syncCheck, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration);
+    const nodeSyncLogs = await this.getNodeSyncLogs(nodes, requestID, syncCheck, syncCheckPath, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration);
     let errorState = false;
 
     // This should never happen
@@ -87,7 +88,7 @@ export class SyncChecker {
 
     if (errorState) {
       // Consult Altruist for sync source of truth
-      currentBlockHeight = await this.getSyncFromAltruist(syncCheck, blockchainSyncBackup);
+      currentBlockHeight = await this.getSyncFromAltruist(syncCheck, syncCheckPath, blockchainSyncBackup);
       if (currentBlockHeight === 0) {
         // Failure to find sync from consensus and altruist
         logger.log('info', 'SYNC CHECK ALTRUIST FAILURE: ' + currentBlockHeight, {requestID: requestID, relayType: '', typeID: '', serviceNode: 'ALTRUIST', error: '', elapsedTime: ''});
@@ -156,14 +157,14 @@ export class SyncChecker {
     return syncedNodes;
   }
 
-  async getSyncFromAltruist(syncCheck: string, blockchainSyncBackup: string): Promise<number> {
+  async getSyncFromAltruist(syncCheck: string, syncCheckPath: string, blockchainSyncBackup: string): Promise<number> {
     // Remove user/pass from the altruist URL
     const redactedAltruistURL = blockchainSyncBackup.replace(/[\w]*:\/\/[^\/]*@/g, '');
 
     try {
       const syncResponse = await axios({
         method: 'POST',
-        url: blockchainSyncBackup,
+        url: `${blockchainSyncBackup}${syncCheckPath}`,
         data: syncCheck,
         headers: {'Content-Type': 'application/json'}
       });
@@ -185,7 +186,7 @@ export class SyncChecker {
     return 0;
   }
 
-  async getNodeSyncLogs(nodes: Node[], requestID: string, syncCheck: string, blockchain: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<NodeSyncLog[]> {
+  async getNodeSyncLogs(nodes: Node[], requestID: string, syncCheck: string, syncCheckPath: string, blockchain: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<NodeSyncLog[]> {
     const nodeSyncLogs: NodeSyncLog[] = [];
     const promiseStack: Promise<NodeSyncLog>[] = [];
     
@@ -194,7 +195,7 @@ export class SyncChecker {
 
     for (const node of nodes) {
       promiseStack.push(
-        this.getNodeSyncLog(node, requestID, syncCheck, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration)
+        this.getNodeSyncLog(node, requestID, syncCheck, syncCheckPath, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration)
       );
     }
 
@@ -211,7 +212,7 @@ export class SyncChecker {
     return nodeSyncLogs;
   }
 
-  async getNodeSyncLog(node: Node, requestID: string, syncCheck: string, blockchain: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<NodeSyncLog> {
+  async getNodeSyncLog(node: Node, requestID: string, syncCheck: string, syncCheckPath: string, blockchain: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<NodeSyncLog> {
     
     logger.log('info', 'SYNC CHECK START', {requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: ''});
 
@@ -225,13 +226,16 @@ export class SyncChecker {
       this.updateConfigurationTimeout(pocketConfiguration),
       undefined,
       'POST' as HTTPMethod,
-      undefined,
+      syncCheckPath,
       node,
       false,
       'synccheck'
     );
 
-    if (relayResponse instanceof RelayResponse) {
+    if (
+        relayResponse instanceof RelayResponse && 
+        checkEnforcementJSON(relayResponse.payload)
+      ) {
       const payload = JSON.parse(relayResponse.payload);
           
       // Create a NodeSyncLog for each node with current block
