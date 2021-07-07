@@ -21,7 +21,7 @@ export class SyncChecker {
 
     // Key is "blockchain - a hash of the all the nodes in this session, sorted by public key"
     // Value is an array of node public keys that have passed sync checks for this session in the past 5 minutes
-    const syncedNodesKey = blockchain + String(Math.random());'-' + crypto.createHash('sha256').update(JSON.stringify(nodes.sort((a,b) => (a.publicKey > b.publicKey) ? 1 : ((b.publicKey > a.publicKey) ? -1 : 0)), (k, v) => k != 'publicKey' ? v : undefined)).digest('hex');
+    const syncedNodesKey = blockchain + '-' + crypto.createHash('sha256').update(JSON.stringify(nodes.sort((a,b) => (a.publicKey > b.publicKey) ? 1 : ((b.publicKey > a.publicKey) ? -1 : 0)), (k, v) => k != 'publicKey' ? v : undefined)).digest('hex');
     const syncedNodesCached = await this.redis.get(syncedNodesKey);
 
     if (syncedNodesCached) {
@@ -133,7 +133,7 @@ export class SyncChecker {
       syncedNodesKey,
       JSON.stringify(syncedNodesList),
       'EX',
-      300,
+      (syncedNodes.length > 0) ? 300 : 30, // will retry sync check every 30 seconds if no nodes are in sync
     );
 
     // If one or more nodes of this session are not in sync, fire a consensus relay with the same check.
