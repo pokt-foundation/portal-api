@@ -145,7 +145,7 @@ export class PocketRelayer {
       }
 
       // Send this relay attempt
-      const relayResponse = await this._sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult, blockchainSyncCheck);
+      const relayResponse = await this._sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult, blockchainSyncCheck, String(this.altruists[blockchain]));
 
       if (!(relayResponse instanceof Error)) {
         // Record success metric
@@ -303,6 +303,7 @@ export class PocketRelayer {
     blockchain: string,
     blockchainEnforceResult: string,
     blockchainSyncCheck: string,
+    blockchainSyncBackup: string,
   ): Promise<RelayResponse | Error> {
     logger.log('info', 'RELAYING ' + blockchain + ' req: ' + data, {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
 
@@ -366,8 +367,11 @@ export class PocketRelayer {
     if (pocketSession instanceof Session) {
       let nodes: Node[] = pocketSession.sessionNodes;
       if (blockchainSyncCheck) {
-        nodes = await this.syncChecker.consensusFilter(pocketSession.sessionNodes, requestID, blockchainSyncCheck, 3, blockchain, application.id, application.gatewayAAT.applicationPublicKey, this.pocket, pocketAAT, this.pocketConfiguration);
-      }           
+        nodes = await this.syncChecker.consensusFilter(pocketSession.sessionNodes, requestID, blockchainSyncCheck, 3, blockchain, blockchainSyncBackup, application.id, application.gatewayAAT.applicationPublicKey, this.pocket, pocketAAT, this.pocketConfiguration);
+        if (nodes.length === 0) {
+          return new Error('Sync check failure; using fallbacks');
+        }
+      }
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchain, requestID);
     }
 
