@@ -250,9 +250,13 @@ export class SyncChecker {
         checkEnforcementJSON(relayResponse.payload)
       ) {
       const payload = JSON.parse(relayResponse.payload);
-          
+        
+      // Pull the blockHeight from payload.result for all chains except Pocket; this 
+      // can go in the database if we have more than two
+      const blockHeight = (payload.result) ? parseInt(payload.result, 16) : payload.height;
+
       // Create a NodeSyncLog for each node with current block
-      const nodeSyncLog = {node: node, blockchain: blockchain, blockHeight: parseInt(payload.result, 16)} as NodeSyncLog;
+      const nodeSyncLog = {node: node, blockchain: blockchain, blockHeight} as NodeSyncLog;
       logger.log('info', 'SYNC CHECK RESULT: ' + JSON.stringify(nodeSyncLog), {requestID: requestID, relayType: '', typeID: '', serviceNode: node.publicKey, error: '', elapsedTime: ''});
 
       // Success
