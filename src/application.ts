@@ -24,9 +24,7 @@ import got from 'got'
 require('log-timestamp')
 require('dotenv').config()
 
-export class PocketGatewayApplication extends BootMixin(
-  ServiceMixin(RepositoryMixin(RestApplication))
-) {
+export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryMixin(RestApplication))) {
   constructor(options: ApplicationConfig = {}) {
     super(options)
     this.sequence(GatewaySequence)
@@ -51,15 +49,12 @@ export class PocketGatewayApplication extends BootMixin(
 
     const dispatchURL: string = process.env.DISPATCH_URL ?? ''
     const altruists: string = process.env.ALTRUISTS ?? ''
-    const clientPrivateKey: string =
-      process.env.GATEWAY_CLIENT_PRIVATE_KEY ?? ''
+    const clientPrivateKey: string = process.env.GATEWAY_CLIENT_PRIVATE_KEY ?? ''
     const clientPassphrase: string = process.env.GATEWAY_CLIENT_PASSPHRASE ?? ''
-    const pocketSessionBlockFrequency: string =
-      process.env.POCKET_SESSION_BLOCK_FREQUENCY ?? ''
+    const pocketSessionBlockFrequency: string = process.env.POCKET_SESSION_BLOCK_FREQUENCY ?? ''
     const pocketBlockTime: string = process.env.POCKET_BLOCK_TIME ?? ''
     const relayRetries: string = process.env.POCKET_RELAY_RETRIES ?? ''
-    const databaseEncryptionKey: string =
-      process.env.DATABASE_ENCRYPTION_KEY ?? ''
+    const databaseEncryptionKey: string = process.env.DATABASE_ENCRYPTION_KEY ?? ''
     const aatPlan = process.env.AAT_PLAN ?? AatPlans.PREMIUM
 
     if (!dispatchURL) {
@@ -69,29 +64,19 @@ export class PocketGatewayApplication extends BootMixin(
       throw new HttpErrors.InternalServerError('ALTRUISTS required in ENV')
     }
     if (!clientPrivateKey) {
-      throw new HttpErrors.InternalServerError(
-        'GATEWAY_CLIENT_PRIVATE_KEY required in ENV'
-      )
+      throw new HttpErrors.InternalServerError('GATEWAY_CLIENT_PRIVATE_KEY required in ENV')
     }
     if (!clientPassphrase) {
-      throw new HttpErrors.InternalServerError(
-        'GATEWAY_CLIENT_PASSPHRASE required in ENV'
-      )
+      throw new HttpErrors.InternalServerError('GATEWAY_CLIENT_PASSPHRASE required in ENV')
     }
     if (!pocketSessionBlockFrequency || pocketSessionBlockFrequency === '') {
-      throw new HttpErrors.InternalServerError(
-        'POCKET_SESSION_BLOCK_FREQUENCY required in ENV'
-      )
+      throw new HttpErrors.InternalServerError('POCKET_SESSION_BLOCK_FREQUENCY required in ENV')
     }
     if (!pocketBlockTime || pocketBlockTime === '') {
-      throw new HttpErrors.InternalServerError(
-        'POCKET_BLOCK_TIME required in ENV'
-      )
+      throw new HttpErrors.InternalServerError('POCKET_BLOCK_TIME required in ENV')
     }
     if (!databaseEncryptionKey) {
-      throw new HttpErrors.InternalServerError(
-        'DATABASE_ENCRYPTION_KEY required in ENV'
-      )
+      throw new HttpErrors.InternalServerError('DATABASE_ENCRYPTION_KEY required in ENV')
     }
     if (aatPlan !== AatPlans.PREMIUM && !AatPlans.values.includes(aatPlan)) {
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
@@ -132,22 +117,13 @@ export class PocketGatewayApplication extends BootMixin(
 
     // Unlock primary client account for relay signing
     try {
-      const importAccount = await pocket.keybase.importAccount(
-        Buffer.from(clientPrivateKey, 'hex'),
-        clientPassphrase
-      )
+      const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase)
       if (importAccount instanceof Account) {
-        await pocket.keybase.unlockAccount(
-          importAccount.addressHex,
-          clientPassphrase,
-          0
-        )
+        await pocket.keybase.unlockAccount(importAccount.addressHex, clientPassphrase, 0)
       }
     } catch (e) {
       logger.log('error', e)
-      throw new HttpErrors.InternalServerError(
-        'Unable to import or unlock base client account'
-      )
+      throw new HttpErrors.InternalServerError('Unable to import or unlock base client account')
     }
 
     // Load Redis for cache

@@ -31,13 +31,8 @@ export class CherryPicker {
     }[]
 
     for (const application of applications) {
-      const rawServiceLog = await this.fetchRawServiceLog(
-        blockchain,
-        application
-      )
-      sortedLogs.push(
-        await this.createUnsortedLog(application, blockchain, rawServiceLog)
-      )
+      const rawServiceLog = await this.fetchRawServiceLog(blockchain, application)
+      sortedLogs.push(await this.createUnsortedLog(application, blockchain, rawServiceLog))
     }
 
     // Sort application logs by highest success rate, then by lowest latency
@@ -61,16 +56,16 @@ export class CherryPicker {
     const selectedApplication = Math.floor(Math.random() * rankedItems.length)
     const application = rankedItems[selectedApplication]
     if (this.checkDebug) {
-      logger.log(
-        'debug',
-        'Number of weighted applications for selection: ' + rankedItems.length,
-        { requestID: requestID, relayType: 'LB', typeID: loadBalancerID }
-      )
-      logger.log(
-        'debug',
-        'Selected ' + selectedApplication + ' : ' + application,
-        { requestID: requestID, relayType: 'LB', typeID: loadBalancerID }
-      )
+      logger.log('debug', 'Number of weighted applications for selection: ' + rankedItems.length, {
+        requestID: requestID,
+        relayType: 'LB',
+        typeID: loadBalancerID,
+      })
+      logger.log('debug', 'Selected ' + selectedApplication + ' : ' + application, {
+        requestID: requestID,
+        relayType: 'LB',
+        typeID: loadBalancerID,
+      })
     }
     return application
   }
@@ -78,12 +73,7 @@ export class CherryPicker {
   // Record the latency and success rate of each node, 1 hour TTL
   // When selecting a node, pull the stats for each node in the session
   // Rank and weight them for node choice
-  async cherryPickNode(
-    application: Applications,
-    nodes: Node[],
-    blockchain: string,
-    requestID: string
-  ): Promise<Node> {
+  async cherryPickNode(application: Applications, nodes: Node[], blockchain: string, requestID: string): Promise<Node> {
     const rawNodes = {} as { [nodePublicKey: string]: Node }
     const rawNodeIDs = [] as string[]
     let sortedLogs = [] as {
@@ -97,13 +87,8 @@ export class CherryPicker {
     for (const node of nodes) {
       rawNodes[node.publicKey] = node
       rawNodeIDs.push(node.publicKey)
-      const rawServiceLog = await this.fetchRawServiceLog(
-        blockchain,
-        node.publicKey
-      )
-      sortedLogs.push(
-        await this.createUnsortedLog(node.publicKey, blockchain, rawServiceLog)
-      )
+      const rawServiceLog = await this.fetchRawServiceLog(blockchain, node.publicKey)
+      sortedLogs.push(await this.createUnsortedLog(node.publicKey, blockchain, rawServiceLog))
     }
 
     // Sort node logs by highest success rate, then by lowest latency
@@ -127,16 +112,12 @@ export class CherryPicker {
     const selectedNode = Math.floor(Math.random() * rankedItems.length)
     const node = rawNodes[rankedItems[selectedNode]]
     if (this.checkDebug) {
-      logger.log(
-        'debug',
-        'Number of weighted nodes for selection: ' + rankedItems.length,
-        {
-          requestID: requestID,
-          relayType: 'APP',
-          typeID: application.id,
-          serviceNode: '',
-        }
-      )
+      logger.log('debug', 'Number of weighted nodes for selection: ' + rankedItems.length, {
+        requestID: requestID,
+        relayType: 'APP',
+        typeID: application.id,
+        serviceNode: '',
+      })
       logger.log('debug', 'Selected ' + selectedNode + ' : ' + node.publicKey, {
         requestID: requestID,
         relayType: 'APP',
@@ -148,35 +129,20 @@ export class CherryPicker {
   }
 
   // Fetch app/node's service log from redis
-  async fetchRawServiceLog(
-    blockchain: string,
-    id: string | undefined
-  ): Promise<string | null> {
-    const rawServiceLog = await this.redis.get(
-      blockchain + '-' + id + '-service'
-    )
+  async fetchRawServiceLog(blockchain: string, id: string | undefined): Promise<string | null> {
+    const rawServiceLog = await this.redis.get(blockchain + '-' + id + '-service')
     return rawServiceLog
   }
 
   // Fetch app/node's overall failure true/false log from redis
-  async fetchRawFailureLog(
-    blockchain: string,
-    id: string | undefined
-  ): Promise<string | null> {
-    const rawFailureLog = await this.redis.get(
-      blockchain + '-' + id + '-failure'
-    )
+  async fetchRawFailureLog(blockchain: string, id: string | undefined): Promise<string | null> {
+    const rawFailureLog = await this.redis.get(blockchain + '-' + id + '-failure')
     return rawFailureLog
   }
 
   // Fetch node client type if Ethereum based
-  async fetchClientTypeLog(
-    blockchain: string,
-    id: string | undefined
-  ): Promise<string | null> {
-    const clientTypeLog = await this.redis.get(
-      blockchain + '-' + id + '-clientType'
-    )
+  async fetchClientTypeLog(blockchain: string, id: string | undefined): Promise<string | null> {
+    const clientTypeLog = await this.redis.get(blockchain + '-' + id + '-clientType')
     return clientTypeLog
   }
 
@@ -189,20 +155,8 @@ export class CherryPicker {
     elapsedTime: number,
     result: number
   ): Promise<void> {
-    await this._updateServiceQuality(
-      blockchain,
-      applicationID,
-      elapsedTime,
-      result,
-      900
-    )
-    await this._updateServiceQuality(
-      blockchain,
-      serviceNode,
-      elapsedTime,
-      result,
-      7200
-    )
+    await this._updateServiceQuality(blockchain, applicationID, elapsedTime, result, 900)
+    await this._updateServiceQuality(blockchain, serviceNode, elapsedTime, result, 7200)
   }
 
   async _updateServiceQuality(
@@ -228,18 +182,14 @@ export class CherryPicker {
         totalResults = totalResults + serviceQuality.results[logResult]
       }
       // Does this result not yet exist in the set?
-      if (
-        !serviceQuality.results[result] ||
-        serviceQuality.results[result] === 0
-      ) {
+      if (!serviceQuality.results[result] || serviceQuality.results[result] === 0) {
         totalResults++
         serviceQuality.results[result] = 1
       }
       // Success; add this result's latency to the average latency of all success requests
       if (result === 200) {
         serviceQuality.averageSuccessLatency = (
-          ((totalResults - 1) * serviceQuality.averageSuccessLatency +
-            elapsedTime) / // All previous results plus current
+          ((totalResults - 1) * serviceQuality.averageSuccessLatency + elapsedTime) / // All previous results plus current
           totalResults
         ) // divided by total results
           .toFixed(5) // to 5 decimal points
@@ -256,19 +206,10 @@ export class CherryPicker {
       }
     }
 
-    await this.redis.set(
-      blockchain + '-' + id + '-service',
-      JSON.stringify(serviceQuality),
-      'EX',
-      ttl
-    )
+    await this.redis.set(blockchain + '-' + id + '-service', JSON.stringify(serviceQuality), 'EX', ttl)
   }
 
-  async rankItems(
-    blockchain: string,
-    sortedLogs: Array<ServiceLog>,
-    maxFailuresPerPeriod: number
-  ) {
+  async rankItems(blockchain: string, sortedLogs: Array<ServiceLog>, maxFailuresPerPeriod: number) {
     const rankedItems = []
     // weightFactor pushes the fastest apps/nodes with the highest success rates
     // to be called on more often for relays.
@@ -309,12 +250,7 @@ export class CherryPicker {
           // Once a node has performed well enough in a session, check to see if it is marked
           // If so, erase the scarlet letter
           if (!sortedLog.failure) {
-            await this.redis.set(
-              blockchain + '-' + sortedLog.id + '-failure',
-              'true',
-              'EX',
-              60 * 60 * 24 * 30
-            )
+            await this.redis.set(blockchain + '-' + sortedLog.id + '-failure', 'true', 'EX', 60 * 60 * 24 * 30)
           }
         }
       }
@@ -322,11 +258,7 @@ export class CherryPicker {
     return rankedItems
   }
 
-  async createUnsortedLog(
-    id: string,
-    blockchain: string,
-    rawServiceLog: any
-  ): Promise<ServiceLog> {
+  async createUnsortedLog(id: string, blockchain: string, rawServiceLog: any): Promise<ServiceLog> {
     let attempts = 0
     let successRate = 0
     let averageSuccessLatency = 0
@@ -378,17 +310,10 @@ export class CherryPicker {
         // If previously marked as failure, erase that
         if (failure) {
           failure = false
-          await this.redis.set(
-            blockchain + '-' + id + '-failure',
-            'false',
-            'EX',
-            60 * 60 * 24 * 30
-          )
+          await this.redis.set(blockchain + '-' + id + '-failure', 'false', 'EX', 60 * 60 * 24 * 30)
         }
         successRate = parsedLog.results['200'] / attempts
-        averageSuccessLatency = parseFloat(
-          parseFloat(parsedLog.averageSuccessLatency).toFixed(5)
-        )
+        averageSuccessLatency = parseFloat(parseFloat(parsedLog.averageSuccessLatency).toFixed(5))
       }
     }
 
@@ -401,12 +326,7 @@ export class CherryPicker {
     }
   }
 
-  sortLogs(
-    array: ServiceLog[],
-    requestID: string,
-    relayType: string,
-    typeID: string
-  ): ServiceLog[] {
+  sortLogs(array: ServiceLog[], requestID: string, relayType: string, typeID: string): ServiceLog[] {
     const sortedLogs = array.sort((a: ServiceLog, b: ServiceLog) => {
       if (a.successRate < b.successRate) {
         return 1

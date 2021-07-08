@@ -1,11 +1,4 @@
-import {
-  Configuration,
-  HTTPMethod,
-  Node,
-  Pocket,
-  PocketAAT,
-  RelayResponse,
-} from '@pokt-network/pocket-js'
+import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
 import { checkEnforcementJSON } from '../utils'
@@ -49,9 +42,7 @@ export class SyncChecker {
         .createHash('sha256')
         .update(
           JSON.stringify(
-            nodes.sort((a, b) =>
-              a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0
-            ),
+            nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0)),
             (k, v) => (k != 'publicKey' ? v : undefined)
           )
         )
@@ -98,18 +89,14 @@ export class SyncChecker {
 
     // This should never happen
     if (nodeSyncLogs.length <= 2) {
-      logger.log(
-        'error',
-        'SYNC CHECK ERROR: fewer than 3 nodes returned sync',
-        {
-          requestID: requestID,
-          relayType: '',
-          typeID: '',
-          serviceNode: '',
-          error: '',
-          elapsedTime: '',
-        }
-      )
+      logger.log('error', 'SYNC CHECK ERROR: fewer than 3 nodes returned sync', {
+        requestID: requestID,
+        relayType: '',
+        typeID: '',
+        serviceNode: '',
+        error: '',
+        elapsedTime: '',
+      })
       errorState = true
     }
 
@@ -125,66 +112,46 @@ export class SyncChecker {
       typeof nodeSyncLogs[0].blockHeight !== 'number' ||
       nodeSyncLogs[0].blockHeight % 1 !== 0
     ) {
-      logger.log(
-        'error',
-        'SYNC CHECK ERROR: top synced node result is invalid ' +
-          JSON.stringify(nodeSyncLogs),
-        {
-          requestID: requestID,
-          relayType: '',
-          typeID: '',
-          serviceNode: '',
-          error: '',
-          elapsedTime: '',
-        }
-      )
+      logger.log('error', 'SYNC CHECK ERROR: top synced node result is invalid ' + JSON.stringify(nodeSyncLogs), {
+        requestID: requestID,
+        relayType: '',
+        typeID: '',
+        serviceNode: '',
+        error: '',
+        elapsedTime: '',
+      })
       errorState = true
     } else {
       currentBlockHeight = nodeSyncLogs[0].blockHeight
     }
 
     // Make sure at least 2 nodes agree on current highest block to prevent one node from being wildly off
-    if (
-      !errorState &&
-      nodeSyncLogs[0].blockHeight > nodeSyncLogs[1].blockHeight + syncAllowance
-    ) {
-      logger.log(
-        'error',
-        'SYNC CHECK ERROR: two highest nodes could not agree on sync',
-        {
-          requestID: requestID,
-          relayType: '',
-          typeID: '',
-          serviceNode: '',
-          error: '',
-          elapsedTime: '',
-        }
-      )
+    if (!errorState && nodeSyncLogs[0].blockHeight > nodeSyncLogs[1].blockHeight + syncAllowance) {
+      logger.log('error', 'SYNC CHECK ERROR: two highest nodes could not agree on sync', {
+        requestID: requestID,
+        relayType: '',
+        typeID: '',
+        serviceNode: '',
+        error: '',
+        elapsedTime: '',
+      })
       errorState = true
     }
 
     if (errorState) {
       // Consult Altruist for sync source of truth
-      currentBlockHeight = await this.getSyncFromAltruist(
-        syncCheck,
-        syncCheckPath,
-        blockchainSyncBackup
-      )
+      currentBlockHeight = await this.getSyncFromAltruist(syncCheck, syncCheckPath, blockchainSyncBackup)
 
       if (currentBlockHeight === 0) {
         // Failure to find sync from consensus and altruist
-        logger.log(
-          'info',
-          'SYNC CHECK ALTRUIST FAILURE: ' + currentBlockHeight,
-          {
-            requestID: requestID,
-            relayType: '',
-            typeID: '',
-            serviceNode: 'ALTRUIST',
-            error: '',
-            elapsedTime: '',
-          }
-        )
+        logger.log('info', 'SYNC CHECK ALTRUIST FAILURE: ' + currentBlockHeight, {
+          requestID: requestID,
+          relayType: '',
+          typeID: '',
+          serviceNode: 'ALTRUIST',
+          error: '',
+          elapsedTime: '',
+        })
         return nodes
       } else {
         logger.log('info', 'SYNC CHECK ALTRUIST CHECK: ' + currentBlockHeight, {
@@ -205,10 +172,7 @@ export class SyncChecker {
       if (nodeSyncLog.blockHeight + syncAllowance >= currentBlockHeight) {
         logger.log(
           'info',
-          'SYNC CHECK IN-SYNC: ' +
-            nodeSyncLog.node.publicKey +
-            ' height: ' +
-            nodeSyncLog.blockHeight,
+          'SYNC CHECK IN-SYNC: ' + nodeSyncLog.node.publicKey + ' height: ' + nodeSyncLog.blockHeight,
           {
             requestID: requestID,
             relayType: '',
@@ -231,21 +195,14 @@ export class SyncChecker {
         syncedNodes.push(nodeSyncLog.node)
         syncedNodesList.push(nodeSyncLog.node.publicKey)
       } else {
-        logger.log(
-          'info',
-          'SYNC CHECK BEHIND: ' +
-            nodeSyncLog.node.publicKey +
-            ' height: ' +
-            nodeSyncLog.blockHeight,
-          {
-            requestID: requestID,
-            relayType: '',
-            typeID: '',
-            serviceNode: nodeSyncLog.node.publicKey,
-            error: '',
-            elapsedTime: '',
-          }
-        )
+        logger.log('info', 'SYNC CHECK BEHIND: ' + nodeSyncLog.node.publicKey + ' height: ' + nodeSyncLog.blockHeight, {
+          requestID: requestID,
+          relayType: '',
+          typeID: '',
+          serviceNode: nodeSyncLog.node.publicKey,
+          error: '',
+          elapsedTime: '',
+        })
 
         await this.metricsRecorder.recordMetric({
           requestID: requestID,
@@ -264,18 +221,14 @@ export class SyncChecker {
       }
     }
 
-    logger.log(
-      'info',
-      'SYNC CHECK COMPLETE: ' + syncedNodes.length + ' nodes in sync',
-      {
-        requestID: requestID,
-        relayType: '',
-        typeID: '',
-        serviceNode: '',
-        error: '',
-        elapsedTime: '',
-      }
-    )
+    logger.log('info', 'SYNC CHECK COMPLETE: ' + syncedNodes.length + ' nodes in sync', {
+      requestID: requestID,
+      relayType: '',
+      typeID: '',
+      serviceNode: '',
+      error: '',
+      elapsedTime: '',
+    })
     await this.redis.set(
       syncedNodesKey,
       JSON.stringify(syncedNodesList),
@@ -298,32 +251,21 @@ export class SyncChecker {
         true,
         'synccheck'
       )
-      logger.log(
-        'info',
-        'SYNC CHECK CHALLENGE: ' + JSON.stringify(consensusResponse),
-        {
-          requestID: requestID,
-          relayType: '',
-          typeID: '',
-          serviceNode: '',
-          error: '',
-          elapsedTime: '',
-        }
-      )
+      logger.log('info', 'SYNC CHECK CHALLENGE: ' + JSON.stringify(consensusResponse), {
+        requestID: requestID,
+        relayType: '',
+        typeID: '',
+        serviceNode: '',
+        error: '',
+        elapsedTime: '',
+      })
     }
     return syncedNodes
   }
 
-  async getSyncFromAltruist(
-    syncCheck: string,
-    syncCheckPath: string,
-    blockchainSyncBackup: string
-  ): Promise<number> {
+  async getSyncFromAltruist(syncCheck: string, syncCheckPath: string, blockchainSyncBackup: string): Promise<number> {
     // Remove user/pass from the altruist URL
-    const redactedAltruistURL = blockchainSyncBackup.replace(
-      /[\w]*:\/\/[^\/]*@/g,
-      ''
-    )
+    const redactedAltruistURL = blockchainSyncBackup.replace(/[\w]*:\/\/[^\/]*@/g, '')
 
     try {
       const syncResponse = await axios({
@@ -393,10 +335,7 @@ export class SyncChecker {
     ] = await Promise.all(promiseStack)
 
     for (const rawNodeSyncLog of rawNodeSyncLogs) {
-      if (
-        typeof rawNodeSyncLog === 'object' &&
-        rawNodeSyncLog.blockHeight > 0
-      ) {
+      if (typeof rawNodeSyncLog === 'object' && rawNodeSyncLog.blockHeight > 0) {
         nodeSyncLogs.push(rawNodeSyncLog)
       }
     }
@@ -440,17 +379,12 @@ export class SyncChecker {
       'synccheck'
     )
 
-    if (
-      relayResponse instanceof RelayResponse &&
-      checkEnforcementJSON(relayResponse.payload)
-    ) {
+    if (relayResponse instanceof RelayResponse && checkEnforcementJSON(relayResponse.payload)) {
       const payload = JSON.parse(relayResponse.payload)
 
       // Pull the blockHeight from payload.result for all chains except Pocket; this
       // can go in the database if we have more than two
-      const blockHeight = payload.result
-        ? parseInt(payload.result, 16)
-        : payload.height
+      const blockHeight = payload.result ? parseInt(payload.result, 16) : payload.height
 
       // Create a NodeSyncLog for each node with current block
       const nodeSyncLog = {
@@ -470,28 +404,21 @@ export class SyncChecker {
       // Success
       return nodeSyncLog
     } else if (relayResponse instanceof Error) {
-      logger.log(
-        'error',
-        'SYNC CHECK ERROR: ' + JSON.stringify(relayResponse),
-        {
-          requestID: requestID,
-          relayType: '',
-          typeID: '',
-          serviceNode: node.publicKey,
-          error: '',
-          elapsedTime: '',
-        }
-      )
+      logger.log('error', 'SYNC CHECK ERROR: ' + JSON.stringify(relayResponse), {
+        requestID: requestID,
+        relayType: '',
+        typeID: '',
+        serviceNode: node.publicKey,
+        error: '',
+        elapsedTime: '',
+      })
 
       let error = relayResponse.message
       if (typeof relayResponse.message === 'object') {
         error = JSON.stringify(relayResponse.message)
       }
 
-      if (
-        error !==
-        'Provided Node is not part of the current session for this application, check your PocketAAT'
-      ) {
+      if (error !== 'Provided Node is not part of the current session for this application, check your PocketAAT') {
         await this.metricsRecorder.recordMetric({
           requestID: requestID,
           applicationID: applicationID,
@@ -508,18 +435,14 @@ export class SyncChecker {
         })
       }
     } else {
-      logger.log(
-        'error',
-        'SYNC CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse),
-        {
-          requestID: requestID,
-          relayType: '',
-          typeID: '',
-          serviceNode: node.publicKey,
-          error: '',
-          elapsedTime: '',
-        }
-      )
+      logger.log('error', 'SYNC CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
+        requestID: requestID,
+        relayType: '',
+        typeID: '',
+        serviceNode: node.publicKey,
+        error: '',
+        elapsedTime: '',
+      })
     }
     // Failed
     const nodeSyncLog = {

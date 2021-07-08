@@ -1,21 +1,5 @@
-import {
-  Count,
-  CountSchema,
-  Filter,
-  FilterExcludingWhere,
-  repository,
-  Where,
-} from '@loopback/repository'
-import {
-  post,
-  param,
-  get,
-  getModelSchemaRef,
-  patch,
-  put,
-  del,
-  requestBody,
-} from '@loopback/rest'
+import { Count, CountSchema, Filter, FilterExcludingWhere, repository, Where } from '@loopback/repository'
+import { post, param, get, getModelSchemaRef, patch, put, del, requestBody } from '@loopback/rest'
 import { Blockchains } from '../models'
 import { BlockchainsRepository } from '../repositories'
 
@@ -58,9 +42,7 @@ export class BlockchainsController {
       },
     },
   })
-  async count(
-    @param.where(Blockchains) where?: Where<Blockchains>
-  ): Promise<Count> {
+  async count(@param.where(Blockchains) where?: Where<Blockchains>): Promise<Count> {
     return this.blockchainsRepository.count(where)
   }
 
@@ -79,9 +61,7 @@ export class BlockchainsController {
       },
     },
   })
-  async find(
-    @param.filter(Blockchains) filter?: Filter<Blockchains>
-  ): Promise<Blockchains[]> {
+  async find(@param.filter(Blockchains) filter?: Filter<Blockchains>): Promise<Blockchains[]> {
     return this.blockchainsRepository.find(filter)
   }
 
@@ -155,10 +135,7 @@ export class BlockchainsController {
       },
     },
   })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() blockchains: Blockchains
-  ): Promise<void> {
+  async replaceById(@param.path.string('id') id: string, @requestBody() blockchains: Blockchains): Promise<void> {
     await this.blockchainsRepository.replaceById(id, blockchains)
   }
 

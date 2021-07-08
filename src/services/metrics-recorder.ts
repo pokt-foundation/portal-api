@@ -96,16 +96,7 @@ export class MetricsRecorder {
         })
       }
 
-      const metricsValues = [
-        new Date(),
-        appPubKey,
-        blockchain,
-        serviceNode,
-        elapsedTime,
-        result,
-        bytes,
-        method,
-      ]
+      const metricsValues = [new Date(), appPubKey, blockchain, serviceNode, elapsedTime, result, bytes, method]
 
       // Store metrics in redis and every 10 seconds, push to postgres
       const redisMetricsKey = 'metrics-' + this.processUID
@@ -114,11 +105,7 @@ export class MetricsRecorder {
       const currentTimestamp = Math.floor(new Date().getTime() / 1000)
 
       // List has been started in redis and needs to be pushed as timestamp is > 10 seconds old
-      if (
-        redisListAge &&
-        redisListSize > 0 &&
-        currentTimestamp > parseInt(redisListAge) + 10
-      ) {
+      if (redisListAge && redisListSize > 0 && currentTimestamp > parseInt(redisListAge) + 10) {
         await this.redis.set('age-' + redisMetricsKey, currentTimestamp)
 
         const bulkData = [metricsValues]
@@ -137,10 +124,7 @@ export class MetricsRecorder {
             client.query(metricsQuery, (err, result) => {
               release()
               if (err) {
-                logger.log(
-                  'error',
-                  'Error executing query ' + metricsQuery + ' ' + err.stack
-                )
+                logger.log('error', 'Error executing query ' + metricsQuery + ' ' + err.stack)
               }
             })
           })
@@ -154,13 +138,7 @@ export class MetricsRecorder {
       }
 
       if (serviceNode) {
-        await this.cherryPicker.updateServiceQuality(
-          blockchain,
-          applicationID,
-          serviceNode,
-          elapsedTime,
-          result
-        )
+        await this.cherryPicker.updateServiceQuality(blockchain, applicationID, serviceNode, elapsedTime, result)
       }
     } catch (err) {
       logger.log('error', err.stack)

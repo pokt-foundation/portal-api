@@ -4,15 +4,7 @@ import { SyncChecker } from '../services/sync-checker'
 import { ChainChecker } from '../services/chain-checker'
 import { Decryptor } from 'strong-cryptor'
 import { HttpErrors } from '@loopback/rest'
-import {
-  PocketAAT,
-  Session,
-  RelayResponse,
-  Pocket,
-  Configuration,
-  HTTPMethod,
-  Node,
-} from '@pokt-network/pocket-js'
+import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
 import { Redis } from 'ioredis'
 import { BlockchainsRepository } from '../repositories'
 import { Applications } from '../models'
@@ -130,23 +122,17 @@ export class PocketRelayer {
     // extraneous characters like newlines and tabs from the rawData.
     // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
 
-    const parsedRawData =
-      Object.keys(rawData).length > 0
-        ? JSON.parse(rawData.toString())
-        : JSON.stringify(rawData)
+    const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
     const data = JSON.stringify(parsedRawData)
     const method = this.parseMethod(parsedRawData)
-    const fallbackAvailable =
-      this.altruists[blockchain] !== undefined ? true : false
+    const fallbackAvailable = this.altruists[blockchain] !== undefined ? true : false
     // Retries if applicable
     for (let x = 0; x <= this.relayRetries; x++) {
       let relayStart = process.hrtime()
 
       // Compute the overall time taken on this LB request
       const overallCurrent = process.hrtime(overallStart)
-      const overallCurrentElasped = Math.round(
-        (overallCurrent[0] * 1e9 + overallCurrent[1]) / 1e6
-      )
+      const overallCurrentElasped = Math.round((overallCurrent[0] * 1e9 + overallCurrent[1]) / 1e6)
       if (overallTimeOut && overallCurrentElasped > overallTimeOut) {
         logger.log('error', 'Overall Timeout exceeded: ' + overallTimeOut, {
           requestID: requestID,
@@ -154,9 +140,7 @@ export class PocketRelayer {
           typeID: application.id,
           serviceNode: '',
         })
-        return new HttpErrors.GatewayTimeout(
-          'Overall Timeout exceeded: ' + overallTimeOut
-        )
+        return new HttpErrors.GatewayTimeout('Overall Timeout exceeded: ' + overallTimeOut)
       }
 
       // Send this relay attempt
@@ -194,9 +178,7 @@ export class PocketRelayer {
         })
 
         // Clear error log
-        await this.redis.del(
-          blockchain + '-' + relayResponse.proof.servicerPubKey + '-errors'
-        )
+        await this.redis.del(blockchain + '-' + relayResponse.proof.servicerPubKey + '-errors')
 
         // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
         if (
@@ -209,17 +191,11 @@ export class PocketRelayer {
       } else if (relayResponse instanceof RelayError) {
         // Record failure metric, retry if possible or fallback
         // If this is the last retry and fallback is available, mark the error not delivered
-        const errorDelivered =
-          x === this.relayRetries && fallbackAvailable ? false : true
+        const errorDelivered = x === this.relayRetries && fallbackAvailable ? false : true
 
         // Increment error log
-        await this.redis.incr(
-          blockchain + '-' + relayResponse.servicer_node + '-errors'
-        )
-        await this.redis.expire(
-          blockchain + '-' + relayResponse.servicer_node + '-errors',
-          3600
-        )
+        await this.redis.incr(blockchain + '-' + relayResponse.servicer_node + '-errors')
+        await this.redis.expire(blockchain + '-' + relayResponse.servicer_node + '-errors', 3600)
 
         let error = relayResponse.message
         if (typeof relayResponse.message === 'object') {
@@ -254,10 +230,7 @@ export class PocketRelayer {
           : `${this.altruists[blockchain]}/${relayPath}`
 
       // Remove user/pass from the altruist URL
-      const redactedAltruistURL = String(this.altruists[blockchain])!.replace(
-        /[\w]*:\/\/[^\/]*@/g,
-        ''
-      )
+      const redactedAltruistURL = String(this.altruists[blockchain])!.replace(/[\w]*:\/\/[^\/]*@/g, '')
 
       if (httpMethod === 'POST') {
         axiosConfig = {
@@ -362,29 +335,13 @@ export class PocketRelayer {
     }
 
     // Whitelist: origins -- explicit matches
-    if (
-      !this.checkWhitelist(
-        application.gatewaySettings.whitelistOrigins,
-        this.origin,
-        'explicit'
-      )
-    ) {
-      throw new HttpErrors.Forbidden(
-        'Whitelist Origin check failed: ' + this.origin
-      )
+    if (!this.checkWhitelist(application.gatewaySettings.whitelistOrigins, this.origin, 'explicit')) {
+      throw new HttpErrors.Forbidden('Whitelist Origin check failed: ' + this.origin)
     }
 
     // Whitelist: userAgent -- substring matches
-    if (
-      !this.checkWhitelist(
-        application.gatewaySettings.whitelistUserAgents,
-        this.userAgent,
-        'substring'
-      )
-    ) {
-      throw new HttpErrors.Forbidden(
-        'Whitelist User Agent check failed: ' + this.userAgent
-      )
+    if (!this.checkWhitelist(application.gatewaySettings.whitelistUserAgents, this.userAgent, 'substring')) {
+      throw new HttpErrors.Forbidden('Whitelist User Agent check failed: ' + this.userAgent)
     }
 
     const aatParams: [string, string, string, string] =
@@ -454,12 +411,7 @@ export class PocketRelayer {
           return new Error('Sync check failure; using fallbacks')
         }
       }
-      node = await this.cherryPicker.cherryPickNode(
-        application,
-        nodes,
-        blockchain,
-        requestID
-      )
+      node = await this.cherryPicker.cherryPickNode(application, nodes, blockchain, requestID)
     }
 
     if (this.checkDebug) {
@@ -520,11 +472,7 @@ export class PocketRelayer {
           relayResponse.payload.startsWith('{"error"')) // the full payload is an error
       ) {
         // then this result is invalid
-        return new RelayError(
-          relayResponse.payload,
-          503,
-          relayResponse.proof.servicerPubKey
-        )
+        return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey)
       } else {
         // Success
         return relayResponse
@@ -542,13 +490,8 @@ export class PocketRelayer {
   }
 
   // Fetch node client type if Ethereum based
-  async fetchClientTypeLog(
-    blockchain: string,
-    id: string | undefined
-  ): Promise<string | null> {
-    const clientTypeLog = await this.redis.get(
-      blockchain + '-' + id + '-clientType'
-    )
+  async fetchClientTypeLog(blockchain: string, id: string | undefined): Promise<string | null> {
+    const clientTypeLog = await this.redis.get(blockchain + '-' + id + '-clientType')
     return clientTypeLog
   }
 
@@ -603,8 +546,7 @@ export class PocketRelayer {
     // Split off the first part of the request's host and check for matches
     const blockchainRequest = this.host.split('.')[0]
     const blockchainFilter = blockchains.filter(
-      (b: { blockchain: string }) =>
-        b.blockchain.toLowerCase() === blockchainRequest.toLowerCase()
+      (b: { blockchain: string }) => b.blockchain.toLowerCase() === blockchainRequest.toLowerCase()
     )
 
     if (blockchainFilter[0]) {
@@ -629,10 +571,7 @@ export class PocketRelayer {
       }
       // Chain ID Check to determine correct chain
       if (blockchainFilter[0].chainIDCheck) {
-        blockchainIDCheck = blockchainFilter[0].chainIDCheck.replace(
-          /\\"/g,
-          '"'
-        )
+        blockchainIDCheck = blockchainFilter[0].chainIDCheck.replace(/\\"/g, '"')
         blockchainID = blockchainFilter[0].chainID
       }
       return Promise.resolve([
@@ -656,11 +595,8 @@ export class PocketRelayer {
       application.gatewaySettings.secretKey && // the app's secret key is set // and
       (!this.secretKey || // the request doesn't contain a secret key // or
         this.secretKey.length < 32 || // the secret key is invalid // or
-        (this.secretKey.length === 32 &&
-          this.secretKey !== application.gatewaySettings.secretKey) || // the secret key does not match plaintext // or
-        (this.secretKey.length > 32 &&
-          this.secretKey !==
-            decryptor.decrypt(application.gatewaySettings.secretKey))) // does not match encrypted
+        (this.secretKey.length === 32 && this.secretKey !== application.gatewaySettings.secretKey) || // the secret key does not match plaintext // or
+        (this.secretKey.length > 32 && this.secretKey !== decryptor.decrypt(application.gatewaySettings.secretKey))) // does not match encrypted
     ) {
       return false
     }

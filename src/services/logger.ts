@@ -3,11 +3,7 @@ import LogzioWinstonTransport from 'winston-logzio'
 
 require('dotenv').config()
 
-const {
-  createLogger,
-  format,
-  transports: winstonTransports,
-} = require('winston')
+const { createLogger, format, transports: winstonTransports } = require('winston')
 const { printf } = format
 
 interface Log {
@@ -34,16 +30,7 @@ const timestampUTC = () => {
 }
 
 const consoleFormat = printf(
-  ({
-    level,
-    message,
-    requestID,
-    relayType,
-    typeID,
-    serviceNode,
-    error,
-    elapsedTime,
-  }: Log) => {
+  ({ level, message, requestID, relayType, typeID, serviceNode, error, elapsedTime }: Log) => {
     return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${error}] [${elapsedTime}] ${message}`
   }
 )
@@ -72,10 +59,7 @@ const options = {
 
 const getTransports = (env: string) =>
   env === 'production'
-    ? [
-        new LogzioWinstonTransport(options.logzio),
-        new winstonTransports.Console(options.console),
-      ]
+    ? [new LogzioWinstonTransport(options.logzio), new winstonTransports.Console(options.console)]
     : [new winstonTransports.Console(options.console)]
 
 const perEnvTransports = getTransports(environment)

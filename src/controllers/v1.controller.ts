@@ -2,11 +2,7 @@ import { inject } from '@loopback/context'
 import { FilterExcludingWhere, repository } from '@loopback/repository'
 import { post, param, requestBody, HttpErrors } from '@loopback/rest'
 import { Applications, LoadBalancers } from '../models'
-import {
-  ApplicationsRepository,
-  BlockchainsRepository,
-  LoadBalancersRepository,
-} from '../repositories'
+import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from '../repositories'
 import { Pocket, Configuration, HTTPMethod } from '@pokt-network/pocket-js'
 import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
@@ -133,11 +129,7 @@ export class V1Controller {
       const loadBalancer = await this.fetchLoadBalancer(id, filter)
       if (loadBalancer?.id) {
         // eslint-disable-next-line
-        const [
-          blockchain,
-          _enforceResult,
-          _syncCheck,
-        ] = await this.pocketRelayer.loadBlockchain()
+        const [blockchain, _enforceResult, _syncCheck] = await this.pocketRelayer.loadBlockchain()
         // Fetch applications contained in this Load Balancer. Verify they exist and choose
         // one randomly for the relay.
         const application = await this.fetchLoadBalancerApplication(
@@ -175,9 +167,7 @@ export class V1Controller {
       typeID: id,
       serviceNode: '',
     })
-    return new HttpErrors.InternalServerError(
-      'Load balancer configuration error'
-    )
+    return new HttpErrors.InternalServerError('Load balancer configuration error')
   }
 
   /**
@@ -228,13 +218,7 @@ export class V1Controller {
     try {
       const application = await this.fetchApplication(id, filter)
       if (application?.id) {
-        return this.pocketRelayer.sendRelay(
-          rawData,
-          this.relayPath,
-          this.httpMethod,
-          application,
-          this.requestID
-        )
+        return this.pocketRelayer.sendRelay(rawData, this.relayPath, this.httpMethod, application, this.requestID)
       }
     } catch (e) {
       logger.log('error', e.message, {
@@ -255,17 +239,11 @@ export class V1Controller {
   }
 
   // Pull LoadBalancer records from redis then DB
-  async fetchLoadBalancer(
-    id: string,
-    filter: FilterExcludingWhere | undefined
-  ): Promise<LoadBalancers | undefined> {
+  async fetchLoadBalancer(id: string, filter: FilterExcludingWhere | undefined): Promise<LoadBalancers | undefined> {
     const cachedLoadBalancer = await this.redis.get(id)
 
     if (!cachedLoadBalancer) {
-      const loadBalancer = await this.loadBalancersRepository.findById(
-        id,
-        filter
-      )
+      const loadBalancer = await this.loadBalancersRepository.findById(id, filter)
       if (loadBalancer?.id) {
         await this.redis.set(id, JSON.stringify(loadBalancer), 'EX', 60)
         return new LoadBalancers(loadBalancer)
@@ -276,10 +254,7 @@ export class V1Controller {
   }
 
   // Pull Application records from redis then DB
-  async fetchApplication(
-    id: string,
-    filter: FilterExcludingWhere | undefined
-  ): Promise<Applications | undefined> {
+  async fetchApplication(id: string, filter: FilterExcludingWhere | undefined): Promise<Applications | undefined> {
     const cachedApplication = await this.redis.get(id)
 
     if (!cachedApplication) {
@@ -301,9 +276,7 @@ export class V1Controller {
     filter: FilterExcludingWhere | undefined
   ): Promise<Applications | undefined> {
     let verifiedIDs: string[] = []
-    const cachedLoadBalancerApplicationIDs = await this.redis.get(
-      'applicationIDs-' + id
-    )
+    const cachedLoadBalancerApplicationIDs = await this.redis.get('applicationIDs-' + id)
 
     // Fetch from DB if not found in redis
     if (!cachedLoadBalancerApplicationIDs) {
@@ -313,12 +286,7 @@ export class V1Controller {
           verifiedIDs.push(application.id)
         }
       }
-      await this.redis.set(
-        'applicationIDs-' + id,
-        JSON.stringify(verifiedIDs),
-        'EX',
-        60
-      )
+      await this.redis.set('applicationIDs-' + id, JSON.stringify(verifiedIDs), 'EX', 60)
     } else {
       verifiedIDs = JSON.parse(cachedLoadBalancerApplicationIDs)
     }
@@ -333,18 +301,12 @@ export class V1Controller {
       filter,
     );
     */
-    return this.fetchApplication(
-      verifiedIDs[Math.floor(Math.random() * verifiedIDs.length)],
-      filter
-    )
+    return this.fetchApplication(verifiedIDs[Math.floor(Math.random() * verifiedIDs.length)], filter)
   }
 
   // Debug log for testing based on user agent
   checkDebug(): boolean {
-    if (
-      this.userAgent &&
-      this.userAgent.toLowerCase().includes('pocket-debug')
-    ) {
+    if (this.userAgent && this.userAgent.toLowerCase().includes('pocket-debug')) {
       return true
     }
     return false

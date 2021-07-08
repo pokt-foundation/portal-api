@@ -1,11 +1,4 @@
-import {
-  Configuration,
-  HTTPMethod,
-  Node,
-  Pocket,
-  PocketAAT,
-  RelayResponse,
-} from '@pokt-network/pocket-js'
+import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
 import { checkEnforcementJSON } from '../utils'
@@ -46,9 +39,7 @@ export class ChainChecker {
         .createHash('sha256')
         .update(
           JSON.stringify(
-            nodes.sort((a, b) =>
-              a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0
-            ),
+            nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0)),
             (k, v) => (k != 'publicKey' ? v : undefined)
           )
         )
@@ -95,10 +86,7 @@ export class ChainChecker {
       if (nodeChainLog.chainID === chainID) {
         logger.log(
           'info',
-          'CHAIN CHECK SUCCESS: ' +
-            nodeChainLog.node.publicKey +
-            ' chainID: ' +
-            nodeChainLog.chainID,
+          'CHAIN CHECK SUCCESS: ' + nodeChainLog.node.publicKey + ' chainID: ' + nodeChainLog.chainID,
           {
             requestID: requestID,
             relayType: '',
@@ -115,10 +103,7 @@ export class ChainChecker {
       } else {
         logger.log(
           'info',
-          'CHAIN CHECK FAILURE: ' +
-            nodeChainLog.node.publicKey +
-            ' chainID: ' +
-            nodeChainLog.chainID,
+          'CHAIN CHECK FAILURE: ' + nodeChainLog.node.publicKey + ' chainID: ' + nodeChainLog.chainID,
           {
             requestID: requestID,
             relayType: '',
@@ -131,18 +116,14 @@ export class ChainChecker {
       }
     }
 
-    logger.log(
-      'info',
-      'CHAIN CHECK COMPLETE: ' + CheckedNodes.length + ' nodes on chain',
-      {
-        requestID: requestID,
-        relayType: '',
-        typeID: '',
-        serviceNode: '',
-        error: '',
-        elapsedTime: '',
-      }
-    )
+    logger.log('info', 'CHAIN CHECK COMPLETE: ' + CheckedNodes.length + ' nodes on chain', {
+      requestID: requestID,
+      relayType: '',
+      typeID: '',
+      serviceNode: '',
+      error: '',
+      elapsedTime: '',
+    })
     await this.redis.set(
       CheckedNodesKey,
       JSON.stringify(CheckedNodesList),
@@ -164,18 +145,14 @@ export class ChainChecker {
         undefined,
         true
       )
-      logger.log(
-        'info',
-        'CHAIN CHECK CHALLENGE: ' + JSON.stringify(consensusResponse),
-        {
-          requestID: requestID,
-          relayType: '',
-          typeID: '',
-          serviceNode: '',
-          error: '',
-          elapsedTime: '',
-        }
-      )
+      logger.log('info', 'CHAIN CHECK CHALLENGE: ' + JSON.stringify(consensusResponse), {
+        requestID: requestID,
+        relayType: '',
+        typeID: '',
+        serviceNode: '',
+        error: '',
+        elapsedTime: '',
+      })
     }
     return CheckedNodes
   }
@@ -222,10 +199,7 @@ export class ChainChecker {
     ] = await Promise.all(promiseStack)
 
     for (const rawNodeChainLog of rawNodeChainLogs) {
-      if (
-        typeof rawNodeChainLog === 'object' &&
-        rawNodeChainLog.chainID !== ''
-      ) {
+      if (typeof rawNodeChainLog === 'object' && rawNodeChainLog.chainID !== '') {
         nodeChainLogs.push(rawNodeChainLog)
       }
     }
@@ -265,10 +239,7 @@ export class ChainChecker {
       false
     )
 
-    if (
-      relayResponse instanceof RelayResponse &&
-      checkEnforcementJSON(relayResponse.payload)
-    ) {
+    if (relayResponse instanceof RelayResponse && checkEnforcementJSON(relayResponse.payload)) {
       const payload = JSON.parse(relayResponse.payload)
 
       // Create a NodeChainLog for each node with current chainID
@@ -276,52 +247,40 @@ export class ChainChecker {
         node: node,
         chainID: parseInt(payload.result, 16),
       } as NodeChainLog
-      logger.log(
-        'info',
-        'CHAIN CHECK RESULT: ' + JSON.stringify(nodeChainLog),
-        {
-          requestID: requestID,
-          relayType: '',
-          typeID: '',
-          serviceNode: node.publicKey,
-          error: '',
-          elapsedTime: '',
-        }
-      )
+      logger.log('info', 'CHAIN CHECK RESULT: ' + JSON.stringify(nodeChainLog), {
+        requestID: requestID,
+        relayType: '',
+        typeID: '',
+        serviceNode: node.publicKey,
+        error: '',
+        elapsedTime: '',
+      })
 
       // Success
       return nodeChainLog
     } else if (relayResponse instanceof Error) {
-      logger.log(
-        'error',
-        'CHAIN CHECK ERROR: ' + JSON.stringify(relayResponse),
-        {
-          requestID: requestID,
-          relayType: '',
-          typeID: '',
-          serviceNode: node.publicKey,
-          error: '',
-          elapsedTime: '',
-        }
-      )
+      logger.log('error', 'CHAIN CHECK ERROR: ' + JSON.stringify(relayResponse), {
+        requestID: requestID,
+        relayType: '',
+        typeID: '',
+        serviceNode: node.publicKey,
+        error: '',
+        elapsedTime: '',
+      })
 
       let error = relayResponse.message
       if (typeof relayResponse.message === 'object') {
         error = JSON.stringify(relayResponse.message)
       }
     } else {
-      logger.log(
-        'error',
-        'CHAIN CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse),
-        {
-          requestID: requestID,
-          relayType: '',
-          typeID: '',
-          serviceNode: node.publicKey,
-          error: '',
-          elapsedTime: '',
-        }
-      )
+      logger.log('error', 'CHAIN CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
+        requestID: requestID,
+        relayType: '',
+        typeID: '',
+        serviceNode: node.publicKey,
+        error: '',
+        elapsedTime: '',
+      })
     }
     // Failed
     const nodeChainLog = { node: node, chainID: 0 } as NodeChainLog

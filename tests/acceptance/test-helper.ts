@@ -1,9 +1,5 @@
 import { PocketGatewayApplication } from '../..'
-import {
-  createRestAppClient,
-  givenHttpServerConfig,
-  Client,
-} from '@loopback/testlab'
+import { createRestAppClient, givenHttpServerConfig, Client } from '@loopback/testlab'
 
 export async function setupApplication(): Promise<AppWithClient> {
   const restConfig = givenHttpServerConfig({
