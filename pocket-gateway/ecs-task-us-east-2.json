@@ -25,7 +25,7 @@
     "environment": [],
 		"command": [],
 		"linuxParameters": null,
-		"cpu": 2098,
+		"cpu": 2048,
 		"resourceRequirements": null,
 		"ulimits": [
 			{
