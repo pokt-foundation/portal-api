@@ -43,7 +43,22 @@ export class PingController {
   ping(): object {
     // Reply with a greeting, the current time, the url, and request headers
     return {
-      greeting: 'Hello from LoopBack',
+      greeting: 'Pocket Network Gateway is saying hello and welcome onboard!',
+      date: new Date(),
+      url: this.req.url,
+      headers: Object.assign({}, this.req.headers),
+    };
+  }
+
+  @get('/', {
+    responses: {
+      '200': PING_RESPONSE,
+    },
+  })
+  index(): object {
+    // Reply with a greeting, the current time, the url, and request headers
+    return {
+      greeting: 'Pocket Network Gateway is saying hello and welcome onboard!',
       date: new Date(),
       url: this.req.url,
       headers: Object.assign({}, this.req.headers),

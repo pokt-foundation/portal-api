@@ -17,6 +17,7 @@ import {BlockchainsRepository} from '../repositories';
 import {Applications} from '../models';
 import {RelayError} from '../errors/relay-error';
 import AatPlans from '../config/aat-plans.json';
+import {checkEnforcementJSON} from '../utils';
 
 import { JSONObject } from '@loopback/context';
 
@@ -109,7 +110,7 @@ export class PocketRelayer {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries;
     }
-    const [blockchain, blockchainEnforceResult, blockchainSyncCheck] = await this.loadBlockchain();
+    const [blockchain, blockchainEnforceResult, blockchainSyncCheck, blockchainSyncCheckPath] = await this.loadBlockchain();
     const overallStart = process.hrtime();
 
     // This converts the raw data into formatted JSON then back to a string for relaying.
@@ -145,7 +146,7 @@ export class PocketRelayer {
       }
 
       // Send this relay attempt
-      const relayResponse = await this._sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult, blockchainSyncCheck, String(this.altruists[blockchain]));
+      const relayResponse = await this._sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult, blockchainSyncCheck, blockchainSyncCheckPath, String(this.altruists[blockchain]));
 
       if (!(relayResponse instanceof Error)) {
         // Record success metric
@@ -303,6 +304,7 @@ export class PocketRelayer {
     blockchain: string,
     blockchainEnforceResult: string,
     blockchainSyncCheck: string,
+    blockchainSyncCheckPath: string,
     blockchainSyncBackup: string,
   ): Promise<RelayResponse | Error> {
     logger.log('info', 'RELAYING ' + blockchain + ' req: ' + data, {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
@@ -367,7 +369,8 @@ export class PocketRelayer {
     if (pocketSession instanceof Session) {
       let nodes: Node[] = pocketSession.sessionNodes;
       if (blockchainSyncCheck) {
-        nodes = await this.syncChecker.consensusFilter(pocketSession.sessionNodes, requestID, blockchainSyncCheck, 3, blockchain, blockchainSyncBackup, application.id, application.gatewayAAT.applicationPublicKey, this.pocket, pocketAAT, this.pocketConfiguration);
+        nodes = await this.syncChecker.consensusFilter(pocketSession.sessionNodes, requestID, blockchainSyncCheck, blockchainSyncCheckPath, 3, blockchain, blockchainSyncBackup, application.id, application.gatewayAAT.applicationPublicKey, this.pocket, pocketAAT, this.pocketConfiguration);
+
         if (nodes.length === 0) {
           return new Error('Sync check failure; using fallbacks');
         }
@@ -430,7 +433,7 @@ export class PocketRelayer {
         blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
         blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON // and
         (
-          !this.checkEnforcementJSON(relayResponse.payload) || // the relay response is not valid JSON // or 
+          !checkEnforcementJSON(relayResponse.payload) || // the relay response is not valid JSON // or 
           relayResponse.payload.startsWith('{"error"') // the full payload is an error
         )
       ) {
@@ -525,6 +528,7 @@ export class PocketRelayer {
     if (blockchainFilter[0]) {
       let blockchainEnforceResult = '';
       let blockchainSyncCheck = '';
+      let blockchainSyncCheckPath = '';
       const blockchain = blockchainFilter[0].hash as string;
       
       // Record the necessary format for the result; example: JSON
@@ -535,27 +539,14 @@ export class PocketRelayer {
       if (blockchainFilter[0].syncCheck) {
         blockchainSyncCheck = blockchainFilter[0].syncCheck.replace(/\\"/g, '"');
       }
-      return Promise.resolve([blockchain, blockchainEnforceResult, blockchainSyncCheck]);
+      // Sync Check path necessary for some chains
+      if (blockchainFilter[0].syncCheckPath) {
+        blockchainSyncCheckPath = blockchainFilter[0].syncCheckPath;
+      }
+      return Promise.resolve([blockchain, blockchainEnforceResult, blockchainSyncCheck, blockchainSyncCheckPath]);
     } else {
       throw new HttpErrors.BadRequest('Incorrect blockchain: ' + this.host);
     }
-  }
-
-  // Check relay result: JSON
-  checkEnforcementJSON(test: string): boolean {
-    if (!test || test.length === 0) {
-      return false;
-    }
-    // Code from: https://github.com/prototypejs/prototype/blob/560bb59414fc9343ce85429b91b1e1b82fdc6812/src/prototype/lang/string.js#L699
-    // Prototype lib
-    if (/^\s*$/.test(test)) return false;
-    test = test.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, '@');
-    test = test.replace(
-      /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,
-      ']',
-    );
-    test = test.replace(/(?:^|:|,)(?:\s*\[)+/g, '');
-    return /^[\],:{}\s]*$/.test(test);
   }
 
   checkSecretKey(application: Applications): boolean {
