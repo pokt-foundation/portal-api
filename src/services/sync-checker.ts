@@ -16,7 +16,7 @@ export class SyncChecker {
     this.metricsRecorder = metricsRecorder;
   }
 
-  async consensusFilter(nodes: Node[], requestID: string, syncCheck: string, syncCheckPath: string, syncAllowance: number = 1, blockchain: string, blockchainSyncBackup: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<Node[]> {
+  async consensusFilter(nodes: Node[], requestID: string, syncCheck: string, syncCheckPath: string, syncAllowance: number = 5, blockchain: string, blockchainSyncBackup: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<Node[]> {
 
     let syncedNodes: Node[] = [];
     let syncedNodesList: String[] = [];
