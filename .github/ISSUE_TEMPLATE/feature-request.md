@@ -1,10 +1,9 @@
 ---
 name: Feature request
 about: Request a feature
-title: "[FEATURE REQUEST]"
+title: '[FEATURE REQUEST]'
 labels: enhancement
 assignees: ''
-
 ---
 
 **Is your feature request related to a problem? Please describe.**

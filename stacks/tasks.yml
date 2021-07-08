@@ -1,13 +1,12 @@
-version: "3.5"
+version: '3.5'
 
 services:
-
   download-production-data:
     image: mongo:4.2.14
     command: /scripts/export-production-data.sh
     volumes:
       - ~/.pocket/production_data:/data/
-      - "../scripts:/scripts"
+      - '../scripts:/scripts'
     env_file:
       - ../.tasks.env
     networks:
@@ -18,7 +17,7 @@ services:
     command: /scripts/import-production-data.sh
     volumes:
       - ~/.pocket/production_data:/data/
-      - "../scripts:/scripts"
+      - '../scripts:/scripts'
       - ~/.pocket/mongodb:/data/db
     env_file:
       - ../.tasks.env

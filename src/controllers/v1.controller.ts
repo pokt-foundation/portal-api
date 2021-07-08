@@ -1,29 +1,29 @@
-import {inject} from '@loopback/context';
-import {FilterExcludingWhere, repository} from '@loopback/repository';
-import {post, param, requestBody, HttpErrors} from '@loopback/rest';
-import {Applications, LoadBalancers} from '../models';
+import { inject } from '@loopback/context'
+import { FilterExcludingWhere, repository } from '@loopback/repository'
+import { post, param, requestBody, HttpErrors } from '@loopback/rest'
+import { Applications, LoadBalancers } from '../models'
 import {
   ApplicationsRepository,
   BlockchainsRepository,
   LoadBalancersRepository,
-} from '../repositories';
-import {Pocket, Configuration, HTTPMethod} from '@pokt-network/pocket-js';
-import {Redis} from 'ioredis';
-import {Pool as PGPool} from 'pg';
-import {CherryPicker} from '../services/cherry-picker';
-import {MetricsRecorder} from '../services/metrics-recorder';
-import {PocketRelayer} from '../services/pocket-relayer';
-import {SyncChecker} from '../services/sync-checker';
-import {ChainChecker} from '../services/chain-checker';
+} from '../repositories'
+import { Pocket, Configuration, HTTPMethod } from '@pokt-network/pocket-js'
+import { Redis } from 'ioredis'
+import { Pool as PGPool } from 'pg'
+import { CherryPicker } from '../services/cherry-picker'
+import { MetricsRecorder } from '../services/metrics-recorder'
+import { PocketRelayer } from '../services/pocket-relayer'
+import { SyncChecker } from '../services/sync-checker'
+import { ChainChecker } from '../services/chain-checker'
 
-const logger = require('../services/logger');
+const logger = require('../services/logger')
 
 export class V1Controller {
-  cherryPicker: CherryPicker;
-  metricsRecorder: MetricsRecorder;
-  pocketRelayer: PocketRelayer;
-  syncChecker: SyncChecker;
-  chainChecker: ChainChecker;
+  cherryPicker: CherryPicker
+  metricsRecorder: MetricsRecorder
+  pocketRelayer: PocketRelayer
+  syncChecker: SyncChecker
+  chainChecker: ChainChecker
 
   constructor(
     @inject('secretKey') private secretKey: string,
@@ -48,20 +48,20 @@ export class V1Controller {
     @repository(BlockchainsRepository)
     private blockchainsRepository: BlockchainsRepository,
     @repository(LoadBalancersRepository)
-    private loadBalancersRepository: LoadBalancersRepository,
+    private loadBalancersRepository: LoadBalancersRepository
   ) {
     this.cherryPicker = new CherryPicker({
       redis: this.redis,
       checkDebug: this.checkDebug(),
-    });
+    })
     this.metricsRecorder = new MetricsRecorder({
       redis: this.redis,
       pgPool: this.pgPool,
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
-    });
-    this.syncChecker = new SyncChecker(this.redis, this.metricsRecorder);
-    this.chainChecker = new ChainChecker(this.redis, this.metricsRecorder);
+    })
+    this.syncChecker = new SyncChecker(this.redis, this.metricsRecorder)
+    this.chainChecker = new ChainChecker(this.redis, this.metricsRecorder)
     this.pocketRelayer = new PocketRelayer({
       host: this.host,
       origin: this.origin,
@@ -80,7 +80,7 @@ export class V1Controller {
       checkDebug: this.checkDebug(),
       altruists: this.altruists,
       aatPlan: this.aatPlan,
-    });
+    })
   }
 
   /**
@@ -113,13 +113,13 @@ export class V1Controller {
       },
     })
     rawData: object,
-    @param.filter(Applications, {exclude: 'where'})
-    filter?: FilterExcludingWhere<Applications>,
+    @param.filter(Applications, { exclude: 'where' })
+    filter?: FilterExcludingWhere<Applications>
   ): Promise<string | Error> {
     // Take the relay path from the end of the endpoint URL
     if (id.match(/[0-9a-zA-Z]{24}~/g)) {
-      this.relayPath = id.slice(24).replace(/~/gi, '/');
-      id = id.slice(0, 24);
+      this.relayPath = id.slice(24).replace(/~/gi, '/')
+      id = id.slice(0, 24)
     }
 
     logger.log('info', 'PROCESSING', {
@@ -127,23 +127,36 @@ export class V1Controller {
       relayType: 'LB',
       typeID: id,
       serviceNode: '',
-    });
+    })
 
     try {
-      const loadBalancer = await this.fetchLoadBalancer(id, filter);
+      const loadBalancer = await this.fetchLoadBalancer(id, filter)
       if (loadBalancer?.id) {
-        // eslint-disable-next-line 
-        const [blockchain, _enforceResult, _syncCheck] = await this.pocketRelayer.loadBlockchain();
+        // eslint-disable-next-line
+        const [
+          blockchain,
+          _enforceResult,
+          _syncCheck,
+        ] = await this.pocketRelayer.loadBlockchain()
         // Fetch applications contained in this Load Balancer. Verify they exist and choose
         // one randomly for the relay.
         const application = await this.fetchLoadBalancerApplication(
           loadBalancer.id,
           loadBalancer.applicationIDs,
           blockchain,
-          filter,
-        );
+          filter
+        )
         if (application?.id) {
-          return this.pocketRelayer.sendRelay(rawData, this.relayPath, this.httpMethod, application, this.requestID, parseInt(loadBalancer.requestTimeOut), parseInt(loadBalancer.overallTimeOut), parseInt(loadBalancer.relayRetries));
+          return this.pocketRelayer.sendRelay(
+            rawData,
+            this.relayPath,
+            this.httpMethod,
+            application,
+            this.requestID,
+            parseInt(loadBalancer.requestTimeOut),
+            parseInt(loadBalancer.overallTimeOut),
+            parseInt(loadBalancer.relayRetries)
+          )
         }
       }
     } catch (e) {
@@ -152,8 +165,8 @@ export class V1Controller {
         relayType: 'LB',
         typeID: id,
         serviceNode: '',
-      });
-      return new HttpErrors.InternalServerError(e.message);
+      })
+      return new HttpErrors.InternalServerError(e.message)
     }
 
     logger.log('error', 'Load balancer configuration error', {
@@ -161,10 +174,10 @@ export class V1Controller {
       relayType: 'LB',
       typeID: id,
       serviceNode: '',
-    });
+    })
     return new HttpErrors.InternalServerError(
-      'Load balancer configuration error',
-    );
+      'Load balancer configuration error'
+    )
   }
 
   /**
@@ -197,25 +210,31 @@ export class V1Controller {
       },
     })
     rawData: object,
-    @param.filter(Applications, {exclude: 'where'})
-    filter?: FilterExcludingWhere<Applications>,
+    @param.filter(Applications, { exclude: 'where' })
+    filter?: FilterExcludingWhere<Applications>
   ): Promise<string | Error> {
     // Take the relay path from the end of the endpoint URL
     if (id.match(/[0-9a-zA-Z]{24}~/g)) {
-      this.relayPath = id.slice(24).replace(/~/gi, '/');
-      id = id.slice(0, 24);
+      this.relayPath = id.slice(24).replace(/~/gi, '/')
+      id = id.slice(0, 24)
     }
     logger.log('info', 'PROCESSING', {
       requestID: this.requestID,
       relayType: 'APP',
       typeID: id,
       serviceNode: '',
-    });
+    })
 
     try {
-      const application = await this.fetchApplication(id, filter);
+      const application = await this.fetchApplication(id, filter)
       if (application?.id) {
-        return this.pocketRelayer.sendRelay(rawData, this.relayPath, this.httpMethod, application, this.requestID);
+        return this.pocketRelayer.sendRelay(
+          rawData,
+          this.relayPath,
+          this.httpMethod,
+          application,
+          this.requestID
+        )
       }
     } catch (e) {
       logger.log('error', e.message, {
@@ -223,58 +242,55 @@ export class V1Controller {
         relayType: 'APP',
         typeID: id,
         serviceNode: '',
-      });
-      return new HttpErrors.InternalServerError(e.message);
+      })
+      return new HttpErrors.InternalServerError(e.message)
     }
     logger.log('error', 'Application not found', {
       requestID: this.requestID,
       relayType: 'APP',
       typeID: id,
       serviceNode: '',
-    });
-    return new HttpErrors.InternalServerError('Application not found');
+    })
+    return new HttpErrors.InternalServerError('Application not found')
   }
 
   // Pull LoadBalancer records from redis then DB
   async fetchLoadBalancer(
     id: string,
-    filter: FilterExcludingWhere | undefined,
+    filter: FilterExcludingWhere | undefined
   ): Promise<LoadBalancers | undefined> {
-    const cachedLoadBalancer = await this.redis.get(id);
+    const cachedLoadBalancer = await this.redis.get(id)
 
     if (!cachedLoadBalancer) {
       const loadBalancer = await this.loadBalancersRepository.findById(
         id,
-        filter,
-      );
+        filter
+      )
       if (loadBalancer?.id) {
-        await this.redis.set(id, JSON.stringify(loadBalancer), 'EX', 60);
-        return new LoadBalancers(loadBalancer);
+        await this.redis.set(id, JSON.stringify(loadBalancer), 'EX', 60)
+        return new LoadBalancers(loadBalancer)
       }
-      return undefined;
+      return undefined
     }
-    return new LoadBalancers(JSON.parse(cachedLoadBalancer));
+    return new LoadBalancers(JSON.parse(cachedLoadBalancer))
   }
 
   // Pull Application records from redis then DB
   async fetchApplication(
     id: string,
-    filter: FilterExcludingWhere | undefined,
+    filter: FilterExcludingWhere | undefined
   ): Promise<Applications | undefined> {
-    const cachedApplication = await this.redis.get(id);
+    const cachedApplication = await this.redis.get(id)
 
     if (!cachedApplication) {
-      const application = await this.applicationsRepository.findById(
-        id,
-        filter,
-      );
+      const application = await this.applicationsRepository.findById(id, filter)
       if (application?.id) {
-        await this.redis.set(id, JSON.stringify(application), 'EX', 60);
-        return new Applications(application);
+        await this.redis.set(id, JSON.stringify(application), 'EX', 60)
+        return new Applications(application)
       }
-      return undefined;
+      return undefined
     }
-    return new Applications(JSON.parse(cachedApplication));
+    return new Applications(JSON.parse(cachedApplication))
   }
 
   // Pull a random Load Balancer Application from redis then DB
@@ -282,34 +298,34 @@ export class V1Controller {
     id: string,
     applicationIDs: string[],
     blockchain: string,
-    filter: FilterExcludingWhere | undefined,
+    filter: FilterExcludingWhere | undefined
   ): Promise<Applications | undefined> {
-    let verifiedIDs: string[] = [];
+    let verifiedIDs: string[] = []
     const cachedLoadBalancerApplicationIDs = await this.redis.get(
-      'applicationIDs-' + id,
-    );
+      'applicationIDs-' + id
+    )
 
     // Fetch from DB if not found in redis
     if (!cachedLoadBalancerApplicationIDs) {
       for (const applicationID of applicationIDs) {
-        const application = await this.fetchApplication(applicationID, filter);
+        const application = await this.fetchApplication(applicationID, filter)
         if (application?.id) {
-          verifiedIDs.push(application.id);
+          verifiedIDs.push(application.id)
         }
       }
       await this.redis.set(
         'applicationIDs-' + id,
         JSON.stringify(verifiedIDs),
         'EX',
-        60,
-      );
+        60
+      )
     } else {
-      verifiedIDs = JSON.parse(cachedLoadBalancerApplicationIDs);
+      verifiedIDs = JSON.parse(cachedLoadBalancerApplicationIDs)
     }
 
     // Sanity check; make sure applications are configured for this LB
     if (verifiedIDs.length < 1) {
-      throw new HttpErrors.Forbidden('Load Balancer configuration invalid');
+      throw new HttpErrors.Forbidden('Load Balancer configuration invalid')
     }
     /*
     return this.fetchApplication(
@@ -319,8 +335,8 @@ export class V1Controller {
     */
     return this.fetchApplication(
       verifiedIDs[Math.floor(Math.random() * verifiedIDs.length)],
-      filter,
-    );
+      filter
+    )
   }
 
   // Debug log for testing based on user agent
@@ -329,8 +345,8 @@ export class V1Controller {
       this.userAgent &&
       this.userAgent.toLowerCase().includes('pocket-debug')
     ) {
-      return true;
+      return true
     }
-    return false;
+    return false
   }
 }

@@ -1,39 +1,52 @@
-import {HttpErrors} from '@loopback/rest';
-import LogzioWinstonTransport from 'winston-logzio';
+import { HttpErrors } from '@loopback/rest'
+import LogzioWinstonTransport from 'winston-logzio'
 
-require('dotenv').config();
+require('dotenv').config()
 
-const { createLogger, format, transports: winstonTransports } = require('winston');
-const { printf } = format;
+const {
+  createLogger,
+  format,
+  transports: winstonTransports,
+} = require('winston')
+const { printf } = format
 
 interface Log {
-  level: string;
-  message: string;
-  requestID: string;
-  relayType: string;
-  typeID: string;
-  serviceNode: string;
-  error: string | undefined;
-  elapsedTime: number;
+  level: string
+  message: string
+  requestID: string
+  relayType: string
+  typeID: string
+  serviceNode: string
+  error: string | undefined
+  elapsedTime: number
 }
 
-const environment: string = process.env.NODE_ENV ?? 'production';
-const logzToken: string = process.env.LOGZ_TOKEN ?? '';
+const environment: string = process.env.NODE_ENV ?? 'production'
+const logzToken: string = process.env.LOGZ_TOKEN ?? ''
 
 if (!logzToken && environment === 'production') {
-  throw new HttpErrors.InternalServerError(
-    'LOGZ_TOKEN required in ENV',
-  );
+  throw new HttpErrors.InternalServerError('LOGZ_TOKEN required in ENV')
 }
 
 const timestampUTC = () => {
-  const timestamp = new Date();
-  return timestamp.toISOString();
-};
+  const timestamp = new Date()
+  return timestamp.toISOString()
+}
 
-const consoleFormat = printf(({ level, message, requestID, relayType, typeID, serviceNode, error, elapsedTime }: Log) => {
-  return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${error}] [${elapsedTime}] ${message}`;
-});
+const consoleFormat = printf(
+  ({
+    level,
+    message,
+    requestID,
+    relayType,
+    typeID,
+    serviceNode,
+    error,
+    elapsedTime,
+  }: Log) => {
+    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${error}] [${elapsedTime}] ${message}`
+  }
+)
 
 const options = {
   console: {
@@ -46,7 +59,7 @@ const options = {
       format.timestamp({
         format: 'YYYY-MM-DD HH:mm:ss.SSS',
       }),
-      consoleFormat,
+      consoleFormat
     ),
   },
   logzio: {
@@ -54,22 +67,21 @@ const options = {
     name: 'winston_logzio',
     token: logzToken,
     host: 'listener-uk.logz.io',
-  }
-};
+  },
+}
 
-const getTransports = (env: string) => env === 'production'
-  ? [
-      new LogzioWinstonTransport(options.logzio),
-      new winstonTransports.Console(options.console),
-  ]
-  : [
-    new winstonTransports.Console(options.console),
-  ]
+const getTransports = (env: string) =>
+  env === 'production'
+    ? [
+        new LogzioWinstonTransport(options.logzio),
+        new winstonTransports.Console(options.console),
+      ]
+    : [new winstonTransports.Console(options.console)]
 
-const perEnvTransports = getTransports(environment);
+const perEnvTransports = getTransports(environment)
 
 module.exports = createLogger({
   format: format.json(),
   transports: perEnvTransports,
   exitOnError: false,
-});
+})

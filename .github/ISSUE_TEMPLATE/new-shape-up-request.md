@@ -1,10 +1,9 @@
 ---
 name: New Shape Up Request
 about: A shape up request details
-title: "[Request]"
+title: '[Request]'
 labels: request:general, request:chain-up
 assignees: Leke-Ariyo
-
 ---
 
 ### In 2-4 sentences write a self-contained summary of idea and benefits.
