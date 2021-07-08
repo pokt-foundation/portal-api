@@ -14,6 +14,7 @@ import {CherryPicker} from '../services/cherry-picker';
 import {MetricsRecorder} from '../services/metrics-recorder';
 import {PocketRelayer} from '../services/pocket-relayer';
 import {SyncChecker} from '../services/sync-checker';
+import {ChainChecker} from '../services/chain-checker';
 
 const logger = require('../services/logger');
 
@@ -22,6 +23,7 @@ export class V1Controller {
   metricsRecorder: MetricsRecorder;
   pocketRelayer: PocketRelayer;
   syncChecker: SyncChecker;
+  chainChecker: ChainChecker;
 
   constructor(
     @inject('secretKey') private secretKey: string,
@@ -59,6 +61,7 @@ export class V1Controller {
       processUID: this.processUID,
     });
     this.syncChecker = new SyncChecker(this.redis, this.metricsRecorder);
+    this.chainChecker = new ChainChecker(this.redis, this.metricsRecorder);
     this.pocketRelayer = new PocketRelayer({
       host: this.host,
       origin: this.origin,
@@ -68,6 +71,7 @@ export class V1Controller {
       cherryPicker: this.cherryPicker,
       metricsRecorder: this.metricsRecorder,
       syncChecker: this.syncChecker,
+      chainChecker: this.chainChecker,
       redis: this.redis,
       databaseEncryptionKey: this.databaseEncryptionKey,
       secretKey: this.secretKey,
