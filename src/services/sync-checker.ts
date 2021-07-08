@@ -108,6 +108,14 @@ export class SyncChecker {
       if ((nodeSyncLog.blockHeight + syncAllowance) >= currentBlockHeight) {
         logger.log('info', 'SYNC CHECK IN-SYNC: ' + nodeSyncLog.node.publicKey + ' height: ' + nodeSyncLog.blockHeight, {requestID: requestID, relayType: '', typeID: '', serviceNode: nodeSyncLog.node.publicKey, error: '', elapsedTime: ''});
         
+        // Erase failure mark 
+        await this.redis.set(
+          blockchain + '-' + nodeSyncLog.node.publicKey + '-failure',
+          'false',
+          'EX',
+          (60 * 60 * 24 * 30),
+        );
+
         // In-sync: add to nodes list
         syncedNodes.push(nodeSyncLog.node);
         syncedNodesList.push(nodeSyncLog.node.publicKey);

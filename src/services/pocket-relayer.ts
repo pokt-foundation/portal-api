@@ -1,6 +1,7 @@
 import {CherryPicker} from '../services/cherry-picker';
 import {MetricsRecorder} from '../services/metrics-recorder';
 import {SyncChecker} from '../services/sync-checker';
+import {ChainChecker} from '../services/chain-checker';
 import {Decryptor} from 'strong-cryptor';
 import {HttpErrors} from '@loopback/rest';
 import {
@@ -33,6 +34,7 @@ export class PocketRelayer {
   cherryPicker: CherryPicker;
   metricsRecorder: MetricsRecorder;
   syncChecker: SyncChecker;
+  chainChecker: ChainChecker;
   redis: Redis;
   databaseEncryptionKey: string;
   secretKey: string;
@@ -51,6 +53,7 @@ export class PocketRelayer {
     cherryPicker,
     metricsRecorder,
     syncChecker,
+    chainChecker,
     redis,
     databaseEncryptionKey,
     secretKey,
@@ -68,6 +71,7 @@ export class PocketRelayer {
     cherryPicker: CherryPicker;
     metricsRecorder: MetricsRecorder;
     syncChecker: SyncChecker;
+    chainChecker: ChainChecker;
     redis: Redis;
     databaseEncryptionKey: string;
     secretKey: string;
@@ -85,6 +89,7 @@ export class PocketRelayer {
     this.cherryPicker = cherryPicker;
     this.metricsRecorder = metricsRecorder;
     this.syncChecker = syncChecker;
+    this.chainChecker = chainChecker;
     this.redis = redis;
     this.databaseEncryptionKey = databaseEncryptionKey;
     this.secretKey = secretKey;
@@ -110,7 +115,7 @@ export class PocketRelayer {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries;
     }
-    const [blockchain, blockchainEnforceResult, blockchainSyncCheck, blockchainSyncCheckPath] = await this.loadBlockchain();
+    const [blockchain, blockchainEnforceResult, blockchainSyncCheck, blockchainSyncCheckPath, blockchainIDCheck, blockchainID] = await this.loadBlockchain();
     const overallStart = process.hrtime();
 
     // This converts the raw data into formatted JSON then back to a string for relaying.
@@ -146,7 +151,7 @@ export class PocketRelayer {
       }
 
       // Send this relay attempt
-      const relayResponse = await this._sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult, blockchainSyncCheck, blockchainSyncCheckPath, String(this.altruists[blockchain]));
+      const relayResponse = await this._sendRelay(data, relayPath, httpMethod, requestID, application, requestTimeOut, blockchain, blockchainEnforceResult, blockchainSyncCheck, blockchainSyncCheckPath, String(this.altruists[blockchain]), blockchainIDCheck, blockchainID);
 
       if (!(relayResponse instanceof Error)) {
         // Record success metric
@@ -306,6 +311,8 @@ export class PocketRelayer {
     blockchainSyncCheck: string,
     blockchainSyncCheckPath: string,
     blockchainSyncBackup: string,
+    blockchainIDCheck: string,
+    blockchainID: string,
   ): Promise<RelayResponse | Error> {
     logger.log('info', 'RELAYING ' + blockchain + ' req: ' + data, {requestID: requestID, relayType: 'APP', typeID: application.id, serviceNode: ''});
 
@@ -368,9 +375,17 @@ export class PocketRelayer {
     );
     if (pocketSession instanceof Session) {
       let nodes: Node[] = pocketSession.sessionNodes;
-      if (blockchainSyncCheck) {
-        nodes = await this.syncChecker.consensusFilter(pocketSession.sessionNodes, requestID, blockchainSyncCheck, blockchainSyncCheckPath, 3, blockchain, blockchainSyncBackup, application.id, application.gatewayAAT.applicationPublicKey, this.pocket, pocketAAT, this.pocketConfiguration);
+      if (blockchainIDCheck) {
+        // Check Chain ID
+        nodes = await this.chainChecker.chainIDFilter(nodes, requestID, blockchainIDCheck, parseInt(blockchainID), blockchain, application.id, application.gatewayAAT.applicationPublicKey, this.pocket, pocketAAT, this.pocketConfiguration);
+        if (nodes.length === 0) {
+          return new Error('ChainID check failure; using fallbacks');
+        }
+      }
 
+      if (blockchainSyncCheck) {
+        // Check Sync
+        nodes = await this.syncChecker.consensusFilter(nodes, requestID, blockchainSyncCheck, blockchainSyncCheckPath, 3, blockchain, blockchainSyncBackup, application.id, application.gatewayAAT.applicationPublicKey, this.pocket, pocketAAT, this.pocketConfiguration);
         if (nodes.length === 0) {
           return new Error('Sync check failure; using fallbacks');
         }
@@ -529,6 +544,8 @@ export class PocketRelayer {
       let blockchainEnforceResult = '';
       let blockchainSyncCheck = '';
       let blockchainSyncCheckPath = '';
+      let blockchainIDCheck = '';
+      let blockchainID = '';
       const blockchain = blockchainFilter[0].hash as string;
       
       // Record the necessary format for the result; example: JSON
@@ -543,7 +560,12 @@ export class PocketRelayer {
       if (blockchainFilter[0].syncCheckPath) {
         blockchainSyncCheckPath = blockchainFilter[0].syncCheckPath;
       }
-      return Promise.resolve([blockchain, blockchainEnforceResult, blockchainSyncCheck, blockchainSyncCheckPath]);
+      // Chain ID Check to determine correct chain
+      if (blockchainFilter[0].chainIDCheck) {
+        blockchainIDCheck = blockchainFilter[0].chainIDCheck.replace(/\\"/g, '"');
+        blockchainID = blockchainFilter[0].chainID;
+      }
+      return Promise.resolve([blockchain, blockchainEnforceResult, blockchainSyncCheck, blockchainSyncCheckPath, blockchainIDCheck, blockchainID]);
     } else {
       throw new HttpErrors.BadRequest('Incorrect blockchain: ' + this.host);
     }
