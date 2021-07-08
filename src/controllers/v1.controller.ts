@@ -129,7 +129,11 @@ export class V1Controller {
       const loadBalancer = await this.fetchLoadBalancer(id, filter)
       if (loadBalancer?.id) {
         // eslint-disable-next-line
-        const [blockchain, _enforceResult, _syncCheck] = await this.pocketRelayer.loadBlockchain()
+        const {
+          blockchain,
+          blockchainEnforceResult: _enforceResult,
+          blockchainSyncCheck: _syncCheck,
+        } = await this.pocketRelayer.loadBlockchain()
         // Fetch applications contained in this Load Balancer. Verify they exist and choose
         // one randomly for the relay.
         const application = await this.fetchLoadBalancerApplication(

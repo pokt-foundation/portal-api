@@ -21,7 +21,7 @@ export class SyncChecker {
     requestID: string,
     syncCheck: string,
     syncCheckPath: string,
-    syncAllowance: number = 1,
+    syncAllowance: number = 5,
     blockchain: string,
     blockchainSyncBackup: string,
     applicationID: string,

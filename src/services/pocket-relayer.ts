@@ -107,14 +107,15 @@ export class PocketRelayer {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries
     }
-    const [
+    const {
       blockchain,
       blockchainEnforceResult,
       blockchainSyncCheck,
       blockchainSyncCheckPath,
+      blockchainSyncAllowance,
       blockchainIDCheck,
       blockchainID,
-    ] = await this.loadBlockchain()
+    } = await this.loadBlockchain()
     const overallStart = process.hrtime()
 
     // This converts the raw data into formatted JSON then back to a string for relaying.
@@ -155,6 +156,7 @@ export class PocketRelayer {
         blockchainEnforceResult,
         blockchainSyncCheck,
         blockchainSyncCheckPath,
+        blockchainSyncAllowance,
         String(this.altruists[blockchain]),
         blockchainIDCheck,
         blockchainID
@@ -318,6 +320,7 @@ export class PocketRelayer {
     blockchainEnforceResult: string,
     blockchainSyncCheck: string,
     blockchainSyncCheckPath: string,
+    blockchainSyncAllowance: number,
     blockchainSyncBackup: string,
     blockchainIDCheck: string,
     blockchainID: string
@@ -398,7 +401,7 @@ export class PocketRelayer {
           requestID,
           blockchainSyncCheck,
           blockchainSyncCheckPath,
-          3,
+          blockchainSyncAllowance,
           blockchain,
           blockchainSyncBackup,
           application.id,
@@ -531,7 +534,7 @@ export class PocketRelayer {
   }
 
   // Load requested blockchain by parsing the URL
-  async loadBlockchain(): Promise<string[]> {
+  async loadBlockchain(): Promise<BlockchainDetails> {
     // Load the requested blockchain
     const cachedBlockchains = await this.redis.get('blockchains')
     let blockchains
@@ -553,6 +556,7 @@ export class PocketRelayer {
       let blockchainEnforceResult = ''
       let blockchainSyncCheck = ''
       let blockchainSyncCheckPath = ''
+      let blockchainSyncAllowance = 0
       let blockchainIDCheck = ''
       let blockchainID = ''
       const blockchain = blockchainFilter[0].hash as string
@@ -574,14 +578,23 @@ export class PocketRelayer {
         blockchainIDCheck = blockchainFilter[0].chainIDCheck.replace(/\\"/g, '"')
         blockchainID = blockchainFilter[0].chainID
       }
-      return Promise.resolve([
+      // Allowance of blocks a data node can be behind
+      if (
+        blockchainFilter[0].syncAllowance &&
+        blockchainFilter[0].syncAllowance.isInteger() &&
+        blockchainFilter[0].syncAllowance > 0
+      ) {
+        blockchainSyncAllowance = blockchainFilter[0].syncAllowance
+      }
+      return Promise.resolve({
         blockchain,
         blockchainEnforceResult,
         blockchainSyncCheck,
         blockchainSyncCheckPath,
+        blockchainSyncAllowance,
         blockchainIDCheck,
         blockchainID,
-      ])
+      })
     } else {
       throw new HttpErrors.BadRequest('Incorrect blockchain: ' + this.host)
     }
@@ -626,4 +639,14 @@ export class PocketRelayer {
     }
     return false
   }
+}
+
+interface BlockchainDetails {
+  blockchain: string
+  blockchainEnforceResult: string
+  blockchainSyncCheck: string
+  blockchainSyncCheckPath: string
+  blockchainSyncAllowance: number
+  blockchainIDCheck: string
+  blockchainID: string
 }
