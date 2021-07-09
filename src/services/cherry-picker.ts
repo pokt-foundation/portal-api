@@ -1,4 +1,4 @@
-import { Node, Session } from '@pokt-network/pocket-js'
+import { Node } from '@pokt-network/pocket-js'
 import { Redis } from 'ioredis'
 import { Applications } from '../models'
 

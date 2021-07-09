@@ -8,7 +8,7 @@ import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
 import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
-import { PocketRelayer } from '../services/pocket-relayer'
+import { PocketRelayer, SendRelayOptions } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
 import { ChainChecker } from '../services/chain-checker'
 
@@ -143,16 +143,18 @@ export class V1Controller {
           filter
         )
         if (application?.id) {
-          return this.pocketRelayer.sendRelay(
+          const options: SendRelayOptions = {
             rawData,
-            this.relayPath,
-            this.httpMethod,
-            application,
-            this.requestID,
-            parseInt(loadBalancer.requestTimeOut),
-            parseInt(loadBalancer.overallTimeOut),
-            parseInt(loadBalancer.relayRetries)
-          )
+            relayPath: this.relayPath,
+            httpMethod: this.httpMethod,
+            application: application,
+            requestID: this.requestID,
+            requestTimeOut: parseInt(loadBalancer.requestTimeOut),
+            overallTimeOut: parseInt(loadBalancer.overallTimeOut),
+            relayRetries: parseInt(loadBalancer.relayRetries),
+          }
+
+          return this.pocketRelayer.sendRelay(options)
         }
       }
     } catch (e) {
@@ -222,7 +224,15 @@ export class V1Controller {
     try {
       const application = await this.fetchApplication(id, filter)
       if (application?.id) {
-        return this.pocketRelayer.sendRelay(rawData, this.relayPath, this.httpMethod, application, this.requestID)
+        const sendRelayOptions: SendRelayOptions = {
+          rawData,
+          application,
+          relayPath: this.relayPath,
+          httpMethod: this.httpMethod,
+          requestID: this.requestID,
+        }
+
+        return this.pocketRelayer.sendRelay(sendRelayOptions)
       }
     } catch (e) {
       logger.log('error', e.message, {

@@ -15,18 +15,16 @@ export class ChainChecker {
     this.metricsRecorder = metricsRecorder
   }
 
-  async chainIDFilter(
-    nodes: Node[],
-    requestID: string,
-    chainCheck: string,
-    chainID: number,
-    blockchain: string,
-    applicationID: string,
-    applicationPublicKey: string,
-    pocket: Pocket,
-    pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration
-  ): Promise<Node[]> {
+  async chainIDFilter({
+    nodes,
+    requestID,
+    chainCheck,
+    chainID,
+    blockchain,
+    pocket,
+    pocketAAT,
+    pocketConfiguration,
+  }: ChainIDFilterOptions): Promise<Node[]> {
     let CheckedNodes: Node[] = []
     let CheckedNodesList: String[] = []
 
@@ -69,17 +67,16 @@ export class ChainChecker {
     }
 
     // Fires all 5 Chain checks Chainhronously then assembles the results
-    const nodeChainLogs = await this.getNodeChainLogs(
+    const options: GetNodesChainLogsOptions = {
       nodes,
       requestID,
       chainCheck,
       blockchain,
-      applicationID,
-      applicationPublicKey,
       pocket,
       pocketAAT,
-      pocketConfiguration
-    )
+      pocketConfiguration,
+    }
+    const nodeChainLogs = await this.getNodeChainLogs(options)
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
     for (const nodeChainLog of nodeChainLogs) {
@@ -157,17 +154,15 @@ export class ChainChecker {
     return CheckedNodes
   }
 
-  async getNodeChainLogs(
-    nodes: Node[],
-    requestID: string,
-    chainCheck: string,
-    blockchain: string,
-    applicationID: string,
-    applicationPublicKey: string,
-    pocket: Pocket,
-    pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration
-  ): Promise<NodeChainLog[]> {
+  async getNodeChainLogs({
+    nodes,
+    requestID,
+    chainCheck,
+    blockchain,
+    pocket,
+    pocketAAT,
+    pocketConfiguration,
+  }: GetNodesChainLogsOptions): Promise<NodeChainLog[]> {
     const nodeChainLogs: NodeChainLog[] = []
     const promiseStack: Promise<NodeChainLog>[] = []
 
@@ -175,19 +170,16 @@ export class ChainChecker {
     let rawNodeChainLogs: any[] = ['', '', '', '', '']
 
     for (const node of nodes) {
-      promiseStack.push(
-        this.getNodeChainLog(
-          node,
-          requestID,
-          chainCheck,
-          blockchain,
-          applicationID,
-          applicationPublicKey,
-          pocket,
-          pocketAAT,
-          pocketConfiguration
-        )
-      )
+      const options: GetNodeChainLogOptions = {
+        node,
+        requestID,
+        chainCheck,
+        blockchain,
+        pocket,
+        pocketAAT,
+        pocketConfiguration,
+      }
+      promiseStack.push(this.getNodeChainLog(options))
     }
 
     ;[
@@ -206,17 +198,15 @@ export class ChainChecker {
     return nodeChainLogs
   }
 
-  async getNodeChainLog(
-    node: Node,
-    requestID: string,
-    chainCheck: string,
-    blockchain: string,
-    applicationID: string,
-    applicationPublicKey: string,
-    pocket: Pocket,
-    pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration
-  ): Promise<NodeChainLog> {
+  async getNodeChainLog({
+    node,
+    requestID,
+    chainCheck,
+    blockchain,
+    pocket,
+    pocketAAT,
+    pocketConfiguration,
+  }: GetNodeChainLogOptions): Promise<NodeChainLog> {
     logger.log('info', 'CHAIN CHECK START', {
       requestID: requestID,
       relayType: '',
@@ -321,4 +311,32 @@ export class ChainChecker {
 type NodeChainLog = {
   node: Node
   chainID: number
+}
+
+interface BaseChainLogOptions {
+  requestID: string
+  chainCheck: string
+  blockchain: string
+  pocket: Pocket
+  pocketAAT: PocketAAT
+  pocketConfiguration: Configuration
+}
+
+interface GetNodesChainLogsOptions extends BaseChainLogOptions {
+  nodes: Node[]
+}
+
+interface GetNodeChainLogOptions extends BaseChainLogOptions {
+  node: Node
+}
+
+export type ChainIDFilterOptions = {
+  nodes: Node[]
+  requestID: string
+  chainCheck: string
+  chainID: number
+  blockchain: string
+  pocket: Pocket
+  pocketAAT: PocketAAT
+  pocketConfiguration: Configuration
 }

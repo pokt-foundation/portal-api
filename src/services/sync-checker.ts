@@ -16,20 +16,20 @@ export class SyncChecker {
     this.metricsRecorder = metricsRecorder
   }
 
-  async consensusFilter(
-    nodes: Node[],
-    requestID: string,
-    syncCheck: string,
-    syncCheckPath: string,
-    syncAllowance: number = 5,
-    blockchain: string,
-    blockchainSyncBackup: string,
-    applicationID: string,
-    applicationPublicKey: string,
-    pocket: Pocket,
-    pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration
-  ): Promise<Node[]> {
+  async consensusFilter({
+    nodes,
+    requestID,
+    syncCheck,
+    syncCheckPath,
+    syncAllowance = 5,
+    blockchain,
+    blockchainSyncBackup,
+    applicationID,
+    applicationPublicKey,
+    pocket,
+    pocketAAT,
+    pocketConfiguration,
+  }: ConsensusFilterOptions): Promise<Node[]> {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
     if (syncAllowance <= 0) {
       syncAllowance = 5
@@ -40,17 +40,15 @@ export class SyncChecker {
 
     // Key is "blockchain - a hash of the all the nodes in this session, sorted by public key"
     // Value is an array of node public keys that have passed sync checks for this session in the past 5 minutes
+
+    const sortedNodes = nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0))
+
     const syncedNodesKey =
       blockchain +
       '-' +
       crypto
         .createHash('sha256')
-        .update(
-          JSON.stringify(
-            nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0)),
-            (k, v) => (k != 'publicKey' ? v : undefined)
-          )
-        )
+        .update(JSON.stringify(sortedNodes, (k, v) => (k != 'publicKey' ? v : undefined)))
         .digest('hex')
     const syncedNodesCached = await this.redis.get(syncedNodesKey)
 
@@ -494,4 +492,19 @@ type NodeSyncLog = {
   node: Node
   blockchain: string
   blockHeight: number
+}
+
+export type ConsensusFilterOptions = {
+  nodes: Node[]
+  requestID: string
+  syncCheck: string
+  syncCheckPath: string
+  syncAllowance: number
+  blockchain: string
+  blockchainSyncBackup: string
+  applicationID: string
+  applicationPublicKey: string
+  pocket: Pocket
+  pocketAAT: PocketAAT
+  pocketConfiguration: Configuration
 }
