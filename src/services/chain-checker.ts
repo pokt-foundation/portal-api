@@ -22,6 +22,8 @@ export class ChainChecker {
     chainID,
     blockchain,
     pocket,
+    applicationID,
+    applicationPublicKey,
     pocketAAT,
     pocketConfiguration,
   }: ChainIDFilterOptions): Promise<Node[]> {
@@ -80,6 +82,8 @@ export class ChainChecker {
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
     for (const nodeChainLog of nodeChainLogs) {
+      let relayStart = process.hrtime()
+
       if (nodeChainLog.chainID === chainID) {
         logger.log(
           'info',
@@ -110,6 +114,21 @@ export class ChainChecker {
             elapsedTime: '',
           }
         )
+
+        await this.metricsRecorder.recordMetric({
+          requestID: requestID,
+          applicationID: applicationID,
+          appPubKey: applicationPublicKey,
+          blockchain,
+          serviceNode: nodeChainLog.node.publicKey,
+          relayStart,
+          result: 500,
+          bytes: Buffer.byteLength('WRONG CHAIN', 'utf8'),
+          delivered: false,
+          fallback: false,
+          method: 'chaincheck',
+          error: 'WRONG CHAIN',
+        })
       }
     }
 
@@ -337,6 +356,8 @@ export type ChainIDFilterOptions = {
   chainID: number
   blockchain: string
   pocket: Pocket
+  applicationID: string
+  applicationPublicKey: string
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
 }

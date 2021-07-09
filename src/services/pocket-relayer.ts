@@ -397,6 +397,8 @@ export class PocketRelayer {
           requestID,
           blockchain,
           pocketAAT,
+          applicationID: application.id,
+          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
           chainCheck: blockchainIDCheck,
           chainID: parseInt(blockchainID),
           pocket: this.pocket,
