@@ -1,24 +1,26 @@
-import {
-  BaseProfiler,
-  ProfileResult,
-} from '@pokt-network/pocket-js';
+import { BaseProfiler, ProfileResult } from '@pokt-network/pocket-js'
 
-import {Pool as PGPool} from 'pg';
+import { Pool as PGPool } from 'pg'
 
 // import pgFormat from 'pg-format';
 // const logger = require('../services/logger');
 
 export class RelayProfiler extends BaseProfiler {
-  public data: {key: string, time_elapsed: number | undefined}[] = []
-  pgPool: PGPool;
+  public data: { key: string; time_elapsed: number | undefined }[] = []
+  pgPool: PGPool
 
   constructor(pgPool: PGPool) {
-    super();
-    this.pgPool = pgPool;
+    super()
+    this.pgPool = pgPool
   }
 
   //@ts-ignore
-  async flushResults(requestID: string, blockchain: string, functionName: string, results: ProfileResult[]): Promise<void> {
+  async flushResults(
+    requestID: string,
+    blockchain: string,
+    functionName: string,
+    results: ProfileResult[]
+  ): Promise<void> {
     /*
     const bulkData: any[] = [];
     const timestamp = new Date();

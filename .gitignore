@@ -28,3 +28,6 @@ dist
 
 # ts configs
 tsconfig.tsbuildinfo
+
+# editor config 
+.vscode

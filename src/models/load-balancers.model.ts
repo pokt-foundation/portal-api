@@ -1,25 +1,25 @@
-import {Entity, model, property} from '@loopback/repository';
+import { Entity, model, property } from '@loopback/repository'
 
-@model({settings: {strict: false}})
+@model({ settings: { strict: false } })
 export class LoadBalancers extends Entity {
   @property({
     type: 'string',
     id: true,
     generated: true,
   })
-  id?: string;
+  id?: string
 
   @property({
     type: 'string',
     required: true,
   })
-  user: string;
+  user: string
 
   @property({
     type: 'string',
     required: false,
   })
-  name: string;
+  name: string
 
   @property({
     type: 'array',
@@ -32,10 +32,10 @@ export class LoadBalancers extends Entity {
 
   // Indexer property to allow additional data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [prop: string]: any;
+  [prop: string]: any
 
   constructor(data?: Partial<LoadBalancers>) {
-    super(data);
+    super(data)
   }
 }
 
@@ -43,4 +43,4 @@ export interface LoadBalancersRelations {
   // describe navigational properties here
 }
 
-export type LoadBalancersWithRelations = LoadBalancers & LoadBalancersRelations;
+export type LoadBalancersWithRelations = LoadBalancers & LoadBalancersRelations
