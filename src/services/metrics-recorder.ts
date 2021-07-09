@@ -111,9 +111,9 @@ export class MetricsRecorder {
       const redisMetricsKey = 'metrics-' + this.processUID
       const redisErrorKey = 'errors-' + this.processUID
       const currentTimestamp = Math.floor(new Date().getTime() / 1000)
-      
+
       await this.processBulkLogs([metricsValues], currentTimestamp, redisMetricsKey, 'relay', logger)
-      
+
       if (result !== 200) {
         await this.processBulkLogs([errorValues], currentTimestamp, redisErrorKey, 'error', logger)
       }
@@ -122,15 +122,20 @@ export class MetricsRecorder {
     }
   }
 
-  async processBulkLogs(bulkData: any[], currentTimestamp: number, redisKey: string, relation: string, logger: CustomLogger): Promise<void> {
+  async processBulkLogs(
+    bulkData: any[],
+    currentTimestamp: number,
+    redisKey: string,
+    relation: string,
+    logger: CustomLogger
+  ): Promise<void> {
     const redisListAge = await this.redis.get('age-' + redisKey)
     const redisListSize = await this.redis.llen(redisKey)
 
     // List has been started in redis and needs to be pushed as timestamp is > 10 seconds old
     if (redisListAge && redisListSize > 0 && currentTimestamp > parseInt(redisListAge) + 10) {
       await this.redis.set('age-' + redisKey, currentTimestamp)
-      await this.pushBulkData(bulkData, redisListSize, redisKey, relation, logger);
-
+      await this.pushBulkData(bulkData, redisListSize, redisKey, relation, logger)
     } else {
       await this.redis.rpush(redisKey, JSON.stringify(bulkData))
     }
@@ -140,8 +145,13 @@ export class MetricsRecorder {
     }
   }
 
-  async pushBulkData(bulkData: any[], redisListSize: number, redisKey: string, relation: string, logger: CustomLogger): Promise<void> {
-    
+  async pushBulkData(
+    bulkData: any[],
+    redisListSize: number,
+    redisKey: string,
+    relation: string,
+    logger: CustomLogger
+  ): Promise<void> {
     for (let count = 0; count < redisListSize; count++) {
       const redisRecord = await this.redis.lpop(redisKey)
       if (redisRecord) {
@@ -149,7 +159,6 @@ export class MetricsRecorder {
       }
     }
     if (bulkData.length > 0) {
-
       const metricsQuery = pgFormat('INSERT INTO %I VALUES %L', relation, bulkData)
       this.pgPool.connect((err, client, release) => {
         if (err) {

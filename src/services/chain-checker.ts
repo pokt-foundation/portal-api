@@ -82,8 +82,8 @@ export class ChainChecker {
     )
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
-    for (const nodeChainLog of nodeChainLogs) {    
-      let relayStart = process.hrtime();
+    for (const nodeChainLog of nodeChainLogs) {
+      let relayStart = process.hrtime()
 
       if (nodeChainLog.chainID === chainID) {
         logger.log(
@@ -103,7 +103,18 @@ export class ChainChecker {
         CheckedNodes.push(nodeChainLog.node)
         CheckedNodesList.push(nodeChainLog.node.publicKey)
       } else {
-        logger.log('info', 'CHAIN CHECK FAILURE: ' + nodeChainLog.node.publicKey + ' chainID: ' + nodeChainLog.chainID, {requestID: requestID, relayType: '', typeID: '', serviceNode: nodeChainLog.node.publicKey, error: '', elapsedTime: ''});
+        logger.log(
+          'info',
+          'CHAIN CHECK FAILURE: ' + nodeChainLog.node.publicKey + ' chainID: ' + nodeChainLog.chainID,
+          {
+            requestID: requestID,
+            relayType: '',
+            typeID: '',
+            serviceNode: nodeChainLog.node.publicKey,
+            error: '',
+            elapsedTime: '',
+          }
+        )
       }
     }
 
