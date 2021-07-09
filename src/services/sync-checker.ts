@@ -219,7 +219,7 @@ export class SyncChecker {
           delivered: false,
           fallback: false,
           method: 'synccheck',
-          error: 'OUT OF SYNC',
+          error: `OUT OF SYNC: current block height on chain ${blockchain}: ${currentBlockHeight} nodes height: ${nodeSyncLog.blockHeight} sync allowance: ${syncAllowance}`,
         })
       }
     }
@@ -422,22 +422,20 @@ export class SyncChecker {
         error = JSON.stringify(relayResponse.message)
       }
 
-      if (error !== 'Provided Node is not part of the current session for this application, check your PocketAAT') {
-        await this.metricsRecorder.recordMetric({
-          requestID: requestID,
-          applicationID: applicationID,
-          appPubKey: applicationPublicKey,
-          blockchain,
-          serviceNode: node.publicKey,
-          relayStart,
-          result: 500,
-          bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
-          delivered: false,
-          fallback: false,
-          method: 'synccheck',
-          error,
-        })
-      }
+      await this.metricsRecorder.recordMetric({
+        requestID: requestID,
+        applicationID: applicationID,
+        appPubKey: applicationPublicKey,
+        blockchain,
+        serviceNode: node.publicKey,
+        relayStart,
+        result: 500,
+        bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
+        delivered: false,
+        fallback: false,
+        method: 'synccheck',
+        error,
+      })
     } else {
       logger.log('error', 'SYNC CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
         requestID: requestID,
@@ -446,6 +444,21 @@ export class SyncChecker {
         serviceNode: node.publicKey,
         error: '',
         elapsedTime: '',
+      })
+
+      await this.metricsRecorder.recordMetric({
+        requestID: requestID,
+        applicationID: applicationID,
+        appPubKey: applicationPublicKey,
+        blockchain,
+        serviceNode: node.publicKey,
+        relayStart,
+        result: 500,
+        bytes: Buffer.byteLength('SYNC CHECK', 'utf8'),
+        delivered: false,
+        fallback: false,
+        method: 'synccheck',
+        error: JSON.stringify(relayResponse),
       })
     }
     // Failed
