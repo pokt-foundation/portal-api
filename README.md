@@ -19,30 +19,32 @@ Only the steps 1 and 2 are required, steps 3 and 4 are only needed if you want t
 bootstrap the app with existing data.
 
 <!-- markdownlint-disable -->
+
 1. Run the following commands to copy the environment variables and optionally replace them with your own.
-    ```
-    $ cp .tasks.env.example .tasks.env
-    $ cp .env.example .env
-    ```
+
+   ```
+   $ cp .tasks.env.example .tasks.env
+   $ cp .env.example .env
+   ```
 
 2. Spin up all services locally (requires docker and docker-compose)
-    ```
-    $ npm install
-    $ npm run services:all:up
-    ```
+
+   ```
+   $ npm install
+   $ npm run services:all:up
+   ```
 
 3. Download the production data in your machine.
-    ``` bash
-    $ docker-compose -f stacks/tasks.yml up download-production-data
-    ```
+
+   ```bash
+   $ docker-compose -f stacks/tasks.yml up download-production-data
+   ```
 
 4. Retrieve the production data to be imported into the local app.
-    ```
-    $ docker-compose -f stacks/tasks.yml up import-production-data
-    ```
+`$ docker-compose -f stacks/tasks.yml up import-production-data`
 <!-- markdownlint-restore -->
 
-**Hint**: If you still got issues about compiling when running the project after following at least the steps 1 and 2, run the command ``` npm run clean ``` and then ``` npm run services:all:up ``` again.
+**Hint**: If you still got issues about compiling when running the project after following at least the steps 1 and 2, run the command `npm run clean` and then `npm run services:all:up` again.
 
 ## Support & Contact
 

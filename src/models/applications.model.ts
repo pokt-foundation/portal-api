@@ -1,6 +1,6 @@
-import {Entity, model, property} from '@loopback/repository';
+import { Entity, model, property } from '@loopback/repository'
 
-@model({settings: {strict: false}})
+@model({ settings: { strict: false } })
 export class Applications extends Entity {
   @property({
     type: 'string',
@@ -8,38 +8,38 @@ export class Applications extends Entity {
     generated: true,
     required: true,
   })
-  id: string;
+  id: string
 
   @property({
     type: 'string',
   })
-  name?: string;
+  name?: string
 
   @property({
     type: 'string',
   })
-  owner?: string;
+  owner?: string
 
   @property({
     type: 'string',
   })
-  url?: string;
+  url?: string
 
   @property({
     type: 'boolean',
     required: true,
   })
-  freeTier: boolean;
+  freeTier: boolean
 
   @property({
     type: 'object',
   })
-  publicPocketAccount?: object;
+  publicPocketAccount?: object
 
   @property({
     type: 'object',
   })
-  freeTierApplicationAccount?: object;
+  freeTierApplicationAccount?: object
 
   @property({
     type: 'object',
@@ -50,10 +50,10 @@ export class Applications extends Entity {
 
   // Indexer property to allow additional data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [prop: string]: any;
+  [prop: string]: any
 
   constructor(data?: Partial<Applications>) {
-    super(data);
+    super(data)
   }
 }
 
@@ -61,4 +61,4 @@ export interface ApplicationsRelations {
   // describe navigational properties here
 }
 
-export type ApplicationsWithRelations = Applications & ApplicationsRelations;
+export type ApplicationsWithRelations = Applications & ApplicationsRelations

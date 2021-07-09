@@ -1,4 +1,4 @@
-version: "3.5"
+version: '3.5'
 
 services:
   gateway:
@@ -13,8 +13,8 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - "../src:/usr/src/gateway/src"
-      - "../dist:/usr/src/gateway/dist"
+      - '../src:/usr/src/gateway/src'
+      - '../dist:/usr/src/gateway/dist'
     depends_on:
       - db
       - cache
@@ -27,19 +27,19 @@ services:
     container_name: db
     env_file:
       - ../.tasks.env
-    volumes: 
+    volumes:
       - ~/.pocket/mongodb:/data/db
     ports:
-      - "27017:27017"
+      - '27017:27017'
     networks:
       - pocket
-  
+
   cache:
-    image: "redis:alpine"
+    image: 'redis:alpine'
     container_name: cache
     command: redis-server
     ports:
-      - "6379:6379"
+      - '6379:6379'
     environment:
       - REDIS_REPLICATION_MODE=master
     networks:
@@ -58,7 +58,7 @@ services:
       - pocket
     volumes:
       - ./local.init.sql:/docker-entrypoint-initdb.d/init.sql
-   
+
 networks:
   pocket:
     driver: bridge
