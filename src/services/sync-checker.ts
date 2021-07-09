@@ -16,7 +16,12 @@ export class SyncChecker {
     this.metricsRecorder = metricsRecorder;
   }
 
-  async consensusFilter(nodes: Node[], requestID: string, syncCheck: string, syncCheckPath: string, syncAllowance: number = 1, blockchain: string, blockchainSyncBackup: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<Node[]> {
+  async consensusFilter(nodes: Node[], requestID: string, syncCheck: string, syncCheckPath: string, syncAllowance: number = 5, blockchain: string, blockchainSyncBackup: string, applicationID: string, applicationPublicKey: string, pocket: Pocket, pocketAAT: PocketAAT, pocketConfiguration: Configuration): Promise<Node[]> {
+
+    // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
+    if (syncAllowance <= 0) {
+      syncAllowance = 5;
+    }
 
     let syncedNodes: Node[] = [];
     let syncedNodesList: String[] = [];
@@ -182,8 +187,9 @@ export class SyncChecker {
       });
 
       if (!(syncResponse instanceof Error)) {
-        // Return decimal version of hex result as blockHeight
-        return parseInt(syncResponse.data.result, 16);
+        // Pull the blockHeight from payload.result for all chains except Pocket; this 
+        // can go in the database if we have more than two
+        return (syncResponse.data.result) ? parseInt(syncResponse.data.result, 16) : syncResponse.data.height;
       }
       return 0;
     }
