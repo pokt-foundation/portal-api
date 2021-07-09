@@ -43,7 +43,7 @@ bootstrap the app with existing data.
 
 4. Retrieve the production data to be imported into the local app.
    ```bash
-   $ npm run tasks:db:persist-production-data
+   $ npm run tasks:db:import-production-data
    ```
 
 <!-- markdownlint-restore -->
