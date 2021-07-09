@@ -74,6 +74,8 @@ export class ChainChecker {
       requestID,
       chainCheck,
       blockchain,
+      applicationID,
+      applicationPublicKey,
       pocket,
       pocketAAT,
       pocketConfiguration
@@ -113,21 +115,6 @@ export class ChainChecker {
             elapsedTime: '',
           }
         )
-
-        await this.metricsRecorder.recordMetric({
-          requestID: requestID,
-          applicationID: applicationID,
-          appPubKey: applicationPublicKey,
-          blockchain,
-          serviceNode: nodeChainLog.node.publicKey,
-          relayStart,
-          result: 500,
-          bytes: Buffer.byteLength('WRONG CHAIN', 'utf8'),
-          delivered: false,
-          fallback: false,
-          method: 'chaincheck',
-          error: 'WRONG CHAIN',
-        })
       }
     }
 
@@ -177,6 +164,8 @@ export class ChainChecker {
     requestID: string,
     chainCheck: string,
     blockchain: string,
+    applicationID: string,
+    applicationPublicKey: string,
     pocket: Pocket,
     pocketAAT: PocketAAT,
     pocketConfiguration: Configuration
@@ -189,7 +178,17 @@ export class ChainChecker {
 
     for (const node of nodes) {
       promiseStack.push(
-        this.getNodeChainLog(node, requestID, chainCheck, blockchain, pocket, pocketAAT, pocketConfiguration)
+        this.getNodeChainLog(
+          node,
+          requestID,
+          chainCheck,
+          blockchain,
+          applicationID,
+          applicationPublicKey,
+          pocket,
+          pocketAAT,
+          pocketConfiguration
+        )
       )
     }
 
@@ -214,6 +213,8 @@ export class ChainChecker {
     requestID: string,
     chainCheck: string,
     blockchain: string,
+    applicationID: string,
+    applicationPublicKey: string,
     pocket: Pocket,
     pocketAAT: PocketAAT,
     pocketConfiguration: Configuration
@@ -228,6 +229,8 @@ export class ChainChecker {
     })
 
     // Pull the current block from each node using the blockchain's chainCheck as the relay
+    let relayStart = process.hrtime()
+
     const relayResponse = await pocket.sendRelay(
       chainCheck,
       blockchain,
@@ -273,6 +276,20 @@ export class ChainChecker {
       if (typeof relayResponse.message === 'object') {
         error = JSON.stringify(relayResponse.message)
       }
+      await this.metricsRecorder.recordMetric({
+        requestID: requestID,
+        applicationID: applicationID,
+        appPubKey: applicationPublicKey,
+        blockchain,
+        serviceNode: node.publicKey,
+        relayStart,
+        result: 500,
+        bytes: Buffer.byteLength('WRONG CHAIN', 'utf8'),
+        delivered: false,
+        fallback: false,
+        method: 'chaincheck',
+        error,
+      })
     } else {
       logger.log('error', 'CHAIN CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
         requestID: requestID,
@@ -281,6 +298,21 @@ export class ChainChecker {
         serviceNode: node.publicKey,
         error: '',
         elapsedTime: '',
+      })
+
+      await this.metricsRecorder.recordMetric({
+        requestID: requestID,
+        applicationID: applicationID,
+        appPubKey: applicationPublicKey,
+        blockchain,
+        serviceNode: node.publicKey,
+        relayStart,
+        result: 500,
+        bytes: Buffer.byteLength('WRONG CHAIN', 'utf8'),
+        delivered: false,
+        fallback: false,
+        method: 'chaincheck',
+        error: JSON.stringify(relayResponse),
       })
     }
     // Failed
