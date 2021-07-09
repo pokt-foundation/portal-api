@@ -128,7 +128,7 @@ export class ChainChecker {
       CheckedNodesKey,
       JSON.stringify(CheckedNodesList),
       'EX',
-      CheckedNodes.length > 0 ? 7200 : 30 // will retry Chain check every 30 seconds if no nodes are in Chain
+      CheckedNodes.length > 0 ? 600 : 30 // will retry Chain check every 30 seconds if no nodes are in Chain
     )
 
     // If one or more nodes of this session are not in Chain, fire a consensus relay with the same check.
