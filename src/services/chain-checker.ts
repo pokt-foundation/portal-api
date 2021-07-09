@@ -74,8 +74,6 @@ export class ChainChecker {
       requestID,
       chainCheck,
       blockchain,
-      applicationID,
-      applicationPublicKey,
       pocket,
       pocketAAT,
       pocketConfiguration
@@ -83,6 +81,8 @@ export class ChainChecker {
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
     for (const nodeChainLog of nodeChainLogs) {
+      let relayStart = process.hrtime()
+
       if (nodeChainLog.chainID === chainID) {
         logger.log(
           'info',
@@ -113,6 +113,21 @@ export class ChainChecker {
             elapsedTime: '',
           }
         )
+
+        await this.metricsRecorder.recordMetric({
+          requestID: requestID,
+          applicationID: applicationID,
+          appPubKey: applicationPublicKey,
+          blockchain,
+          serviceNode: nodeChainLog.node.publicKey,
+          relayStart,
+          result: 500,
+          bytes: Buffer.byteLength('WRONG CHAIN', 'utf8'),
+          delivered: false,
+          fallback: false,
+          method: 'chaincheck',
+          error: 'WRONG CHAIN',
+        })
       }
     }
 
@@ -162,8 +177,6 @@ export class ChainChecker {
     requestID: string,
     chainCheck: string,
     blockchain: string,
-    applicationID: string,
-    applicationPublicKey: string,
     pocket: Pocket,
     pocketAAT: PocketAAT,
     pocketConfiguration: Configuration
@@ -176,17 +189,7 @@ export class ChainChecker {
 
     for (const node of nodes) {
       promiseStack.push(
-        this.getNodeChainLog(
-          node,
-          requestID,
-          chainCheck,
-          blockchain,
-          applicationID,
-          applicationPublicKey,
-          pocket,
-          pocketAAT,
-          pocketConfiguration
-        )
+        this.getNodeChainLog(node, requestID, chainCheck, blockchain, pocket, pocketAAT, pocketConfiguration)
       )
     }
 
@@ -211,8 +214,6 @@ export class ChainChecker {
     requestID: string,
     chainCheck: string,
     blockchain: string,
-    applicationID: string,
-    applicationPublicKey: string,
     pocket: Pocket,
     pocketAAT: PocketAAT,
     pocketConfiguration: Configuration
