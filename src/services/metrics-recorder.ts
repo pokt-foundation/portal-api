@@ -3,6 +3,7 @@ import { Pool as PGPool } from 'pg'
 import { CherryPicker } from './cherry-picker'
 
 import pgFormat from 'pg-format'
+import { CustomLogger } from 'ajv'
 const logger = require('../services/logger')
 
 export class MetricsRecorder {
@@ -96,52 +97,71 @@ export class MetricsRecorder {
         })
       }
 
-      const metricsValues = [new Date(), appPubKey, blockchain, serviceNode, elapsedTime, result, bytes, method]
-
-      // Store metrics in redis and every 10 seconds, push to postgres
-      const redisMetricsKey = 'metrics-' + this.processUID
-      const redisListAge = await this.redis.get('age-' + redisMetricsKey)
-      const redisListSize = await this.redis.llen(redisMetricsKey)
-      const currentTimestamp = Math.floor(new Date().getTime() / 1000)
-
-      // List has been started in redis and needs to be pushed as timestamp is > 10 seconds old
-      if (redisListAge && redisListSize > 0 && currentTimestamp > parseInt(redisListAge) + 10) {
-        await this.redis.set('age-' + redisMetricsKey, currentTimestamp)
-
-        const bulkData = [metricsValues]
-        for (let count = 0; count < redisListSize; count++) {
-          const redisRecord = await this.redis.lpop(redisMetricsKey)
-          if (redisRecord) {
-            bulkData.push(JSON.parse(redisRecord))
-          }
-        }
-        if (bulkData.length > 0) {
-          const metricsQuery = pgFormat('INSERT INTO relay VALUES %L', bulkData)
-          this.pgPool.connect((err, client, release) => {
-            if (err) {
-              logger.log('error', 'Error acquiring client ' + err.stack)
-            }
-            client.query(metricsQuery, (err, result) => {
-              release()
-              if (err) {
-                logger.log('error', 'Error executing query ' + metricsQuery + ' ' + err.stack)
-              }
-            })
-          })
-        }
-      } else {
-        await this.redis.rpush(redisMetricsKey, JSON.stringify(metricsValues))
-      }
-
-      if (!redisListAge) {
-        await this.redis.set('age-' + redisMetricsKey, currentTimestamp)
-      }
-
+      // Update service node quality with cherry picker
       if (serviceNode) {
         await this.cherryPicker.updateServiceQuality(blockchain, applicationID, serviceNode, elapsedTime, result)
       }
+
+      // Bulk insert relay / error metrics
+      const postgresTimestamp = new Date()
+      const metricsValues = [postgresTimestamp, appPubKey, blockchain, serviceNode, elapsedTime, result, bytes, method]
+      const errorValues = [postgresTimestamp, appPubKey, blockchain, serviceNode, elapsedTime, bytes, method, error]
+
+      // Store metrics in redis and every 10 seconds, push to postgres
+      const redisMetricsKey = 'metrics-' + this.processUID
+      const redisErrorKey = 'errors-' + this.processUID
+      const currentTimestamp = Math.floor(new Date().getTime() / 1000)
+      
+      await this.processBulkLogs([metricsValues], currentTimestamp, redisMetricsKey, 'relay', logger)
+      
+      if (result !== 200) {
+        await this.processBulkLogs([errorValues], currentTimestamp, redisErrorKey, 'error', logger)
+      }
     } catch (err) {
       logger.log('error', err.stack)
+    }
+  }
+
+  async processBulkLogs(bulkData: any[], currentTimestamp: number, redisKey: string, relation: string, logger: CustomLogger): Promise<void> {
+    const redisListAge = await this.redis.get('age-' + redisKey)
+    const redisListSize = await this.redis.llen(redisKey)
+
+    // List has been started in redis and needs to be pushed as timestamp is > 10 seconds old
+    if (redisListAge && redisListSize > 0 && currentTimestamp > parseInt(redisListAge) + 10) {
+      await this.redis.set('age-' + redisKey, currentTimestamp)
+      await this.pushBulkData(bulkData, redisListSize, redisKey, relation, logger);
+
+    } else {
+      await this.redis.rpush(redisKey, JSON.stringify(bulkData))
+    }
+
+    if (!redisListAge) {
+      await this.redis.set('age-' + redisKey, currentTimestamp)
+    }
+  }
+
+  async pushBulkData(bulkData: any[], redisListSize: number, redisKey: string, relation: string, logger: CustomLogger): Promise<void> {
+    
+    for (let count = 0; count < redisListSize; count++) {
+      const redisRecord = await this.redis.lpop(redisKey)
+      if (redisRecord) {
+        bulkData.push(JSON.parse(redisRecord))
+      }
+    }
+    if (bulkData.length > 0) {
+
+      const metricsQuery = pgFormat('INSERT INTO %I VALUES %L', relation, bulkData)
+      this.pgPool.connect((err, client, release) => {
+        if (err) {
+          logger.log('error', 'Error acquiring client ' + err.stack)
+        }
+        client.query(metricsQuery, (err, result) => {
+          release()
+          if (err) {
+            logger.log('error', 'Error executing query ' + metricsQuery + ' ' + err.stack)
+          }
+        })
+      })
     }
   }
 }
