@@ -27,7 +27,7 @@ export class ChainChecker {
     pocketAAT,
     pocketConfiguration,
   }: ChainIDFilterOptions): Promise<Node[]> {
-    let CheckedNodes: Node[] = []
+    const CheckedNodes: Node[] = []
     let CheckedNodesList: String[] = []
 
     // Key is "chainID - a hash of the all the nodes in this session, sorted by public key"
@@ -39,7 +39,7 @@ export class ChainChecker {
         .update(
           JSON.stringify(
             nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0)),
-            (k, v) => (k != 'publicKey' ? v : undefined)
+            (k, v) => (k !== 'publicKey' ? v : undefined)
           )
         )
         .digest('hex')
@@ -83,7 +83,7 @@ export class ChainChecker {
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
     for (const nodeChainLog of nodeChainLogs) {
-      let relayStart = process.hrtime()
+      // const relayStart = process.hrtime()
 
       if (nodeChainLog.chainID === chainID) {
         logger.log(
@@ -174,7 +174,13 @@ export class ChainChecker {
     const promiseStack: Promise<NodeChainLog>[] = []
 
     // Set to junk values first so that the Promise stack can fill them later
-    let rawNodeChainLogs: any[] = ['', '', '', '', '']
+    const rawNodeChainLogs: NodeChainLog[] = [
+      <NodeChainLog>{},
+      <NodeChainLog>{},
+      <NodeChainLog>{},
+      <NodeChainLog>{},
+      <NodeChainLog>{},
+    ]
 
     for (const node of nodes) {
       const options: GetNodeChainLogOptions = {
@@ -200,7 +206,7 @@ export class ChainChecker {
     ] = await Promise.all(promiseStack)
 
     for (const rawNodeChainLog of rawNodeChainLogs) {
-      if (typeof rawNodeChainLog === 'object' && rawNodeChainLog.chainID !== '') {
+      if (typeof rawNodeChainLog === 'object' && ((rawNodeChainLog.chainID as unknown) as string) !== '') {
         nodeChainLogs.push(rawNodeChainLog)
       }
     }
@@ -228,7 +234,7 @@ export class ChainChecker {
     })
 
     // Pull the current block from each node using the blockchain's chainCheck as the relay
-    let relayStart = process.hrtime()
+    const relayStart = process.hrtime()
 
     const relayResponse = await pocket.sendRelay(
       chainCheck,

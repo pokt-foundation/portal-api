@@ -127,8 +127,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     }
 
     // Load Redis for cache
-    const redisEndpoint: string = process.env.REDIS_ENDPOINT || ''
-    const redisPort: string = process.env.REDIS_PORT || ''
+    const redisEndpoint: string = process.env.REDIS_ENDPOINT ?? ''
+    const redisPort: string = process.env.REDIS_PORT ?? ''
 
     if (!redisEndpoint) {
       throw new HttpErrors.InternalServerError('REDIS_ENDPOINT required in ENV')
@@ -140,8 +140,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('redisInstance').to(redis)
 
     // Load Postgres for TimescaleDB metrics
-    const pgConnection: string = process.env.PG_CONNECTION || ''
-    const pgCertificate: string = process.env.PG_CERTIFICATE || ''
+    const pgConnection: string = process.env.PG_CONNECTION ?? ''
+    const pgCertificate: string = process.env.PG_CERTIFICATE ?? ''
 
     if (!pgConnection) {
       throw new HttpErrors.InternalServerError('PG_CONNECTION required in ENV')
@@ -163,7 +163,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
         } catch (e) {
           throw new HttpErrors.InternalServerError('Invalid Certificate')
         }
-        redis.set('timescaleDBCertificate', publicCertificate, 'EX', 600)
+        await redis.set('timescaleDBCertificate', publicCertificate, 'EX', 600)
       } else {
         publicCertificate = cachedCertificate
       }

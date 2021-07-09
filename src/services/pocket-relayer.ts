@@ -129,7 +129,7 @@ export class PocketRelayer {
     const fallbackAvailable = this.altruists[blockchain] !== undefined ? true : false
     // Retries if applicable
     for (let x = 0; x <= this.relayRetries; x++) {
-      let relayStart = process.hrtime()
+      const relayStart = process.hrtime()
 
       // Compute the overall time taken on this LB request
       const overallCurrent = process.hrtime(overallStart)
@@ -222,7 +222,7 @@ export class PocketRelayer {
     }
     // Exhausted network relay attempts; use fallback
     if (fallbackAvailable) {
-      let relayStart = process.hrtime()
+      const relayStart = process.hrtime()
       let axiosConfig = {}
 
       // Add relay path to URL
@@ -517,6 +517,7 @@ export class PocketRelayer {
     return clientTypeLog
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   parseMethod(parsedRawData: any) {
     // Method recording for metrics
     let method = ''

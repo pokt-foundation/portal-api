@@ -128,10 +128,11 @@ export class V1Controller {
     try {
       const loadBalancer = await this.fetchLoadBalancer(id, filter)
       if (loadBalancer?.id) {
-        // eslint-disable-next-line
         const {
           blockchain,
+          // eslint-disable-next-line
           blockchainEnforceResult: _enforceResult,
+          // eslint-disable-next-line
           blockchainSyncCheck: _syncCheck,
         } = await this.pocketRelayer.loadBlockchain()
         // Fetch applications contained in this Load Balancer. Verify they exist and choose
@@ -154,7 +155,7 @@ export class V1Controller {
             relayRetries: parseInt(loadBalancer.relayRetries),
           }
 
-          return this.pocketRelayer.sendRelay(options)
+          return await this.pocketRelayer.sendRelay(options)
         }
       }
     } catch (e) {
@@ -232,7 +233,7 @@ export class V1Controller {
           requestID: this.requestID,
         }
 
-        return this.pocketRelayer.sendRelay(sendRelayOptions)
+        return await this.pocketRelayer.sendRelay(sendRelayOptions)
       }
     } catch (e) {
       logger.log('error', e.message, {
@@ -320,7 +321,7 @@ export class V1Controller {
 
   // Debug log for testing based on user agent
   checkDebug(): boolean {
-    if (this.userAgent && this.userAgent.toLowerCase().includes('pocket-debug')) {
+    if (this.userAgent?.toLowerCase().includes('pocket-debug')) {
       return true
     }
     return false

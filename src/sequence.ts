@@ -71,7 +71,7 @@ export class GatewaySequence implements SequenceHandler {
       response.header('Access-Control-Allow-Headers', 'user-agent,origin,content-type')
       response.header('Access-Control-Max-Age', '86400')
 
-      if (request.method == 'OPTIONS') {
+      if (request.method === 'OPTIONS') {
         response.status(200)
         this.send(response, '')
       } else {

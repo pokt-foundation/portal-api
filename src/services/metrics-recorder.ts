@@ -141,11 +141,12 @@ export class MetricsRecorder {
   }
 
   async processBulkLogs(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     bulkData: any[],
     currentTimestamp: number,
     redisKey: string,
     relation: string,
-    logger: CustomLogger
+    processlogger: CustomLogger
   ): Promise<void> {
     const redisListAge = await this.redis.get('age-' + redisKey)
     const redisListSize = await this.redis.llen(redisKey)
@@ -153,7 +154,7 @@ export class MetricsRecorder {
     // List has been started in redis and needs to be pushed as timestamp is > 10 seconds old
     if (redisListAge && redisListSize > 0 && currentTimestamp > parseInt(redisListAge) + 10) {
       await this.redis.set('age-' + redisKey, currentTimestamp)
-      await this.pushBulkData(bulkData, redisListSize, redisKey, relation, logger)
+      await this.pushBulkData(bulkData, redisListSize, redisKey, relation, processlogger)
     } else {
       await this.redis.rpush(redisKey, JSON.stringify(bulkData))
     }
@@ -164,11 +165,12 @@ export class MetricsRecorder {
   }
 
   async pushBulkData(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     bulkData: any[],
     redisListSize: number,
     redisKey: string,
     relation: string,
-    logger: CustomLogger
+    processlogger: CustomLogger
   ): Promise<void> {
     for (let count = 0; count < redisListSize; count++) {
       const redisRecord = await this.redis.lpop(redisKey)
@@ -180,12 +182,12 @@ export class MetricsRecorder {
       const metricsQuery = pgFormat('INSERT INTO %I VALUES %L', relation, bulkData)
       this.pgPool.connect((err, client, release) => {
         if (err) {
-          logger.log('error', 'Error acquiring client ' + err.stack)
+          processlogger.log('error', 'Error acquiring client ' + err.stack)
         }
-        client.query(metricsQuery, (err, result) => {
+        client.query(metricsQuery, (metricsErr, result) => {
           release()
-          if (err) {
-            logger.log('error', 'Error executing query ' + metricsQuery + ' ' + err.stack)
+          if (metricsErr) {
+            processlogger.log('error', 'Error executing query ' + metricsQuery + ' ' + err.stack)
           }
         })
       })

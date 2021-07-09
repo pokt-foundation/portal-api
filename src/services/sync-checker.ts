@@ -2,7 +2,7 @@ import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } fro
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
 import { checkEnforcementJSON } from '../utils'
-var crypto = require('crypto')
+const crypto = require('crypto')
 
 const logger = require('../services/logger')
 import axios from 'axios'
@@ -35,7 +35,7 @@ export class SyncChecker {
       syncAllowance = 5
     }
 
-    let syncedNodes: Node[] = []
+    const syncedNodes: Node[] = []
     let syncedNodesList: String[] = []
 
     // Key is "blockchain - a hash of the all the nodes in this session, sorted by public key"
@@ -48,7 +48,7 @@ export class SyncChecker {
       '-' +
       crypto
         .createHash('sha256')
-        .update(JSON.stringify(sortedNodes, (k, v) => (k != 'publicKey' ? v : undefined)))
+        .update(JSON.stringify(sortedNodes, (k, v) => (k !== 'publicKey' ? v : undefined)))
         .digest('hex')
     const syncedNodesCached = await this.redis.get(syncedNodesKey)
 
@@ -170,7 +170,7 @@ export class SyncChecker {
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
     for (const nodeSyncLog of nodeSyncLogs) {
-      let relayStart = process.hrtime()
+      const relayStart = process.hrtime()
 
       if (nodeSyncLog.blockHeight + syncAllowance >= currentBlockHeight) {
         logger.log(
@@ -311,7 +311,13 @@ export class SyncChecker {
     const promiseStack: Promise<NodeSyncLog>[] = []
 
     // Set to junk values first so that the Promise stack can fill them later
-    let rawNodeSyncLogs: any[] = [0, 0, 0, 0, 0]
+    const rawNodeSyncLogs: NodeSyncLog[] = [
+      <NodeSyncLog>{},
+      <NodeSyncLog>{},
+      <NodeSyncLog>{},
+      <NodeSyncLog>{},
+      <NodeSyncLog>{},
+    ]
 
     for (const node of nodes) {
       promiseStack.push(
@@ -368,7 +374,7 @@ export class SyncChecker {
     })
 
     // Pull the current block from each node using the blockchain's syncCheck as the relay
-    let relayStart = process.hrtime()
+    const relayStart = process.hrtime()
 
     const relayResponse = await pocket.sendRelay(
       syncCheck,

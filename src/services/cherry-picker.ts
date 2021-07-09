@@ -32,7 +32,7 @@ export class CherryPicker {
 
     for (const application of applications) {
       const rawServiceLog = await this.fetchRawServiceLog(blockchain, application)
-      sortedLogs.push(await this.createUnsortedLog(application, blockchain, rawServiceLog))
+      sortedLogs.push(await this.createUnsortedLog(application, blockchain, rawServiceLog!))
     }
 
     // Sort application logs by highest success rate, then by lowest latency
@@ -88,7 +88,7 @@ export class CherryPicker {
       rawNodes[node.publicKey] = node
       rawNodeIDs.push(node.publicKey)
       const rawServiceLog = await this.fetchRawServiceLog(blockchain, node.publicKey)
-      sortedLogs.push(await this.createUnsortedLog(node.publicKey, blockchain, rawServiceLog))
+      sortedLogs.push(await this.createUnsortedLog(node.publicKey, blockchain, rawServiceLog!))
     }
 
     // Sort node logs by highest success rate, then by lowest latency
@@ -258,7 +258,7 @@ export class CherryPicker {
     return rankedItems
   }
 
-  async createUnsortedLog(id: string, blockchain: string, rawServiceLog: any): Promise<ServiceLog> {
+  async createUnsortedLog(id: string, blockchain: string, rawServiceLog: string): Promise<ServiceLog> {
     let attempts = 0
     let successRate = 0
     let averageSuccessLatency = 0
