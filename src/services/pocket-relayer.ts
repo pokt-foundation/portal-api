@@ -579,12 +579,8 @@ export class PocketRelayer {
         blockchainID = blockchainFilter[0].chainID
       }
       // Allowance of blocks a data node can be behind
-      if (
-        blockchainFilter[0].syncAllowance &&
-        blockchainFilter[0].syncAllowance.isInteger() &&
-        blockchainFilter[0].syncAllowance > 0
-      ) {
-        blockchainSyncAllowance = blockchainFilter[0].syncAllowance
+      if (blockchainFilter[0].syncAllowance) {
+        blockchainSyncAllowance = parseInt(blockchainFilter[0].syncAllowance)
       }
       return Promise.resolve({
         blockchain,
