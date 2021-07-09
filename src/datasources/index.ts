@@ -1,1 +1,1 @@
-export * from './gateway.datasource';
+export * from './gateway.datasource'

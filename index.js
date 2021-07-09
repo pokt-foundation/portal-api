@@ -1,7 +1,7 @@
 /* eslint-disable */
-const application = require('./dist');
+const application = require('./dist')
 
-module.exports = application;
+module.exports = application
 
 if (require.main === module) {
   // Run the application
@@ -21,11 +21,11 @@ if (require.main === module) {
       },
     },
     json: {
-      strict: false
+      strict: false,
     },
-  };
-  application.main(config).catch(err => {
-    console.error('Cannot start the application.', err);
-    process.exit(1);
-  });
+  }
+  application.main(config).catch((err) => {
+    console.error('Cannot start the application.', err)
+    process.exit(1)
+  })
 }
