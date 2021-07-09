@@ -52,7 +52,9 @@ export class ChainChecker {
     const nodeChainLogs = await this.getNodeChainLogs(nodes, requestID, chainCheck, blockchain, applicationID, applicationPublicKey, pocket, pocketAAT, pocketConfiguration);
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
-    for (const nodeChainLog of nodeChainLogs) {             
+    for (const nodeChainLog of nodeChainLogs) {    
+      let relayStart = process.hrtime();
+
       if (nodeChainLog.chainID === chainID) {
         logger.log('info', 'CHAIN CHECK SUCCESS: ' + nodeChainLog.node.publicKey + ' chainID: ' + nodeChainLog.chainID, {requestID: requestID, relayType: '', typeID: '', serviceNode: nodeChainLog.node.publicKey, error: '', elapsedTime: ''});
 
@@ -61,6 +63,21 @@ export class ChainChecker {
         CheckedNodesList.push(nodeChainLog.node.publicKey);
       } else {
         logger.log('info', 'CHAIN CHECK FAILURE: ' + nodeChainLog.node.publicKey + ' chainID: ' + nodeChainLog.chainID, {requestID: requestID, relayType: '', typeID: '', serviceNode: nodeChainLog.node.publicKey, error: '', elapsedTime: ''});
+
+        await this.metricsRecorder.recordMetric({
+          requestID: requestID,
+          applicationID: applicationID,
+          appPubKey: applicationPublicKey,
+          blockchain,
+          serviceNode: nodeChainLog.node.publicKey,
+          relayStart,
+          result: 500,
+          bytes: Buffer.byteLength('WRONG CHAIN', 'utf8'),
+          delivered: false,
+          fallback: false,
+          method: 'chaincheck',
+          error: 'WRONG CHAIN',
+        });
       }
     }
 
