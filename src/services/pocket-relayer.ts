@@ -167,7 +167,7 @@ export class PocketRelayer {
         await this.metricsRecorder.recordMetric({
           requestID: requestID,
           applicationID: application.id,
-          appPubKey: application.gatewayAAT.applicationPublicKey,
+          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
           blockchain,
           serviceNode: relayResponse.proof.servicerPubKey,
           relayStart,
@@ -207,7 +207,7 @@ export class PocketRelayer {
         await this.metricsRecorder.recordMetric({
           requestID,
           applicationID: application.id,
-          appPubKey: application.gatewayAAT.applicationPublicKey,
+          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
           blockchain,
           serviceNode: relayResponse.servicer_node,
           relayStart,
@@ -266,7 +266,7 @@ export class PocketRelayer {
           await this.metricsRecorder.recordMetric({
             requestID: requestID,
             applicationID: application.id,
-            appPubKey: application.gatewayAAT.applicationPublicKey,
+            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
             blockchain,
             serviceNode: 'fallback:' + redactedAltruistURL,
             relayStart,

@@ -33,7 +33,7 @@ export class MetricsRecorder {
   async recordMetric({
     requestID,
     applicationID,
-    appPubKey,
+    applicationPublicKey,
     blockchain,
     serviceNode,
     relayStart,
@@ -46,7 +46,7 @@ export class MetricsRecorder {
   }: {
     requestID: string
     applicationID: string
-    appPubKey: string
+    applicationPublicKey: string
     blockchain: string
     serviceNode: string | undefined
     relayStart: [number, number]
@@ -104,8 +104,26 @@ export class MetricsRecorder {
 
       // Bulk insert relay / error metrics
       const postgresTimestamp = new Date()
-      const metricsValues = [postgresTimestamp, appPubKey, blockchain, serviceNode, elapsedTime, result, bytes, method]
-      const errorValues = [postgresTimestamp, appPubKey, blockchain, serviceNode, elapsedTime, bytes, method, error]
+      const metricsValues = [
+        postgresTimestamp,
+        applicationPublicKey,
+        blockchain,
+        serviceNode,
+        elapsedTime,
+        result,
+        bytes,
+        method,
+      ]
+      const errorValues = [
+        postgresTimestamp,
+        applicationPublicKey,
+        blockchain,
+        serviceNode,
+        elapsedTime,
+        bytes,
+        method,
+        error,
+      ]
 
       // Store metrics in redis and every 10 seconds, push to postgres
       const redisMetricsKey = 'metrics-' + this.processUID

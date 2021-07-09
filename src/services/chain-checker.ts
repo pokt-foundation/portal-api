@@ -2,7 +2,7 @@ import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } fro
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
 import { checkEnforcementJSON } from '../utils'
-var crypto = require('crypto')
+import { createHash } from 'crypto'
 
 const logger = require('../services/logger')
 
@@ -35,8 +35,7 @@ export class ChainChecker {
     const CheckedNodesKey =
       chainID +
       '-' +
-      crypto
-        .createHash('sha256')
+      createHash('sha256')
         .update(
           JSON.stringify(
             nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0)),
@@ -279,7 +278,7 @@ export class ChainChecker {
       await this.metricsRecorder.recordMetric({
         requestID: requestID,
         applicationID: applicationID,
-        appPubKey: applicationPublicKey,
+        applicationPublicKey: applicationPublicKey,
         blockchain,
         serviceNode: node.publicKey,
         relayStart,
@@ -303,7 +302,7 @@ export class ChainChecker {
       await this.metricsRecorder.recordMetric({
         requestID: requestID,
         applicationID: applicationID,
-        appPubKey: applicationPublicKey,
+        applicationPublicKey: applicationPublicKey,
         blockchain,
         serviceNode: node.publicKey,
         relayStart,

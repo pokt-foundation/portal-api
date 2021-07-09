@@ -210,7 +210,7 @@ export class SyncChecker {
         await this.metricsRecorder.recordMetric({
           requestID: requestID,
           applicationID: applicationID,
-          appPubKey: applicationPublicKey,
+          applicationPublicKey: applicationPublicKey,
           blockchain,
           serviceNode: nodeSyncLog.node.publicKey,
           relayStart,
@@ -425,7 +425,7 @@ export class SyncChecker {
       await this.metricsRecorder.recordMetric({
         requestID: requestID,
         applicationID: applicationID,
-        appPubKey: applicationPublicKey,
+        applicationPublicKey: applicationPublicKey,
         blockchain,
         serviceNode: node.publicKey,
         relayStart,
@@ -449,7 +449,7 @@ export class SyncChecker {
       await this.metricsRecorder.recordMetric({
         requestID: requestID,
         applicationID: applicationID,
-        appPubKey: applicationPublicKey,
+        applicationPublicKey: applicationPublicKey,
         blockchain,
         serviceNode: node.publicKey,
         relayStart,
