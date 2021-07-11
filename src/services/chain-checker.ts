@@ -28,7 +28,7 @@ export class ChainChecker {
     pocketConfiguration,
   }: ChainIDFilterOptions): Promise<Node[]> {
     const CheckedNodes: Node[] = []
-    let CheckedNodesList: String[] = []
+    let CheckedNodesList: string[] = []
 
     // Key is "chainID - a hash of the all the nodes in this session, sorted by public key"
     // Value is an array of node public keys that have passed Chain checks for this session in the past 5 minutes
@@ -59,6 +59,7 @@ export class ChainChecker {
     // Cache is stale, start a new cache fill
     // First check cache lock key; if lock key exists, return full node set
     const ChainLock = await this.redis.get('lock-' + CheckedNodesKey)
+
     if (ChainLock) {
       return nodes
     } else {
@@ -147,6 +148,7 @@ export class ChainChecker {
         undefined,
         true
       )
+
       logger.log('info', 'CHAIN CHECK CHALLENGE: ' + JSON.stringify(consensusResponse), {
         requestID: requestID,
         relayType: '',
@@ -194,6 +196,7 @@ export class ChainChecker {
         pocketAAT,
         pocketConfiguration,
       }
+
       promiseStack.push(this.getNodeChainLog(options))
     }
 
@@ -256,6 +259,7 @@ export class ChainChecker {
         node: node,
         chainID: parseInt(payload.result, 16),
       } as NodeChainLog
+
       logger.log('info', 'CHAIN CHECK RESULT: ' + JSON.stringify(nodeChainLog), {
         requestID: requestID,
         relayType: '',
@@ -278,6 +282,7 @@ export class ChainChecker {
       })
 
       let error = relayResponse.message
+
       if (typeof relayResponse.message === 'object') {
         error = JSON.stringify(relayResponse.message)
       }
@@ -322,10 +327,11 @@ export class ChainChecker {
     }
     // Failed
     const nodeChainLog = { node: node, chainID: 0 } as NodeChainLog
+
     return nodeChainLog
   }
 
-  updateConfigurationConsensus(pocketConfiguration: Configuration) {
+  updateConfigurationConsensus(pocketConfiguration: Configuration): Configuration {
     return new Configuration(
       pocketConfiguration.maxDispatchers,
       pocketConfiguration.maxSessions,
@@ -340,7 +346,7 @@ export class ChainChecker {
     )
   }
 
-  updateConfigurationTimeout(pocketConfiguration: Configuration) {
+  updateConfigurationTimeout(pocketConfiguration: Configuration): Configuration {
     return new Configuration(
       pocketConfiguration.maxDispatchers,
       pocketConfiguration.maxSessions,

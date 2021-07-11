@@ -3,6 +3,7 @@ import { juggler } from '@loopback/repository'
 import { HttpErrors } from '@loopback/rest'
 
 const mongoEndpoint: string = process.env.MONGO_ENDPOINT ?? ''
+
 if (!mongoEndpoint) {
   throw new HttpErrors.InternalServerError('MONGO_ENDPOINT required in ENV')
 }

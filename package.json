@@ -1,4 +1,4 @@
-    {
+{
   "name": "@pokt-network/pocket-gateway",
   "version": "1.0.5",
   "description": "The Pocket Network Gateway is a single endpoint that will offer access to the full range of supported blockchains through one URL.",
@@ -73,6 +73,7 @@
     "@types/pg": "^7.14.3",
     "axios": "^0.21.1",
     "dotenv": "^8.2.0",
+    "eslint-plugin-import": "^2.23.4",
     "got": "^11.1.4",
     "ioredis": "^4.16.3",
     "log-timestamp": "^0.3.0",

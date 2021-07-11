@@ -60,6 +60,7 @@ export class MetricsRecorder {
     try {
       let elapsedTime = 0
       const relayEnd = process.hrtime(relayStart)
+
       elapsedTime = (relayEnd[0] * 1e9 + relayEnd[1]) / 1e9
 
       let fallbackTag = ''
@@ -174,12 +175,14 @@ export class MetricsRecorder {
   ): Promise<void> {
     for (let count = 0; count < redisListSize; count++) {
       const redisRecord = await this.redis.lpop(redisKey)
+
       if (redisRecord) {
         bulkData.push(JSON.parse(redisRecord))
       }
     }
     if (bulkData.length > 0) {
       const metricsQuery = pgFormat('INSERT INTO %I VALUES %L', relation, bulkData)
+
       this.pgPool.connect((err, client, release) => {
         if (err) {
           processlogger.log('error', 'Error acquiring client ' + err.stack)

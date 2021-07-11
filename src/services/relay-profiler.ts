@@ -15,8 +15,7 @@ export class RelayProfiler extends BaseProfiler {
     this.pgPool = pgPool
   }
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  //@ts-ignore
+  // @ts-ignore
   async flushResults(
     requestID: string,
     blockchain: string,

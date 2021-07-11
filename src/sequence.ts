@@ -22,7 +22,7 @@ export class GatewaySequence implements SequenceHandler {
     @inject(SequenceActions.REJECT) public reject: Reject
   ) {}
 
-  async handle(context: RequestContext) {
+  async handle(context: RequestContext): Promise<void> {
     try {
       const { request, response } = context
 
@@ -36,10 +36,12 @@ export class GatewaySequence implements SequenceHandler {
       context.bind('httpMethod').to(request.method)
 
       let secretKey = ''
+
       // SecretKey passed in via basic http auth
       if (request.headers['authorization']) {
         const base64Credentials = request.headers['authorization'].split(' ')[1]
         const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii').split(':')
+
         if (credentials[1]) {
           secretKey = credentials[1]
         }
@@ -78,6 +80,7 @@ export class GatewaySequence implements SequenceHandler {
         const route = this.findRoute(request)
         const args = await this.parseParams(request, route)
         const result = await this.invoke(route, args)
+
         this.send(response, result)
       }
     } catch (err) {

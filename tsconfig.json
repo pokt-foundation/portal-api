@@ -2,10 +2,13 @@
   "$schema": "http://json.schemastore.org/tsconfig",
   "extends": "@loopback/build/config/tsconfig.common.json",
   "compilerOptions": {
+    "allowJs": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "outDir": "dist",
-    "rootDir": "."
+    "rootDir": ".",
+    "strict": false,
+    "moduleResolution": "node"
   },
   "include": ["src", "tests", ".eslintrc.js"]
 }

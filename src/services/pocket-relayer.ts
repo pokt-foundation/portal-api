@@ -15,6 +15,7 @@ import { checkEnforcementJSON } from '../utils'
 import { JSONObject } from '@loopback/context'
 
 const logger = require('../services/logger')
+
 import axios from 'axios'
 
 export class PocketRelayer {
@@ -127,6 +128,7 @@ export class PocketRelayer {
     const data = JSON.stringify(parsedRawData)
     const method = this.parseMethod(parsedRawData)
     const fallbackAvailable = this.altruists[blockchain] !== undefined ? true : false
+
     // Retries if applicable
     for (let x = 0; x <= this.relayRetries; x++) {
       const relayStart = process.hrtime()
@@ -134,6 +136,7 @@ export class PocketRelayer {
       // Compute the overall time taken on this LB request
       const overallCurrent = process.hrtime(overallStart)
       const overallCurrentElasped = Math.round((overallCurrent[0] * 1e9 + overallCurrent[1]) / 1e6)
+
       if (overallTimeOut && overallCurrentElasped > overallTimeOut) {
         logger.log('error', 'Overall Timeout exceeded: ' + overallTimeOut, {
           requestID: requestID,
@@ -200,6 +203,7 @@ export class PocketRelayer {
         await this.redis.expire(blockchain + '-' + relayResponse.servicer_node + '-errors', 3600)
 
         let error = relayResponse.message
+
         if (typeof relayResponse.message === 'object') {
           error = JSON.stringify(relayResponse.message)
         }
@@ -232,7 +236,7 @@ export class PocketRelayer {
           : `${this.altruists[blockchain]}/${relayPath}`
 
       // Remove user/pass from the altruist URL
-      const redactedAltruistURL = String(this.altruists[blockchain])!.replace(/[\w]*:\/\/[^\/]*@/g, '')
+      const redactedAltruistURL = String(this.altruists[blockchain])?.replace(/[\w]*:\/\/[^\/]*@/g, '')
 
       if (httpMethod === 'POST') {
         axiosConfig = {
@@ -388,8 +392,10 @@ export class PocketRelayer {
       blockchain,
       this.pocketConfiguration
     )
+
     if (pocketSession instanceof Session) {
       let nodes: Node[] = pocketSession.sessionNodes
+
       if (blockchainIDCheck) {
         // Check Chain ID
         const chainIDOptions: ChainIDFilterOptions = {
@@ -447,6 +453,7 @@ export class PocketRelayer {
 
     // Adjust Pocket Configuration for a custom requestTimeOut
     let relayConfiguration = this.pocketConfiguration
+
     if (requestTimeOut) {
       relayConfiguration = this.updateConfiguration(requestTimeOut)
     }
@@ -499,13 +506,11 @@ export class PocketRelayer {
         // Success
         return relayResponse
       }
-    }
-    // Error
-    else if (relayResponse instanceof Error) {
+      // Error
+    } else if (relayResponse instanceof Error) {
       return new RelayError(relayResponse.message, 500, node?.publicKey)
-    }
-    // ConsensusNode
-    else {
+      // ConsensusNode
+    } else {
       // TODO: ConsensusNode is a possible return
       return new Error('relayResponse is undefined')
     }
@@ -514,13 +519,15 @@ export class PocketRelayer {
   // Fetch node client type if Ethereum based
   async fetchClientTypeLog(blockchain: string, id: string | undefined): Promise<string | null> {
     const clientTypeLog = await this.redis.get(blockchain + '-' + id + '-clientType')
+
     return clientTypeLog
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  parseMethod(parsedRawData: any) {
+  parseMethod(parsedRawData: Record<string, any>): string {
     // Method recording for metrics
     let method = ''
+
     if (parsedRawData instanceof Array) {
       // Join the methods of calls in an array for chains that can join multiple calls in one
       for (const key in parsedRawData) {
@@ -537,7 +544,7 @@ export class PocketRelayer {
     return method
   }
 
-  updateConfiguration(requestTimeOut: number) {
+  updateConfiguration(requestTimeOut: number): Configuration {
     return new Configuration(
       this.pocketConfiguration.maxDispatchers,
       this.pocketConfiguration.maxSessions,
@@ -619,6 +626,7 @@ export class PocketRelayer {
   checkSecretKey(application: Applications): boolean {
     // Check secretKey; is it required? does it pass? -- temp allowance for unencrypted keys
     const decryptor = new Decryptor({ key: this.databaseEncryptionKey })
+
     if (
       application.gatewaySettings.secretKeyRequired && // If the secret key is required by app's settings // and
       application.gatewaySettings.secretKey && // the app's secret key is set // and

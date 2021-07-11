@@ -2,9 +2,10 @@ import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } fro
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
 import { checkEnforcementJSON } from '../utils'
-const crypto = require('crypto')
+import crypto from 'crypto'
 
 const logger = require('../services/logger')
+
 import axios from 'axios'
 
 export class SyncChecker {
@@ -36,7 +37,7 @@ export class SyncChecker {
     }
 
     const syncedNodes: Node[] = []
-    let syncedNodesList: String[] = []
+    let syncedNodesList: string[] = []
 
     // Key is "blockchain - a hash of the all the nodes in this session, sorted by public key"
     // Value is an array of node public keys that have passed sync checks for this session in the past 5 minutes
@@ -66,6 +67,7 @@ export class SyncChecker {
     // Cache is stale, start a new cache fill
     // First check cache lock key; if lock key exists, return full node set
     const syncLock = await this.redis.get('lock-' + syncedNodesKey)
+
     if (syncLock) {
       return nodes
     } else {
@@ -254,6 +256,7 @@ export class SyncChecker {
         true,
         'synccheck'
       )
+
       logger.log('info', 'SYNC CHECK CHALLENGE: ' + JSON.stringify(consensusResponse), {
         requestID: requestID,
         relayType: '',
@@ -402,6 +405,7 @@ export class SyncChecker {
         blockchain: blockchain,
         blockHeight,
       } as NodeSyncLog
+
       logger.log('info', 'SYNC CHECK RESULT: ' + JSON.stringify(nodeSyncLog), {
         requestID: requestID,
         relayType: '',
@@ -424,6 +428,7 @@ export class SyncChecker {
       })
 
       let error = relayResponse.message
+
       if (typeof relayResponse.message === 'object') {
         error = JSON.stringify(relayResponse.message)
       }
@@ -473,10 +478,11 @@ export class SyncChecker {
       blockchain: blockchain,
       blockHeight: 0,
     } as NodeSyncLog
+
     return nodeSyncLog
   }
 
-  updateConfigurationConsensus(pocketConfiguration: Configuration) {
+  updateConfigurationConsensus(pocketConfiguration: Configuration): Configuration {
     return new Configuration(
       pocketConfiguration.maxDispatchers,
       pocketConfiguration.maxSessions,
@@ -491,7 +497,7 @@ export class SyncChecker {
     )
   }
 
-  updateConfigurationTimeout(pocketConfiguration: Configuration) {
+  updateConfigurationTimeout(pocketConfiguration: Configuration): Configuration {
     return new Configuration(
       pocketConfiguration.maxDispatchers,
       pocketConfiguration.maxSessions,

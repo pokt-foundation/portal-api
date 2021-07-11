@@ -127,6 +127,7 @@ export class V1Controller {
 
     try {
       const loadBalancer = await this.fetchLoadBalancer(id, filter)
+
       if (loadBalancer?.id) {
         const {
           blockchain,
@@ -143,6 +144,7 @@ export class V1Controller {
           blockchain,
           filter
         )
+
         if (application?.id) {
           const options: SendRelayOptions = {
             rawData,
@@ -224,6 +226,7 @@ export class V1Controller {
 
     try {
       const application = await this.fetchApplication(id, filter)
+
       if (application?.id) {
         const sendRelayOptions: SendRelayOptions = {
           rawData,
@@ -259,6 +262,7 @@ export class V1Controller {
 
     if (!cachedLoadBalancer) {
       const loadBalancer = await this.loadBalancersRepository.findById(id, filter)
+
       if (loadBalancer?.id) {
         await this.redis.set(id, JSON.stringify(loadBalancer), 'EX', 60)
         return new LoadBalancers(loadBalancer)
@@ -274,6 +278,7 @@ export class V1Controller {
 
     if (!cachedApplication) {
       const application = await this.applicationsRepository.findById(id, filter)
+
       if (application?.id) {
         await this.redis.set(id, JSON.stringify(application), 'EX', 60)
         return new Applications(application)
@@ -297,6 +302,7 @@ export class V1Controller {
     if (!cachedLoadBalancerApplicationIDs) {
       for (const applicationID of applicationIDs) {
         const application = await this.fetchApplication(applicationID, filter)
+
         if (application?.id) {
           verifiedIDs.push(application.id)
         }
