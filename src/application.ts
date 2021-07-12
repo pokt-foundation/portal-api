@@ -103,7 +103,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       50,
       100000,
       0,
-      120000,
+      1200000,
       false,
       parseInt(pocketSessionBlockFrequency),
       parseInt(pocketBlockTime),
