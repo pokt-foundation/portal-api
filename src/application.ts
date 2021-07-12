@@ -130,8 +130,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     }
 
     // Load Redis for cache
-    const redisEndpoint: string = process.env.REDIS_ENDPOINT ?? ''
-    const redisPort: string = process.env.REDIS_PORT ?? ''
+    const redisEndpoint: string = process.env.REDIS_ENDPOINT || ''
+    const redisPort: string = process.env.REDIS_PORT || ''
 
     if (!redisEndpoint) {
       throw new HttpErrors.InternalServerError('REDIS_ENDPOINT required in ENV')

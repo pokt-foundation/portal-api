@@ -115,7 +115,7 @@
   "lint-staged": {
     "*.(t|j)s": [
       "eslint --fix",
-      "prettier --write"
+      "prettier --write ."
     ]
   }
 }
