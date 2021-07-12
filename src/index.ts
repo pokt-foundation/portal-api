@@ -6,7 +6,13 @@ const logger = require('./services/logger');
 export {PocketGatewayApplication};
 
 export async function main(options: ApplicationConfig = {}) {
-  const app = new PocketGatewayApplication(options);
+  const app = new PocketGatewayApplication(options); 
+
+  app.on('stateChanged', data => {
+    console.log('app state changed', data); 
+  })
+
+
   await app.boot();
   await app.start();
   await app.loadPocket();
