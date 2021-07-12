@@ -8,8 +8,8 @@ ENV PORT=3000
 ENV PATH="${PATH}:/usr/src/gateway/node_modules/.bin"
 
 RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y git
+  apt-get upgrade -y && \
+  apt-get install -y git
 
 RUN mkdir -p /usr/src/gateway
 
@@ -20,7 +20,10 @@ WORKDIR /usr/src/gateway
 # where available (npm@5+)
 COPY package*.json ./
 
-RUN npm install
+# Installs the project
+# Ignores installation scripts as of right now they're only used for development
+# and may trigger errors
+RUN npm ci --ignore-scripts
 
 # Bundle app source code
 COPY . .

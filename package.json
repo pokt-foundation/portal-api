@@ -41,7 +41,8 @@
     "services:all:up": "docker-compose -f stacks/local.yml up -d --build",
     "services:all:down": "docker-compose -f stacks/local.yml down",
     "tasks:db:download-production-data": "docker-compose -f stacks/tasks.yml up download-production-data",
-    "tasks:db:import-production-data": "docker-compose -f stacks/tasks.yml up import-production-data"
+    "tasks:db:import-production-data": "docker-compose -f stacks/tasks.yml up import-production-data",
+    "prepare": "husky install"
   },
   "repository": {
     "type": "git"
@@ -100,8 +101,21 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-eslint-plugin": "^3.0.2",
     "eslint-plugin-mocha": "^8.1.0",
+    "husky": "^7.0.1",
+    "lint-staged": "^11.0.0",
     "source-map-support": "^0.5.19",
     "tsnodemon": "^1.2.2",
     "typescript": "~4.2.4"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.(t|j)s": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }
