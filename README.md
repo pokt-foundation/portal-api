@@ -37,11 +37,15 @@ bootstrap the app with existing data.
 3. Download the production data in your machine.
 
    ```bash
-   $ docker-compose -f stacks/tasks.yml up download-production-data
+
+   $ npm run tasks:db:download-production-data
    ```
 
 4. Retrieve the production data to be imported into the local app.
-`$ docker-compose -f stacks/tasks.yml up import-production-data`
+   ```bash
+   $ npm run tasks:db:import-production-data
+   ```
+
 <!-- markdownlint-restore -->
 
 **Hint**: If you still got issues about compiling when running the project after following at least the steps 1 and 2, run the command `npm run clean` and then `npm run services:all:up` again.
