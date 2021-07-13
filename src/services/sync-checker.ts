@@ -8,6 +8,8 @@ const logger = require('../services/logger')
 
 import axios from 'axios'
 
+const DEFAULT_SYNC_ALLOWANCE: number = parseInt(process.env.DEFAULT_SYNC_ALLOWANCE) || 5
+
 export class SyncChecker {
   redis: Redis
   metricsRecorder: MetricsRecorder
@@ -32,9 +34,7 @@ export class SyncChecker {
     pocketConfiguration,
   }: ConsensusFilterOptions): Promise<Node[]> {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
-    if (syncAllowance <= 0) {
-      syncAllowance = 5
-    }
+    syncAllowance = syncAllowance <= 0 ? syncAllowance : DEFAULT_SYNC_ALLOWANCE
 
     const syncedNodes: Node[] = []
     let syncedNodesList: string[] = []
