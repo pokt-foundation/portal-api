@@ -57,6 +57,7 @@ export class Applications extends Entity {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface ApplicationsRelations {
   // describe navigational properties here
 }

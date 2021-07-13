@@ -45,6 +45,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     //
     // For Dev, you need to pass them in via .env file
     const environment: string = process.env.NODE_ENV ?? 'production'
+
     logger.log('info', 'Environment: ' + environment)
 
     const dispatchURL: string = process.env.DISPATCH_URL ?? ''
@@ -86,6 +87,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     if (dispatchURL.indexOf(',')) {
       const dispatcherArray = dispatchURL.split(',')
+
       dispatcherArray.forEach(function (dispatcher) {
         dispatchers.push(new URL(dispatcher))
       })
@@ -118,6 +120,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     // Unlock primary client account for relay signing
     try {
       const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase)
+
       if (importAccount instanceof Account) {
         await pocket.keybase.unlockAccount(importAccount.addressHex, clientPassphrase, 0)
       }
@@ -137,11 +140,12 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       throw new HttpErrors.InternalServerError('REDIS_PORT required in ENV')
     }
     const redis = new Redis(parseInt(redisPort), redisEndpoint)
+
     this.bind('redisInstance').to(redis)
 
     // Load Postgres for TimescaleDB metrics
-    const pgConnection: string = process.env.PG_CONNECTION || ''
-    const pgCertificate: string = process.env.PG_CERTIFICATE || ''
+    const pgConnection: string = process.env.PG_CONNECTION ?? ''
+    const pgCertificate: string = process.env.PG_CERTIFICATE ?? ''
 
     if (!pgConnection) {
       throw new HttpErrors.InternalServerError('PG_CONNECTION required in ENV')
@@ -159,11 +163,12 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       if (!cachedCertificate) {
         try {
           const s3Certificate = await got(pgCertificate)
+
           publicCertificate = s3Certificate.body
         } catch (e) {
           throw new HttpErrors.InternalServerError('Invalid Certificate')
         }
-        redis.set('timescaleDBCertificate', publicCertificate, 'EX', 600)
+        await redis.set('timescaleDBCertificate', publicCertificate, 'EX', 600)
       } else {
         publicCertificate = cachedCertificate
       }
@@ -190,6 +195,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     // Create a UID for this process
     const parts = [os.hostname(), process.pid, +new Date()]
     const hash = crypto.createHash('md5').update(parts.join(''))
+
     this.bind('processUID').to(hash.digest('hex'))
   }
 }

@@ -2,7 +2,7 @@ import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } fro
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
 import { checkEnforcementJSON } from '../utils'
-var crypto = require('crypto')
+import { createHash } from 'crypto'
 
 const logger = require('../services/logger')
 
@@ -15,32 +15,31 @@ export class ChainChecker {
     this.metricsRecorder = metricsRecorder
   }
 
-  async chainIDFilter(
-    nodes: Node[],
-    requestID: string,
-    chainCheck: string,
-    chainID: number,
-    blockchain: string,
-    applicationID: string,
-    applicationPublicKey: string,
-    pocket: Pocket,
-    pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration
-  ): Promise<Node[]> {
-    let CheckedNodes: Node[] = []
-    let CheckedNodesList: String[] = []
+  async chainIDFilter({
+    nodes,
+    requestID,
+    chainCheck,
+    chainID,
+    blockchain,
+    pocket,
+    applicationID,
+    applicationPublicKey,
+    pocketAAT,
+    pocketConfiguration,
+  }: ChainIDFilterOptions): Promise<Node[]> {
+    const CheckedNodes: Node[] = []
+    let CheckedNodesList: string[] = []
 
     // Key is "chainID - a hash of the all the nodes in this session, sorted by public key"
     // Value is an array of node public keys that have passed Chain checks for this session in the past 5 minutes
     const CheckedNodesKey =
       chainID +
       '-' +
-      crypto
-        .createHash('sha256')
+      createHash('sha256')
         .update(
           JSON.stringify(
             nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0)),
-            (k, v) => (k != 'publicKey' ? v : undefined)
+            (k, v) => (k !== 'publicKey' ? v : undefined)
           )
         )
         .digest('hex')
@@ -60,6 +59,7 @@ export class ChainChecker {
     // Cache is stale, start a new cache fill
     // First check cache lock key; if lock key exists, return full node set
     const ChainLock = await this.redis.get('lock-' + CheckedNodesKey)
+
     if (ChainLock) {
       return nodes
     } else {
@@ -69,7 +69,7 @@ export class ChainChecker {
     }
 
     // Fires all 5 Chain checks Chainhronously then assembles the results
-    const nodeChainLogs = await this.getNodeChainLogs(
+    const options: GetNodesChainLogsOptions = {
       nodes,
       requestID,
       chainCheck,
@@ -78,12 +78,13 @@ export class ChainChecker {
       applicationPublicKey,
       pocket,
       pocketAAT,
-      pocketConfiguration
-    )
+      pocketConfiguration,
+    }
+    const nodeChainLogs = await this.getNodeChainLogs(options)
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
     for (const nodeChainLog of nodeChainLogs) {
-      let relayStart = process.hrtime()
+      // const relayStart = process.hrtime()
 
       if (nodeChainLog.chainID === chainID) {
         logger.log(
@@ -147,6 +148,7 @@ export class ChainChecker {
         undefined,
         true
       )
+
       logger.log('info', 'CHAIN CHECK CHALLENGE: ' + JSON.stringify(consensusResponse), {
         requestID: requestID,
         relayType: '',
@@ -159,66 +161,67 @@ export class ChainChecker {
     return CheckedNodes
   }
 
-  async getNodeChainLogs(
-    nodes: Node[],
-    requestID: string,
-    chainCheck: string,
-    blockchain: string,
-    applicationID: string,
-    applicationPublicKey: string,
-    pocket: Pocket,
-    pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration
-  ): Promise<NodeChainLog[]> {
+  async getNodeChainLogs({
+    nodes,
+    requestID,
+    chainCheck,
+    blockchain,
+    applicationID,
+    applicationPublicKey,
+    pocket,
+    pocketAAT,
+    pocketConfiguration,
+  }: GetNodesChainLogsOptions): Promise<NodeChainLog[]> {
     const nodeChainLogs: NodeChainLog[] = []
     const promiseStack: Promise<NodeChainLog>[] = []
 
     // Set to junk values first so that the Promise stack can fill them later
-    let rawNodeChainLogs: any[] = ['', '', '', '', '']
+    const rawNodeChainLogs: NodeChainLog[] = [
+      <NodeChainLog>{},
+      <NodeChainLog>{},
+      <NodeChainLog>{},
+      <NodeChainLog>{},
+      <NodeChainLog>{},
+    ]
 
     for (const node of nodes) {
-      promiseStack.push(
-        this.getNodeChainLog(
-          node,
-          requestID,
-          chainCheck,
-          blockchain,
-          applicationID,
-          applicationPublicKey,
-          pocket,
-          pocketAAT,
-          pocketConfiguration
-        )
-      )
+      const options: GetNodeChainLogOptions = {
+        node,
+        requestID,
+        chainCheck,
+        blockchain,
+        applicationID,
+        applicationPublicKey,
+        pocket,
+        pocketAAT,
+        pocketConfiguration,
+      }
+
+      promiseStack.push(this.getNodeChainLog(options))
     }
 
-    ;[
-      rawNodeChainLogs[0],
-      rawNodeChainLogs[1],
-      rawNodeChainLogs[2],
-      rawNodeChainLogs[3],
-      rawNodeChainLogs[4],
-    ] = await Promise.all(promiseStack)
+    ;[rawNodeChainLogs[0], rawNodeChainLogs[1], rawNodeChainLogs[2], rawNodeChainLogs[3], rawNodeChainLogs[4]] =
+      await Promise.all(promiseStack)
 
     for (const rawNodeChainLog of rawNodeChainLogs) {
-      if (typeof rawNodeChainLog === 'object' && rawNodeChainLog.chainID !== '') {
+      if (typeof rawNodeChainLog === 'object' && (rawNodeChainLog.chainID as unknown as string) !== '') {
         nodeChainLogs.push(rawNodeChainLog)
       }
     }
     return nodeChainLogs
   }
 
-  async getNodeChainLog(
-    node: Node,
-    requestID: string,
-    chainCheck: string,
-    blockchain: string,
-    applicationID: string,
-    applicationPublicKey: string,
-    pocket: Pocket,
-    pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration
-  ): Promise<NodeChainLog> {
+  async getNodeChainLog({
+    node,
+    requestID,
+    chainCheck,
+    blockchain,
+    pocket,
+    applicationID,
+    applicationPublicKey,
+    pocketAAT,
+    pocketConfiguration,
+  }: GetNodeChainLogOptions): Promise<NodeChainLog> {
     logger.log('info', 'CHAIN CHECK START', {
       requestID: requestID,
       relayType: '',
@@ -229,7 +232,7 @@ export class ChainChecker {
     })
 
     // Pull the current block from each node using the blockchain's chainCheck as the relay
-    let relayStart = process.hrtime()
+    const relayStart = process.hrtime()
 
     const relayResponse = await pocket.sendRelay(
       chainCheck,
@@ -251,6 +254,7 @@ export class ChainChecker {
         node: node,
         chainID: parseInt(payload.result, 16),
       } as NodeChainLog
+
       logger.log('info', 'CHAIN CHECK RESULT: ' + JSON.stringify(nodeChainLog), {
         requestID: requestID,
         relayType: '',
@@ -273,13 +277,14 @@ export class ChainChecker {
       })
 
       let error = relayResponse.message
+
       if (typeof relayResponse.message === 'object') {
         error = JSON.stringify(relayResponse.message)
       }
       await this.metricsRecorder.recordMetric({
         requestID: requestID,
         applicationID: applicationID,
-        appPubKey: applicationPublicKey,
+        applicationPublicKey: applicationPublicKey,
         blockchain,
         serviceNode: node.publicKey,
         relayStart,
@@ -303,7 +308,7 @@ export class ChainChecker {
       await this.metricsRecorder.recordMetric({
         requestID: requestID,
         applicationID: applicationID,
-        appPubKey: applicationPublicKey,
+        applicationPublicKey: applicationPublicKey,
         blockchain,
         serviceNode: node.publicKey,
         relayStart,
@@ -317,10 +322,11 @@ export class ChainChecker {
     }
     // Failed
     const nodeChainLog = { node: node, chainID: 0 } as NodeChainLog
+
     return nodeChainLog
   }
 
-  updateConfigurationConsensus(pocketConfiguration: Configuration) {
+  updateConfigurationConsensus(pocketConfiguration: Configuration): Configuration {
     return new Configuration(
       pocketConfiguration.maxDispatchers,
       pocketConfiguration.maxSessions,
@@ -335,7 +341,7 @@ export class ChainChecker {
     )
   }
 
-  updateConfigurationTimeout(pocketConfiguration: Configuration) {
+  updateConfigurationTimeout(pocketConfiguration: Configuration): Configuration {
     return new Configuration(
       pocketConfiguration.maxDispatchers,
       pocketConfiguration.maxSessions,
@@ -354,4 +360,36 @@ export class ChainChecker {
 type NodeChainLog = {
   node: Node
   chainID: number
+}
+
+interface BaseChainLogOptions {
+  requestID: string
+  chainCheck: string
+  blockchain: string
+  applicationID: string
+  applicationPublicKey: string
+  pocket: Pocket
+  pocketAAT: PocketAAT
+  pocketConfiguration: Configuration
+}
+
+interface GetNodesChainLogsOptions extends BaseChainLogOptions {
+  nodes: Node[]
+}
+
+interface GetNodeChainLogOptions extends BaseChainLogOptions {
+  node: Node
+}
+
+export type ChainIDFilterOptions = {
+  nodes: Node[]
+  requestID: string
+  chainCheck: string
+  chainID: number
+  blockchain: string
+  pocket: Pocket
+  applicationID: string
+  applicationPublicKey: string
+  pocketAAT: PocketAAT
+  pocketConfiguration: Configuration
 }

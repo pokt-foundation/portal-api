@@ -26,6 +26,7 @@ if (!logzToken && environment === 'production') {
 
 const timestampUTC = () => {
   const timestamp = new Date()
+
   return timestamp.toISOString()
 }
 

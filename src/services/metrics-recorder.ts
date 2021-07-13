@@ -33,7 +33,7 @@ export class MetricsRecorder {
   async recordMetric({
     requestID,
     applicationID,
-    appPubKey,
+    applicationPublicKey,
     blockchain,
     serviceNode,
     relayStart,
@@ -46,7 +46,7 @@ export class MetricsRecorder {
   }: {
     requestID: string
     applicationID: string
-    appPubKey: string
+    applicationPublicKey: string
     blockchain: string
     serviceNode: string | undefined
     relayStart: [number, number]
@@ -60,6 +60,7 @@ export class MetricsRecorder {
     try {
       let elapsedTime = 0
       const relayEnd = process.hrtime(relayStart)
+
       elapsedTime = (relayEnd[0] * 1e9 + relayEnd[1]) / 1e9
 
       let fallbackTag = ''
@@ -104,8 +105,26 @@ export class MetricsRecorder {
 
       // Bulk insert relay / error metrics
       const postgresTimestamp = new Date()
-      const metricsValues = [postgresTimestamp, appPubKey, blockchain, serviceNode, elapsedTime, result, bytes, method]
-      const errorValues = [postgresTimestamp, appPubKey, blockchain, serviceNode, elapsedTime, bytes, method, error]
+      const metricsValues = [
+        postgresTimestamp,
+        applicationPublicKey,
+        blockchain,
+        serviceNode,
+        elapsedTime,
+        result,
+        bytes,
+        method,
+      ]
+      const errorValues = [
+        postgresTimestamp,
+        applicationPublicKey,
+        blockchain,
+        serviceNode,
+        elapsedTime,
+        bytes,
+        method,
+        error,
+      ]
 
       // Store metrics in redis and every 10 seconds, push to postgres
       const redisMetricsKey = 'metrics-' + this.processUID
@@ -123,11 +142,12 @@ export class MetricsRecorder {
   }
 
   async processBulkLogs(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     bulkData: any[],
     currentTimestamp: number,
     redisKey: string,
     relation: string,
-    logger: CustomLogger
+    processlogger: CustomLogger
   ): Promise<void> {
     const redisListAge = await this.redis.get('age-' + redisKey)
     const redisListSize = await this.redis.llen(redisKey)
@@ -135,7 +155,7 @@ export class MetricsRecorder {
     // List has been started in redis and needs to be pushed as timestamp is > 10 seconds old
     if (redisListAge && redisListSize > 0 && currentTimestamp > parseInt(redisListAge) + 10) {
       await this.redis.set('age-' + redisKey, currentTimestamp)
-      await this.pushBulkData(bulkData, redisListSize, redisKey, relation, logger)
+      await this.pushBulkData(bulkData, redisListSize, redisKey, relation, processlogger)
     } else {
       await this.redis.rpush(redisKey, JSON.stringify(bulkData))
     }
@@ -146,28 +166,31 @@ export class MetricsRecorder {
   }
 
   async pushBulkData(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     bulkData: any[],
     redisListSize: number,
     redisKey: string,
     relation: string,
-    logger: CustomLogger
+    processlogger: CustomLogger
   ): Promise<void> {
     for (let count = 0; count < redisListSize; count++) {
       const redisRecord = await this.redis.lpop(redisKey)
+
       if (redisRecord) {
         bulkData.push(JSON.parse(redisRecord))
       }
     }
     if (bulkData.length > 0) {
       const metricsQuery = pgFormat('INSERT INTO %I VALUES %L', relation, bulkData)
+
       this.pgPool.connect((err, client, release) => {
         if (err) {
-          logger.log('error', 'Error acquiring client ' + err.stack)
+          processlogger.log('error', 'Error acquiring client ' + err.stack)
         }
-        client.query(metricsQuery, (err, result) => {
+        client.query(metricsQuery, (metricsErr, result) => {
           release()
-          if (err) {
-            logger.log('error', 'Error executing query ' + metricsQuery + ' ' + err.stack)
+          if (metricsErr) {
+            processlogger.log('error', 'Error executing query ' + metricsQuery + ' ' + err.stack)
           }
         })
       })
