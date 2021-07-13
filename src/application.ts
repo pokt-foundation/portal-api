@@ -56,6 +56,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const pocketBlockTime: string = process.env.POCKET_BLOCK_TIME || ''
     const relayRetries: string = process.env.POCKET_RELAY_RETRIES || ''
     const databaseEncryptionKey: string = process.env.DATABASE_ENCRYPTION_KEY || ''
+    const defaultSyncAllowance: number = parseInt(process.env.DEFAULT_SYNC_ALLOWANCE) || -1
     const aatPlan = process.env.AAT_PLAN || AatPlans.PREMIUM
 
     if (!dispatchURL) {
@@ -78,6 +79,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     }
     if (!databaseEncryptionKey) {
       throw new HttpErrors.InternalServerError('DATABASE_ENCRYPTION_KEY required in ENV')
+    }
+    if (defaultSyncAllowance < 0) {
+      throw new HttpErrors.InternalServerError('DEFAULT_SYNC_ALLOWANCE required in ENV')
     }
     if (aatPlan !== AatPlans.PREMIUM && !AatPlans.values.includes(aatPlan)) {
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
@@ -116,6 +120,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('relayRetries').to(parseInt(relayRetries))
     this.bind('altruists').to(altruists)
     this.bind('logger').to(logger)
+    this.bind('defaultSyncAllowance').to(defaultSyncAllowance)
 
     // Unlock primary client account for relay signing
     try {
