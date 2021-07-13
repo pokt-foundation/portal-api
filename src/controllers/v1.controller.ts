@@ -38,6 +38,7 @@ export class V1Controller {
     @inject('processUID') private processUID: string,
     @inject('altruists') private altruists: string,
     @inject('requestID') private requestID: string,
+    @inject('defaultSyncAllowance') private defaultSyncAllowance: number,
     @inject('aatPlan') private aatPlan: string,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
@@ -56,7 +57,7 @@ export class V1Controller {
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
     })
-    this.syncChecker = new SyncChecker(this.redis, this.metricsRecorder)
+    this.syncChecker = new SyncChecker(this.redis, this.metricsRecorder, this.defaultSyncAllowance)
     this.chainChecker = new ChainChecker(this.redis, this.metricsRecorder)
     this.pocketRelayer = new PocketRelayer({
       host: this.host,

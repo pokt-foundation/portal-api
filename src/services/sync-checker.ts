@@ -11,10 +11,12 @@ import axios from 'axios'
 export class SyncChecker {
   redis: Redis
   metricsRecorder: MetricsRecorder
+  defaultSyncAllowance: number
 
-  constructor(redis: Redis, metricsRecorder: MetricsRecorder) {
+  constructor(redis: Redis, metricsRecorder: MetricsRecorder, defaultSyncAllowance: number) {
     this.redis = redis
     this.metricsRecorder = metricsRecorder
+    this.defaultSyncAllowance = defaultSyncAllowance
   }
 
   async consensusFilter({
@@ -32,9 +34,7 @@ export class SyncChecker {
     pocketConfiguration,
   }: ConsensusFilterOptions): Promise<Node[]> {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
-    if (syncAllowance <= 0) {
-      syncAllowance = 5
-    }
+    syncAllowance = syncAllowance <= 0 ? syncAllowance : this.defaultSyncAllowance
 
     const syncedNodes: Node[] = []
     let syncedNodesList: string[] = []
