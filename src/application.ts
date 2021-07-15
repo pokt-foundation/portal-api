@@ -47,20 +47,36 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     // Requirements; for Production these are stored in GitHub repo secrets
     //
     // For Dev, you need to pass them in via .env file
-    const environment: string = process.env.NODE_ENV || 'production'
+    // TODO: Add env as a type
+    const {
+      NODE_ENV,
+      GATEWAY_CLIENT_PRIVATE_KEY,
+      GATEWAY_CLIENT_PASSPHRASE,
+      DATABASE_ENCRYPTION_KEY,
+      REDIS_ENDPOINT,
+      REDIS_PORT,
+      PG_CONNECTION,
+      PG_CERTIFICATE,
+      DISPATCH_URL,
+      ALTRUISTS,
+      POCKET_SESSION_BLOCK_FREQUENCY,
+      POCKET_BLOCK_TIME,
+      POCKET_RELAY_RETRIES,
+      DEFAULT_SYNC_ALLOWANCE,
+      AAT_PLAN,
+    } = this.get('configuration.environment.values') as any
 
-    logger.log('info', 'Environment: ' + environment)
-
-    const dispatchURL: string = process.env.DISPATCH_URL || ''
-    const altruists: string = process.env.ALTRUISTS || ''
-    const clientPrivateKey: string = process.env.GATEWAY_CLIENT_PRIVATE_KEY || ''
-    const clientPassphrase: string = process.env.GATEWAY_CLIENT_PASSPHRASE || ''
-    const pocketSessionBlockFrequency: string = process.env.POCKET_SESSION_BLOCK_FREQUENCY || ''
-    const pocketBlockTime: string = process.env.POCKET_BLOCK_TIME || ''
-    const relayRetries: string = process.env.POCKET_RELAY_RETRIES || ''
-    const databaseEncryptionKey: string = process.env.DATABASE_ENCRYPTION_KEY || ''
-    const defaultSyncAllowance: number = parseInt(process.env.DEFAULT_SYNC_ALLOWANCE) || -1
-    const aatPlan = process.env.AAT_PLAN || AatPlans.PREMIUM
+    const environment: string = NODE_ENV || 'production'
+    const dispatchURL: string = DISPATCH_URL || ''
+    const altruists: string = ALTRUISTS || ''
+    const clientPrivateKey: string = GATEWAY_CLIENT_PRIVATE_KEY || ''
+    const clientPassphrase: string = GATEWAY_CLIENT_PASSPHRASE || ''
+    const pocketSessionBlockFrequency: string = POCKET_SESSION_BLOCK_FREQUENCY || ''
+    const pocketBlockTime: string = POCKET_BLOCK_TIME || ''
+    const relayRetries: string = POCKET_RELAY_RETRIES || ''
+    const databaseEncryptionKey: string = DATABASE_ENCRYPTION_KEY || ''
+    const defaultSyncAllowance: number = parseInt(DEFAULT_SYNC_ALLOWANCE) || -1
+    const aatPlan = AAT_PLAN || AatPlans.PREMIUM
 
     if (!dispatchURL) {
       throw new HttpErrors.InternalServerError('DISPATCH_URL required in ENV')
@@ -138,8 +154,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     }
 
     // Load Redis for cache
-    const redisEndpoint: string = process.env.REDIS_ENDPOINT || ''
-    const redisPort: string = process.env.REDIS_PORT || ''
+    const redisEndpoint: string = REDIS_ENDPOINT || ''
+    const redisPort: string = REDIS_PORT || ''
 
     if (!redisEndpoint) {
       throw new HttpErrors.InternalServerError('REDIS_ENDPOINT required in ENV')
@@ -152,8 +168,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('redisInstance').to(redis)
 
     // Load Postgres for TimescaleDB metrics
-    const pgConnection: string = process.env.PG_CONNECTION || ''
-    const pgCertificate: string = process.env.PG_CERTIFICATE || ''
+    const pgConnection: string = PG_CONNECTION || ''
+    const pgCertificate: string = PG_CERTIFICATE || ''
 
     if (!pgConnection) {
       throw new HttpErrors.InternalServerError('PG_CONNECTION required in ENV')
