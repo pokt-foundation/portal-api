@@ -50,9 +50,31 @@ export class PocketGatewayApplication extends BootMixin(
     // Requirements; for Production these are stored in GitHub repo secrets
     //
     // For Dev, you need to pass them in via .env file
-    const environment: string = process.env.NODE_ENV || 'production';
-    const dispatchURL: string = process.env.DISPATCH_URL ?? '';
-    const fallbackURL: string = process.env.FALLBACK_URL ?? '';
+    // TODO: Add env as a type
+    const {NODE_ENV,
+      GATEWAY_CLIENT_PUBLIC_KEY,
+      GATEWAY_CLIENT_PRIVATE_KEY,
+      GATEWAY_CLIENT_PASSPHRASE,
+      MONGO_ENDPOINT,
+      DATABASE_ENCRYPTION_KEY,
+      REDIS_ENDPOINT,
+      REDIS_PORT,
+      PG_CONNECTION,
+      PG_CERTIFICATE,
+      LOGZ_TOKEN,
+      DISPATCH_URL,
+      ALTRUISTS,
+      POCKET_SESSION_BLOCK_FREQUENCY,
+      POCKET_BLOCK_TIME,
+      POCKET_RELAY_RETRIES,
+      DEFAULT_SYNC_ALLOWANCE,
+      AAT_PLAN,
+      FALLBACK_URL,
+      WATCH} = this.get('configuration.environment.values') as any
+
+    const environment: string = NODE_ENV || 'production';
+    const dispatchURL: string = DISPATCH_URL ?? '';
+    const fallbackURL: string = FALLBACK_URL ?? '';
     const clientPrivateKey: string =
       process.env.GATEWAY_CLIENT_PRIVATE_KEY ?? '';
     const clientPassphrase: string =

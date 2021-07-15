@@ -13,6 +13,7 @@ import {
  */
 @lifeCycleObserver('configuration')
 export class EnvironmentObserver implements LifeCycleObserver {
+  // TODO: split the arrays on optional and require
   private static environment : string[] = [
     'NODE_ENV',
     'GATEWAY_CLIENT_PUBLIC_KEY',
@@ -31,7 +32,7 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'POCKET_BLOCK_TIME',
     'POCKET_RELAY_RETRIES',
     'DEFAULT_SYNC_ALLOWANCE',
-    'AAT_PLAN',
+    'AAT_PLAN', 
     'WATCH'
   ];
 
