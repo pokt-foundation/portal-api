@@ -16,10 +16,12 @@ export async function setupApplication(): Promise<AppWithClient> {
 
   const app = new PocketGatewayApplication({
     rest: restConfig,
+    env: {load: false, values: {}}
   });
 
   await app.boot();
   await app.start();
+  await app.loadPocket();
 
   const client = createRestAppClient(app);
 

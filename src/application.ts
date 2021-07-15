@@ -1,5 +1,5 @@
 import {BootMixin} from '@loopback/boot';
-import {ApplicationConfig} from '@loopback/core';
+import {ApplicationConfig, inject} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
 import {RestApplication, HttpErrors} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
@@ -41,6 +41,9 @@ export class PocketGatewayApplication extends BootMixin(
         nested: true,
       },
     };
+
+    this.bind('configuration.environment.load').to(typeof options.env.load !== undefined ? options.env.load : true)
+    this.bind('configuration.environment.values').to(options.env.values || {})
   }
 
   async loadPocket(): Promise<void> {
