@@ -38,6 +38,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
         nested: true,
       },
     }
+
+    this.bind('configuration.environment.load').to(typeof options.env.load !== undefined ? options.env.load : true)
+    this.bind('configuration.environment.values').to(options.env.values || {})
   }
 
   async loadPocket(): Promise<void> {
