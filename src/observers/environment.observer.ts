@@ -1,11 +1,11 @@
-import { Binding } from '@loopback/context';
+import { Binding } from '@loopback/context'
 import {
   Context,
   inject,
   /* inject, Application, CoreBindings, */
   lifeCycleObserver, // The decorator
   LifeCycleObserver, // The interface
-} from '@loopback/core';
+} from '@loopback/core'
 
 /**
  * This class will be bound to the application as a `LifeCycleObserver` during
@@ -14,7 +14,7 @@ import {
 @lifeCycleObserver('configuration')
 export class EnvironmentObserver implements LifeCycleObserver {
   // TODO: split the arrays on optional and require
-  private static environment : string[] = [
+  private static environment: string[] = [
     'NODE_ENV',
     'GATEWAY_CLIENT_PUBLIC_KEY',
     'GATEWAY_CLIENT_PRIVATE_KEY',
@@ -32,9 +32,9 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'POCKET_BLOCK_TIME',
     'POCKET_RELAY_RETRIES',
     'DEFAULT_SYNC_ALLOWANCE',
-    'AAT_PLAN', 
-    'WATCH'
-  ];
+    'AAT_PLAN',
+    'WATCH',
+  ]
 
   /*
   constructor(
@@ -46,20 +46,24 @@ export class EnvironmentObserver implements LifeCycleObserver {
    * This method will be invoked when the application initializes. It will be
    * called at most once for a given application instance.
    */
-  async init(@inject('configuration.environment.load') load : any, @inject('configuration.environment.values') configValues : any): Promise<void> {
+  async init(
+    @inject('configuration.environment.load') load: any,
+    @inject('configuration.environment.values') configValues: any
+  ): Promise<void> {
     // TODO: Find a coherent API to bind the global context on the observer
 
     if (!load) {
       return
     }
 
-    EnvironmentObserver.environment.forEach((name : string) => {
+    EnvironmentObserver.environment.forEach((name: string) => {
       const variable = process.env[name]
+
       if (!variable) {
         throw new Error(`Required variable ${name} not found`)
       }
 
-      configValues[name] = variable;
+      configValues[name] = variable
     })
   }
 

@@ -1,1 +1,1 @@
-export * from './environment.observer';
+export * from './environment.observer'
