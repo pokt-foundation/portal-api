@@ -39,7 +39,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       },
     }
 
-    this.bind('configuration.environment.load').to(typeof options.env.load !== undefined ? options.env.load : true)
+    console.log('hi hello', options)
+
+    this.bind('configuration.environment.load').to(typeof options?.env?.load !== undefined ? options.env.load : true)
     this.bind('configuration.environment.values').to(options.env.values || {})
   }
 
@@ -64,7 +66,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       POCKET_RELAY_RETRIES,
       DEFAULT_SYNC_ALLOWANCE,
       AAT_PLAN,
-    } = this.get('configuration.environment.values') as any
+    } = (await this.get('configuration.environment.values')) as any
 
     const environment: string = NODE_ENV || 'production'
     const dispatchURL: string = DISPATCH_URL || ''
