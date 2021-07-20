@@ -1,4 +1,4 @@
-name: Production Deployment ap-southeast-1
+name: Production Deployment eu-south-1
 
 on:
   push:
@@ -18,13 +18,13 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-southeast-1
+          aws-region: eu-south-1
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Make envfile ap-southeast-1
+      - name: Make envfile eu-south-1
         uses: SpicyPizza/create-envfile@v1
         with:
           envkey_GATEWAY_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PRIVATE_KEY }}
@@ -38,10 +38,10 @@ jobs:
           envkey_AWS_S3_SECRET_ACCESS_KEY: ${{ secrets.AWS_S3_SECRET_ACCESS_KEY }}
           envkey_AWS_S3_LOGS_BUCKET: pocket-gateway
           envkey_AWS_S3_LOGS_FOLDER: logs/mainnet
-          envkey_AWS_S3_LOGS_REGION: us-west-2
+          envkey_AWS_S3_LOGS_REGION: eu-south-1
           envkey_DISPATCH_URL: https://mainnet-1.nodes.pokt.network:4201,https://mainnet-2.nodes.pokt.network:4202,https://mainnet-3.nodes.pokt.network:4203,https://mainnet-4.nodes.pokt.network:4204,https://mainnet-5.nodes.pokt.network:4205,https://mainnet-6.nodes.pokt.network:4206,https://mainnet-7.nodes.pokt.network:4207,https://mainnet-8.nodes.pokt.network:4208,https://mainnet-9.nodes.pokt.network:4209,https://mainnet-10.nodes.pokt.network:4210,https://mainnet-11.nodes.pokt.network:4211,https://mainnet-12.nodes.pokt.network:4212,https://mainnet-13.nodes.pokt.network:4213,https://mainnet-14.nodes.pokt.network:4214,https://mainnet-15.nodes.pokt.network:4215,https://mainnet-16.nodes.pokt.network:4216,https://mainnet-17.nodes.pokt.network:4217,https://mainnet-18.nodes.pokt.network:4218,https://mainnet-19.nodes.pokt.network:4219,https://mainnet-20.nodes.pokt.network:4220,https://mainnet-21.nodes.pokt.network:4221,https://mainnet-22.nodes.pokt.network:4222,https://mainnet-23.nodes.pokt.network:4223,https://mainnet-24.nodes.pokt.network:4224
           envkey_ALTRUISTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_ALTRUISTS }}
-          envkey_REDIS_ENDPOINT: dashboard.y2p8qe.ng.0001.apse1.cache.amazonaws.com:6379
+          envkey_REDIS_ENDPOINT: gateway.dj2dgc.ng.0001.euw1.cache.amazonaws.com:6379
           envkey_REDIS_PORT: 6379
           envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
           envkey_POCKET_BLOCK_TIME: 1038000
@@ -62,18 +62,18 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
-      - name: Fill in the new image ID / ap-southeast-1
-        id: task-def-ap-southeast-1
+      - name: Fill in the new image ID / eu-south-1
+        id: task-def-eu-south-1
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: pocket-gateway/ecs-task-ap-southeast-1.json
+          task-definition: pocket-gateway/ecs-task-eu-south-1.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
 
-      - name: Deploy / ap-southeast-1
+      - name: Deploy / eu-south-1
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def-ap-southeast-1.outputs.task-definition }}
+          task-definition: ${{ steps.task-def-eu-south-1.outputs.task-definition }}
           service: gateway-service
           cluster: gateway
           wait-for-service-stability: true

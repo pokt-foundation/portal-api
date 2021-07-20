@@ -1,7 +1,7 @@
 import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
-import { SyncChecker } from '../services/sync-checker'
-import { ChainChecker } from '../services/chain-checker'
+import { ConsensusFilterOptions, SyncChecker } from '../services/sync-checker'
+import { ChainChecker, ChainIDFilterOptions } from '../services/chain-checker'
 import { Decryptor } from 'strong-cryptor'
 import { HttpErrors } from '@loopback/rest'
 import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
@@ -15,6 +15,7 @@ import { checkEnforcementJSON } from '../utils'
 import { JSONObject } from '@loopback/context'
 
 const logger = require('../services/logger')
+
 import axios from 'axios'
 
 export class PocketRelayer {
@@ -94,16 +95,16 @@ export class PocketRelayer {
     this.altruists = JSON.parse(altruists)
   }
 
-  async sendRelay(
-    rawData: object,
-    relayPath: string,
-    httpMethod: HTTPMethod,
-    application: Applications,
-    requestID: string,
-    requestTimeOut?: number,
-    overallTimeOut?: number,
-    relayRetries?: number
-  ): Promise<string | Error> {
+  async sendRelay({
+    rawData,
+    relayPath,
+    httpMethod,
+    application,
+    requestID,
+    requestTimeOut,
+    overallTimeOut,
+    relayRetries,
+  }: SendRelayOptions): Promise<string | Error> {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries
     }
@@ -127,13 +128,15 @@ export class PocketRelayer {
     const data = JSON.stringify(parsedRawData)
     const method = this.parseMethod(parsedRawData)
     const fallbackAvailable = this.altruists[blockchain] !== undefined ? true : false
+
     // Retries if applicable
     for (let x = 0; x <= this.relayRetries; x++) {
-      let relayStart = process.hrtime()
+      const relayStart = process.hrtime()
 
       // Compute the overall time taken on this LB request
       const overallCurrent = process.hrtime(overallStart)
       const overallCurrentElasped = Math.round((overallCurrent[0] * 1e9 + overallCurrent[1]) / 1e6)
+
       if (overallTimeOut && overallCurrentElasped > overallTimeOut) {
         logger.log('error', 'Overall Timeout exceeded: ' + overallTimeOut, {
           requestID: requestID,
@@ -145,7 +148,7 @@ export class PocketRelayer {
       }
 
       // Send this relay attempt
-      const relayResponse = await this._sendRelay(
+      const relayResponse = await this._sendRelay({
         data,
         relayPath,
         httpMethod,
@@ -157,17 +160,17 @@ export class PocketRelayer {
         blockchainSyncCheck,
         blockchainSyncCheckPath,
         blockchainSyncAllowance,
-        String(this.altruists[blockchain]),
         blockchainIDCheck,
-        blockchainID
-      )
+        blockchainID,
+        blockchainSyncBackup: String(this.altruists[blockchain]),
+      })
 
       if (!(relayResponse instanceof Error)) {
         // Record success metric
         await this.metricsRecorder.recordMetric({
           requestID: requestID,
           applicationID: application.id,
-          appPubKey: application.gatewayAAT.applicationPublicKey,
+          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
           blockchain,
           serviceNode: relayResponse.proof.servicerPubKey,
           relayStart,
@@ -200,6 +203,7 @@ export class PocketRelayer {
         await this.redis.expire(blockchain + '-' + relayResponse.servicer_node + '-errors', 3600)
 
         let error = relayResponse.message
+
         if (typeof relayResponse.message === 'object') {
           error = JSON.stringify(relayResponse.message)
         }
@@ -207,7 +211,7 @@ export class PocketRelayer {
         await this.metricsRecorder.recordMetric({
           requestID,
           applicationID: application.id,
-          appPubKey: application.gatewayAAT.applicationPublicKey,
+          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
           blockchain,
           serviceNode: relayResponse.servicer_node,
           relayStart,
@@ -222,7 +226,7 @@ export class PocketRelayer {
     }
     // Exhausted network relay attempts; use fallback
     if (fallbackAvailable) {
-      let relayStart = process.hrtime()
+      const relayStart = process.hrtime()
       let axiosConfig = {}
 
       // Add relay path to URL
@@ -232,7 +236,7 @@ export class PocketRelayer {
           : `${this.altruists[blockchain]}/${relayPath}`
 
       // Remove user/pass from the altruist URL
-      const redactedAltruistURL = String(this.altruists[blockchain])!.replace(/[\w]*:\/\/[^\/]*@/g, '')
+      const redactedAltruistURL = String(this.altruists[blockchain])?.replace(/[\w]*:\/\/[^\/]*@/g, '')
 
       if (httpMethod === 'POST') {
         axiosConfig = {
@@ -266,7 +270,7 @@ export class PocketRelayer {
           await this.metricsRecorder.recordMetric({
             requestID: requestID,
             applicationID: application.id,
-            appPubKey: application.gatewayAAT.applicationPublicKey,
+            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
             blockchain,
             serviceNode: 'fallback:' + redactedAltruistURL,
             relayStart,
@@ -309,22 +313,37 @@ export class PocketRelayer {
   }
 
   // Private function to allow relay retries
-  async _sendRelay(
-    data: string,
-    relayPath: string,
-    httpMethod: HTTPMethod,
-    requestID: string,
-    application: Applications,
-    requestTimeOut: number | undefined,
-    blockchain: string,
-    blockchainEnforceResult: string,
-    blockchainSyncCheck: string,
-    blockchainSyncCheckPath: string,
-    blockchainSyncAllowance: number,
-    blockchainSyncBackup: string,
-    blockchainIDCheck: string,
+  async _sendRelay({
+    data,
+    relayPath,
+    httpMethod,
+    requestID,
+    application,
+    requestTimeOut,
+    blockchain,
+    blockchainEnforceResult,
+    blockchainSyncCheck,
+    blockchainSyncCheckPath,
+    blockchainSyncAllowance,
+    blockchainSyncBackup,
+    blockchainIDCheck,
+    blockchainID,
+  }: {
+    data: string
+    relayPath: string
+    httpMethod: HTTPMethod
+    requestID: string
+    application: Applications
+    requestTimeOut: number | undefined
+    blockchain: string
+    blockchainEnforceResult: string
+    blockchainSyncCheck: string
+    blockchainSyncCheckPath: string
+    blockchainSyncAllowance: number
+    blockchainSyncBackup: string
+    blockchainIDCheck: string
     blockchainID: string
-  ): Promise<RelayResponse | Error> {
+  }): Promise<RelayResponse | Error> {
     logger.log('info', 'RELAYING ' + blockchain + ' req: ' + data, {
       requestID: requestID,
       relayType: 'APP',
@@ -373,22 +392,26 @@ export class PocketRelayer {
       blockchain,
       this.pocketConfiguration
     )
+
     if (pocketSession instanceof Session) {
       let nodes: Node[] = pocketSession.sessionNodes
+
       if (blockchainIDCheck) {
         // Check Chain ID
-        nodes = await this.chainChecker.chainIDFilter(
+        const chainIDOptions: ChainIDFilterOptions = {
           nodes,
           requestID,
-          blockchainIDCheck,
-          parseInt(blockchainID),
           blockchain,
-          application.id,
-          application.gatewayAAT.applicationPublicKey,
-          this.pocket,
           pocketAAT,
-          this.pocketConfiguration
-        )
+          applicationID: application.id,
+          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+          chainCheck: blockchainIDCheck,
+          chainID: parseInt(blockchainID),
+          pocket: this.pocket,
+          pocketConfiguration: this.pocketConfiguration,
+        }
+
+        nodes = await this.chainChecker.chainIDFilter(chainIDOptions)
         if (nodes.length === 0) {
           return new Error('ChainID check failure; using fallbacks')
         }
@@ -396,20 +419,22 @@ export class PocketRelayer {
 
       if (blockchainSyncCheck) {
         // Check Sync
-        nodes = await this.syncChecker.consensusFilter(
+        const consensusFilterOptions: ConsensusFilterOptions = {
           nodes,
           requestID,
-          blockchainSyncCheck,
-          blockchainSyncCheckPath,
-          blockchainSyncAllowance,
+          syncCheck: blockchainSyncCheck,
+          syncCheckPath: blockchainSyncCheckPath,
+          syncAllowance: blockchainSyncAllowance,
           blockchain,
           blockchainSyncBackup,
-          application.id,
-          application.gatewayAAT.applicationPublicKey,
-          this.pocket,
+          applicationID: application.id,
+          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+          pocket: this.pocket,
           pocketAAT,
-          this.pocketConfiguration
-        )
+          pocketConfiguration: this.pocketConfiguration,
+        }
+
+        nodes = await this.syncChecker.consensusFilter(consensusFilterOptions)
         if (nodes.length === 0) {
           return new Error('Sync check failure; using fallbacks')
         }
@@ -428,6 +453,7 @@ export class PocketRelayer {
 
     // Adjust Pocket Configuration for a custom requestTimeOut
     let relayConfiguration = this.pocketConfiguration
+
     if (requestTimeOut) {
       relayConfiguration = this.updateConfiguration(requestTimeOut)
     }
@@ -480,13 +506,11 @@ export class PocketRelayer {
         // Success
         return relayResponse
       }
-    }
-    // Error
-    else if (relayResponse instanceof Error) {
+      // Error
+    } else if (relayResponse instanceof Error) {
       return new RelayError(relayResponse.message, 500, node?.publicKey)
-    }
-    // ConsensusNode
-    else {
+      // ConsensusNode
+    } else {
       // TODO: ConsensusNode is a possible return
       return new Error('relayResponse is undefined')
     }
@@ -495,12 +519,15 @@ export class PocketRelayer {
   // Fetch node client type if Ethereum based
   async fetchClientTypeLog(blockchain: string, id: string | undefined): Promise<string | null> {
     const clientTypeLog = await this.redis.get(blockchain + '-' + id + '-clientType')
+
     return clientTypeLog
   }
 
-  parseMethod(parsedRawData: any) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  parseMethod(parsedRawData: Record<string, any>): string {
     // Method recording for metrics
     let method = ''
+
     if (parsedRawData instanceof Array) {
       // Join the methods of calls in an array for chains that can join multiple calls in one
       for (const key in parsedRawData) {
@@ -517,7 +544,7 @@ export class PocketRelayer {
     return method
   }
 
-  updateConfiguration(requestTimeOut: number) {
+  updateConfiguration(requestTimeOut: number): Configuration {
     return new Configuration(
       this.pocketConfiguration.maxDispatchers,
       this.pocketConfiguration.maxSessions,
@@ -599,6 +626,7 @@ export class PocketRelayer {
   checkSecretKey(application: Applications): boolean {
     // Check secretKey; is it required? does it pass? -- temp allowance for unencrypted keys
     const decryptor = new Decryptor({ key: this.databaseEncryptionKey })
+
     if (
       application.gatewaySettings.secretKeyRequired && // If the secret key is required by app's settings // and
       application.gatewaySettings.secretKey && // the app's secret key is set // and
@@ -645,4 +673,15 @@ interface BlockchainDetails {
   blockchainSyncAllowance: number
   blockchainIDCheck: string
   blockchainID: string
+}
+
+export interface SendRelayOptions {
+  rawData: object
+  relayPath: string
+  httpMethod: HTTPMethod
+  application: Applications
+  requestID: string
+  requestTimeOut?: number
+  overallTimeOut?: number
+  relayRetries?: number
 }
