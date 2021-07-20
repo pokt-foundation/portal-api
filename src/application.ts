@@ -39,8 +39,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       },
     }
 
-    console.log('hi hello', options)
-
     this.bind('configuration.environment.load').to(typeof options?.env?.load !== undefined ? options.env.load : true)
     this.bind('configuration.environment.values').to(options.env.values || {})
   }
