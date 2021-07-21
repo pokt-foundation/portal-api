@@ -20,7 +20,6 @@ export class V1Controller {
   pocketRelayer: PocketRelayer
   syncChecker: SyncChecker
   chainChecker: ChainChecker
-  forceBlockchain: string
 
   constructor(
     @inject('secretKey') private secretKey: string,
