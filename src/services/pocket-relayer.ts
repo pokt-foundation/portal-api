@@ -129,6 +129,12 @@ export class PocketRelayer {
     const limitation = await this.enforceLimits(parsedRawData, blockchain)
 
     if (limitation instanceof LimitError) {
+      logger.log('error', 'Method limitations exceeded: ' + parsedRawData.method, {
+        requestID: requestID,
+        relayType: 'APP',
+        typeID: application.id,
+        serviceNode: '',
+      })
       return limitation
     }
     const data = JSON.stringify(parsedRawData)
