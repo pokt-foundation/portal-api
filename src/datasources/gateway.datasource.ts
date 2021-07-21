@@ -1,7 +1,11 @@
-import { inject, lifeCycleObserver, LifeCycleObserver } from '@loopback/core'
+import { inject, lifeCycleObserver, LifeCycleObserver, Context } from '@loopback/core'
 import { juggler } from '@loopback/repository'
 import { HttpErrors } from '@loopback/rest'
 
+// FIXME: on testing, the environment variable has to be set manually to a dummy
+// due to the loopback loading data sources loaded before any code from us, so
+// we cannot intercept the instance to mock the value or do anything else.
+// Try to find a way to intercept the instance before is loaded
 const mongoEndpoint: string = process.env.MONGO_ENDPOINT ?? ''
 
 if (!mongoEndpoint) {

@@ -1,6 +1,4 @@
-import { Binding } from '@loopback/context'
 import {
-  Context,
   inject,
   /* inject, Application, CoreBindings, */
   lifeCycleObserver, // The decorator
@@ -47,11 +45,10 @@ export class EnvironmentObserver implements LifeCycleObserver {
    * called at most once for a given application instance.
    */
   async init(
-    @inject('configuration.environment.load') load: any,
-    @inject('configuration.environment.values') configValues: any
+    @inject('configuration.environment.load') load: boolean,
+    @inject('configuration.environment.values') configValues: object
   ): Promise<void> {
     // TODO: Find a coherent API to bind the global context on the observer
-
     if (!load) {
       return
     }

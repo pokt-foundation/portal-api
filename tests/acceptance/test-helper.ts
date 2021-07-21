@@ -1,8 +1,40 @@
 import { PocketGatewayApplication } from '../../src/application'
 import { createRestAppClient, givenHttpServerConfig, Client } from '@loopback/testlab'
-import { testdb } from '../fixtures/testdb.datasource'
+import { gatewayTestDB } from '../fixtures/test.datasource'
 import RedisMock from 'ioredis-mock'
 import rewiremock from 'rewiremock'
+
+export async function setupApplication(): Promise<AppWithClient> {
+  const restConfig = givenHttpServerConfig()
+
+  const appWithMock = rewiremock.proxy(() => require('../../src/application'), {
+    ioredis: RedisMock,
+  })
+
+  const app = new appWithMock.PocketGatewayApplication({
+    rest: restConfig,
+    env: {
+      load: false,
+      values: localEnv,
+    },
+  })
+
+  await app.boot()
+
+  app.dataSource(gatewayTestDB)
+
+  await app.start()
+  await app.loadPocket()
+
+  const client = createRestAppClient(app)
+
+  return { app, client }
+}
+
+export interface AppWithClient {
+  app: PocketGatewayApplication
+  client: Client
+}
 
 const localEnv = {
   NODE_ENV: 'development',
@@ -37,55 +69,4 @@ const localEnv = {
   POCKET_RELAY_RETRIES: 0,
   DEFAULT_SYNC_ALLOWANCE: 5,
   AAT_PLAN: 'freemium',
-}
-
-export async function setupApplication(mockDB = true, mockRedis = true): Promise<AppWithClient> {
-  const restConfig = givenHttpServerConfig({
-    // Customize the server configuration here.
-    // Empty values (undefined, '') will be ignored by the helper.
-    //
-    // host: process.env.HOST,
-    // port: +process.env.PORT,
-  })
-
-  let app: PocketGatewayApplication
-
-  if (!mockRedis) {
-    const appWithMock = rewiremock.proxy(() => require('../../src/application'), {
-      ioredis: RedisMock,
-    })
-
-    app = new appWithMock.PocketGatewayApplication({
-      rest: restConfig,
-      env: {
-        load: false,
-        values: localEnv,
-      },
-    })
-  } else {
-    app = new PocketGatewayApplication({
-      rest: restConfig,
-      env: {
-        load: false,
-        values: localEnv,
-      },
-    })
-  }
-
-  await app.boot()
-  await app.start()
-  await app.loadPocket()
-
-  const client = createRestAppClient(app)
-
-  if (mockDB) {
-    app.dataSource(testdb)
-  }
-
-  return { app, client }
-}
-
-export interface AppWithClient {
-  app: PocketGatewayApplication
-  client: Client
 }

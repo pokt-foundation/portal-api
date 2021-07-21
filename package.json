@@ -28,6 +28,7 @@
     "eslint:fix": "npm run eslint -- --fix",
     "pretest": "npm run clean && npm run build",
     "test": "lb-mocha --allow-console-logs \"dist/tests\"",
+    "mocha": "lb-tsc && MONGO_ENDPOINT=test mocha --allow-console-logs --recursive dist/tests",
     "posttest": "npm run lint && npm run lint:fix",
     "test:dev": "lb-mocha --allow-console-logs dist/tests/**/*.js && npm run posttest",
     "docker:build": "docker build -t pocket-gateway .",
