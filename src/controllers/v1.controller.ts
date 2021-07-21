@@ -40,6 +40,7 @@ export class V1Controller {
     @inject('requestID') private requestID: string,
     @inject('defaultSyncAllowance') private defaultSyncAllowance: number,
     @inject('aatPlan') private aatPlan: string,
+    @inject('redirects') private redirects: string,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -78,6 +79,35 @@ export class V1Controller {
       altruists: this.altruists,
       aatPlan: this.aatPlan,
     })
+  }
+
+  /**
+   * Redirect simple URLs to specific Load Balancers
+   */
+  @post('/')
+  async redirect(
+    @requestBody({
+      description: 'Relay Request',
+      required: true,
+      content: {
+        'application/json': {
+          'x-parser': 'raw',
+        },
+      },
+    })
+    rawData: object
+  ): Promise<string | Error> {
+    if (!this.redirects) {
+      return new Error('No redirect domains allowed')
+    }
+
+    for (const redirect of JSON.parse(this.redirects)) {
+      if (this.pocketRelayer.host.toLowerCase().includes(redirect.domain, 0)) {
+        this.pocketRelayer.host = redirect.blockchain
+        return this.loadBalancerRelay(redirect.loadBalancerID, rawData)
+      }
+    }
+    return new Error('Invalid domain')
   }
 
   /**

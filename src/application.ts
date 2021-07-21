@@ -58,6 +58,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const databaseEncryptionKey: string = process.env.DATABASE_ENCRYPTION_KEY || ''
     const defaultSyncAllowance: number = parseInt(process.env.DEFAULT_SYNC_ALLOWANCE) || -1
     const aatPlan = process.env.AAT_PLAN || AatPlans.PREMIUM
+    const redirects = process.env.REDIRECTS || '' // Can be empty
 
     if (!dispatchURL) {
       throw new HttpErrors.InternalServerError('DISPATCH_URL required in ENV')
@@ -121,6 +122,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('altruists').to(altruists)
     this.bind('logger').to(logger)
     this.bind('defaultSyncAllowance').to(defaultSyncAllowance)
+    this.bind('redirects').to(redirects)
 
     // Unlock primary client account for relay signing
     try {
