@@ -17,8 +17,8 @@ interface Log {
   elapsedTime: number
 }
 
-const environment: string = process.env.NODE_ENV ?? 'production'
-const logzToken: string = process.env.LOGZ_TOKEN ?? ''
+const environment: string = process.env.NODE_ENV || 'production'
+const logzToken: string = process.env.LOGZ_TOKEN || ''
 
 if (!logzToken && environment === 'production') {
   throw new HttpErrors.InternalServerError('LOGZ_TOKEN required in ENV')
@@ -26,6 +26,7 @@ if (!logzToken && environment === 'production') {
 
 const timestampUTC = () => {
   const timestamp = new Date()
+
   return timestamp.toISOString()
 }
 

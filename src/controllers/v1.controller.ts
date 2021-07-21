@@ -8,7 +8,7 @@ import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
 import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
-import { PocketRelayer } from '../services/pocket-relayer'
+import { PocketRelayer, SendRelayOptions } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
 import { ChainChecker } from '../services/chain-checker'
 
@@ -38,6 +38,7 @@ export class V1Controller {
     @inject('processUID') private processUID: string,
     @inject('altruists') private altruists: string,
     @inject('requestID') private requestID: string,
+    @inject('defaultSyncAllowance') private defaultSyncAllowance: number,
     @inject('aatPlan') private aatPlan: string,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
@@ -56,7 +57,7 @@ export class V1Controller {
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
     })
-    this.syncChecker = new SyncChecker(this.redis, this.metricsRecorder)
+    this.syncChecker = new SyncChecker(this.redis, this.metricsRecorder, this.defaultSyncAllowance)
     this.chainChecker = new ChainChecker(this.redis, this.metricsRecorder)
     this.pocketRelayer = new PocketRelayer({
       host: this.host,
@@ -127,11 +128,13 @@ export class V1Controller {
 
     try {
       const loadBalancer = await this.fetchLoadBalancer(id, filter)
+
       if (loadBalancer?.id) {
-        // eslint-disable-next-line
         const {
           blockchain,
+          // eslint-disable-next-line
           blockchainEnforceResult: _enforceResult,
+          // eslint-disable-next-line
           blockchainSyncCheck: _syncCheck,
         } = await this.pocketRelayer.loadBlockchain()
         // Fetch applications contained in this Load Balancer. Verify they exist and choose
@@ -142,17 +145,20 @@ export class V1Controller {
           blockchain,
           filter
         )
+
         if (application?.id) {
-          return this.pocketRelayer.sendRelay(
+          const options: SendRelayOptions = {
             rawData,
-            this.relayPath,
-            this.httpMethod,
-            application,
-            this.requestID,
-            parseInt(loadBalancer.requestTimeOut),
-            parseInt(loadBalancer.overallTimeOut),
-            parseInt(loadBalancer.relayRetries)
-          )
+            relayPath: this.relayPath,
+            httpMethod: this.httpMethod,
+            application: application,
+            requestID: this.requestID,
+            requestTimeOut: parseInt(loadBalancer.requestTimeOut),
+            overallTimeOut: parseInt(loadBalancer.overallTimeOut),
+            relayRetries: parseInt(loadBalancer.relayRetries),
+          }
+
+          return await this.pocketRelayer.sendRelay(options)
         }
       }
     } catch (e) {
@@ -221,8 +227,17 @@ export class V1Controller {
 
     try {
       const application = await this.fetchApplication(id, filter)
+
       if (application?.id) {
-        return this.pocketRelayer.sendRelay(rawData, this.relayPath, this.httpMethod, application, this.requestID)
+        const sendRelayOptions: SendRelayOptions = {
+          rawData,
+          application,
+          relayPath: this.relayPath,
+          httpMethod: this.httpMethod,
+          requestID: this.requestID,
+        }
+
+        return await this.pocketRelayer.sendRelay(sendRelayOptions)
       }
     } catch (e) {
       logger.log('error', e.message, {
@@ -248,6 +263,7 @@ export class V1Controller {
 
     if (!cachedLoadBalancer) {
       const loadBalancer = await this.loadBalancersRepository.findById(id, filter)
+
       if (loadBalancer?.id) {
         await this.redis.set(id, JSON.stringify(loadBalancer), 'EX', 60)
         return new LoadBalancers(loadBalancer)
@@ -263,6 +279,7 @@ export class V1Controller {
 
     if (!cachedApplication) {
       const application = await this.applicationsRepository.findById(id, filter)
+
       if (application?.id) {
         await this.redis.set(id, JSON.stringify(application), 'EX', 60)
         return new Applications(application)
@@ -286,6 +303,7 @@ export class V1Controller {
     if (!cachedLoadBalancerApplicationIDs) {
       for (const applicationID of applicationIDs) {
         const application = await this.fetchApplication(applicationID, filter)
+
         if (application?.id) {
           verifiedIDs.push(application.id)
         }
@@ -310,7 +328,7 @@ export class V1Controller {
 
   // Debug log for testing based on user agent
   checkDebug(): boolean {
-    if (this.userAgent && this.userAgent.toLowerCase().includes('pocket-debug')) {
+    if (this.userAgent?.toLowerCase().includes('pocket-debug')) {
       return true
     }
     return false

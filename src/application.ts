@@ -44,18 +44,20 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     // Requirements; for Production these are stored in GitHub repo secrets
     //
     // For Dev, you need to pass them in via .env file
-    const environment: string = process.env.NODE_ENV ?? 'production'
+    const environment: string = process.env.NODE_ENV || 'production'
+
     logger.log('info', 'Environment: ' + environment)
 
-    const dispatchURL: string = process.env.DISPATCH_URL ?? ''
-    const altruists: string = process.env.ALTRUISTS ?? ''
-    const clientPrivateKey: string = process.env.GATEWAY_CLIENT_PRIVATE_KEY ?? ''
-    const clientPassphrase: string = process.env.GATEWAY_CLIENT_PASSPHRASE ?? ''
-    const pocketSessionBlockFrequency: string = process.env.POCKET_SESSION_BLOCK_FREQUENCY ?? ''
-    const pocketBlockTime: string = process.env.POCKET_BLOCK_TIME ?? ''
-    const relayRetries: string = process.env.POCKET_RELAY_RETRIES ?? ''
-    const databaseEncryptionKey: string = process.env.DATABASE_ENCRYPTION_KEY ?? ''
-    const aatPlan = process.env.AAT_PLAN ?? AatPlans.PREMIUM
+    const dispatchURL: string = process.env.DISPATCH_URL || ''
+    const altruists: string = process.env.ALTRUISTS || ''
+    const clientPrivateKey: string = process.env.GATEWAY_CLIENT_PRIVATE_KEY || ''
+    const clientPassphrase: string = process.env.GATEWAY_CLIENT_PASSPHRASE || ''
+    const pocketSessionBlockFrequency: string = process.env.POCKET_SESSION_BLOCK_FREQUENCY || ''
+    const pocketBlockTime: string = process.env.POCKET_BLOCK_TIME || ''
+    const relayRetries: string = process.env.POCKET_RELAY_RETRIES || ''
+    const databaseEncryptionKey: string = process.env.DATABASE_ENCRYPTION_KEY || ''
+    const defaultSyncAllowance: number = parseInt(process.env.DEFAULT_SYNC_ALLOWANCE) || -1
+    const aatPlan = process.env.AAT_PLAN || AatPlans.PREMIUM
 
     if (!dispatchURL) {
       throw new HttpErrors.InternalServerError('DISPATCH_URL required in ENV')
@@ -78,6 +80,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     if (!databaseEncryptionKey) {
       throw new HttpErrors.InternalServerError('DATABASE_ENCRYPTION_KEY required in ENV')
     }
+    if (defaultSyncAllowance < 0) {
+      throw new HttpErrors.InternalServerError('DEFAULT_SYNC_ALLOWANCE required in ENV')
+    }
     if (aatPlan !== AatPlans.PREMIUM && !AatPlans.values.includes(aatPlan)) {
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
     }
@@ -86,6 +91,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     if (dispatchURL.indexOf(',')) {
       const dispatcherArray = dispatchURL.split(',')
+
       dispatcherArray.forEach(function (dispatcher) {
         dispatchers.push(new URL(dispatcher))
       })
@@ -114,10 +120,12 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('relayRetries').to(parseInt(relayRetries))
     this.bind('altruists').to(altruists)
     this.bind('logger').to(logger)
+    this.bind('defaultSyncAllowance').to(defaultSyncAllowance)
 
     // Unlock primary client account for relay signing
     try {
       const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase)
+
       if (importAccount instanceof Account) {
         await pocket.keybase.unlockAccount(importAccount.addressHex, clientPassphrase, 0)
       }
@@ -137,6 +145,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       throw new HttpErrors.InternalServerError('REDIS_PORT required in ENV')
     }
     const redis = new Redis(parseInt(redisPort), redisEndpoint)
+
     this.bind('redisInstance').to(redis)
 
     // Load Postgres for TimescaleDB metrics
@@ -159,11 +168,12 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       if (!cachedCertificate) {
         try {
           const s3Certificate = await got(pgCertificate)
+
           publicCertificate = s3Certificate.body
         } catch (e) {
           throw new HttpErrors.InternalServerError('Invalid Certificate')
         }
-        redis.set('timescaleDBCertificate', publicCertificate, 'EX', 600)
+        await redis.set('timescaleDBCertificate', publicCertificate, 'EX', 600)
       } else {
         publicCertificate = cachedCertificate
       }
@@ -190,6 +200,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     // Create a UID for this process
     const parts = [os.hostname(), process.pid, +new Date()]
     const hash = crypto.createHash('md5').update(parts.join(''))
+
     this.bind('processUID').to(hash.digest('hex'))
   }
 }

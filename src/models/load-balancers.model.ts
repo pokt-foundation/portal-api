@@ -39,6 +39,7 @@ export class LoadBalancers extends Entity {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface LoadBalancersRelations {
   // describe navigational properties here
 }

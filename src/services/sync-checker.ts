@@ -2,55 +2,54 @@ import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } fro
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
 import { checkEnforcementJSON } from '../utils'
-var crypto = require('crypto')
+import crypto from 'crypto'
 
 const logger = require('../services/logger')
+
 import axios from 'axios'
 
 export class SyncChecker {
   redis: Redis
   metricsRecorder: MetricsRecorder
+  defaultSyncAllowance: number
 
-  constructor(redis: Redis, metricsRecorder: MetricsRecorder) {
+  constructor(redis: Redis, metricsRecorder: MetricsRecorder, defaultSyncAllowance: number) {
     this.redis = redis
     this.metricsRecorder = metricsRecorder
+    this.defaultSyncAllowance = defaultSyncAllowance
   }
 
-  async consensusFilter(
-    nodes: Node[],
-    requestID: string,
-    syncCheck: string,
-    syncCheckPath: string,
-    syncAllowance: number = 5,
-    blockchain: string,
-    blockchainSyncBackup: string,
-    applicationID: string,
-    applicationPublicKey: string,
-    pocket: Pocket,
-    pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration
-  ): Promise<Node[]> {
+  async consensusFilter({
+    nodes,
+    requestID,
+    syncCheck,
+    syncCheckPath,
+    syncAllowance = 5,
+    blockchain,
+    blockchainSyncBackup,
+    applicationID,
+    applicationPublicKey,
+    pocket,
+    pocketAAT,
+    pocketConfiguration,
+  }: ConsensusFilterOptions): Promise<Node[]> {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
-    if (syncAllowance <= 0) {
-      syncAllowance = 5
-    }
+    syncAllowance = syncAllowance <= 0 ? syncAllowance : this.defaultSyncAllowance
 
-    let syncedNodes: Node[] = []
-    let syncedNodesList: String[] = []
+    const syncedNodes: Node[] = []
+    let syncedNodesList: string[] = []
 
     // Key is "blockchain - a hash of the all the nodes in this session, sorted by public key"
     // Value is an array of node public keys that have passed sync checks for this session in the past 5 minutes
+
+    const sortedNodes = nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0))
+
     const syncedNodesKey =
       blockchain +
       '-' +
       crypto
         .createHash('sha256')
-        .update(
-          JSON.stringify(
-            nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0)),
-            (k, v) => (k != 'publicKey' ? v : undefined)
-          )
-        )
+        .update(JSON.stringify(sortedNodes, (k, v) => (k !== 'publicKey' ? v : undefined)))
         .digest('hex')
     const syncedNodesCached = await this.redis.get(syncedNodesKey)
 
@@ -68,6 +67,7 @@ export class SyncChecker {
     // Cache is stale, start a new cache fill
     // First check cache lock key; if lock key exists, return full node set
     const syncLock = await this.redis.get('lock-' + syncedNodesKey)
+
     if (syncLock) {
       return nodes
     } else {
@@ -172,7 +172,7 @@ export class SyncChecker {
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
     for (const nodeSyncLog of nodeSyncLogs) {
-      let relayStart = process.hrtime()
+      const relayStart = process.hrtime()
 
       if (nodeSyncLog.blockHeight + syncAllowance >= currentBlockHeight) {
         logger.log(
@@ -212,7 +212,7 @@ export class SyncChecker {
         await this.metricsRecorder.recordMetric({
           requestID: requestID,
           applicationID: applicationID,
-          appPubKey: applicationPublicKey,
+          applicationPublicKey: applicationPublicKey,
           blockchain,
           serviceNode: nodeSyncLog.node.publicKey,
           relayStart,
@@ -256,6 +256,7 @@ export class SyncChecker {
         true,
         'synccheck'
       )
+
       logger.log('info', 'SYNC CHECK CHALLENGE: ' + JSON.stringify(consensusResponse), {
         requestID: requestID,
         relayType: '',
@@ -313,7 +314,13 @@ export class SyncChecker {
     const promiseStack: Promise<NodeSyncLog>[] = []
 
     // Set to junk values first so that the Promise stack can fill them later
-    let rawNodeSyncLogs: any[] = [0, 0, 0, 0, 0]
+    const rawNodeSyncLogs: NodeSyncLog[] = [
+      <NodeSyncLog>{},
+      <NodeSyncLog>{},
+      <NodeSyncLog>{},
+      <NodeSyncLog>{},
+      <NodeSyncLog>{},
+    ]
 
     for (const node of nodes) {
       promiseStack.push(
@@ -332,13 +339,8 @@ export class SyncChecker {
       )
     }
 
-    ;[
-      rawNodeSyncLogs[0],
-      rawNodeSyncLogs[1],
-      rawNodeSyncLogs[2],
-      rawNodeSyncLogs[3],
-      rawNodeSyncLogs[4],
-    ] = await Promise.all(promiseStack)
+    ;[rawNodeSyncLogs[0], rawNodeSyncLogs[1], rawNodeSyncLogs[2], rawNodeSyncLogs[3], rawNodeSyncLogs[4]] =
+      await Promise.all(promiseStack)
 
     for (const rawNodeSyncLog of rawNodeSyncLogs) {
       if (typeof rawNodeSyncLog === 'object' && rawNodeSyncLog.blockHeight > 0) {
@@ -370,7 +372,7 @@ export class SyncChecker {
     })
 
     // Pull the current block from each node using the blockchain's syncCheck as the relay
-    let relayStart = process.hrtime()
+    const relayStart = process.hrtime()
 
     const relayResponse = await pocket.sendRelay(
       syncCheck,
@@ -398,6 +400,7 @@ export class SyncChecker {
         blockchain: blockchain,
         blockHeight,
       } as NodeSyncLog
+
       logger.log('info', 'SYNC CHECK RESULT: ' + JSON.stringify(nodeSyncLog), {
         requestID: requestID,
         relayType: '',
@@ -420,6 +423,7 @@ export class SyncChecker {
       })
 
       let error = relayResponse.message
+
       if (typeof relayResponse.message === 'object') {
         error = JSON.stringify(relayResponse.message)
       }
@@ -427,7 +431,7 @@ export class SyncChecker {
       await this.metricsRecorder.recordMetric({
         requestID: requestID,
         applicationID: applicationID,
-        appPubKey: applicationPublicKey,
+        applicationPublicKey: applicationPublicKey,
         blockchain,
         serviceNode: node.publicKey,
         relayStart,
@@ -451,7 +455,7 @@ export class SyncChecker {
       await this.metricsRecorder.recordMetric({
         requestID: requestID,
         applicationID: applicationID,
-        appPubKey: applicationPublicKey,
+        applicationPublicKey: applicationPublicKey,
         blockchain,
         serviceNode: node.publicKey,
         relayStart,
@@ -469,10 +473,11 @@ export class SyncChecker {
       blockchain: blockchain,
       blockHeight: 0,
     } as NodeSyncLog
+
     return nodeSyncLog
   }
 
-  updateConfigurationConsensus(pocketConfiguration: Configuration) {
+  updateConfigurationConsensus(pocketConfiguration: Configuration): Configuration {
     return new Configuration(
       pocketConfiguration.maxDispatchers,
       pocketConfiguration.maxSessions,
@@ -487,7 +492,7 @@ export class SyncChecker {
     )
   }
 
-  updateConfigurationTimeout(pocketConfiguration: Configuration) {
+  updateConfigurationTimeout(pocketConfiguration: Configuration): Configuration {
     return new Configuration(
       pocketConfiguration.maxDispatchers,
       pocketConfiguration.maxSessions,
@@ -507,4 +512,19 @@ type NodeSyncLog = {
   node: Node
   blockchain: string
   blockHeight: number
+}
+
+export type ConsensusFilterOptions = {
+  nodes: Node[]
+  requestID: string
+  syncCheck: string
+  syncCheckPath: string
+  syncAllowance: number
+  blockchain: string
+  blockchainSyncBackup: string
+  applicationID: string
+  applicationPublicKey: string
+  pocket: Pocket
+  pocketAAT: PocketAAT
+  pocketConfiguration: Configuration
 }

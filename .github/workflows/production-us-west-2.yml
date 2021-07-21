@@ -41,6 +41,8 @@ jobs:
           envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
           envkey_POCKET_BLOCK_TIME: 1038000
           envkey_POCKET_RELAY_RETRIES: 0
+          envkey_DEFAULT_SYNC_ALLOWANCE: 5
+          envkey_NODE_TLS_REJECT_UNAUTHORIZED: 0
           envkey_AAT_PLAN: 'premium'
           envkey_NODE_ENV: 'production'
           file_name: .env
