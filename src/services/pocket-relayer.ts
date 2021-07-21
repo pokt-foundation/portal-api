@@ -9,8 +9,9 @@ import { Redis } from 'ioredis'
 import { BlockchainsRepository } from '../repositories'
 import { Applications } from '../models'
 import { RelayError } from '../errors/relay-error'
+import { LimitError } from '../errors/limit-error'
 import AatPlans from '../config/aat-plans.json'
-import { checkEnforcementJSON } from '../utils'
+import { checkEnforcementJSON, getBlockNumber, blockHexToDecimal } from '../utils'
 
 import { JSONObject } from '@loopback/context'
 
@@ -125,6 +126,14 @@ export class PocketRelayer {
     // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
 
     const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
+    const limitation = await this.enforceLimits(parsedRawData, blockchain)
+
+    console.log(`Limitation: ${limitation}`)
+    if (limitation instanceof LimitError) {
+      console.log('Returning Limitation...')
+      return limitation
+    }
+
     const data = JSON.stringify(parsedRawData)
     const method = this.parseMethod(parsedRawData)
     const fallbackAvailable = this.altruists[blockchain] !== undefined ? true : false
@@ -235,6 +244,7 @@ export class PocketRelayer {
           ? this.altruists[blockchain]
           : `${this.altruists[blockchain]}/${relayPath}`
 
+      console.log('altruist:', altruistURL)
       // Remove user/pass from the altruist URL
       const redactedAltruistURL = String(this.altruists[blockchain])?.replace(/[\w]*:\/\/[^\/]*@/g, '')
 
@@ -560,7 +570,7 @@ export class PocketRelayer {
     )
   }
 
-  // Load requested blockchain by parsing the URL
+  // Load requested blockchain by pxarsing the URL
   async loadBlockchain(): Promise<BlockchainDetails> {
     // Load the requested blockchain
     const cachedBlockchains = await this.redis.get('blockchains')
@@ -620,6 +630,27 @@ export class PocketRelayer {
       })
     } else {
       throw new HttpErrors.BadRequest('Incorrect blockchain: ' + this.host)
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async enforceLimits(parsedRawData: Record<string, any>, blockchain: string): Promise<string | LimitError> {
+    console.log('Enforcing limits...')
+    if (parsedRawData.method === 'eth_getLogs') {
+      const altruistUrl = String(this.altruists[blockchain])
+      let [{ fromBlock, toBlock }] = parsedRawData.params as [{ fromBlock: string; toBlock: string }]
+
+      if (fromBlock === 'latest' && altruistUrl !== 'undefined') {
+        fromBlock = String(await getBlockNumber(altruistUrl))
+      } else if (toBlock === 'latest' && altruistUrl !== 'undefined') {
+        toBlock = String(await getBlockNumber(altruistUrl))
+      } else {
+        return new LimitError('Please use an explicit block number instead of latest')
+      }
+
+      if (blockHexToDecimal(toBlock) - blockHexToDecimal(fromBlock) > 10000) {
+        return new LimitError('You cannot query more than 10,000 blocks at once.')
+      }
     }
   }
 
