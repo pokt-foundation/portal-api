@@ -570,7 +570,7 @@ export class PocketRelayer {
     )
   }
 
-  // Load requested blockchain by pxarsing the URL
+  // Load requested blockchain by parsing the URL
   async loadBlockchain(): Promise<BlockchainDetails> {
     // Load the requested blockchain
     const cachedBlockchains = await this.redis.get('blockchains')
