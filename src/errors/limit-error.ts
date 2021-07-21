@@ -3,8 +3,12 @@
  * @class LimitError
  */
 export class LimitError extends Error {
-  constructor(message: string) {
-    super(message)
+  method: string
+  message: string
+  constructor(message: string, method: string) {
+    super()
     this.name = 'LimitError'
+    this.message = message
+    this.method = method
   }
 }

@@ -635,18 +635,17 @@ export class PocketRelayer {
       const altruistUrl = String(this.altruists[blockchain])
       let [{ fromBlock, toBlock }] = parsedRawData.params as [{ fromBlock: string; toBlock: string }]
 
-      console.log(fromBlock, typeof fromBlock)
-      // If fromBlock or toBlock is equal to 'undefined' it defaults to latest.
+      // If fromBlock or toBlock is equal to undefined it defaults to latest.
       if ((fromBlock === 'latest' || fromBlock === undefined) && altruistUrl !== 'undefined') {
         fromBlock = String(await getBlockNumber(altruistUrl))
       } else if ((toBlock === 'latest' || toBlock === undefined) && altruistUrl !== 'undefined') {
         toBlock = String(await getBlockNumber(altruistUrl))
       } else {
-        return new LimitError('Please use an explicit block number instead of latest')
+        return new LimitError('Please use an explicit block number instead of latest', parsedRawData.method)
       }
 
       if (blockHexToDecimal(toBlock) - blockHexToDecimal(fromBlock) > 10000) {
-        return new LimitError('You cannot query logs for more than 10,000 blocks at once.')
+        return new LimitError('You cannot query logs for more than 10,000 blocks at once.', parsedRawData.method)
       }
     }
   }
