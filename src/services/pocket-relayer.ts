@@ -128,9 +128,7 @@ export class PocketRelayer {
     const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
     const limitation = await this.enforceLimits(parsedRawData, blockchain)
 
-    console.log(`Limitation: ${limitation}`)
     if (limitation instanceof LimitError) {
-      console.log('Returning Limitation...')
       return limitation
     }
 
@@ -244,7 +242,6 @@ export class PocketRelayer {
           ? this.altruists[blockchain]
           : `${this.altruists[blockchain]}/${relayPath}`
 
-      console.log('altruist:', altruistURL)
       // Remove user/pass from the altruist URL
       const redactedAltruistURL = String(this.altruists[blockchain])?.replace(/[\w]*:\/\/[^\/]*@/g, '')
 
@@ -635,7 +632,6 @@ export class PocketRelayer {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async enforceLimits(parsedRawData: Record<string, any>, blockchain: string): Promise<string | LimitError> {
-    console.log('Enforcing limits...')
     if (parsedRawData.method === 'eth_getLogs') {
       const altruistUrl = String(this.altruists[blockchain])
       let [{ fromBlock, toBlock }] = parsedRawData.params as [{ fromBlock: string; toBlock: string }]
