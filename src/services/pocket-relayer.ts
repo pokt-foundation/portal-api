@@ -131,7 +131,6 @@ export class PocketRelayer {
     if (limitation instanceof LimitError) {
       return limitation
     }
-
     const data = JSON.stringify(parsedRawData)
     const method = this.parseMethod(parsedRawData)
     const fallbackAvailable = this.altruists[blockchain] !== undefined ? true : false
@@ -645,7 +644,7 @@ export class PocketRelayer {
       }
 
       if (blockHexToDecimal(toBlock) - blockHexToDecimal(fromBlock) > 10000) {
-        return new LimitError('You cannot query more than 10,000 blocks at once.')
+        return new LimitError('You cannot query logs for more than 10,000 blocks at once.')
       }
     }
   }
