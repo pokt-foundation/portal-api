@@ -635,9 +635,11 @@ export class PocketRelayer {
       const altruistUrl = String(this.altruists[blockchain])
       let [{ fromBlock, toBlock }] = parsedRawData.params as [{ fromBlock: string; toBlock: string }]
 
-      if (fromBlock === 'latest' && altruistUrl !== 'undefined') {
+      console.log(fromBlock, typeof fromBlock)
+      // If fromBlock or toBlock is equal to 'undefined' it defaults to latest.
+      if ((fromBlock === 'latest' || fromBlock === undefined) && altruistUrl !== 'undefined') {
         fromBlock = String(await getBlockNumber(altruistUrl))
-      } else if (toBlock === 'latest' && altruistUrl !== 'undefined') {
+      } else if ((toBlock === 'latest' || toBlock === undefined) && altruistUrl !== 'undefined') {
         toBlock = String(await getBlockNumber(altruistUrl))
       } else {
         return new LimitError('Please use an explicit block number instead of latest')
