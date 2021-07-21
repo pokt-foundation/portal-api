@@ -79,7 +79,7 @@
     "got": "^11.1.4",
     "ioredis": "^4.16.3",
     "log-timestamp": "^0.3.0",
-    "loopback-connector-mongodb": "^5.2.3",
+    "loopback-connector-mongodb": "^6.0.0",
     "pg": "^8.2.1",
     "pg-format": "^1.0.4",
     "s3-streamlogger": "^1.7.0",
