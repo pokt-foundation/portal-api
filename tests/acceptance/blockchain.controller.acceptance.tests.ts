@@ -62,7 +62,7 @@ describe('Blockchain (acceptance)', () => {
     expect(res.body.count).to.equal(5)
   })
 
-  it('retrieves the information of an specific blockchain', async () => {
+  it('retrieves the information of a specific blockchain', async () => {
     const [blockchain] = await generateBlockchains(1)
 
     const res = await client.get(`/blockchains/${blockchain.hash}`).expect(200)
