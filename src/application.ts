@@ -64,6 +64,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       POCKET_RELAY_RETRIES,
       DEFAULT_SYNC_ALLOWANCE,
       AAT_PLAN,
+      REDIRECTS,
     } = await this.get('configuration.environment.values')
 
     const environment: string = NODE_ENV || 'production'
@@ -77,6 +78,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const databaseEncryptionKey: string = DATABASE_ENCRYPTION_KEY || ''
     const defaultSyncAllowance: number = parseInt(DEFAULT_SYNC_ALLOWANCE) || -1
     const aatPlan = AAT_PLAN || AatPlans.PREMIUM
+    const redirects = REDIRECTS || '' // Can be empty
 
     if (!dispatchURL) {
       throw new HttpErrors.InternalServerError('DISPATCH_URL required in ENV')
@@ -140,6 +142,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('altruists').to(altruists)
     this.bind('logger').to(logger)
     this.bind('defaultSyncAllowance').to(defaultSyncAllowance)
+    this.bind('redirects').to(redirects)
 
     // Unlock primary client account for relay signing
     try {
