@@ -646,7 +646,7 @@ export class PocketRelayer {
         fromBlock = String(await getBlockNumber(altruistUrl))
       } else if ((toBlock === 'latest' || toBlock === undefined) && altruistUrl !== 'undefined') {
         toBlock = String(await getBlockNumber(altruistUrl))
-      } else {
+      } else if ((toBlock === 'latest' || toBlock === undefined) && altruistUrl === 'undefined') {
         return new LimitError('Please use an explicit block number instead of latest', parsedRawData.method)
       }
 
