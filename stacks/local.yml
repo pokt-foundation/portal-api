@@ -65,10 +65,10 @@ services:
     volumes:
       - influxdb:/.influxdbv2
     ports:
-      - "8086:8086"
+      - '8086:8086'
     networks:
       - pocket
-      
+
   influxdb_cli:
     links:
       - influxdb

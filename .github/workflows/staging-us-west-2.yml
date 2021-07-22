@@ -49,7 +49,7 @@ jobs:
           envkey_REGION: 'staging'
           envkey_INFLUX_URL: 'https://eu-central-1-1.aws.cloud2.influxdata.com'
           envkey_INFLUX_ORG: 'pocket'
-          envkey_INFLUX_TOKEN: ${{ secrets.INFLUX TOKEN }}
+          envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
