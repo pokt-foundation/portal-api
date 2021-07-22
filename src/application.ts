@@ -64,7 +64,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       POCKET_RELAY_RETRIES,
       DEFAULT_SYNC_ALLOWANCE,
       AAT_PLAN,
-    } = (await this.get('configuration.environment.values')) as any
+    } = await this.get('configuration.environment.values')
 
     const environment: string = NODE_ENV || 'production'
     const dispatchURL: string = DISPATCH_URL || ''

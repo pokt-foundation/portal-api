@@ -5,7 +5,7 @@ const logger = require('./services/logger')
 
 export { PocketGatewayApplication }
 
-export async function main(options: ApplicationConfig = {}) {
+export async function main(options: ApplicationConfig = {}): Promise<PocketGatewayApplication> {
   options.env = { load: true }
 
   const app = new PocketGatewayApplication(options)
