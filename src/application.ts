@@ -24,6 +24,17 @@ import got from 'got'
 require('log-timestamp')
 require('dotenv').config()
 
+const DEFAULT_POCKET_CONFIG = {
+  MAX_DISPATCHERS: 50,
+  MAX_SESSIONS: 100000,
+  CONSENSUS_NODE_COUNT: 0,
+  REQUEST_TIMEOUT: 120000, // 3 minutes
+  ACCEPT_DISPUTED_RESPONSES: false,
+  VALIDATE_RELAY_RESPONSES: undefined,
+  REJECT_SELF_SIGNED_CERTIFICATES: undefined,
+  USE_LEGACY_TX_CODEC: true,
+}
+
 export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryMixin(RestApplication))) {
   constructor(options: ApplicationConfig = {}) {
     super(options)
@@ -121,16 +132,16 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     }
 
     const configuration = new Configuration(
-      50,
-      100000,
-      0,
-      1200000,
-      false,
+      DEFAULT_POCKET_CONFIG.MAX_DISPATCHERS,
+      DEFAULT_POCKET_CONFIG.MAX_SESSIONS,
+      DEFAULT_POCKET_CONFIG.CONSENSUS_NODE_COUNT,
+      DEFAULT_POCKET_CONFIG.REQUEST_TIMEOUT,
+      DEFAULT_POCKET_CONFIG.ACCEPT_DISPUTED_RESPONSES,
       parseInt(pocketSessionBlockFrequency),
       parseInt(pocketBlockTime),
-      undefined,
-      undefined,
-      false
+      DEFAULT_POCKET_CONFIG.VALIDATE_RELAY_RESPONSES,
+      DEFAULT_POCKET_CONFIG.REJECT_SELF_SIGNED_CERTIFICATES,
+      DEFAULT_POCKET_CONFIG.USE_LEGACY_TX_CODEC
     )
     const rpcProvider = new HttpRpcProvider(dispatchers[0])
     const pocket = new Pocket(dispatchers, rpcProvider, configuration)

@@ -1,42 +1,10 @@
-import { PocketGatewayApplication } from '../../src/application'
 import { createRestAppClient, givenHttpServerConfig, Client } from '@loopback/testlab'
-import { gatewayTestDB } from '../fixtures/test.datasource'
 import RedisMock from 'ioredis-mock'
 import rewiremock from 'rewiremock'
+import { PocketGatewayApplication } from '../../src/application'
+import { gatewayTestDB } from '../fixtures/test.datasource'
 
-export async function setupApplication(): Promise<AppWithClient> {
-  const restConfig = givenHttpServerConfig()
-
-  const appWithMock = rewiremock.proxy(() => require('../../src/application'), {
-    ioredis: RedisMock,
-  })
-
-  const app = new appWithMock.PocketGatewayApplication({
-    rest: restConfig,
-    env: {
-      load: false,
-      values: localEnv,
-    },
-  })
-
-  await app.boot()
-
-  app.dataSource(gatewayTestDB)
-
-  await app.start()
-  await app.loadPocket()
-
-  const client = createRestAppClient(app)
-
-  return { app, client }
-}
-
-export interface AppWithClient {
-  app: PocketGatewayApplication
-  client: Client
-}
-
-const localEnv = {
+const DUMMY_ENV = {
   NODE_ENV: 'development',
   GATEWAY_CLIENT_PRIVATE_KEY: 'v3rys3cr3tk3yud0nt3venkn0w',
   GATEWAY_CLIENT_PASSPHRASE: 'v3rys3cr3tp4ssphr4ze',
@@ -69,4 +37,36 @@ const localEnv = {
   POCKET_RELAY_RETRIES: 0,
   DEFAULT_SYNC_ALLOWANCE: 5,
   AAT_PLAN: 'freemium',
+}
+
+export async function setupApplication(): Promise<AppWithClient> {
+  const restConfig = givenHttpServerConfig()
+
+  const appWithMock = rewiremock.proxy(() => require('../../src/application'), {
+    ioredis: RedisMock,
+  })
+
+  const app = new appWithMock.PocketGatewayApplication({
+    rest: restConfig,
+    env: {
+      load: false,
+      values: DUMMY_ENV,
+    },
+  })
+
+  await app.boot()
+
+  app.dataSource(gatewayTestDB)
+
+  await app.start()
+  await app.loadPocket()
+
+  const client = createRestAppClient(app)
+
+  return { app, client }
+}
+
+export interface AppWithClient {
+  app: PocketGatewayApplication
+  client: Client
 }
