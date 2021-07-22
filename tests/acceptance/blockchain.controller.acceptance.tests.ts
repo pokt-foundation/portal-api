@@ -1,16 +1,18 @@
-import { PocketGatewayApplication } from '../..'
 import { Client, expect } from '@loopback/testlab'
-import { setupApplication } from './test-helper'
-import { gatewayTestDB } from '../fixtures/test.datasource'
-import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
 import { Blockchains } from '../../src/models/blockchains.model'
+import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
+import { gatewayTestDB } from '../fixtures/test.datasource'
+import { PocketGatewayApplication } from '../..'
+import { setupApplication } from './test-helper'
 
 describe('Blockchain (acceptance)', () => {
   let app: PocketGatewayApplication
   let client: Client
+  let blockchainRepository: BlockchainsRepository
 
   before('setupApplication', async () => {
     ;({ app, client } = await setupApplication())
+    blockchainRepository = new BlockchainsRepository(gatewayTestDB)
   })
 
   after(async () => {
@@ -18,7 +20,7 @@ describe('Blockchain (acceptance)', () => {
   })
 
   const cleanDB = async () => {
-    await new BlockchainsRepository(gatewayTestDB).deleteAll()
+    await blockchainRepository.deleteAll()
   }
 
   afterEach(cleanDB)
@@ -41,7 +43,7 @@ describe('Blockchain (acceptance)', () => {
       }
     )
 
-    await new BlockchainsRepository(gatewayTestDB).create(expected)
+    await blockchainRepository.create(expected)
 
     const res = await client.get('/blockchains').expect(200)
 
@@ -61,35 +63,18 @@ describe('Blockchain (acceptance)', () => {
   })
 
   it('retrieves the information of an specific blockchain', async () => {
-    const expected = Object.assign(
-      {},
-      {
-        _id: '0024',
-        ticker: 'POA',
-        networkID: '42',
-        network: 'POA-42',
-        description: 'Kovan',
-        index: 6,
-        blockchain: 'poa-kovan',
-        active: true,
-        enforceResult: 'JSON',
-        nodeCount: 23,
-        hash: '1234',
-      }
-    )
+    const [blockchain] = await generateBlockchains(1)
 
-    await new BlockchainsRepository(gatewayTestDB).create(expected)
-
-    const res = await client.get('/blockchains/1234').expect(200)
+    const res = await client.get(`/blockchains/${blockchain.hash}`).expect(200)
 
     expect(res.body).to.be.Object()
-    expect(res.body).to.containEql(expected)
+    expect(res.body).to.containEql(blockchain)
 
     // Blockchain that doesn't exist
     await client.get('/blockchains/nope').expect(404)
   })
 
-  async function generateBlockchains(amount: number): Promise<Partial<Blockchains>> {
+  async function generateBlockchains(amount: number): Promise<Partial<Blockchains>[]> {
     const blockchains = []
 
     for (let i = 0; i < amount; i++) {
@@ -104,6 +89,7 @@ describe('Blockchain (acceptance)', () => {
             description: 'Kovan',
             index: 6,
             blockchain: 'poa-kovan',
+            syncCheck: '',
             active: true,
             enforceResult: 'JSON',
             nodeCount: 23,
@@ -113,7 +99,7 @@ describe('Blockchain (acceptance)', () => {
       )
     }
 
-    const result = await new BlockchainsRepository(gatewayTestDB).createAll(blockchains)
+    const result = blockchainRepository.createAll(blockchains)
 
     return result
   }
