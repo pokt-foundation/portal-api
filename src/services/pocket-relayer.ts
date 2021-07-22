@@ -646,6 +646,7 @@ export class PocketRelayer {
         fromBlock = String(await getBlockNumber(altruistUrl))
       } else if ((toBlock === 'latest' || toBlock === undefined) && altruistUrl !== 'undefined') {
         toBlock = String(await getBlockNumber(altruistUrl))
+        // We cannot move forward if there is no altruist available.
       } else if (
         (toBlock === 'latest' || toBlock === undefined || fromBlock === 'latest' || fromBlock === undefined) &&
         altruistUrl === 'undefined'
