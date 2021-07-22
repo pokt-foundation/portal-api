@@ -46,6 +46,7 @@ jobs:
           envkey_NODE_TLS_REJECT_UNAUTHORIZED: 0
           envkey_AAT_PLAN: 'premium'
           envkey_NODE_ENV: 'production'
+          envkey_REGION: 'ap-se-1'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR

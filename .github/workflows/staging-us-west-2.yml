@@ -2,7 +2,7 @@ name: Staging Deployment us-west-2
 
 on:
   push:
-    branches: [staging]
+    branches: [influx]
 
 jobs:
   deploy:
@@ -46,6 +46,10 @@ jobs:
           envkey_NODE_TLS_REJECT_UNAUTHORIZED: 0
           envkey_AAT_PLAN: 'premium'
           envkey_NODE_ENV: 'production'
+          envkey_REGION: 'staging'
+          envkey_INFLUX_URL: 'https://eu-central-1-1.aws.cloud2.influxdata.com'
+          envkey_INFLUX_ORG: 'pocket'
+          envkey_INFLUX_TOKEN: ${{ secrets.INFLUX TOKEN }}
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR

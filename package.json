@@ -61,6 +61,7 @@
     "tests"
   ],
   "dependencies": {
+    "@influxdata/influxdb-client": "^1.15.0",
     "@loopback/boot": "^3.4.0",
     "@loopback/context": "^3.16.0",
     "@loopback/core": "^2.16.0",
