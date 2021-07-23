@@ -667,7 +667,7 @@ export class PocketRelayer {
             fromBlock = await getBlockNumber(altruistUrl)
           }
         } catch (e) {
-          logger.log('error', 'Failed trying to reach altruist to fetch block number.', e)
+          logger.log('error', `Failed trying to reach altruist (${altruistUrl}) to fetch block number.`)
           return new HttpErrors.InternalServerError('Internal error. Try again with a explicit block number.')
         }
       } else {
