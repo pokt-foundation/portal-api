@@ -1,8 +1,8 @@
 import { Client, expect } from '@loopback/testlab'
+import { PocketGatewayApplication } from '../..'
+import { gatewayTestDB } from '../fixtures/test.datasource'
 import { Blockchains } from '../../src/models/blockchains.model'
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
-import { gatewayTestDB } from '../fixtures/test.datasource'
-import { PocketGatewayApplication } from '../..'
 import { setupApplication } from './test-helper'
 
 describe('Blockchain (acceptance)', () => {

@@ -30,17 +30,6 @@ module.exports = {
     },
   },
   rules: {
-    // TODO: Change config for project guideline
-    'sort-imports': [
-      'warn',
-      {
-        ignoreCase: false,
-        ignoreDeclarationSort: false,
-        ignoreMemberSort: false,
-        memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
-        allowSeparatedGroups: true,
-      },
-    ],
     'no-console': 'off',
     'arrow-parens': ['error', 'always'],
     'comma-spacing': 'error',

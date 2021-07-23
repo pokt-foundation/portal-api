@@ -3,12 +3,12 @@ import { ApplicationConfig } from '@loopback/core'
 
 const logger = require('./services/logger')
 
-const DEFAULT_APPLICATION_OPTIONS = { load: true }
+const DEFAULT_APPLICATION_OPTIONS = { env: { load: true } }
 
 export { PocketGatewayApplication }
 
 export async function main(options: ApplicationConfig = {}): Promise<PocketGatewayApplication> {
-  options.env = DEFAULT_APPLICATION_OPTIONS
+  options = DEFAULT_APPLICATION_OPTIONS
 
   const app = new PocketGatewayApplication(options)
 
