@@ -128,7 +128,7 @@ export class PocketRelayer {
     const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
     const limitation = await this.enforceLimits(parsedRawData, blockchain)
 
-    if (limitation instanceof LimitError) {
+    if (limitation instanceof Error) {
       logger.log('error', `${parsedRawData.method} method limitations exceeded.`, {
         requestID: requestID,
         relayType: 'APP',
@@ -660,6 +660,7 @@ export class PocketRelayer {
         // Altruist
         try {
           if (!isToBlockHex) {
+            console.log(`Connecting to: ${altruistUrl}`)
             toBlock = await getBlockNumber(altruistUrl)
           }
           if (!isFromBlockHex) {
