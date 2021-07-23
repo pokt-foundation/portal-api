@@ -11,7 +11,7 @@ import { Applications } from '../models'
 import { RelayError } from '../errors/relay-error'
 import { LimitError } from '../errors/limit-error'
 import AatPlans from '../config/aat-plans.json'
-import { checkEnforcementJSON, getBlockNumber, blockHexToDecimal } from '../utils'
+import { blockHexToDecimal, checkEnforcementJSON, getBlockNumber } from '../utils'
 
 import { JSONObject } from '@loopback/context'
 
@@ -129,7 +129,7 @@ export class PocketRelayer {
     const limitation = await this.enforceLimits(parsedRawData, blockchain)
 
     if (limitation instanceof LimitError) {
-      logger.log('error', 'Method limitations exceeded: ' + parsedRawData.method, {
+      logger.log('error', `${parsedRawData.method} method limitations exceeded.`, {
         requestID: requestID,
         relayType: 'APP',
         typeID: application.id,
@@ -636,25 +636,46 @@ export class PocketRelayer {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async enforceLimits(parsedRawData: Record<string, any>, blockchain: string): Promise<string | LimitError> {
+  async enforceLimits(parsedRawData: Record<string, any>, blockchain: string): Promise<string | Error> {
     if (parsedRawData.method === 'eth_getLogs') {
+      let toBlock: number
+      let fromBlock: number
+      let isToBlockHex = false
+      let isFromBlockHex = false
       const altruistUrl = String(this.altruists[blockchain])
-      let [{ fromBlock, toBlock }] = parsedRawData.params as [{ fromBlock: string; toBlock: string }]
+      const [{ fromBlock: fromBlockParam, toBlock: toBlockParam }] = parsedRawData.params as [
+        { fromBlock: string; toBlock: string }
+      ]
 
-      // If fromBlock or toBlock is equal to undefined it defaults to latest.
-      if ((fromBlock === 'latest' || fromBlock === undefined) && altruistUrl !== 'undefined') {
-        fromBlock = String(await getBlockNumber(altruistUrl))
-      } else if ((toBlock === 'latest' || toBlock === undefined) && altruistUrl !== 'undefined') {
-        toBlock = String(await getBlockNumber(altruistUrl))
-        // We cannot move forward if there is no altruist available.
-      } else if (
-        (toBlock === 'latest' || toBlock === undefined || fromBlock === 'latest' || fromBlock === undefined) &&
-        altruistUrl === 'undefined'
-      ) {
-        return new LimitError('Please use an explicit block number instead of latest', parsedRawData.method)
+      if (toBlockParam !== undefined && toBlockParam !== 'latest') {
+        toBlock = blockHexToDecimal(toBlockParam)
+        isToBlockHex = true
+      }
+      if (fromBlockParam !== undefined && fromBlockParam !== 'latest') {
+        fromBlock = blockHexToDecimal(fromBlockParam)
+        isFromBlockHex = true
       }
 
-      if (blockHexToDecimal(toBlock) - blockHexToDecimal(fromBlock) > 10000) {
+      if (altruistUrl !== 'undefined') {
+        // Altruist
+        try {
+          if (!isToBlockHex) {
+            toBlock = await getBlockNumber(altruistUrl)
+          }
+          if (!isFromBlockHex) {
+            fromBlock = await getBlockNumber(altruistUrl)
+          }
+        } catch (e) {
+          logger.log('error', 'Failed trying to reach altruist to fetch block number.', e)
+          return new HttpErrors.InternalServerError('Internal error. Try again with a explicit block number.')
+        }
+      } else {
+        // We cannot move forward if there is no altruist available.
+        if (!isToBlockHex || !isFromBlockHex) {
+          return new LimitError(`Please use an explicit block number instead of 'latest'.`, parsedRawData.method)
+        }
+      }
+      if (toBlock - fromBlock > 10000) {
         return new LimitError('You cannot query logs for more than 10,000 blocks at once.', parsedRawData.method)
       }
     }
