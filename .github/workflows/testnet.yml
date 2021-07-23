@@ -43,6 +43,8 @@ jobs:
           envkey_POCKET_RELAY_RETRIES: 5
           envkey_DEFAULT_SYNC_ALLOWANCE: 5
           envkey_AAT_PLAN: 'premium'
+          envkey_NODE_ENV: 'production'
+          envkey_REGION: 'testnet'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
