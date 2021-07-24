@@ -14,7 +14,6 @@ export class EnvironmentObserver implements LifeCycleObserver {
   // TODO: split the arrays on optional and require
   private static environment: string[] = [
     'NODE_ENV',
-    'GATEWAY_CLIENT_PUBLIC_KEY',
     'GATEWAY_CLIENT_PRIVATE_KEY',
     'GATEWAY_CLIENT_PASSPHRASE',
     'MONGO_ENDPOINT',
