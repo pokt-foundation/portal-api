@@ -31,3 +31,7 @@ tsconfig.tsbuildinfo
 
 # editor config 
 .vscode
+
+# Coverage output
+.nyc_output
+coverage
