@@ -5,7 +5,7 @@ import { Blockchains } from '../../src/models/blockchains.model'
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
 import { setupApplication } from './test-helper'
 
-describe('Blockchain (acceptance)', () => {
+describe('Blockchains controller (acceptance)', () => {
   let app: PocketGatewayApplication
   let client: Client
   let blockchainRepository: BlockchainsRepository
