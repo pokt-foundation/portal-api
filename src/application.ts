@@ -68,6 +68,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       REDIS_PORT,
       PG_CONNECTION,
       PG_CERTIFICATE,
+      PSQL_CONNECTION,
       DISPATCH_URL,
       ALTRUISTS,
       POCKET_SESSION_BLOCK_FREQUENCY,
@@ -227,6 +228,21 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const pgPool = new pg.Pool(pgConfig)
 
     this.bind('pgPool').to(pgPool)
+
+    // New metrics postgres for error recording
+    const psqlConnection: string = PSQL_CONNECTION || ''
+
+    if (!psqlConnection) {
+      throw new HttpErrors.InternalServerError('PSQL_CONNECTION required in ENV')
+    }
+    const psqlConfig = {
+      connectionString: psqlConnection,
+      ssl: environment === 'production' ? true : false,
+    }
+    const pgPool2 = new pg.Pool(psqlConfig)
+
+    this.bind('pgPool2').to(pgPool2)
+
     this.bind('databaseEncryptionKey').to(databaseEncryptionKey)
     this.bind('aatPlan').to(aatPlan)
 
