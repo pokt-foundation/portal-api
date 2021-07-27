@@ -35,22 +35,26 @@ writeApi.useDefaultTags({ host: os.hostname(), region: region })
 export class MetricsRecorder {
   redis: Redis
   pgPool: PGPool
+  pgPool2: PGPool
   cherryPicker: CherryPicker
   processUID: string
 
   constructor({
     redis,
     pgPool,
+    pgPool2,
     cherryPicker,
     processUID,
   }: {
     redis: Redis
     pgPool: PGPool
+    pgPool2: PGPool
     cherryPicker: CherryPicker
     processUID: string
   }) {
     this.redis = redis
     this.pgPool = pgPool
+    this.pgPool2 = pgPool2
     this.cherryPicker = cherryPicker
     this.processUID = processUID
   }
@@ -234,6 +238,21 @@ export class MetricsRecorder {
           }
         })
       })
+
+      // Temporary force push to new psql
+      if (relation === 'error') {
+        this.pgPool2.connect((err, client, release) => {
+          if (err) {
+            processlogger.log('error', 'Error acquiring client ' + err.stack)
+          }
+          client.query(metricsQuery, (metricsErr, result) => {
+            release()
+            if (metricsErr) {
+              processlogger.log('error', 'Error executing query on pgpool2 ' + metricsQuery + ' ' + err.stack)
+            }
+          })
+        })
+      }
     }
   }
 }
