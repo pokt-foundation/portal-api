@@ -351,7 +351,6 @@ export class CherryPicker {
         } else if (a.averageSuccessLatency < b.averageSuccessLatency) {
           return -1
         }
-        return 0
       }
       return 0
     })

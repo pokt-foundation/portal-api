@@ -395,6 +395,7 @@ export class PocketRelayer {
 
     if (pocketSession instanceof Session) {
       let nodes: Node[] = pocketSession.sessionNodes
+      const relayStart = process.hrtime()
 
       if (blockchainIDCheck) {
         // Check Chain ID
@@ -436,7 +437,24 @@ export class PocketRelayer {
 
         nodes = await this.syncChecker.consensusFilter(consensusFilterOptions)
         if (nodes.length === 0) {
-          return new Error('Sync check failure; using fallbacks')
+          const error = 'Sync / chain check failure'
+          const method = 'checks'
+
+          await this.metricsRecorder.recordMetric({
+            requestID,
+            applicationID: application.id,
+            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+            blockchain,
+            serviceNode: 'session-failure',
+            relayStart,
+            result: 500,
+            bytes: Buffer.byteLength(error, 'utf8'),
+            delivered: false,
+            fallback: false,
+            method,
+            error,
+          })
+          return new Error('Sync / chain check failure; using fallbacks')
         }
       }
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchain, requestID)
