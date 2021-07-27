@@ -50,6 +50,7 @@ jobs:
           envkey_INFLUX_URL: 'https://influx.portal.pokt.network:8086'
           envkey_INFLUX_ORG: 'pocket'
           envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
+          envkey_PSQL_CONNECTION: ${{ secrets.PSQL_CONNECTION }}
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR

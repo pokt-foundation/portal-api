@@ -343,7 +343,7 @@ export class SyncChecker {
       await Promise.all(promiseStack)
 
     for (const rawNodeSyncLog of rawNodeSyncLogs) {
-      if (typeof rawNodeSyncLog === 'object' && rawNodeSyncLog.blockHeight > 0) {
+      if (typeof rawNodeSyncLog === 'object') {
         nodeSyncLogs.push(rawNodeSyncLog)
       }
     }
