@@ -74,6 +74,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       POCKET_BLOCK_TIME,
       POCKET_RELAY_RETRIES,
       DEFAULT_SYNC_ALLOWANCE,
+      LOG_LIMIT_BLOCKS,
       AAT_PLAN,
       REDIRECTS,
     } = await this.get('configuration.environment.values')
@@ -88,7 +89,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const relayRetries: string = POCKET_RELAY_RETRIES || ''
     const databaseEncryptionKey: string = DATABASE_ENCRYPTION_KEY || ''
     const defaultSyncAllowance: number = parseInt(DEFAULT_SYNC_ALLOWANCE) || -1
-    const defaultLogLimitBlocks: number = parseInt(process.env.LOG_LIMIT_BLOCKS) || -1
+    const defaultLogLimitBlocks: number = parseInt(LOG_LIMIT_BLOCKS) || -1
     const aatPlan = AAT_PLAN || AatPlans.PREMIUM
     const redirects = REDIRECTS || '' // Can be empty
 

@@ -42,6 +42,7 @@ jobs:
           envkey_POCKET_BLOCK_TIME: 900000
           envkey_POCKET_RELAY_RETRIES: 5
           envkey_DEFAULT_SYNC_ALLOWANCE: 5
+          envkey_LOG_LIMIT_BLOCKS: 10000
           envkey_AAT_PLAN: 'premium'
           envkey_NODE_ENV: 'production'
           envkey_REGION: 'testnet'
