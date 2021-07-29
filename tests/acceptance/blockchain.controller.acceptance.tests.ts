@@ -40,6 +40,7 @@ describe('Blockchains controller (acceptance)', () => {
         enforceResult: 'JSON',
         nodeCount: 23,
         hash: '1234',
+        logLimitBlocks: 10,
       }
     )
 
@@ -94,6 +95,7 @@ describe('Blockchains controller (acceptance)', () => {
             enforceResult: 'JSON',
             nodeCount: 23,
             hash: i,
+            logLimitBlocks: 10,
           }
         )
       )
