@@ -24,6 +24,17 @@ import got from 'got'
 require('log-timestamp')
 require('dotenv').config()
 
+const DEFAULT_POCKET_CONFIG = {
+  MAX_DISPATCHERS: 50,
+  MAX_SESSIONS: 100000,
+  CONSENSUS_NODE_COUNT: 0,
+  REQUEST_TIMEOUT: 120000, // 3 minutes
+  ACCEPT_DISPUTED_RESPONSES: false,
+  VALIDATE_RELAY_RESPONSES: undefined,
+  REJECT_SELF_SIGNED_CERTIFICATES: undefined,
+  USE_LEGACY_TX_CODEC: true,
+}
+
 export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryMixin(RestApplication))) {
   constructor(options: ApplicationConfig = {}) {
     super(options)
@@ -38,28 +49,48 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
         nested: true,
       },
     }
+
+    this.bind('configuration.environment.load').to(typeof options?.env?.load !== undefined ? options.env.load : true)
+    this.bind('configuration.environment.values').to(options.env.values || {})
   }
 
   async loadPocket(): Promise<void> {
     // Requirements; for Production these are stored in GitHub repo secrets
     //
     // For Dev, you need to pass them in via .env file
-    const environment: string = process.env.NODE_ENV || 'production'
+    // TODO: Add env as a type
+    const {
+      NODE_ENV,
+      GATEWAY_CLIENT_PRIVATE_KEY,
+      GATEWAY_CLIENT_PASSPHRASE,
+      DATABASE_ENCRYPTION_KEY,
+      REDIS_ENDPOINT,
+      REDIS_PORT,
+      PG_CONNECTION,
+      PG_CERTIFICATE,
+      DISPATCH_URL,
+      ALTRUISTS,
+      POCKET_SESSION_BLOCK_FREQUENCY,
+      POCKET_BLOCK_TIME,
+      POCKET_RELAY_RETRIES,
+      DEFAULT_SYNC_ALLOWANCE,
+      AAT_PLAN,
+      REDIRECTS,
+    } = await this.get('configuration.environment.values')
 
-    logger.log('info', 'Environment: ' + environment)
-
-    const dispatchURL: string = process.env.DISPATCH_URL || ''
-    const altruists: string = process.env.ALTRUISTS || ''
-    const clientPrivateKey: string = process.env.GATEWAY_CLIENT_PRIVATE_KEY || ''
-    const clientPassphrase: string = process.env.GATEWAY_CLIENT_PASSPHRASE || ''
-    const pocketSessionBlockFrequency: string = process.env.POCKET_SESSION_BLOCK_FREQUENCY || ''
-    const pocketBlockTime: string = process.env.POCKET_BLOCK_TIME || ''
-    const relayRetries: string = process.env.POCKET_RELAY_RETRIES || ''
-    const databaseEncryptionKey: string = process.env.DATABASE_ENCRYPTION_KEY || ''
-    const defaultSyncAllowance: number = parseInt(process.env.DEFAULT_SYNC_ALLOWANCE) || -1
+    const environment: string = NODE_ENV || 'production'
+    const dispatchURL: string = DISPATCH_URL || ''
+    const altruists: string = ALTRUISTS || ''
+    const clientPrivateKey: string = GATEWAY_CLIENT_PRIVATE_KEY || ''
+    const clientPassphrase: string = GATEWAY_CLIENT_PASSPHRASE || ''
+    const pocketSessionBlockFrequency: string = POCKET_SESSION_BLOCK_FREQUENCY || ''
+    const pocketBlockTime: string = POCKET_BLOCK_TIME || ''
+    const relayRetries: string = POCKET_RELAY_RETRIES || ''
+    const databaseEncryptionKey: string = DATABASE_ENCRYPTION_KEY || ''
+    const defaultSyncAllowance: number = parseInt(DEFAULT_SYNC_ALLOWANCE) || -1
     const defaultLogLimitBlocks: number = parseInt(process.env.LOG_LIMIT_BLOCKS) || -1
-    const aatPlan = process.env.AAT_PLAN || AatPlans.PREMIUM
-    const redirects = process.env.REDIRECTS || '' // Can be empty
+    const aatPlan = AAT_PLAN || AatPlans.PREMIUM
+    const redirects = REDIRECTS || '' // Can be empty
 
     if (!dispatchURL) {
       throw new HttpErrors.InternalServerError('DISPATCH_URL required in ENV')
@@ -105,16 +136,16 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     }
 
     const configuration = new Configuration(
-      50,
-      100000,
-      0,
-      120000,
-      false,
+      DEFAULT_POCKET_CONFIG.MAX_DISPATCHERS,
+      DEFAULT_POCKET_CONFIG.MAX_SESSIONS,
+      DEFAULT_POCKET_CONFIG.CONSENSUS_NODE_COUNT,
+      DEFAULT_POCKET_CONFIG.REQUEST_TIMEOUT,
+      DEFAULT_POCKET_CONFIG.ACCEPT_DISPUTED_RESPONSES,
       parseInt(pocketSessionBlockFrequency),
       parseInt(pocketBlockTime),
-      undefined,
-      undefined,
-      false
+      DEFAULT_POCKET_CONFIG.VALIDATE_RELAY_RESPONSES,
+      DEFAULT_POCKET_CONFIG.REJECT_SELF_SIGNED_CERTIFICATES,
+      DEFAULT_POCKET_CONFIG.USE_LEGACY_TX_CODEC
     )
     const rpcProvider = new HttpRpcProvider(dispatchers[0])
     const pocket = new Pocket(dispatchers, rpcProvider, configuration)
@@ -142,8 +173,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     }
 
     // Load Redis for cache
-    const redisEndpoint: string = process.env.REDIS_ENDPOINT || ''
-    const redisPort: string = process.env.REDIS_PORT || ''
+    const redisEndpoint: string = REDIS_ENDPOINT || ''
+    const redisPort: string = REDIS_PORT || ''
 
     if (!redisEndpoint) {
       throw new HttpErrors.InternalServerError('REDIS_ENDPOINT required in ENV')
@@ -156,8 +187,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('redisInstance').to(redis)
 
     // Load Postgres for TimescaleDB metrics
-    const pgConnection: string = process.env.PG_CONNECTION || ''
-    const pgCertificate: string = process.env.PG_CERTIFICATE || ''
+    const pgConnection: string = PG_CONNECTION || ''
+    const pgCertificate: string = PG_CERTIFICATE || ''
 
     if (!pgConnection) {
       throw new HttpErrors.InternalServerError('PG_CONNECTION required in ENV')
