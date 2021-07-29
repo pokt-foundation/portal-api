@@ -117,6 +117,7 @@ export class PocketRelayer {
       blockchainSyncAllowance,
       blockchainIDCheck,
       blockchainID,
+      blockchainLogLimitBlocks,
     } = await this.loadBlockchain()
     const overallStart = process.hrtime()
 
@@ -126,7 +127,7 @@ export class PocketRelayer {
     // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
 
     const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
-    const limitation = await this.enforceLimits(parsedRawData, blockchain)
+    const limitation = await this.enforceLimits(parsedRawData, blockchain, blockchainLogLimitBlocks)
 
     if (limitation instanceof Error) {
       logger.log('error', `${parsedRawData.method} method limitations exceeded.`, {
@@ -598,6 +599,7 @@ export class PocketRelayer {
       let blockchainSyncAllowance = 0
       let blockchainIDCheck = ''
       let blockchainID = ''
+      let blockchainLogLimitBlocks = 0
       const blockchain = blockchainFilter[0].hash as string
 
       // Record the necessary format for the result; example: JSON
@@ -621,6 +623,11 @@ export class PocketRelayer {
       if (blockchainFilter[0].syncAllowance) {
         blockchainSyncAllowance = parseInt(blockchainFilter[0].syncAllowance)
       }
+      // Max number of blocks to request logs for
+      if (blockchainFilter[0].logLimitBlocks) {
+        blockchainLogLimitBlocks = parseInt(blockchainFilter[0].logLimitBlocks)
+      }
+
       return Promise.resolve({
         blockchain,
         blockchainEnforceResult,
@@ -629,14 +636,19 @@ export class PocketRelayer {
         blockchainSyncAllowance,
         blockchainIDCheck,
         blockchainID,
+        blockchainLogLimitBlocks,
       })
     } else {
       throw new HttpErrors.BadRequest('Incorrect blockchain: ' + this.host)
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async enforceLimits(parsedRawData: Record<string, any>, blockchain: string): Promise<string | Error> {
+  async enforceLimits(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    parsedRawData: Record<string, any>,
+    blockchain: string,
+    logLimitBlocks: number
+  ): Promise<string | Error> {
     if (parsedRawData.method === 'eth_getLogs') {
       let toBlock: number
       let fromBlock: number
@@ -676,8 +688,11 @@ export class PocketRelayer {
           return new LimitError(`Please use an explicit block number instead of 'latest'.`, parsedRawData.method)
         }
       }
-      if (toBlock - fromBlock > 10000) {
-        return new LimitError('You cannot query logs for more than 10,000 blocks at once.', parsedRawData.method)
+      if (toBlock - fromBlock > logLimitBlocks) {
+        return new LimitError(
+          `You cannot query logs for more than ${logLimitBlocks} blocks at once.`,
+          parsedRawData.method
+        )
       }
     }
   }
@@ -732,6 +747,7 @@ interface BlockchainDetails {
   blockchainSyncAllowance: number
   blockchainIDCheck: string
   blockchainID: string
+  blockchainLogLimitBlocks: number
 }
 
 export interface SendRelayOptions {
