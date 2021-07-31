@@ -11,18 +11,26 @@ import {
   StakingStatus,
   RelayResponse,
   RpcError,
+  RelayRequest,
+  RelayPayload,
+  HTTPMethod,
+  RelayProofResponse,
+  PocketAAT,
+  RelayMeta,
+  RelayProof,
+  RequestHash,
 } from '@pokt-network/pocket-js'
 
 const MINIMUM_NODE_STAKE = 15150
 
-const DEFAULT_NODES = [
+export const DEFAULT_NODES = [
   new Node(
     '4decdda1c176daf9d70f482e1d7ac476eb57b7ae',
     '3babba8b6a4a3d94e6a3d01d9e1ac15f8d5331f605b06421e5be1720d5a56867',
     false,
     StakingStatus.Staked,
     BigInt(15145000000),
-    'https://val1622149101.c0d3r.org/',
+    'https://validator0.org/',
     ['0001', '0027', '0021']
   ),
   new Node(
@@ -31,7 +39,7 @@ const DEFAULT_NODES = [
     false,
     StakingStatus.Staked,
     BigInt(15145000000),
-    'https://val1622172002.c0d3r.org/',
+    'https://validator1.org/',
     ['0009', '0027', '0012', '0010']
   ),
   new Node(
@@ -40,7 +48,7 @@ const DEFAULT_NODES = [
     false,
     StakingStatus.Staked,
     BigInt(15150000000),
-    'https://val1618208687.c0d3r.org/',
+    'https://validator2.org/',
     ['0008', '0015', '0020', '0018']
   ),
   new Node(
@@ -49,7 +57,7 @@ const DEFAULT_NODES = [
     false,
     StakingStatus.Staked,
     BigInt(15373984626),
-    'https://mp-pokt-386.n.blockspaces.io/',
+    'https://validator3.org/',
     ['0012', '0021', '0022', '0015']
   ),
   new Node(
@@ -58,7 +66,7 @@ const DEFAULT_NODES = [
     false,
     StakingStatus.Staked,
     BigInt(15369984630),
-    'https://mb-pokt-39.n.blockspaces.io/',
+    'https://validator4.org/',
     ['0027', '0002', '0004', '0022']
   ),
 ]
@@ -174,7 +182,7 @@ export class PocketMock {
   /**
    * GetObject returns an object instance of pocketjs  with the configured options
    */
-  async getObject(): Promise<Pocket> {
+  getObject(): Pocket {
     const sessionManagerMock = new Mock<SessionManager>()
       .setup((instance) => instance.getCurrentSession(It.IsAny(), It.IsAny(), It.IsAny()))
       .returnsAsync(this.session)
@@ -207,7 +215,7 @@ export class PocketMock {
   /**
    * getClass returns a mocked class of pocketjs with the configured options
    */
-  async getClass(): Promise<typeof Pocket> {
+  getClass(): typeof Pocket {
     const sessionManagerMock = new Mock<SessionManager>()
       .setup((instance) => instance.getCurrentSession(It.IsAny(), It.IsAny(), It.IsAny()))
       .returnsAsync(this.session)
@@ -245,14 +253,43 @@ export class PocketMock {
     if (this.relayResponse instanceof RelayResponse || this.relayResponse instanceof RpcError) {
       relayResponse = this.relayResponse
     } else {
-      // Although we do not have a complete instance of RelayResponse, for basic requests these
-      // can be mocked only using the request/response payload data
-      // @ts-ignore
-      relayResponse = { response: { payload: this.relayResponse } } as RelayResponse
+      const poktAAT = new PocketAAT(
+        '0.0.1',
+        '657008a612d86c4f8c43c8d46094c04aedc7dc36b2a6dbc5af168aeaf52f1750',
+        '06t6wkhjtr3ezmgzd9n1hl3ofahkdfqoutuf27mvy5xeqb2tqondk5lkhihxwza4',
+        '7h0kixql89qw9muz2uel2zao5xuk546slj2d6hv2psgbjte0m0gbrgj1co3oprhtfd3vlx7pboyzpbcwvnfyxrtdxiff1t34mp3cmepobdsbvwb5k5lsfrnkdbf9mh6i'
+      )
 
-      if (typeof this.relayRequest === 'string') {
-        relayResponse.request = { payload: { data: this.relayRequest } }
-      }
+      // TODO: Flexibilize relay response values to be set by user
+      relayResponse = new RelayResponse(
+        'qrzn2yeyobvsb0la6au8jqykkrlgq4me2js34vl31h93lfjjrxxnvmrjibqozlbnnil3em7qhgkz3ipinhvgeevjbcxzqc06htfe6z5vrougudldz34cp7k7lqec0xu7',
+        this.relayResponse,
+        new RelayProofResponse(
+          BigInt(17386131212264644),
+          BigInt(32889),
+          '142e2b65610a798b0e4e3f45927ae0b986a71852039c28a625dcf11d2fc48637',
+          '0027',
+          poktAAT,
+          'c57e5076153450855e7018ab5b8de37034f04d4884f33020f339fc634228951ff1ecb69f39ab31bc6544f869f6ce10dd4cbc186fceb496d02b443a9420d09b03',
+          'tfvdesrvn1bv2zeyxcrxj4evbhymbfdkqcdoavjierhqjyevtvomszgcopqucris'
+        ),
+        new RelayRequest(
+          new RelayPayload(this.relayRequest, HTTPMethod.POST, '', undefined),
+          new RelayMeta(BigInt(32889)),
+          new RelayProof(
+            BigInt(17386131212264644),
+            BigInt(32889),
+            '142e2b65610a798b0e4e3f45927ae0b986a71852039c28a625dcf11d2fc48637',
+            '0027',
+            poktAAT,
+            'c57e5076153450855e7018ab5b8de37034f04d4884f33020f339fc634228951ff1ecb69f39ab31bc6544f869f6ce10dd4cbc186fceb496d02b443a9420d09b03',
+            new RequestHash(
+              new RelayPayload(this.relayRequest, HTTPMethod.POST, '', undefined),
+              new RelayMeta(BigInt(17386131212264644))
+            )
+          )
+        )
+      )
     }
     const response = !this.fail ? relayResponse : this.rpcMockError
 
