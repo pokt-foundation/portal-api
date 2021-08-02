@@ -2,6 +2,7 @@ import { BootMixin } from '@loopback/boot'
 import { ApplicationConfig } from '@loopback/core'
 import { RepositoryMixin } from '@loopback/repository'
 import { RestApplication, HttpErrors } from '@loopback/rest'
+import { DEFAULT_POCKET_CONFIG } from './config/pocket-config'
 import { ServiceMixin } from '@loopback/service-proxy'
 import { GatewaySequence } from './sequence'
 import { Account } from '@pokt-network/pocket-js/dist/keybase/models/account'
@@ -23,17 +24,6 @@ import got from 'got'
 
 require('log-timestamp')
 require('dotenv').config()
-
-const DEFAULT_POCKET_CONFIG = {
-  MAX_DISPATCHERS: 50,
-  MAX_SESSIONS: 100000,
-  CONSENSUS_NODE_COUNT: 0,
-  REQUEST_TIMEOUT: 120000, // 3 minutes
-  ACCEPT_DISPUTED_RESPONSES: false,
-  VALIDATE_RELAY_RESPONSES: undefined,
-  REJECT_SELF_SIGNED_CERTIFICATES: undefined,
-  USE_LEGACY_TX_CODEC: true,
-}
 
 export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryMixin(RestApplication))) {
   constructor(options: ApplicationConfig = {}) {
@@ -68,6 +58,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       REDIS_PORT,
       PG_CONNECTION,
       PG_CERTIFICATE,
+      PSQL_CONNECTION,
       DISPATCH_URL,
       ALTRUISTS,
       POCKET_SESSION_BLOCK_FREQUENCY,
@@ -233,6 +224,21 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const pgPool = new pg.Pool(pgConfig)
 
     this.bind('pgPool').to(pgPool)
+
+    // New metrics postgres for error recording
+    const psqlConnection: string = PSQL_CONNECTION || ''
+
+    if (!psqlConnection) {
+      throw new HttpErrors.InternalServerError('PSQL_CONNECTION required in ENV')
+    }
+    const psqlConfig = {
+      connectionString: psqlConnection,
+      ssl: environment === 'production' ? true : false,
+    }
+    const pgPool2 = new pg.Pool(psqlConfig)
+
+    this.bind('pgPool2').to(pgPool2)
+
     this.bind('databaseEncryptionKey').to(databaseEncryptionKey)
     this.bind('aatPlan').to(aatPlan)
 

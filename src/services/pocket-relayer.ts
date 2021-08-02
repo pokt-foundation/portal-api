@@ -237,6 +237,7 @@ export class PocketRelayer {
         })
       }
     }
+
     // Exhausted network relay attempts; use fallback
     if (fallbackAvailable) {
       const relayStart = process.hrtime()
@@ -300,10 +301,11 @@ export class PocketRelayer {
             blockchainEnforceResult && // Is this blockchain marked for result enforcement and
             blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON
             typeof responseParsed === 'string' &&
-            (responseParsed.match('{') || responseParsed.match('[{')) // and it matches JSON
+            (responseParsed.match('{') || responseParsed.match(/'\[{'/g)) // and it matches JSON
           ) {
             return JSON.parse(responseParsed)
           }
+
           return responseParsed
         } else {
           logger.log('error', JSON.stringify(fallbackResponse), {
@@ -408,6 +410,7 @@ export class PocketRelayer {
 
     if (pocketSession instanceof Session) {
       let nodes: Node[] = pocketSession.sessionNodes
+      const relayStart = process.hrtime()
 
       if (blockchainIDCheck) {
         // Check Chain ID
@@ -449,7 +452,24 @@ export class PocketRelayer {
 
         nodes = await this.syncChecker.consensusFilter(consensusFilterOptions)
         if (nodes.length === 0) {
-          return new Error('Sync check failure; using fallbacks')
+          const error = 'Sync / chain check failure'
+          const method = 'checks'
+
+          await this.metricsRecorder.recordMetric({
+            requestID,
+            applicationID: application.id,
+            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+            blockchain,
+            serviceNode: 'session-failure',
+            relayStart,
+            result: 500,
+            bytes: Buffer.byteLength(error, 'utf8'),
+            delivered: false,
+            fallback: false,
+            method,
+            error,
+          })
+          return new Error('Sync / chain check failure; using fallbacks')
         }
       }
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchain, requestID)
@@ -751,7 +771,7 @@ interface BlockchainDetails {
 }
 
 export interface SendRelayOptions {
-  rawData: object
+  rawData: object | string
   relayPath: string
   httpMethod: HTTPMethod
   application: Applications

@@ -8,7 +8,7 @@ import { HttpErrors } from '@loopback/rest'
 const logger = require('../services/logger')
 const os = require('os')
 
-const { InfluxDB, Point } = require('@influxdata/influxdb-client')
+import { InfluxDB, Point } from '@influxdata/influxdb-client'
 
 const region = process.env.REGION || '' // Can be empty
 const influxURL = process.env.INFLUX_URL || ''
@@ -35,22 +35,26 @@ writeApi.useDefaultTags({ host: os.hostname(), region: region })
 export class MetricsRecorder {
   redis: Redis
   pgPool: PGPool
+  pgPool2: PGPool
   cherryPicker: CherryPicker
   processUID: string
 
   constructor({
     redis,
     pgPool,
+    pgPool2,
     cherryPicker,
     processUID,
   }: {
     redis: Redis
     pgPool: PGPool
+    pgPool2: PGPool
     cherryPicker: CherryPicker
     processUID: string
   }) {
     this.redis = redis
     this.pgPool = pgPool
+    this.pgPool2 = pgPool2
     this.cherryPicker = cherryPicker
     this.processUID = processUID
   }
@@ -157,7 +161,7 @@ export class MetricsRecorder {
         .tag('applicationPublicKey', applicationPublicKey)
         .tag('nodePublicKey', serviceNode)
         .tag('method', method)
-        .tag('result', result)
+        .tag('result', result.toString())
         .tag('blockchain', blockchain)
         .floatField('bytes', bytes)
         .floatField('elapsedTime', elapsedTime.toFixed(4))
@@ -234,6 +238,21 @@ export class MetricsRecorder {
           }
         })
       })
+
+      // Temporary force push to new psql
+      if (relation === 'error') {
+        this.pgPool2.connect((err, client, release) => {
+          if (err) {
+            processlogger.log('error', 'Error acquiring client ' + err.stack)
+          }
+          client.query(metricsQuery, (metricsErr, result) => {
+            release()
+            if (metricsErr) {
+              processlogger.log('error', 'Error executing query on pgpool2 ' + metricsQuery + ' ' + err.stack)
+            }
+          })
+        })
+      }
     }
   }
 }
