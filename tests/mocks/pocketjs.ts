@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import { Mock, It } from 'moq.ts'
 import { DEFAULT_POCKET_CONFIG } from '../../src/config/pocket-config'
 import {
@@ -125,8 +126,10 @@ export class PocketMock {
   // relayResponse: string = '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
   fail = false
   rpcMockError = new RpcError('500', 'Mock error')
-  relayRequest = '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
-  relayResponse: string | RelayResponse | RpcError = '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+  // relayRequest = '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
+  relayResponse: Record<string, string | RelayResponse | RpcError> = {
+    '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}': '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}',
+  }
   session = DEFAULT_MOCK_VALUES.SESSION
 
   constructor(
@@ -188,8 +191,6 @@ export class PocketMock {
       .returnsAsync(this.session)
       .object()
 
-    const response = this._getRelayResponse()
-
     const repoMock = new Mock<Pocket>()
       .setup((instance) => instance.sessionManager)
       .returns(sessionManagerMock)
@@ -207,7 +208,12 @@ export class PocketMock {
           It.IsAny()
         )
       )
-      .returnsAsync(response)
+      .callback(
+        ({
+          args: [data, blockchain, pocketAAT, configuration, headers, method, path, node, consensusEnabled, requestID],
+        }) => Promise.resolve(this._getRelayResponse(data))
+      )
+    // .returnsAsync(response)
 
     return repoMock.object()
   }
@@ -220,8 +226,6 @@ export class PocketMock {
       .setup((instance) => instance.getCurrentSession(It.IsAny(), It.IsAny(), It.IsAny()))
       .returnsAsync(this.session)
       .object()
-
-    const response = this._getRelayResponse()
 
     const repoMock = new Mock<typeof Pocket>({ target: Pocket })
       .setup((instance) => new instance(It.IsAny(), It.IsAny(), It.IsAny()))
@@ -242,12 +246,16 @@ export class PocketMock {
           It.IsAny()
         )
       )
-      .returnsAsync(response)
+      .callback(
+        ({
+          args: [data, blockchain, pocketAAT, configuration, headers, method, path, node, consensusEnabled, requestID],
+        }) => Promise.resolve(this._getRelayResponse(data))
+      )
 
     return repoMock.object()
   }
 
-  _getRelayResponse(): RelayResponse | RpcError {
+  _getRelayResponse(data: string): RelayResponse | RpcError {
     let relayResponse
 
     if (this.relayResponse instanceof RelayResponse || this.relayResponse instanceof RpcError) {
@@ -260,10 +268,9 @@ export class PocketMock {
         '7h0kixql89qw9muz2uel2zao5xuk546slj2d6hv2psgbjte0m0gbrgj1co3oprhtfd3vlx7pboyzpbcwvnfyxrtdxiff1t34mp3cmepobdsbvwb5k5lsfrnkdbf9mh6i'
       )
 
-      // TODO: Flexibilize relay response values to be set by user
       relayResponse = new RelayResponse(
         'qrzn2yeyobvsb0la6au8jqykkrlgq4me2js34vl31h93lfjjrxxnvmrjibqozlbnnil3em7qhgkz3ipinhvgeevjbcxzqc06htfe6z5vrougudldz34cp7k7lqec0xu7',
-        this.relayResponse,
+        this.relayResponse[data] as string,
         new RelayProofResponse(
           BigInt(17386131212264644),
           BigInt(32889),
@@ -274,7 +281,7 @@ export class PocketMock {
           'tfvdesrvn1bv2zeyxcrxj4evbhymbfdkqcdoavjierhqjyevtvomszgcopqucris'
         ),
         new RelayRequest(
-          new RelayPayload(this.relayRequest, HTTPMethod.POST, '', undefined),
+          new RelayPayload(data, HTTPMethod.POST, '', undefined),
           new RelayMeta(BigInt(32889)),
           new RelayProof(
             BigInt(17386131212264644),
@@ -284,7 +291,7 @@ export class PocketMock {
             poktAAT,
             'c57e5076153450855e7018ab5b8de37034f04d4884f33020f339fc634228951ff1ecb69f39ab31bc6544f869f6ce10dd4cbc186fceb496d02b443a9420d09b03',
             new RequestHash(
-              new RelayPayload(this.relayRequest, HTTPMethod.POST, '', undefined),
+              new RelayPayload(data, HTTPMethod.POST, '', undefined),
               new RelayMeta(BigInt(17386131212264644))
             )
           )
