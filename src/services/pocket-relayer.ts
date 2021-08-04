@@ -11,7 +11,7 @@ import { Applications } from '../models'
 import { RelayError } from '../errors/relay-error'
 import { LimitError } from '../errors/limit-error'
 import AatPlans from '../config/aat-plans.json'
-import { blockHexToDecimal, checkEnforcementJSON, getBlockNumber } from '../utils'
+import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
 
 import { JSONObject } from '@loopback/context'
 
@@ -690,14 +690,29 @@ export class PocketRelayer {
 
       if (altruistUrl !== 'undefined') {
         // Altruist
+        const rawData = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] })
+
+        let axiosConfig = {}
+
         try {
+          axiosConfig = {
+            method: 'POST',
+            url: altruistUrl,
+            data: rawData,
+            headers: { 'Content-Type': 'application/json' },
+          }
+          const { data } = await axios(axiosConfig)
+
+          const latestBlock = blockHexToDecimal(data.result)
+
           if (!isToBlockHex) {
-            toBlock = await getBlockNumber(altruistUrl)
+            toBlock = latestBlock
           }
           if (!isFromBlockHex) {
-            fromBlock = await getBlockNumber(altruistUrl)
+            fromBlock = latestBlock
           }
         } catch (e) {
+          console.log(e)
           logger.log('error', `Failed trying to reach altruist (${altruistUrl}) to fetch block number.`)
           return new HttpErrors.InternalServerError('Internal error. Try again with a explicit block number.')
         }

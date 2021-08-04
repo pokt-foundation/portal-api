@@ -22,22 +22,6 @@ import { LimitError } from '../../src/errors/limit-error'
 import rewiremock from 'rewiremock'
 import { providers } from 'ethers'
 
-// "JsonRpcProvider", {
-//   // @ts-ignore
-//   JsonRpcProvider: {
-//     getBlockNumber: async () : Promise<number> => {
-//       console.log("con el lapiz no")
-//       return Promise.resolve(1234)
-//     }
-//   }
-
-const stub = sinon.stub(providers.JsonRpcProvider.prototype, 'getBlockNumber')
-
-rewiremock('ethers').with(stub)
-// rewiremock(() => require('providers')).with(stub)
-// rewiremock(() => import('ethers')).with(stub) // works with async API only
-rewiremock.enable()
-
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
 
 const DEFAULT_HOST = 'mainnet'
