@@ -18,6 +18,8 @@ import { metricsRecorderMock } from '../mocks/metricsRecorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
 import { gatewayTestDB } from '../fixtures/test.datasource'
+import { LimitError } from '../../src/errors/limit-error'
+import { assert } from 'console'
 
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
 
@@ -35,6 +37,7 @@ const BLOCKCHAINS = [
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
+    logLimitBlocks: 10000,
   },
   {
     hash: '0021',
@@ -47,6 +50,7 @@ const BLOCKCHAINS = [
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
+    logLimitBlocks: 10000,
     chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
     syncCheck: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
     // Does not actually exist on this chain, only for testing purposes
@@ -63,6 +67,7 @@ const BLOCKCHAINS = [
     blockchain: 'eth-mainnet-string',
     active: true,
     nodeCount: 1,
+    logLimitBlocks: 10000,
   },
 ]
 
@@ -544,12 +549,149 @@ describe('Pocket relayer service (unit)', () => {
       expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
     })
 
+    it('returns an error if exceeded `eth_getLogs` max blocks range (no altruist)', async () => {
+      const mock = new PocketMock()
+
+      mock.fail = true
+
+      const pocket = mock.getObject()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker,
+        chainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: true,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+      })
+
+      rawData =
+        '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","toBlock":"0x9c82c7","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
+
+      const relayResponse = (await poktRelayer.sendRelay({
+        rawData,
+        relayPath: '',
+        httpMethod: HTTPMethod.POST,
+        application: APPLICATION as unknown as Applications,
+        requestID: '1234',
+        requestTimeOut: undefined,
+        overallTimeOut: undefined,
+        relayRetries: 0,
+      })) as Error
+
+      expect(relayResponse).to.be.instanceOf(LimitError)
+      expect(relayResponse.message).to.match(/You cannot query logs for more than/)
+    })
+
+    it('returns an error if `eth_getLogs` call uses "latest" on block params (no altruist)', async () => {
+      const mock = new PocketMock()
+
+      mock.fail = true
+
+      const pocket = mock.getObject()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker,
+        chainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: true,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+      })
+
+      rawData =
+        '{"method":"eth_getLogs","params":[{"fromBlock":"latest","toBlock":"latest","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
+
+      const relayResponse = (await poktRelayer.sendRelay({
+        rawData,
+        relayPath: '',
+        httpMethod: HTTPMethod.POST,
+        application: APPLICATION as unknown as Applications,
+        requestID: '1234',
+        requestTimeOut: undefined,
+        overallTimeOut: undefined,
+        relayRetries: 0,
+      })) as Error
+
+      expect(relayResponse).to.be.instanceOf(LimitError)
+      expect(relayResponse.message).to.be.equal(`Please use an explicit block number instead of 'latest'.`)
+    })
+
+    it('succeeds if `eth_getLogs` call is within permitted blocks range (no altruist)', async () => {
+      const mock = new PocketMock()
+
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+
+      mock.relayResponse =
+        '{"jsonrpc":"2.0","id":1,"result":[{"address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff","blockHash":"0x2ad90e24266edd835bb03071c0c0b58ee8356c2feb4576d15b3c2c2b2ef319c5","blockNumber":"0xc5bdc9","data":"0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000767fe9edc9e0df98e07454847909b5e959d7ca0e0000000000000000000000000000000000000000000000019274b259f653fc110000000000000000000000000000000000000000000000104bf2ffa4dcbf8de5","logIndex":"0x4c","removed":false,"topics":["0x0f6672f78a59ba8e5e5b5d38df3ebc67f3c792e2c9259b8d97d7f00dd78ba1b3","0x000000000000000000000000e5feeac09d36b18b3fa757e5cf3f8da6b8e27f4c"],"transactionHash":"0x14430f1e344b5f95ea68a5f4c0538fc732cc97efdc68f6ee0ba20e2c633542f6","transactionIndex":"0x1a"}]}'
+
+      const pocket = mock.getObject()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: true,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+      })
+
+      rawData =
+        '{"method":"eth_getLogs","params":[{"fromBlock":"0xc5bdc9","toBlock":"0xc5bdc9","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
+
+      const relayResponse = await poktRelayer.sendRelay({
+        rawData,
+        relayPath: '',
+        httpMethod: HTTPMethod.POST,
+        application: APPLICATION as unknown as Applications,
+        requestID: '1234',
+        requestTimeOut: undefined,
+        overallTimeOut: undefined,
+        relayRetries: 0,
+      })
+
+      expect(relayResponse).to.be.deepEqual(JSON.parse(mock.relayResponse as string))
+    })
+
     it('chainIDCheck / syncCheck succeeds', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
 
       const mockCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
 
-      const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
+      const syncCherckerSpy = sinon.spy(mockSyncChecker, 'consensusFilter')
 
       const pocket = pocketMock.getObject()
 

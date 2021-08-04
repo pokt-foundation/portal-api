@@ -692,7 +692,6 @@ export class PocketRelayer {
         // Altruist
         try {
           if (!isToBlockHex) {
-            console.log(`Connecting to: ${altruistUrl}`)
             toBlock = await getBlockNumber(altruistUrl)
           }
           if (!isFromBlockHex) {
