@@ -1,11 +1,12 @@
-import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import RedisMock from 'ioredis-mock'
-import { metricsRecorderMock } from '../mocks/metricsRecorder'
-import { CherryPicker } from '../../src/services/cherry-picker'
-import { ChainChecker } from '../../src/services/chain-checker'
 import { expect, sinon } from '@loopback/testlab'
+import { Configuration } from '@pokt-network/pocket-js'
+
 import { DEFAULT_POCKET_CONFIG } from '../../src/config/pocket-config'
-import { Configuration, Node } from '@pokt-network/pocket-js'
+import { ChainChecker } from '../../src/services/chain-checker'
+import { CherryPicker } from '../../src/services/cherry-picker'
+import { MetricsRecorder } from '../../src/services/metrics-recorder'
+import { metricsRecorderMock } from '../mocks/metricsRecorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
 const CHAINCHECK_URL = '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'
