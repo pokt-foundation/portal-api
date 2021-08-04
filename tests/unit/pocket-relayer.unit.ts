@@ -19,7 +19,24 @@ import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
 import { gatewayTestDB } from '../fixtures/test.datasource'
 import { LimitError } from '../../src/errors/limit-error'
-import { assert } from 'console'
+import rewiremock from 'rewiremock'
+import { providers } from 'ethers'
+
+// "JsonRpcProvider", {
+//   // @ts-ignore
+//   JsonRpcProvider: {
+//     getBlockNumber: async () : Promise<number> => {
+//       console.log("con el lapiz no")
+//       return Promise.resolve(1234)
+//     }
+//   }
+
+const stub = sinon.stub(providers.JsonRpcProvider.prototype, 'getBlockNumber')
+
+rewiremock('ethers').with(stub)
+// rewiremock(() => require('providers')).with(stub)
+// rewiremock(() => import('ethers')).with(stub) // works with async API only
+rewiremock.enable()
 
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
 
@@ -549,7 +566,7 @@ describe('Pocket relayer service (unit)', () => {
       expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
     })
 
-    it('returns an error if exceeded `eth_getLogs` max blocks range (no altruist)', async () => {
+    it('should return an error if exceeded `eth_getLogs` max blocks range (no altruist)', async () => {
       const mock = new PocketMock()
 
       mock.fail = true
@@ -594,7 +611,7 @@ describe('Pocket relayer service (unit)', () => {
       expect(relayResponse.message).to.match(/You cannot query logs for more than/)
     })
 
-    it('returns an error if `eth_getLogs` call uses "latest" on block params (no altruist)', async () => {
+    it('should return an error if `eth_getLogs` call uses "latest" on block params (no altruist)', async () => {
       const mock = new PocketMock()
 
       mock.fail = true
@@ -639,7 +656,7 @@ describe('Pocket relayer service (unit)', () => {
       expect(relayResponse.message).to.be.equal(`Please use an explicit block number instead of 'latest'.`)
     })
 
-    it('succeeds if `eth_getLogs` call is within permitted blocks range (no altruist)', async () => {
+    it('should succeed if `eth_getLogs` call is within permitted blocks range (no altruist)', async () => {
       const mock = new PocketMock()
 
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
@@ -684,6 +701,52 @@ describe('Pocket relayer service (unit)', () => {
       })
 
       expect(relayResponse).to.be.deepEqual(JSON.parse(mock.relayResponse as string))
+    })
+
+    // eslint-disable-next-line mocha/no-exclusive-tests
+    it.only('should return an error if exceeded eth_getLogs max blocks range (altruist, latest)', async () => {
+      const mock = new PocketMock()
+
+      mock.fail = true
+
+      const pocket = mock.getObject()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker,
+        chainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: true,
+        altruists: JSON.stringify(ALTRUISTS),
+        aatPlan: AatPlans.FREEMIUM,
+      })
+
+      rawData =
+        '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
+
+      const relayResponse = (await poktRelayer.sendRelay({
+        rawData,
+        relayPath: '',
+        httpMethod: HTTPMethod.POST,
+        application: APPLICATION as unknown as Applications,
+        requestID: '1234',
+        requestTimeOut: undefined,
+        overallTimeOut: undefined,
+        relayRetries: 0,
+      })) as Error
+
+      expect(relayResponse).to.be.instanceOf(LimitError)
+      expect(relayResponse.message).to.match(/You cannot query logs for more than/)
     })
 
     it('chainIDCheck / syncCheck succeeds', async () => {

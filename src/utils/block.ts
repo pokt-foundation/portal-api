@@ -1,7 +1,7 @@
-import { ethers } from 'ethers'
+import { providers } from 'ethers'
 
 export async function getBlockNumber(providerUrl: string): Promise<number> {
-  const provider = new ethers.providers.JsonRpcProvider(providerUrl)
+  const provider = new providers.JsonRpcProvider(providerUrl)
   const latestBlock = await provider.getBlockNumber()
 
   return latestBlock
