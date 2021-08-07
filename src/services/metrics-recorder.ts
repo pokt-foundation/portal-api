@@ -227,18 +227,6 @@ export class MetricsRecorder {
     if (bulkData.length > 0) {
       const metricsQuery = pgFormat('INSERT INTO %I VALUES %L', relation, bulkData)
 
-      this.pgPool.connect((err, client, release) => {
-        if (err) {
-          processlogger.log('error', 'Error acquiring client ' + err.stack)
-        }
-        client.query(metricsQuery, (metricsErr, result) => {
-          release()
-          if (metricsErr) {
-            processlogger.log('error', 'Error executing query ' + metricsQuery + ' ' + err.stack)
-          }
-        })
-      })
-
       // Temporary force push to new psql
       if (relation === 'error') {
         this.pgPool2.connect((err, client, release) => {
