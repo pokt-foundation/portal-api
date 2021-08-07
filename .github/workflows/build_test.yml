@@ -1,0 +1,44 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests and lint across different versions of node
+
+name: CI - Code checks
+
+on:
+  pull_request:
+    branches: [develop]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    # Adding dummy/development variables for services that can't
+    # be injected at runtime
+    env:
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_TOKEN: mytoken
+      INFLUX_ORG: myorg
+      MONGO_ENDPOINT: endpoint
+      LOGZ_TOKEN: token
+      NODE_ENV: development
+
+    strategy:
+      matrix:
+        node-version: [10.x, 12.x]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Installing dependencies
+        run: npm install --saveDev
+
+      - name: Running production build
+        run: npm run build
+
+      - name: Running tests
+        run: npm run test
+
+      - name: Running lint
+        run: npm run lint
