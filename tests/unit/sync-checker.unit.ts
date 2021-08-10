@@ -14,6 +14,8 @@ const SYNC_ALLOWANCE = 5
 
 const DEFAULT_RELAY_RESPONSE = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c9c" }'
 
+const ALTRUIST_URL = 'https://user:pass@backups.example.org:18081'
+
 const blockchain = {
   hash: '0021',
   ticker: 'ETH',
@@ -67,8 +69,7 @@ describe('Sync checker service (unit)', () => {
     beforeEach(axiosMock.reset)
 
     pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
-    pocketMock.relayRequest = blockchain.syncCheck
-    pocketMock.relayResponse = DEFAULT_RELAY_RESPONSE
+    pocketMock.relayResponse[blockchain.syncCheck] = DEFAULT_RELAY_RESPONSE
 
     await redis.flushall()
   }
@@ -178,7 +179,7 @@ describe('Sync checker service (unit)', () => {
       const node = DEFAULT_NODES[0]
 
       // Invalid JSON string
-      pocketMock.relayResponse = 'method":eth_blockNumber","id":,"jsonrpc""2.0"}'
+      pocketMock.relayResponse[blockchain.syncCheck] = 'method":eth_blockNumber","id":,"jsonrpc""2.0"}'
 
       const pocket = pocketMock.getObject()
 
@@ -204,24 +205,22 @@ describe('Sync checker service (unit)', () => {
   })
 
   describe('getSyncFromAltruist function', () => {
-    const altruistURL = 'https://user:pass@backups.example.org:18081'
-
     it('retrieves sync from altruist', async () => {
-      axiosMock.onPost(altruistURL).reply(200, DEFAULT_RELAY_RESPONSE)
+      axiosMock.onPost(ALTRUIST_URL).reply(200, DEFAULT_RELAY_RESPONSE)
 
       const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
 
-      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', altruistURL)
+      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', ALTRUIST_URL)
 
       expect(blockHeight).to.be.equal(expectedBlockHeight)
     })
 
     it('fails retrieving sync from altruist', async () => {
-      axiosMock.onPost(altruistURL).networkError()
+      axiosMock.onPost(ALTRUIST_URL).networkError()
 
       const expectedBlockHeight = 0
 
-      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', altruistURL)
+      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', ALTRUIST_URL)
 
       expect(blockHeight).to.be.equal(expectedBlockHeight)
     })
@@ -253,50 +252,149 @@ describe('Sync checker service (unit)', () => {
     })
   })
 
-  it('performs the sync check successfully', async () => {
-    const nodes = DEFAULT_NODES
+  describe('consensusFilter function', () => {
+    it('performs the sync check successfully', async () => {
+      const nodes = DEFAULT_NODES
 
-    const pocketClient = pocketMock.getObject()
+      const pocketClient = pocketMock.getObject()
 
-    const redisGetSpy = sinon.spy(redis, 'get')
-    const redisSetSpy = sinon.spy(redis, 'set')
+      const redisGetSpy = sinon.spy(redis, 'get')
+      const redisSetSpy = sinon.spy(redis, 'set')
 
-    let syncedNodes = await syncChecker.consensusFilter({
-      nodes,
-      requestID: '1234',
-      blockchain: blockchain.blockchain,
-      syncCheck: blockchain.syncCheck,
-      pocket: pocketClient,
-      applicationID: '',
-      applicationPublicKey: '',
-      blockchainSyncBackup: '',
-      pocketAAT: undefined,
-      pocketConfiguration,
-      syncAllowance: SYNC_ALLOWANCE,
-      syncCheckPath: '',
+      let syncedNodes = await syncChecker.consensusFilter({
+        nodes,
+        requestID: '1234',
+        blockchain: blockchain.blockchain,
+        syncCheck: blockchain.syncCheck,
+        pocket: pocketClient,
+        applicationID: '',
+        applicationPublicKey: '',
+        blockchainSyncBackup: '',
+        pocketAAT: undefined,
+        pocketConfiguration,
+        syncAllowance: SYNC_ALLOWANCE,
+        syncCheckPath: '',
+      })
+
+      expect(syncedNodes).to.have.length(5)
+
+      expect(redisGetSpy.callCount).to.be.equal(2)
+      expect(redisSetSpy.callCount).to.be.equal(7)
+
+      // Subsequent calls should retrieve results from redis instead
+      syncedNodes = await syncChecker.consensusFilter({
+        nodes,
+        requestID: '1234',
+        blockchain: blockchain.blockchain,
+        syncCheck: blockchain.syncCheck,
+        pocket: pocketClient,
+        applicationID: '',
+        applicationPublicKey: '',
+        blockchainSyncBackup: '',
+        pocketAAT: undefined,
+        pocketConfiguration,
+        syncAllowance: SYNC_ALLOWANCE,
+        syncCheckPath: '',
+      })
+
+      expect(redisGetSpy.callCount).to.be.equal(3)
+      expect(redisSetSpy.callCount).to.be.equal(7)
     })
 
-    expect(syncedNodes).to.have.length(5)
+    it('fails the sync check due to all nodes failing', async () => {
+      const nodes = DEFAULT_NODES
 
-    expect(redisGetSpy.callCount).to.be.equal(2)
-    expect(redisSetSpy.callCount).to.be.equal(7)
+      pocketMock.fail = true
 
-    syncedNodes = await syncChecker.consensusFilter({
-      nodes,
-      requestID: '1234',
-      blockchain: blockchain.blockchain,
-      syncCheck: blockchain.syncCheck,
-      pocket: pocketClient,
-      applicationID: '',
-      applicationPublicKey: '',
-      blockchainSyncBackup: '',
-      pocketAAT: undefined,
-      pocketConfiguration,
-      syncAllowance: SYNC_ALLOWANCE,
-      syncCheckPath: '',
+      const pocketClient = pocketMock.getObject()
+
+      const syncedNodes = await syncChecker.consensusFilter({
+        nodes,
+        requestID: '1234',
+        blockchain: blockchain.blockchain,
+        syncCheck: blockchain.syncCheck,
+        pocket: pocketClient,
+        applicationID: '',
+        applicationPublicKey: '',
+        blockchainSyncBackup: '',
+        pocketAAT: undefined,
+        pocketConfiguration,
+        syncAllowance: SYNC_ALLOWANCE,
+        syncCheckPath: '',
+      })
+
+      expect(syncedNodes).to.have.length(5)
     })
 
-    expect(redisGetSpy.callCount).to.be.equal(3)
-    expect(redisSetSpy.callCount).to.be.equal(7)
+    it('penalize node failing sync check', async () => {
+      const nodes = DEFAULT_NODES
+
+      const penalizedNode = '{ "id": 1, "jsonrpc": "2.0", "result": "0x1aa38c" }'
+
+      pocketMock.relayResponse[blockchain.syncCheck] = [
+        DEFAULT_RELAY_RESPONSE,
+        DEFAULT_RELAY_RESPONSE,
+        DEFAULT_RELAY_RESPONSE,
+        DEFAULT_RELAY_RESPONSE,
+        penalizedNode,
+      ]
+
+      const pocketClient = pocketMock.getObject()
+
+      const syncedNodes = await syncChecker.consensusFilter({
+        nodes,
+        requestID: '1234',
+        blockchain: blockchain.blockchain,
+        syncCheck: blockchain.syncCheck,
+        pocket: pocketClient,
+        applicationID: '',
+        applicationPublicKey: '',
+        blockchainSyncBackup: '',
+        pocketAAT: undefined,
+        pocketConfiguration,
+        syncAllowance: SYNC_ALLOWANCE,
+        syncCheckPath: '',
+      })
+
+      expect(syncedNodes).to.have.length(4)
+    })
+
+    it('fails agreement of two highest nodes and check altruist', async () => {
+      axiosMock.onPost(ALTRUIST_URL).reply(200, DEFAULT_RELAY_RESPONSE)
+
+      const nodes = DEFAULT_NODES
+
+      const highestNode = DEFAULT_RELAY_RESPONSE // 17435804
+
+      // Difference is over the allowed sync check
+      const secondHighestNode = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c7e" }' // 17435774
+
+      pocketMock.relayResponse[blockchain.syncCheck] = [
+        highestNode,
+        secondHighestNode,
+        secondHighestNode,
+        secondHighestNode,
+        secondHighestNode,
+      ]
+
+      const pocketClient = pocketMock.getObject()
+
+      const syncedNodes = await syncChecker.consensusFilter({
+        nodes,
+        requestID: '1234',
+        blockchain: blockchain.blockchain,
+        syncCheck: blockchain.syncCheck,
+        pocket: pocketClient,
+        applicationID: '',
+        applicationPublicKey: '',
+        blockchainSyncBackup: ALTRUIST_URL,
+        pocketAAT: undefined,
+        pocketConfiguration,
+        syncAllowance: SYNC_ALLOWANCE,
+        syncCheckPath: '',
+      })
+
+      expect(syncedNodes).to.have.length(1)
+    })
   })
 })
