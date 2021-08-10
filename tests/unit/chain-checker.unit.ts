@@ -9,7 +9,7 @@ import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { metricsRecorderMock } from '../mocks/metricsRecorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
-const CHAINCHECK_URL = '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'
+const CHAINCHECK_PAYLOAD = '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'
 
 describe('Chain checker service (unit)', () => {
   let chainChecker: ChainChecker
@@ -41,8 +41,7 @@ describe('Chain checker service (unit)', () => {
 
   const clean = async () => {
     pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
-    pocketMock.relayRequest = CHAINCHECK_URL
-    pocketMock.relayResponse = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+    pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
 
     await redis.flushall()
     sinon.restore()
@@ -101,8 +100,7 @@ describe('Chain checker service (unit)', () => {
     it('Retrieve the logs of a node', async () => {
       const node = DEFAULT_NODES[0]
 
-      pocketMock.relayRequest = CHAINCHECK_URL
-      pocketMock.relayResponse = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+      pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
 
       const pocketClient = pocketMock.getObject()
 
@@ -110,7 +108,7 @@ describe('Chain checker service (unit)', () => {
         node,
         requestID: '1234',
         blockchain: '100',
-        chainCheck: CHAINCHECK_URL,
+        chainCheck: CHAINCHECK_PAYLOAD,
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
@@ -127,7 +125,6 @@ describe('Chain checker service (unit)', () => {
     it('Fails gracefully on handled error result', async () => {
       const node = DEFAULT_NODES[0]
 
-      pocketMock.relayRequest = CHAINCHECK_URL
       pocketMock.fail = true
 
       const pocketClient = pocketMock.getObject()
@@ -136,7 +133,7 @@ describe('Chain checker service (unit)', () => {
         node,
         requestID: '1234',
         blockchain: '100',
-        chainCheck: CHAINCHECK_URL,
+        chainCheck: CHAINCHECK_PAYLOAD,
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
@@ -153,9 +150,8 @@ describe('Chain checker service (unit)', () => {
     it('Fails gracefully on unhandled error result', async () => {
       const node = DEFAULT_NODES[0]
 
-      pocketMock.relayRequest = CHAINCHECK_URL
       // Invalid JSON string
-      pocketMock.relayResponse = 'id":1,"jsonrp:"2.0","result": "0x64"}'
+      pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = 'id":1,"jsonrp:"2.0","result": "0x64"}'
 
       const pocketClient = pocketMock.getObject()
 
@@ -163,7 +159,7 @@ describe('Chain checker service (unit)', () => {
         node,
         requestID: '1234',
         blockchain: '100',
-        chainCheck: CHAINCHECK_URL,
+        chainCheck: CHAINCHECK_PAYLOAD,
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
@@ -187,7 +183,7 @@ describe('Chain checker service (unit)', () => {
       nodes,
       requestID: '1234',
       blockchain: '100',
-      chainCheck: CHAINCHECK_URL,
+      chainCheck: CHAINCHECK_PAYLOAD,
       pocket: pocketClient,
       applicationID: '',
       applicationPublicKey: '',
@@ -217,7 +213,7 @@ describe('Chain checker service (unit)', () => {
       nodes,
       requestID: '1234',
       blockchain: '100',
-      chainCheck: CHAINCHECK_URL,
+      chainCheck: CHAINCHECK_PAYLOAD,
       pocket: pocketClient,
       applicationID: '',
       applicationPublicKey: '',
@@ -237,7 +233,7 @@ describe('Chain checker service (unit)', () => {
       nodes,
       requestID: '1234',
       blockchain: '100',
-      chainCheck: CHAINCHECK_URL,
+      chainCheck: CHAINCHECK_PAYLOAD,
       pocket: pocketClient,
       applicationID: '',
       applicationPublicKey: '',
@@ -254,7 +250,7 @@ describe('Chain checker service (unit)', () => {
     const nodes = DEFAULT_NODES
 
     // Default nodes are set with a chainID of 100
-    pocketMock.relayResponse = '{"id":1,"jsonrpc":"2.0","result":"0xC8"}' // 0xC8 to base 10: 200
+    pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = '{"id":1,"jsonrpc":"2.0","result":"0xC8"}' // 0xC8 to base 10: 200
 
     const pocketClient = pocketMock.getObject()
 
@@ -264,7 +260,7 @@ describe('Chain checker service (unit)', () => {
       nodes,
       requestID: '1234',
       blockchain: chainID.toString(),
-      chainCheck: CHAINCHECK_URL,
+      chainCheck: CHAINCHECK_PAYLOAD,
       pocket: pocketClient,
       applicationID: '',
       applicationPublicKey: '',

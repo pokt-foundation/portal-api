@@ -397,7 +397,8 @@ describe('Pocket relayer service (unit)', () => {
     }
 
     beforeEach(async () => {
-      rawData = '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
+      // Default data of pocketJS mock
+      rawData = Object.keys(pocketMock.relayResponse)[0]
 
       await createBlockchain()
     })
@@ -413,8 +414,7 @@ describe('Pocket relayer service (unit)', () => {
         overallTimeOut: undefined,
         relayRetries: 0,
       })
-
-      const expected = JSON.parse(pocketMock.relayResponse as string)
+      const expected = JSON.parse(pocketMock.relayResponse[rawData] as string)
 
       expect(relayResponse).to.be.deepEqual(expected)
     })
@@ -422,7 +422,7 @@ describe('Pocket relayer service (unit)', () => {
     it('sends successful relay response as string', async () => {
       const mock = new PocketMock()
 
-      mock.relayResponse = 'string response'
+      mock.relayResponse[rawData] = 'string response'
 
       const pocket = mock.getObject()
 
@@ -457,7 +457,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })
 
-      const expected = mock.relayResponse
+      const expected = mock.relayResponse[rawData]
 
       expect(relayResponse).to.be.deepEqual(expected)
     })
@@ -506,7 +506,7 @@ describe('Pocket relayer service (unit)', () => {
     it('returns relay error on successful relay response that returns error', async () => {
       const mock = new PocketMock()
 
-      mock.relayResponse = '{"error": "a relay error"}'
+      mock.relayResponse[rawData] = '{"error": "a relay error"}'
 
       const pocket = mock.getObject()
 
@@ -584,7 +584,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })
 
-      expect(relayResponse).to.be.deepEqual(JSON.parse(pocketMock.relayResponse as string))
+      expect(relayResponse).to.be.deepEqual(JSON.parse(pocketMock.relayResponse[rawData] as string))
 
       expect(mockCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
@@ -876,7 +876,7 @@ describe('Pocket relayer service (unit)', () => {
       }
 
       it('sends a relay post request to an altruist node when no session nodes are available', async () => {
-        const axiosRelayResponse = JSON.parse(pocketMock.relayResponse as string)
+        const axiosRelayResponse = JSON.parse(pocketMock.relayResponse[rawData] as string)
 
         axiosMock.onPost(ALTRUISTS['0021']).reply(200, axiosRelayResponse)
 
@@ -897,7 +897,7 @@ describe('Pocket relayer service (unit)', () => {
       })
 
       it('sends a relay get request to an altruist node when no session nodes are available', async () => {
-        const axiosRelayResponse = JSON.parse(pocketMock.relayResponse as string)
+        const axiosRelayResponse = JSON.parse(pocketMock.relayResponse[rawData] as string)
 
         axiosMock.onGet(ALTRUISTS['0021']).reply(200, axiosRelayResponse)
 
