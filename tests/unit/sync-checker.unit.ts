@@ -6,11 +6,13 @@ import { CherryPicker } from '../../src/services/cherry-picker'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 import { Configuration } from '@pokt-network/pocket-js'
 import { DEFAULT_POCKET_CONFIG } from '../../src/config/pocket-config'
-import { expect } from '@loopback/testlab'
-import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
-import { gatewayTestDB } from '../fixtures/test.datasource'
+import { expect, sinon } from '@loopback/testlab'
+import MockAdapter from 'axios-mock-adapter'
+import axios from 'axios'
 
 const SYNC_ALLOWANCE = 5
+
+const DEFAULT_RELAY_RESPONSE = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c9c" }'
 
 const blockchain = {
   hash: '0021',
@@ -24,8 +26,6 @@ const blockchain = {
   enforceResult: 'JSON',
   nodeCount: 1,
   syncCheck: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
-  // Does not actually exist on this chain, only for testing purposes
-  syncCheckPath: '/v1/query/height',
   syncAllowance: 2,
 }
 
@@ -36,14 +36,13 @@ describe('Sync checker service (unit)', () => {
   let metricsRecorder: MetricsRecorder
   let pocketMock: PocketMock
   let pocketConfiguration: Configuration
-  let blockchainRepository: BlockchainsRepository
+  let axiosMock: MockAdapter
 
   before('initialize variables', async () => {
     redis = new RedisMock(0, '')
     cherryPicker = new CherryPicker({ redis, checkDebug: false })
     metricsRecorder = metricsRecorderMock(redis, cherryPicker)
     syncChecker = new SyncChecker(redis, metricsRecorder, SYNC_ALLOWANCE)
-    blockchainRepository = new BlockchainsRepository(gatewayTestDB)
 
     pocketConfiguration = new Configuration(
       DEFAULT_POCKET_CONFIG.MAX_DISPATCHERS,
@@ -59,12 +58,18 @@ describe('Sync checker service (unit)', () => {
     )
     pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
 
-    const dbBlockchain = await blockchainRepository.create(blockchain)
+    axiosMock = new MockAdapter(axios)
 
-    expect(dbBlockchain).to.be.deepEqual(blockchain)
+    // Mocks logger so we can assert the resultsplakataplakata
   })
 
   const clean = async () => {
+    beforeEach(axiosMock.reset)
+
+    pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
+    pocketMock.relayRequest = blockchain.syncCheck
+    pocketMock.relayResponse = DEFAULT_RELAY_RESPONSE
+
     await redis.flushall()
   }
 
@@ -116,10 +121,182 @@ describe('Sync checker service (unit)', () => {
     expect(newConfig.requestTimeOut).to.be.equal(expectedTimeout)
   })
 
-  it('retrieves node sync log', () => {
-    const node = DEFAULT_NODES[0]
+  describe('getNodeSyncLog function', () => {
+    it('retrieves the sync logs of a node', async () => {
+      const node = DEFAULT_NODES[0]
 
-    pocketMock.relayRequest = blockchain.syncCheck
-    pocketMock.relayResponse = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+      const pocket = pocketMock.getObject()
+
+      const nodeSyncLog = await syncChecker.getNodeSyncLog(
+        node,
+        '1234',
+        blockchain.syncCheck,
+        '',
+        blockchain.blockchain,
+        '',
+        '',
+        pocket,
+        undefined,
+        pocketConfiguration
+      )
+
+      const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
+
+      expect(nodeSyncLog.node).to.be.equal(node)
+      expect(nodeSyncLog.blockHeight).to.be.equal(expectedBlockHeight)
+      expect(nodeSyncLog.blockchain).to.be.equal(blockchain.blockchain)
+    })
+
+    it('Fails gracefully on handled error result', async () => {
+      const node = DEFAULT_NODES[0]
+
+      pocketMock.fail = true
+
+      const pocket = pocketMock.getObject()
+
+      const nodeSyncLog = await syncChecker.getNodeSyncLog(
+        node,
+        '1234',
+        blockchain.syncCheck,
+        '',
+        blockchain.blockchain,
+        '',
+        '',
+        pocket,
+        undefined,
+        pocketConfiguration
+      )
+
+      const expectedBlockHeight = 0
+
+      expect(nodeSyncLog.node).to.be.equal(node)
+      expect(nodeSyncLog.blockHeight).to.be.equal(expectedBlockHeight)
+      expect(nodeSyncLog.blockchain).to.be.equal(blockchain.blockchain)
+    })
+
+    it('Fails gracefully on unhandled error result', async () => {
+      const node = DEFAULT_NODES[0]
+
+      // Invalid JSON string
+      pocketMock.relayResponse = 'method":eth_blockNumber","id":,"jsonrpc""2.0"}'
+
+      const pocket = pocketMock.getObject()
+
+      const nodeSyncLog = await syncChecker.getNodeSyncLog(
+        node,
+        '1234',
+        blockchain.syncCheck,
+        '',
+        blockchain.blockchain,
+        '',
+        '',
+        pocket,
+        undefined,
+        pocketConfiguration
+      )
+
+      const expectedBlockHeight = 0
+
+      expect(nodeSyncLog.node).to.be.equal(node)
+      expect(nodeSyncLog.blockHeight).to.be.equal(expectedBlockHeight)
+      expect(nodeSyncLog.blockchain).to.be.equal(blockchain.blockchain)
+    })
+  })
+
+  describe('getSyncFromAltruist function', () => {
+    const altruistURL = 'https://user:pass@backups.example.org:18081'
+
+    it('retrieves sync from altruist', async () => {
+      axiosMock.onPost(altruistURL).reply(200, DEFAULT_RELAY_RESPONSE)
+
+      const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
+
+      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', altruistURL)
+
+      expect(blockHeight).to.be.equal(expectedBlockHeight)
+    })
+
+    it('fails retrieving sync from altruist', async () => {
+      axiosMock.onPost(altruistURL).networkError()
+
+      const expectedBlockHeight = 0
+
+      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', altruistURL)
+
+      expect(blockHeight).to.be.equal(expectedBlockHeight)
+    })
+  })
+
+  it('Retrieve the sync logs of a all the nodes in a pocket session', async () => {
+    const nodes = DEFAULT_NODES
+
+    const pocketClient = pocketMock.getObject()
+
+    const nodeLogs = await syncChecker.getNodeSyncLogs(
+      nodes,
+      '1234',
+      blockchain.syncCheck,
+      '',
+      blockchain.blockchain,
+      '',
+      '',
+      pocketClient,
+      undefined,
+      pocketConfiguration
+    )
+
+    const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
+
+    nodeLogs.forEach((nodeLog, idx: number) => {
+      expect(nodeLog.node).to.be.deepEqual(nodes[idx])
+      expect(nodeLog.blockHeight).to.be.equal(expectedBlockHeight)
+    })
+  })
+
+  it('performs the sync check successfully', async () => {
+    const nodes = DEFAULT_NODES
+
+    const pocketClient = pocketMock.getObject()
+
+    const redisGetSpy = sinon.spy(redis, 'get')
+    const redisSetSpy = sinon.spy(redis, 'set')
+
+    let syncedNodes = await syncChecker.consensusFilter({
+      nodes,
+      requestID: '1234',
+      blockchain: blockchain.blockchain,
+      syncCheck: blockchain.syncCheck,
+      pocket: pocketClient,
+      applicationID: '',
+      applicationPublicKey: '',
+      blockchainSyncBackup: '',
+      pocketAAT: undefined,
+      pocketConfiguration,
+      syncAllowance: SYNC_ALLOWANCE,
+      syncCheckPath: '',
+    })
+
+    expect(syncedNodes).to.have.length(5)
+
+    expect(redisGetSpy.callCount).to.be.equal(2)
+    expect(redisSetSpy.callCount).to.be.equal(7)
+
+    syncedNodes = await syncChecker.consensusFilter({
+      nodes,
+      requestID: '1234',
+      blockchain: blockchain.blockchain,
+      syncCheck: blockchain.syncCheck,
+      pocket: pocketClient,
+      applicationID: '',
+      applicationPublicKey: '',
+      blockchainSyncBackup: '',
+      pocketAAT: undefined,
+      pocketConfiguration,
+      syncAllowance: SYNC_ALLOWANCE,
+      syncCheckPath: '',
+    })
+
+    expect(redisGetSpy.callCount).to.be.equal(3)
+    expect(redisSetSpy.callCount).to.be.equal(7)
   })
 })
