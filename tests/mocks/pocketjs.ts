@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 import { Mock, It } from 'moq.ts'
 import { DEFAULT_POCKET_CONFIG } from '../../src/config/pocket-config'
 import {
@@ -19,9 +20,9 @@ import {
   RelayMeta,
   RelayProof,
   RequestHash,
+  Keybase,
+  Account,
 } from '@pokt-network/pocket-js'
-
-const MINIMUM_NODE_STAKE = 15150
 
 export const DEFAULT_NODES = [
   new Node(
@@ -115,27 +116,22 @@ const DEFAULT_MOCK_VALUES = {
   ),
 }
 
+type MockRelayResponse = string | RelayResponse | RpcError
+
 export class PocketMock {
-  randomizeNodes: boolean
   dispatchers: URL[]
   rpcProvider: HttpRpcProvider
   configuration: Configuration
   nodes: Node[]
-  // relayRequest: string = '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
-  // relayResponse: string = '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
   fail = false
   rpcMockError = new RpcError('500', 'Mock error')
-  relayRequest = '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
-  relayResponse: string | RelayResponse | RpcError = '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+  relayResponse: Record<string, MockRelayResponse | Array<MockRelayResponse>> = {
+    '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}': '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}',
+  }
+  relayCounter: Record<string, number>
   session = DEFAULT_MOCK_VALUES.SESSION
 
-  constructor(
-    // TODO: Implement usage with custom session generation
-    // { randomizeNodes = false }: PocketMockOptions,
-    dispatchers?: URL[],
-    rpcProvider?: HttpRpcProvider,
-    configuration?: Configuration
-  ) {
+  constructor(dispatchers?: URL[], rpcProvider?: HttpRpcProvider, configuration?: Configuration) {
     // Cannot set rpcProvider without setting the dispatchers as it depends on them
     if (rpcProvider && !dispatchers) {
       throw new Error('Cannot set rpcProvider without dispatchers')
@@ -144,55 +140,39 @@ export class PocketMock {
     this.dispatchers = dispatchers || DEFAULT_MOCK_VALUES.DISPATCHERS
     this.rpcProvider = rpcProvider || new HttpRpcProvider(DEFAULT_MOCK_VALUES.DISPATCHERS[0])
     this.configuration = configuration || DEFAULT_MOCK_VALUES.CONFIGURATION
-  }
 
-  _setMockOptions({ randomizeNodes }: PocketMockOptions): void {
-    if (randomizeNodes) {
-      const nodes = PocketMock._genRandomNodes()
-
-      this.nodes = nodes
-    } else {
-      this.nodes = DEFAULT_MOCK_VALUES.NODES
-    }
-  }
-
-  // Generate a pocket session's amount of nodes (5) with random field values
-  static _genRandomNodes(): Node[] {
-    const generateString = (length: number) =>
-      Array.from(Array(length), () => Math.floor(Math.random() * 36).toString(36)).join('')
-
-    const nodes: [Node, Node, Node, Node, Node] = [<Node>{}, <Node>{}, <Node>{}, <Node>{}, <Node>{}]
-
-    nodes.forEach(
-      () =>
-        new Node(
-          generateString(40),
-          generateString(64),
-          false,
-          StakingStatus.Staked,
-          BigInt(Math.floor(Math.random() * MINIMUM_NODE_STAKE) + 10000),
-          `https://validators${Math.floor(Math.random() * 20)}.com`,
-          // Chain format: ['0000', '00XX']
-          new Array(4).fill('').map(() => `00${Math.floor(Math.random() * 20)}`.padStart(2, '0'))
-        )
-    )
-    return nodes
+    this.relayCounter = {}
   }
 
   /**
-   * GetObject returns an object instance of pocketjs  with the configured options
+   * Retrieves an object instance of pocketjs  with the configured options
+   * @returns pocketjs instance with mocked functions
    */
-  getObject(): Pocket {
-    const sessionManagerMock = new Mock<SessionManager>()
+  object(): Pocket {
+    // Default mock functions
+    // TODO: Implement custom results
+    const sessionManager = new Mock<SessionManager>()
       .setup((instance) => instance.getCurrentSession(It.IsAny(), It.IsAny(), It.IsAny()))
       .returnsAsync(this.session)
       .object()
 
-    const response = this._getRelayResponse()
+    const keybase = new Mock<Keybase>()
+      .setup((instance) => instance.unlockAccount(It.IsAny(), It.IsAny(), It.IsAny()))
+      .returns(undefined)
+      .setup((instance) => instance.importAccount(It.IsAny(), It.IsAny()))
+      .returnsAsync(
+        new Account(
+          Buffer.from('viymhp9wli51m1i9f1jyk4v4entepune', 'hex'),
+          'k2dfnl30z51gvi96ajh5xateyfjytorxy7pnserri0eix1kn0fizmw5wsnjr10fd8jdatm4bdywtpjk08eamplgflnxpeyir8vakzte620ykiewwhwqy8nh8sgx9luwu'
+        )
+      )
+      .object()
 
     const repoMock = new Mock<Pocket>()
       .setup((instance) => instance.sessionManager)
-      .returns(sessionManagerMock)
+      .returns(sessionManager)
+      .setup((instance) => instance.keybase)
+      .returns(keybase)
       .setup((instance) =>
         instance.sendRelay(
           It.IsAny(),
@@ -207,51 +187,63 @@ export class PocketMock {
           It.IsAny()
         )
       )
-      .returnsAsync(response)
+      .callback(({ args: [data] }) => Promise.resolve(this._sendRelay(data)))
 
     return repoMock.object()
   }
 
   /**
-   * getClass returns a mocked class of pocketjs with the configured options
+   * Retrieves a mocked class of pocketjs with the configured options
+   * @returns pocketjs class with mocked functions
    */
-  getClass(): typeof Pocket {
-    const sessionManagerMock = new Mock<SessionManager>()
-      .setup((instance) => instance.getCurrentSession(It.IsAny(), It.IsAny(), It.IsAny()))
-      .returnsAsync(this.session)
-      .object()
-
-    const response = this._getRelayResponse()
-
+  class(): typeof Pocket {
     const repoMock = new Mock<typeof Pocket>({ target: Pocket })
       .setup((instance) => new instance(It.IsAny(), It.IsAny(), It.IsAny()))
-      .callback(({ args: [dispatchers, rpcConfig, config] }) => new Pocket(dispatchers, rpcConfig, config))
-      .setup((instance) => new instance(It.IsAny(), It.IsAny(), It.IsAny()).sessionManager)
-      .returns(sessionManagerMock)
-      .setup((instance) =>
-        new instance(It.IsAny(), It.IsAny(), It.IsAny()).sendRelay(
-          It.IsAny(),
-          It.IsAny(),
-          It.IsAny(),
-          It.IsAny(),
-          It.IsAny(),
-          It.IsAny(),
-          It.IsAny(),
-          It.IsAny(),
-          It.IsAny(),
-          It.IsAny()
-        )
-      )
-      .returnsAsync(response)
+      .returns(this.object())
 
     return repoMock.object()
   }
 
-  _getRelayResponse(): RelayResponse | RpcError {
+  /**
+   * Obtain relay values that  can be a single type or array, when an array is given, the response will follow
+   * the index of the array for each response and the final item when the requests exceededs the array length
+   * @param data relay request payload
+   * @returns response payload or RpcError if it wasn't previously defined
+   */
+  _getRelayResponse(data: string): MockRelayResponse {
+    if (!this.relayResponse.hasOwnProperty(data)) {
+      return new RpcError('000', 'relay request not set on map')
+    }
+
+    if (!Array.isArray(this.relayResponse[data])) {
+      return this.relayResponse[data] as MockRelayResponse
+    }
+
+    const relayArray = this.relayResponse[data] as MockRelayResponse[]
+
+    if (!this.relayCounter.hasOwnProperty(data)) {
+      this.relayCounter[data] = 0
+    }
+
+    const idx = this.relayCounter[data] < relayArray.length ? this.relayCounter[data] : relayArray.length - 1
+
+    this.relayCounter[data]++
+
+    return relayArray[idx]
+  }
+
+  /**
+   * Simulates a relay request and returns a response previously saved on the `relayResponse` property prior object/class instantiation
+   * @param data relay request payload
+   * @returns response payload of request
+   */
+  _sendRelay(data: string): RelayResponse | RpcError {
     let relayResponse
 
-    if (this.relayResponse instanceof RelayResponse || this.relayResponse instanceof RpcError) {
-      relayResponse = this.relayResponse
+    const _relayResponse = this._getRelayResponse(data)
+
+    if (_relayResponse instanceof RelayResponse || _relayResponse instanceof RpcError) {
+      relayResponse = _relayResponse
     } else {
       const poktAAT = new PocketAAT(
         '0.0.1',
@@ -260,10 +252,9 @@ export class PocketMock {
         '7h0kixql89qw9muz2uel2zao5xuk546slj2d6hv2psgbjte0m0gbrgj1co3oprhtfd3vlx7pboyzpbcwvnfyxrtdxiff1t34mp3cmepobdsbvwb5k5lsfrnkdbf9mh6i'
       )
 
-      // TODO: Flexibilize relay response values to be set by user
       relayResponse = new RelayResponse(
         'qrzn2yeyobvsb0la6au8jqykkrlgq4me2js34vl31h93lfjjrxxnvmrjibqozlbnnil3em7qhgkz3ipinhvgeevjbcxzqc06htfe6z5vrougudldz34cp7k7lqec0xu7',
-        this.relayResponse,
+        _relayResponse as string,
         new RelayProofResponse(
           BigInt(17386131212264644),
           BigInt(32889),
@@ -274,7 +265,7 @@ export class PocketMock {
           'tfvdesrvn1bv2zeyxcrxj4evbhymbfdkqcdoavjierhqjyevtvomszgcopqucris'
         ),
         new RelayRequest(
-          new RelayPayload(this.relayRequest, HTTPMethod.POST, '', undefined),
+          new RelayPayload(data, HTTPMethod.POST, '', undefined),
           new RelayMeta(BigInt(32889)),
           new RelayProof(
             BigInt(17386131212264644),
@@ -284,7 +275,7 @@ export class PocketMock {
             poktAAT,
             'c57e5076153450855e7018ab5b8de37034f04d4884f33020f339fc634228951ff1ecb69f39ab31bc6544f869f6ce10dd4cbc186fceb496d02b443a9420d09b03',
             new RequestHash(
-              new RelayPayload(this.relayRequest, HTTPMethod.POST, '', undefined),
+              new RelayPayload(data, HTTPMethod.POST, '', undefined),
               new RelayMeta(BigInt(17386131212264644))
             )
           )
@@ -295,8 +286,4 @@ export class PocketMock {
 
     return response
   }
-}
-
-export type PocketMockOptions = {
-  randomizeNodes?: boolean
 }
