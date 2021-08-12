@@ -49,6 +49,10 @@ describe('Chain checker service (unit)', () => {
 
   beforeEach(clean)
 
+  after(() => {
+    sinon.restore()
+  })
+
   it('should be defined', async () => {
     expect(chainChecker).to.be.ok()
   })

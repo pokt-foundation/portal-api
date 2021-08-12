@@ -163,6 +163,10 @@ describe('Pocket relayer service (unit)', () => {
     })
   })
 
+  after(() => {
+    sinon.restore()
+  })
+
   const clean = async () => {
     await blockchainRepository.deleteAll()
     await redis.flushall()
