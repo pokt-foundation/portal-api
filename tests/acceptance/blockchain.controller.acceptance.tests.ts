@@ -1,4 +1,4 @@
-import { Client, expect } from '@loopback/testlab'
+import { Client, expect, sinon } from '@loopback/testlab'
 import { PocketGatewayApplication } from '../..'
 import { gatewayTestDB } from '../fixtures/test.datasource'
 import { Blockchains } from '../../src/models/blockchains.model'
@@ -16,6 +16,7 @@ describe('Blockchains controller (acceptance)', () => {
   })
 
   after(async () => {
+    sinon.restore()
     await app.stop()
   })
 
