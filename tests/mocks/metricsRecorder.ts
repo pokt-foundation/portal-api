@@ -1,4 +1,4 @@
-import { expect, sinon } from '@loopback/testlab'
+import { sinon } from '@loopback/testlab'
 import { Pool } from 'pg'
 import rewiremock from 'rewiremock'
 import { InfluxDB, WriteApi } from '@influxdata/influxdb-client'

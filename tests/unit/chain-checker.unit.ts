@@ -102,7 +102,7 @@ describe('Chain checker service (unit)', () => {
 
       pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
 
-      const pocketClient = pocketMock.getObject()
+      const pocketClient = pocketMock.object()
 
       const nodeLog = await chainChecker.getNodeChainLog({
         node,
@@ -127,7 +127,7 @@ describe('Chain checker service (unit)', () => {
 
       pocketMock.fail = true
 
-      const pocketClient = pocketMock.getObject()
+      const pocketClient = pocketMock.object()
 
       const nodeLog = await chainChecker.getNodeChainLog({
         node,
@@ -153,7 +153,7 @@ describe('Chain checker service (unit)', () => {
       // Invalid JSON string
       pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = 'id":1,"jsonrp:"2.0","result": "0x64"}'
 
-      const pocketClient = pocketMock.getObject()
+      const pocketClient = pocketMock.object()
 
       const nodeLog = await chainChecker.getNodeChainLog({
         node,
@@ -177,7 +177,7 @@ describe('Chain checker service (unit)', () => {
   it('Retrieve the logs of a all the nodes in a pocket session', async () => {
     const nodes = DEFAULT_NODES
 
-    const pocketClient = pocketMock.getObject()
+    const pocketClient = pocketMock.object()
 
     const nodeLogs = await chainChecker.getNodeChainLogs({
       nodes,
@@ -202,7 +202,7 @@ describe('Chain checker service (unit)', () => {
   it('performs the chain check successfully', async () => {
     const nodes = DEFAULT_NODES
 
-    const pocketClient = pocketMock.getObject()
+    const pocketClient = pocketMock.object()
 
     const chainID = 100
 
@@ -252,7 +252,7 @@ describe('Chain checker service (unit)', () => {
     // Default nodes are set with a chainID of 100
     pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = '{"id":1,"jsonrpc":"2.0","result":"0xC8"}' // 0xC8 to base 10: 200
 
-    const pocketClient = pocketMock.getObject()
+    const pocketClient = pocketMock.object()
 
     const chainID = 100
 

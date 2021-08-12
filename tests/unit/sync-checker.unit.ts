@@ -126,7 +126,7 @@ describe('Sync checker service (unit)', () => {
     it('retrieves the sync logs of a node', async () => {
       const node = DEFAULT_NODES[0]
 
-      const pocket = pocketMock.getObject()
+      const pocket = pocketMock.object()
 
       const nodeSyncLog = await syncChecker.getNodeSyncLog(
         node,
@@ -153,7 +153,7 @@ describe('Sync checker service (unit)', () => {
 
       pocketMock.fail = true
 
-      const pocket = pocketMock.getObject()
+      const pocket = pocketMock.object()
 
       const nodeSyncLog = await syncChecker.getNodeSyncLog(
         node,
@@ -181,7 +181,7 @@ describe('Sync checker service (unit)', () => {
       // Invalid JSON string
       pocketMock.relayResponse[blockchain.syncCheck] = 'method":eth_blockNumber","id":,"jsonrpc""2.0"}'
 
-      const pocket = pocketMock.getObject()
+      const pocket = pocketMock.object()
 
       const nodeSyncLog = await syncChecker.getNodeSyncLog(
         node,
@@ -229,7 +229,7 @@ describe('Sync checker service (unit)', () => {
   it('Retrieve the sync logs of a all the nodes in a pocket session', async () => {
     const nodes = DEFAULT_NODES
 
-    const pocketClient = pocketMock.getObject()
+    const pocketClient = pocketMock.object()
 
     const nodeLogs = await syncChecker.getNodeSyncLogs(
       nodes,
@@ -256,7 +256,7 @@ describe('Sync checker service (unit)', () => {
     it('performs the sync check successfully', async () => {
       const nodes = DEFAULT_NODES
 
-      const pocketClient = pocketMock.getObject()
+      const pocketClient = pocketMock.object()
 
       const redisGetSpy = sinon.spy(redis, 'get')
       const redisSetSpy = sinon.spy(redis, 'set')
@@ -306,7 +306,7 @@ describe('Sync checker service (unit)', () => {
 
       pocketMock.fail = true
 
-      const pocketClient = pocketMock.getObject()
+      const pocketClient = pocketMock.object()
 
       const syncedNodes = await syncChecker.consensusFilter({
         nodes,
@@ -339,7 +339,7 @@ describe('Sync checker service (unit)', () => {
         penalizedNode,
       ]
 
-      const pocketClient = pocketMock.getObject()
+      const pocketClient = pocketMock.object()
 
       const syncedNodes = await syncChecker.consensusFilter({
         nodes,
@@ -377,7 +377,7 @@ describe('Sync checker service (unit)', () => {
         secondHighestNode,
       ]
 
-      const pocketClient = pocketMock.getObject()
+      const pocketClient = pocketMock.object()
 
       const syncedNodes = await syncChecker.consensusFilter({
         nodes,
