@@ -6,7 +6,6 @@ import { Pool as PGPool } from 'pg'
 // const logger = require('../services/logger');
 
 export class RelayProfiler extends BaseProfiler {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   public data: { key: string; time_elapsed: number | undefined }[] = []
   pgPool: PGPool
 
