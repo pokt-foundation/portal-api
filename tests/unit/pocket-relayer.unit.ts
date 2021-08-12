@@ -140,7 +140,7 @@ describe('Pocket relayer service (unit)', () => {
 
     pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
 
-    const pocket = pocketMock.getObject()
+    const pocket = pocketMock.object()
 
     pocketRelayer = new PocketRelayer({
       host: DEFAULT_HOST,
@@ -233,7 +233,7 @@ describe('Pocket relayer service (unit)', () => {
   })
 
   it('checks secret of application when set', () => {
-    const pocket = pocketMock.getObject()
+    const pocket = pocketMock.object()
 
     const encryptor = new Encryptor({ key: DB_ENCRYPTION_KEY })
 
@@ -424,7 +424,7 @@ describe('Pocket relayer service (unit)', () => {
 
       mock.relayResponse[rawData] = 'string response'
 
-      const pocket = mock.getObject()
+      const pocket = mock.object()
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet-string',
@@ -467,7 +467,7 @@ describe('Pocket relayer service (unit)', () => {
 
       mock.fail = true
 
-      const pocket = mock.getObject()
+      const pocket = mock.object()
 
       const poktRelayer = new PocketRelayer({
         host: 'mainnet',
@@ -508,7 +508,7 @@ describe('Pocket relayer service (unit)', () => {
 
       mock.relayResponse[rawData] = '{"error": "a relay error"}'
 
-      const pocket = mock.getObject()
+      const pocket = mock.object()
 
       const poktRelayer = new PocketRelayer({
         host: 'mainnet',
@@ -551,7 +551,7 @@ describe('Pocket relayer service (unit)', () => {
 
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
 
-      const pocket = pocketMock.getObject()
+      const pocket = pocketMock.object()
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -597,7 +597,7 @@ describe('Pocket relayer service (unit)', () => {
 
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
 
-      const pocket = pocketMock.getObject()
+      const pocket = pocketMock.object()
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -643,7 +643,7 @@ describe('Pocket relayer service (unit)', () => {
 
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
 
-      const pocket = pocketMock.getObject()
+      const pocket = pocketMock.object()
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -695,7 +695,7 @@ describe('Pocket relayer service (unit)', () => {
 
         application.gatewaySettings = gatewaySettings
 
-        const pocket = pocketMock.getObject()
+        const pocket = pocketMock.object()
 
         const poktRelayer = new PocketRelayer({
           host: 'mainnet',
@@ -746,7 +746,7 @@ describe('Pocket relayer service (unit)', () => {
 
         application.gatewaySettings = gatewaySettings
 
-        const pocket = pocketMock.getObject()
+        const pocket = pocketMock.object()
 
         const invalidOrigin = 'invalid-origin'
 
@@ -799,7 +799,7 @@ describe('Pocket relayer service (unit)', () => {
 
         application.gatewaySettings = gatewaySettings
 
-        const pocket = pocketMock.getObject()
+        const pocket = pocketMock.object()
 
         const invalidUserAgent = 'invalid-user-agent'
 
@@ -850,7 +850,7 @@ describe('Pocket relayer service (unit)', () => {
       const getAltruistRelayer = (): PocketRelayer => {
         const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(0, 5)
 
-        const pocket = pocketMock.getObject()
+        const pocket = pocketMock.object()
 
         const poktRelayer = new PocketRelayer({
           host: 'eth-mainnet',
