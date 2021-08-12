@@ -488,8 +488,6 @@ describe('Cherry picker service (unit)', () => {
       expect(pickedApp).to.be.ok()
       expect(pickedApp).to.be.String()
 
-      console.log(pickedApp)
-
       // App should continue flagged as failure
       const failureNode = await redis.get(blockchain + '-' + appsIDs[3] + '-failure')
 
@@ -517,8 +515,6 @@ describe('Cherry picker service (unit)', () => {
 
       expect(pickedApp).to.be.ok()
       expect(pickedApp).to.be.String()
-
-      console.log(pickedApp)
 
       // All apps should continue being failures
       for (const app of appsIDs) {

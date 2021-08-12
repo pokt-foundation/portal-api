@@ -8,7 +8,7 @@ import { HttpErrors } from '@loopback/rest'
 const logger = require('../services/logger')
 const os = require('os')
 
-const { InfluxDB, Point } = require('@influxdata/influxdb-client')
+import { InfluxDB, Point } from '@influxdata/influxdb-client'
 
 const region = process.env.REGION || '' // Can be empty
 const influxURL = process.env.INFLUX_URL || ''
@@ -161,7 +161,7 @@ export class MetricsRecorder {
         .tag('applicationPublicKey', applicationPublicKey)
         .tag('nodePublicKey', serviceNode)
         .tag('method', method)
-        .tag('result', result)
+        .tag('result', result.toString())
         .tag('blockchain', blockchain)
         .floatField('bytes', bytes)
         .floatField('elapsedTime', elapsedTime.toFixed(4))
