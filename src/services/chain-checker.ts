@@ -243,7 +243,8 @@ export class ChainChecker {
       'POST' as HTTPMethod,
       undefined,
       node,
-      false
+      false,
+      undefined
     )
 
     if (relayResponse instanceof RelayResponse && checkEnforcementJSON(relayResponse.payload)) {

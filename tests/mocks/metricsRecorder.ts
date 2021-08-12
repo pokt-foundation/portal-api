@@ -8,23 +8,25 @@ import { CherryPicker } from '../../src/services/cherry-picker'
 
 // Returns a MetricsRecorder class with its external dependencies (pg and influxdb) mocked
 export const metricsRecorderMock = (redis: Redis, cherryPicker: CherryPicker): MetricsRecorder => {
-  sinon.replace(InfluxDB.prototype, 'getWriteApi', function (org: string, bucket: string): WriteApi {
+  const sandbox = sinon.createSandbox()
+
+  sandbox.replace(InfluxDB.prototype, 'getWriteApi', function (org: string, bucket: string): WriteApi {
     return {
-      useDefaultTags: sinon.stub(),
-      writePoint: sinon.stub(),
-      flush: sinon.stub(),
+      useDefaultTags: sandbox.stub(),
+      writePoint: sandbox.stub(),
+      flush: sandbox.stub(),
     } as unknown as WriteApi
   })
 
-  const mockPool = sinon.mock(new Pool({ connectionString: 'database1' }))
-  const mockPool2 = sinon.mock(new Pool({ connectionString: 'database2' }))
+  const mockPool = sandbox.mock(new Pool({ connectionString: 'database1' }))
+  const mockPool2 = sandbox.mock(new Pool({ connectionString: 'database2' }))
 
   mockPool.expects('connect').returns({
-    query: sinon.stub(),
+    query: sandbox.stub(),
   })
 
   mockPool2.expects('connect').returns({
-    query: sinon.stub(),
+    query: sandbox.stub(),
   })
 
   const proxy = rewiremock.proxy(() => require('../../src/services/metrics-recorder'), {
