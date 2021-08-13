@@ -26,4 +26,16 @@ describe('PingController', () => {
 
     expect(res.body).to.have.property('headers')
   })
+
+  it('invokes GET /', async () => {
+    const res = await client.get('/').expect(200)
+
+    expect(res.body).to.have.property('greeting', 'Pocket Network Gateway is saying hello and welcome onboard!')
+
+    expect(res.body).to.have.property('url')
+
+    expect(res.body).to.have.property('date')
+
+    expect(res.body).to.have.property('headers')
+  })
 })

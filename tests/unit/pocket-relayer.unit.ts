@@ -240,7 +240,6 @@ describe('Pocket relayer service (unit)', () => {
     const pocket = pocketMock.object()
 
     const encryptor = new Encryptor({ key: DB_ENCRYPTION_KEY })
-
     const key = 'encrypt123456789120encrypt123456789120'
     const encryptedKey = encryptor.encrypt(key)
 
@@ -381,7 +380,7 @@ describe('Pocket relayer service (unit)', () => {
           requestID,
           syncCheck,
           syncCheckPath,
-          syncAllowance = 5,
+          syncAllowance,
           blockchain,
           blockchainSyncBackup,
           applicationID,
