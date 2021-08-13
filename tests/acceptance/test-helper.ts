@@ -44,7 +44,7 @@ const DUMMY_ENV = {
   AAT_PLAN: 'freemium',
 }
 
-export async function setupApplication(pocket?: typeof Pocket): Promise<AppWithClient> {
+export async function setupApplication(pocket?: typeof Pocket, envs?: object): Promise<AppWithClient> {
   const restConfig = givenHttpServerConfig()
 
   sinon.replace(InfluxDB.prototype, 'getWriteApi', function (org: string, bucket: string): WriteApi {
@@ -68,7 +68,7 @@ export async function setupApplication(pocket?: typeof Pocket): Promise<AppWithC
     rest: restConfig,
     env: {
       load: false,
-      values: DUMMY_ENV,
+      values: envs ? { ...DUMMY_ENV, ...envs } : DUMMY_ENV,
     },
   })
 

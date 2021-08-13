@@ -3,11 +3,15 @@ import { PocketGatewayApplication } from '../..'
 import { setupApplication } from './test-helper'
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
 import { gatewayTestDB } from '../fixtures/test.datasource'
-import { PocketMock } from '../mocks/pocketjs'
-import { Configuration, Pocket } from '@pokt-network/pocket-js'
-import { DEFAULT_POCKET_CONFIG } from '../../src/config/pocket-config'
+import { MockRelayResponse, PocketMock } from '../mocks/pocketjs'
 import { ApplicationsRepository } from '../../src/repositories/applications.repository'
+import { Encryptor } from 'strong-cryptor'
+import { LoadBalancersRepository } from '../../src/repositories/load-balancers.repository'
 
+// Must be the same one from the test environment
+const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
+
+// Might not actually reflect real-world values
 const BLOCKCHAINS = [
   {
     hash: '0001',
@@ -20,6 +24,7 @@ const BLOCKCHAINS = [
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
+    chainID: '21',
   },
   {
     hash: '0021',
@@ -32,11 +37,11 @@ const BLOCKCHAINS = [
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
+    chainID: '100',
     chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
     syncCheck: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
-    // Does not actually exist on this chain, only for testing purposes
     syncCheckPath: '/v1/query/height',
-    syncAllowance: 2,
+    syncAllowance: 5,
   },
   {
     hash: '0040',
@@ -48,6 +53,7 @@ const BLOCKCHAINS = [
     blockchain: 'eth-mainnet-string',
     active: true,
     nodeCount: 1,
+    chainID: '64',
   },
 ]
 
@@ -87,37 +93,27 @@ const APPLICATION = {
   },
 }
 
+const LOAD_BALANCER = {
+  id: 'gt4a1s9rfrebaf8g31bsdc04',
+  user: 'test@test.com',
+  name: 'test load balancer',
+  requestTimeout: 5000,
+  applicationIDs: Array(10).fill(APPLICATION.id),
+}
+
 describe('V1 controller (acceptance)', () => {
   let app: PocketGatewayApplication
   let client: Client
   let blockchainsRepository: BlockchainsRepository
   let applicationsRepository: ApplicationsRepository
+  let loadBalancersRepository: LoadBalancersRepository
   let pocketMock: PocketMock
-  let pocketConfiguration: Configuration
-  let pocketClass: typeof Pocket
+  let relayResponses: Record<string, MockRelayResponse | MockRelayResponse[]>
 
   before('setupApplication', async () => {
-    pocketConfiguration = new Configuration(
-      DEFAULT_POCKET_CONFIG.MAX_DISPATCHERS,
-      DEFAULT_POCKET_CONFIG.MAX_SESSIONS,
-      DEFAULT_POCKET_CONFIG.CONSENSUS_NODE_COUNT,
-      DEFAULT_POCKET_CONFIG.REQUEST_TIMEOUT,
-      DEFAULT_POCKET_CONFIG.ACCEPT_DISPUTED_RESPONSES,
-      4,
-      10200,
-      DEFAULT_POCKET_CONFIG.VALIDATE_RELAY_RESPONSES,
-      DEFAULT_POCKET_CONFIG.REJECT_SELF_SIGNED_CERTIFICATES,
-      DEFAULT_POCKET_CONFIG.USE_LEGACY_TX_CODEC
-    )
-
     blockchainsRepository = new BlockchainsRepository(gatewayTestDB)
     applicationsRepository = new ApplicationsRepository(gatewayTestDB)
-
-    pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
-    pocketMock.relayResponse['{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'] =
-      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
-
-    pocketClass = pocketMock.class()
+    loadBalancersRepository = new LoadBalancersRepository(gatewayTestDB)
   })
 
   after(async () => {
@@ -125,34 +121,48 @@ describe('V1 controller (acceptance)', () => {
   })
 
   beforeEach(async () => {
+    relayResponses = {
+      '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}':
+        '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}',
+    }
+
+    pocketMock = new PocketMock(undefined, undefined, undefined)
+    pocketMock.relayResponse = relayResponses
+
+    await loadBalancersRepository.create(LOAD_BALANCER)
     await blockchainsRepository.createAll(BLOCKCHAINS)
     await applicationsRepository.create(APPLICATION)
   })
 
   afterEach(async () => {
     sinon.restore()
+
+    await loadBalancersRepository.deleteAll()
     await blockchainsRepository.deleteAll()
     await applicationsRepository.deleteAll()
   })
 
   it('invokes GET /v1/{appId} and successfully relays a request', async () => {
-    ;({ app, client } = await setupApplication(pocketClass))
+    const pocket = pocketMock.class()
+
+    ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh')
+      .post('/v1/sd9fj31d714kgos42e68f9gh/query')
       .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'mainnet')
       .expect(200)
 
-    const expected = { id: 1, jsonrpc: '2.0', result: '0x1083d57' }
-
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
-    expect(response.body).to.be.deepEqual(expected)
+    expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+    expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
   })
 
   it('returns 404 when no app is found', async () => {
-    ;({ app, client } = await setupApplication(pocketClass))
+    const pocket = pocketMock.class()
+
+    ;({ app, client } = await setupApplication(pocket))
 
     await applicationsRepository.deleteAll()
 
@@ -164,11 +174,13 @@ describe('V1 controller (acceptance)', () => {
       .expect(200)
 
     expect(res.body).to.have.property('message')
-    expect(res.body.message).to.startWith('Entity not found')
+    expect(res.body.message).to.startWith('Application not found')
   })
 
   it('returns 404 when the specified blockchain is not found', async () => {
-    ;({ app, client } = await setupApplication(pocketClass))
+    const pocket = pocketMock.class()
+
+    ;({ app, client } = await setupApplication(pocket))
 
     await blockchainsRepository.deleteAll()
 
@@ -181,5 +193,258 @@ describe('V1 controller (acceptance)', () => {
 
     expect(res.body).to.have.property('message')
     expect(res.body.message).to.startWith('Incorrect blockchain')
+  })
+
+  it('internally performs successful sync check/chain check', async () => {
+    relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+    relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+
+    const pocket = pocketMock.class()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    const response = await client
+      .post('/v1/sd9fj31d714kgos42e68f9gh/query/height')
+      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet')
+      .expect(200)
+
+    expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+    expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+  })
+
+  it('fails on request with invalid authorization header', async () => {
+    await applicationsRepository.deleteAll()
+
+    const encryptor = new Encryptor({ key: DB_ENCRYPTION_KEY })
+    const key = 'encrypt123456789120encrypt123456789120'
+    const encryptedKey = encryptor.encrypt(key)
+
+    const appWithSecurity = { ...APPLICATION }
+
+    appWithSecurity.gatewaySettings = {
+      secretKey: encryptedKey,
+      secretKeyRequired: true,
+      whitelistOrigins: [],
+      whitelistUserAgents: [],
+    }
+
+    await applicationsRepository.create(appWithSecurity)
+
+    const pocket = pocketMock.class()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    const response = await client
+      .post('/v1/sd9fj31d714kgos42e68f9gh/query/height')
+      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'mainnet')
+      .set('authorization', 'invalid key')
+      .expect(200)
+
+    expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(response.body).to.have.property('message')
+    expect(response.body.message).to.be.equal('SecretKey does not match')
+  })
+
+  it('fails on request with invalid origin', async () => {
+    await applicationsRepository.deleteAll()
+
+    const appWithSecurity = { ...APPLICATION }
+
+    appWithSecurity.gatewaySettings = {
+      secretKey: '',
+      secretKeyRequired: false,
+      whitelistOrigins: ['unlocalhost'],
+      whitelistUserAgents: [],
+    }
+
+    await applicationsRepository.create(appWithSecurity)
+
+    const pocket = pocketMock.class()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    const response = await client
+      .post('/v1/sd9fj31d714kgos42e68f9gh/query/height')
+      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'mainnet')
+      .set('origin', 'localhost')
+      .expect(200)
+
+    expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(response.body).to.have.property('message')
+    expect(response.body.message).to.startWith('Whitelist Origin check failed')
+  })
+
+  it('success relay with correct secret key, origin and userAgent security', async () => {
+    await applicationsRepository.deleteAll()
+
+    const encryptor = new Encryptor({ key: DB_ENCRYPTION_KEY })
+    const key = 'encrypt123456789120encrypt123456789120'
+    const encryptedKey = encryptor.encrypt(key)
+
+    const appWithSecurity = { ...APPLICATION }
+
+    appWithSecurity.gatewaySettings = {
+      secretKey: encryptedKey,
+      secretKeyRequired: true,
+      whitelistOrigins: ['unlocalhost'],
+      whitelistUserAgents: ['Mozilla/5.0'],
+    }
+
+    await applicationsRepository.create(appWithSecurity)
+
+    const pocket = pocketMock.class()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    const response = await client
+      .post('/v1/sd9fj31d714kgos42e68f9gh')
+      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'mainnet')
+      .set('origin', 'unlocalhost')
+      .set('authorization', `Basic ${Buffer.from(':' + key).toString('base64')}`)
+      .set('user-agent', 'Mozilla/5.0')
+      .expect(200)
+
+    expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+    expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+  })
+
+  it('performs a failed request returning error', async () => {
+    pocketMock.fail = true
+    const pocket = pocketMock.class()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    const response = await client
+      .post('/v1/sd9fj31d714kgos42e68f9gh/query')
+      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'mainnet')
+      .expect(200)
+
+    expect(response.body).to.have.property('message')
+    expect(response.body.message).to.be.equal('Relay attempts exhausted')
+  })
+
+  it('returns error on chain check failure', async () => {
+    // Failing chain check
+    relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
+    // Successfull sync check
+    relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+
+    const pocket = pocketMock.class()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    const response = await client
+      .post('/v1/sd9fj31d714kgos42e68f9gh/query')
+      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet')
+      .expect(200)
+
+    expect(response.body).to.have.property('message')
+    expect(response.body.message).to.be.equal('Relay attempts exhausted')
+  })
+
+  it('succesfully relays a loadbalancer application', async () => {
+    const pocket = pocketMock.class()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    const response = await client
+      .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc04/query/height')
+      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'mainnet')
+      .expect(200)
+
+    expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+    expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+  })
+
+  it('returns error when no load balancer is found', async () => {
+    const pocket = pocketMock.class()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    const response = await client
+      .post('/v1/lb/invalid')
+      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'mainnet')
+      .expect(200)
+
+    expect(response.body).to.have.property('message')
+    expect(response.body.message).to.be.equal('Load balancer configuration error')
+  })
+
+  it('returns error on load balancer relay failure', async () => {
+    pocketMock.fail = true
+    const pocket = pocketMock.class()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    const response = await client
+      .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc04')
+      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'mainnet')
+      .expect(200)
+
+    expect(response.body).to.have.property('message')
+    expect(response.body.message).to.be.equal('Relay attempts exhausted')
+  })
+
+  it('redirects empty path with specific load balancer', async () => {
+    const pocket = pocketMock.class()
+
+    ;({ app, client } = await setupApplication(pocket, {
+      REDIRECTS: '[{"domain": "mainnet", "blockchain": "mainnet", "loadBalancerID" : "gt4a1s9rfrebaf8g31bsdc04"}]',
+    }))
+
+    const response = await client
+      .post('/')
+      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'mainnet')
+      .expect(200)
+
+    expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+    expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+  })
+
+  it('fails on invalid redirect load balancer', async () => {
+    const pocket = pocketMock.class()
+
+    ;({ app, client } = await setupApplication(pocket, {
+      REDIRECTS: '[{"domain": "mainnet", "blockchain": "mainnet", "loadBalancerID" : "gt4a1s9rfrebaf8g31bsdc04"}]',
+    }))
+
+    const response = await client
+      .post('/')
+      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'invalid host')
+      .expect(200)
+
+    console.log('BODY', response.body)
+
+    expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(response.body).to.have.property('message')
+    expect(response.body.message).to.be.equal('Invalid domain')
   })
 })
