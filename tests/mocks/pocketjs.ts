@@ -116,7 +116,7 @@ const DEFAULT_MOCK_VALUES = {
   ),
 }
 
-type MockRelayResponse = string | RelayResponse | RpcError
+export type MockRelayResponse = string | RelayResponse | RpcError
 
 export class PocketMock {
   dispatchers: URL[]
