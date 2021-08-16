@@ -12,8 +12,7 @@ import AatPlans from './config/aat-plans.json'
 
 const logger = require('./services/logger')
 
-const pocketJS = require('@pokt-network/pocket-js')
-const { Pocket, Configuration, HttpRpcProvider } = pocketJS
+import { Pocket, Configuration, HttpRpcProvider } from '@pokt-network/pocket-js'
 
 import Redis from 'ioredis'
 import crypto from 'crypto'

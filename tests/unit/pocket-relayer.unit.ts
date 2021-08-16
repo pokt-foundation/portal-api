@@ -144,7 +144,7 @@ describe('Pocket relayer service (unit)', () => {
 
     pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
 
-    const pocket = pocketMock.getObject()
+    const pocket = pocketMock.object()
 
     pocketRelayer = new PocketRelayer({
       host: DEFAULT_HOST,
@@ -237,7 +237,7 @@ describe('Pocket relayer service (unit)', () => {
   })
 
   it('checks secret of application when set', () => {
-    const pocket = pocketMock.getObject()
+    const pocket = pocketMock.object()
 
     const encryptor = new Encryptor({ key: DB_ENCRYPTION_KEY })
 
@@ -401,7 +401,8 @@ describe('Pocket relayer service (unit)', () => {
     }
 
     beforeEach(async () => {
-      rawData = '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
+      // Default data of pocketJS mock
+      rawData = Object.keys(pocketMock.relayResponse)[0]
 
       await createBlockchain()
     })
@@ -417,8 +418,7 @@ describe('Pocket relayer service (unit)', () => {
         overallTimeOut: undefined,
         relayRetries: 0,
       })
-
-      const expected = JSON.parse(pocketMock.relayResponse as string)
+      const expected = JSON.parse(pocketMock.relayResponse[rawData] as string)
 
       expect(relayResponse).to.be.deepEqual(expected)
     })
@@ -426,9 +426,9 @@ describe('Pocket relayer service (unit)', () => {
     it('sends successful relay response as string', async () => {
       const mock = new PocketMock()
 
-      mock.relayResponse = 'string response'
+      mock.relayResponse[rawData] = 'string response'
 
-      const pocket = mock.getObject()
+      const pocket = mock.object()
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet-string',
@@ -461,7 +461,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })
 
-      const expected = mock.relayResponse
+      const expected = mock.relayResponse[rawData]
 
       expect(relayResponse).to.be.deepEqual(expected)
     })
@@ -471,7 +471,7 @@ describe('Pocket relayer service (unit)', () => {
 
       mock.fail = true
 
-      const pocket = mock.getObject()
+      const pocket = mock.object()
 
       const poktRelayer = new PocketRelayer({
         host: 'mainnet',
@@ -510,9 +510,9 @@ describe('Pocket relayer service (unit)', () => {
     it('returns relay error on successful relay response that returns error', async () => {
       const mock = new PocketMock()
 
-      mock.relayResponse = '{"error": "a relay error"}'
+      mock.relayResponse[rawData] = '{"error": "a relay error"}'
 
-      const pocket = mock.getObject()
+      const pocket = mock.object()
 
       const poktRelayer = new PocketRelayer({
         host: 'mainnet',
@@ -555,7 +555,7 @@ describe('Pocket relayer service (unit)', () => {
 
       const syncCherckerSpy = sinon.spy(mockSyncChecker, 'consensusFilter')
 
-      const pocket = pocketMock.getObject()
+      const pocket = pocketMock.object()
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -588,7 +588,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })
 
-      expect(relayResponse).to.be.deepEqual(JSON.parse(pocketMock.relayResponse as string))
+      expect(relayResponse).to.be.deepEqual(JSON.parse(pocketMock.relayResponse[rawData] as string))
 
       expect(mockCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
@@ -601,7 +601,7 @@ describe('Pocket relayer service (unit)', () => {
 
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
 
-      const pocket = pocketMock.getObject()
+      const pocket = pocketMock.object()
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -647,7 +647,7 @@ describe('Pocket relayer service (unit)', () => {
 
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
 
-      const pocket = pocketMock.getObject()
+      const pocket = pocketMock.object()
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -691,7 +691,7 @@ describe('Pocket relayer service (unit)', () => {
 
       mock.fail = true
 
-      const pocket = mock.getObject()
+      const pocket = mock.object()
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -736,7 +736,7 @@ describe('Pocket relayer service (unit)', () => {
 
       mock.fail = true
 
-      const pocket = mock.getObject()
+      const pocket = mock.object()
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -781,10 +781,13 @@ describe('Pocket relayer service (unit)', () => {
 
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
 
-      mock.relayResponse =
+      rawData =
+        '{"method":"eth_getLogs","params":[{"fromBlock":"0xc5bdc9","toBlock":"0xc5bdc9","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
+
+      mock.relayResponse[rawData] =
         '{"jsonrpc":"2.0","id":1,"result":[{"address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff","blockHash":"0x2ad90e24266edd835bb03071c0c0b58ee8356c2feb4576d15b3c2c2b2ef319c5","blockNumber":"0xc5bdc9","data":"0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000767fe9edc9e0df98e07454847909b5e959d7ca0e0000000000000000000000000000000000000000000000019274b259f653fc110000000000000000000000000000000000000000000000104bf2ffa4dcbf8de5","logIndex":"0x4c","removed":false,"topics":["0x0f6672f78a59ba8e5e5b5d38df3ebc67f3c792e2c9259b8d97d7f00dd78ba1b3","0x000000000000000000000000e5feeac09d36b18b3fa757e5cf3f8da6b8e27f4c"],"transactionHash":"0x14430f1e344b5f95ea68a5f4c0538fc732cc97efdc68f6ee0ba20e2c633542f6","transactionIndex":"0x1a"}]}'
 
-      const pocket = mock.getObject()
+      const pocket = mock.object()
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -806,9 +809,6 @@ describe('Pocket relayer service (unit)', () => {
         aatPlan: AatPlans.FREEMIUM,
       })
 
-      rawData =
-        '{"method":"eth_getLogs","params":[{"fromBlock":"0xc5bdc9","toBlock":"0xc5bdc9","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
-
       const relayResponse = await poktRelayer.sendRelay({
         rawData,
         relayPath: '',
@@ -820,7 +820,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })
 
-      expect(relayResponse).to.be.deepEqual(JSON.parse(mock.relayResponse as string))
+      expect(relayResponse).to.be.deepEqual(JSON.parse(mock.relayResponse[rawData] as string))
     })
 
     describe('security checks', () => {
@@ -836,7 +836,7 @@ describe('Pocket relayer service (unit)', () => {
 
         application.gatewaySettings = gatewaySettings
 
-        const pocket = pocketMock.getObject()
+        const pocket = pocketMock.object()
 
         const poktRelayer = new PocketRelayer({
           host: 'mainnet',
@@ -887,7 +887,7 @@ describe('Pocket relayer service (unit)', () => {
 
         application.gatewaySettings = gatewaySettings
 
-        const pocket = pocketMock.getObject()
+        const pocket = pocketMock.object()
 
         const invalidOrigin = 'invalid-origin'
 
@@ -940,7 +940,7 @@ describe('Pocket relayer service (unit)', () => {
 
         application.gatewaySettings = gatewaySettings
 
-        const pocket = pocketMock.getObject()
+        const pocket = pocketMock.object()
 
         const invalidUserAgent = 'invalid-user-agent'
 
@@ -993,11 +993,10 @@ describe('Pocket relayer service (unit)', () => {
       const getAltruistRelayer = (relayResponse?: string): PocketRelayer => {
         const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(0, 5)
 
-        const mock = new PocketMock()
-        const pocket = mock.getObject()
+        const pocket = pocketMock.object()
 
         if (relayResponse) {
-          mock.relayResponse = relayResponse
+          pocketMock.relayResponse[rawData] = relayResponse
         }
 
         const poktRelayer = new PocketRelayer({
@@ -1024,7 +1023,7 @@ describe('Pocket relayer service (unit)', () => {
       }
 
       it('sends a relay post request to an altruist node when no session nodes are available', async () => {
-        const axiosRelayResponse = JSON.parse(pocketMock.relayResponse as string)
+        const axiosRelayResponse = JSON.parse(pocketMock.relayResponse[rawData] as string)
 
         axiosMock.onPost(ALTRUISTS['0021']).reply(200, axiosRelayResponse)
 
@@ -1045,7 +1044,7 @@ describe('Pocket relayer service (unit)', () => {
       })
 
       it('sends a relay get request to an altruist node when no session nodes are available', async () => {
-        const axiosRelayResponse = JSON.parse(pocketMock.relayResponse as string)
+        const axiosRelayResponse = JSON.parse(pocketMock.relayResponse[rawData] as string)
 
         axiosMock.onGet(ALTRUISTS['0021']).reply(200, axiosRelayResponse)
 
@@ -1146,10 +1145,10 @@ describe('Pocket relayer service (unit)', () => {
         const mockRelayResponse =
           '{"jsonrpc":"2.0","id":1,"result":[{"address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff","blockHash":"0x2ad90e24266edd835bb03071c0c0b58ee8356c2feb4576d15b3c2c2b2ef319c5","blockNumber":"0xc5bdc9","data":"0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000767fe9edc9e0df98e07454847909b5e959d7ca0e0000000000000000000000000000000000000000000000019274b259f653fc110000000000000000000000000000000000000000000000104bf2ffa4dcbf8de5","logIndex":"0x4c","removed":false,"topics":["0x0f6672f78a59ba8e5e5b5d38df3ebc67f3c792e2c9259b8d97d7f00dd78ba1b3","0x000000000000000000000000e5feeac09d36b18b3fa757e5cf3f8da6b8e27f4c"],"transactionHash":"0x14430f1e344b5f95ea68a5f4c0538fc732cc97efdc68f6ee0ba20e2c633542f6","transactionIndex":"0x1a"}]}'
 
-        const altruistRelayer = getAltruistRelayer(mockRelayResponse)
-
         rawData =
           '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
+
+        const altruistRelayer = getAltruistRelayer(mockRelayResponse)
 
         axiosMock.onPost(ALTRUISTS['0021'], blockNumberData).reply(200, blockNumberRespose)
         axiosMock.onPost(ALTRUISTS['0021'], JSON.parse(rawData)).reply(200, mockRelayResponse)
