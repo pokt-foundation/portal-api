@@ -984,6 +984,7 @@ describe('Pocket relayer service (unit)', () => {
 
     describe('sendRelay function (with altruists)', () => {
       const axiosMock = new MockAdapter(axios)
+      const blockNumberData = { jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] }
 
       beforeEach(() => {
         axiosMock.reset()
@@ -1109,15 +1110,15 @@ describe('Pocket relayer service (unit)', () => {
         const blockNumberRespose = {
           jsonrpc: '2.0',
           id: 1,
-          result: '0x9c5bb8',
+          result: '0x9c82c7',
         }
-
-        axiosMock.onPost(ALTRUISTS['0021']).reply(200, blockNumberRespose)
 
         const altruistRelayer = getAltruistRelayer()
 
         rawData =
           '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
+
+        axiosMock.onPost(ALTRUISTS['0021'], blockNumberData).reply(200, blockNumberRespose)
 
         const relayResponse = (await altruistRelayer.sendRelay({
           rawData,
@@ -1135,7 +1136,6 @@ describe('Pocket relayer service (unit)', () => {
       })
 
       it('should succeed if `eth_getLogs` call is within permitted blocks range (using latest)', async () => {
-        const blockNumberData = { jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] }
         const blockNumberRespose = {
           jsonrpc: '2.0',
           id: 1,
