@@ -143,38 +143,40 @@ export class SyncChecker {
       errorState = true
     }
 
-    if (errorState) {
-      // Consult Altruist for sync source of truth
-      currentBlockHeight = await this.getSyncFromAltruist(syncCheck, syncCheckPath, blockchainSyncBackup)
+    // Consult Altruist for sync source of truth
+    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheck, syncCheckPath, blockchainSyncBackup)
 
-      if (currentBlockHeight === 0) {
-        // Failure to find sync from consensus and altruist
-        logger.log('info', 'SYNC CHECK ALTRUIST FAILURE: ' + currentBlockHeight, {
-          requestID: requestID,
-          relayType: '',
-          typeID: '',
-          serviceNode: 'ALTRUIST',
-          error: '',
-          elapsedTime: '',
-        })
+    if (altruistBlockHeight === 0) {
+      // Failure to find sync from consensus and altruist
+      logger.log('info', 'SYNC CHECK ALTRUIST FAILURE: ' + altruistBlockHeight, {
+        requestID: requestID,
+        relayType: '',
+        typeID: '',
+        serviceNode: 'ALTRUIST',
+        error: '',
+        elapsedTime: '',
+      })
+
+      if (errorState) {
         return nodes
-      } else {
-        logger.log('info', 'SYNC CHECK ALTRUIST CHECK: ' + currentBlockHeight, {
-          requestID: requestID,
-          relayType: '',
-          typeID: '',
-          serviceNode: 'ALTRUIST',
-          error: '',
-          elapsedTime: '',
-        })
       }
+    } else {
+      logger.log('info', 'SYNC CHECK ALTRUIST CHECK: ' + altruistBlockHeight, {
+        requestID: requestID,
+        relayType: '',
+        typeID: '',
+        serviceNode: 'ALTRUIST',
+        error: '',
+        elapsedTime: '',
+      })
     }
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
     for (const nodeSyncLog of nodeSyncLogs) {
       const relayStart = process.hrtime()
+      const allowedBlockHeight = nodeSyncLog.blockHeight + syncAllowance
 
-      if (nodeSyncLog.blockHeight + syncAllowance >= currentBlockHeight) {
+      if (allowedBlockHeight >= currentBlockHeight && allowedBlockHeight >= altruistBlockHeight) {
         logger.log(
           'info',
           'SYNC CHECK IN-SYNC: ' + nodeSyncLog.node.publicKey + ' height: ' + nodeSyncLog.blockHeight,
@@ -221,7 +223,7 @@ export class SyncChecker {
           delivered: false,
           fallback: false,
           method: 'synccheck',
-          error: `OUT OF SYNC: current block height on chain ${blockchain}: ${currentBlockHeight} nodes height: ${nodeSyncLog.blockHeight} sync allowance: ${syncAllowance}`,
+          error: `OUT OF SYNC: current block height on chain ${blockchain}: ${currentBlockHeight} altruist block height: ${altruistBlockHeight} nodes height: ${nodeSyncLog.blockHeight} sync allowance: ${syncAllowance}`,
         })
       }
     }

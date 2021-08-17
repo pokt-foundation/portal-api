@@ -254,8 +254,11 @@ describe('Sync checker service (unit)', () => {
     })
   })
 
-  describe('consensusFilter function', () => {
+  // eslint-disable-next-line mocha/no-exclusive-tests
+  describe.only('consensusFilter function', () => {
     it('performs the sync check successfully', async () => {
+      axiosMock.onPost(ALTRUIST_URL).reply(200, DEFAULT_RELAY_RESPONSE)
+
       const nodes = DEFAULT_NODES
 
       const pocketClient = pocketMock.object()
@@ -271,7 +274,7 @@ describe('Sync checker service (unit)', () => {
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
-        blockchainSyncBackup: '',
+        blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
@@ -292,7 +295,7 @@ describe('Sync checker service (unit)', () => {
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
-        blockchainSyncBackup: '',
+        blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
@@ -303,7 +306,9 @@ describe('Sync checker service (unit)', () => {
       expect(redisSetSpy.callCount).to.be.equal(7)
     })
 
-    it('fails the sync check due to all nodes failing', async () => {
+    it('fails sync check due to altruist and chain error', async () => {
+      axiosMock.onPost(ALTRUIST_URL).reply(500)
+
       const nodes = DEFAULT_NODES
 
       pocketMock.fail = true
@@ -318,7 +323,7 @@ describe('Sync checker service (unit)', () => {
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
-        blockchainSyncBackup: '',
+        blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
@@ -328,7 +333,61 @@ describe('Sync checker service (unit)', () => {
       expect(syncedNodes).to.have.length(5)
     })
 
+    it('fails the sync check due to all nodes failing', async () => {
+      axiosMock.onPost(ALTRUIST_URL).reply(200, DEFAULT_RELAY_RESPONSE)
+
+      const nodes = DEFAULT_NODES
+
+      pocketMock.fail = true
+
+      const pocketClient = pocketMock.object()
+
+      const syncedNodes = await syncChecker.consensusFilter({
+        nodes,
+        requestID: '1234',
+        blockchain: blockchain.blockchain,
+        syncCheck: blockchain.syncCheck,
+        pocket: pocketClient,
+        applicationID: '',
+        applicationPublicKey: '',
+        blockchainSyncBackup: ALTRUIST_URL,
+        pocketAAT: undefined,
+        pocketConfiguration,
+        syncAllowance: SYNC_ALLOWANCE,
+        syncCheckPath: '',
+      })
+
+      expect(syncedNodes).to.have.length(0)
+    })
+
+    it('pass session sync check but fails due to behind altruist', async () => {
+      axiosMock.onPost(ALTRUIST_URL).reply(200, '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0d00" }') // 100 blocks after the DEFAULT_RELAY_RESPONSE
+
+      const nodes = DEFAULT_NODES
+
+      const pocketClient = pocketMock.object()
+
+      const syncedNodes = await syncChecker.consensusFilter({
+        nodes,
+        requestID: '1234',
+        blockchain: blockchain.blockchain,
+        syncCheck: blockchain.syncCheck,
+        pocket: pocketClient,
+        applicationID: '',
+        applicationPublicKey: '',
+        blockchainSyncBackup: ALTRUIST_URL,
+        pocketAAT: undefined,
+        pocketConfiguration,
+        syncAllowance: SYNC_ALLOWANCE,
+        syncCheckPath: '',
+      })
+
+      expect(syncedNodes).to.have.length(0)
+    })
+
     it('penalize node failing sync check', async () => {
+      axiosMock.onPost(ALTRUIST_URL).reply(200, DEFAULT_RELAY_RESPONSE)
+
       const nodes = DEFAULT_NODES
 
       const penalizedNode = '{ "id": 1, "jsonrpc": "2.0", "result": "0x1aa38c" }'
@@ -351,7 +410,7 @@ describe('Sync checker service (unit)', () => {
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
-        blockchainSyncBackup: '',
+        blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
@@ -361,7 +420,7 @@ describe('Sync checker service (unit)', () => {
       expect(syncedNodes).to.have.length(4)
     })
 
-    it('fails agreement of two highest nodes and check altruist', async () => {
+    it('fails agreement of two highest nodes', async () => {
       axiosMock.onPost(ALTRUIST_URL).reply(200, DEFAULT_RELAY_RESPONSE)
 
       const nodes = DEFAULT_NODES
