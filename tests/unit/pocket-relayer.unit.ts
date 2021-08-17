@@ -551,7 +551,7 @@ describe('Pocket relayer service (unit)', () => {
     it('chainIDCheck / syncCheck succeeds', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
 
-      const mockCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
+      const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
 
       const syncCherckerSpy = sinon.spy(mockSyncChecker, 'consensusFilter')
 
@@ -590,16 +590,16 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(relayResponse).to.be.deepEqual(JSON.parse(pocketMock.relayResponse[rawData] as string))
 
-      expect(mockCheckerSpy.callCount).to.be.equal(1)
+      expect(mockChainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
     })
 
     it('chainIDCheck fails (no nodes returned)', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(0, 5)
 
-      const mockCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
+      const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
 
-      const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
+      const syncCherckerSpy = sinon.spy(mockSyncChecker, 'consensusFilter')
 
       const pocket = pocketMock.object()
 
@@ -636,16 +636,16 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(relayResponse).to.be.instanceOf(Error)
 
-      expect(mockCheckerSpy.callCount).to.be.equal(1)
-      expect(syncCherckerSpy.callCount).to.be.equal(0)
+      expect(mockChainCheckerSpy.callCount).to.be.equal(1)
+      expect(syncCherckerSpy.callCount).to.be.equal(1)
     })
 
     it('syncCheck fails (no nodes returned)', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 0)
 
-      const mockCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
+      const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
 
-      const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
+      const syncCherckerSpy = sinon.spy(mockSyncChecker, 'consensusFilter')
 
       const pocket = pocketMock.object()
 
@@ -682,7 +682,7 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(relayResponse).to.be.instanceOf(Error)
 
-      expect(mockCheckerSpy.callCount).to.be.equal(1)
+      expect(mockChainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
     })
 

@@ -457,11 +457,13 @@ export class PocketRelayer {
 
       const results = await Promise.all(checkers)
 
-      if (blockchainIDCheck && results.length === 1) {
+      if (blockchainIDCheck && checkers.length === 1) {
         chainCheckNodes = results[0]
-      } else if (blockchainSyncCheck && results.length === 1) {
+      }
+      if (blockchainSyncCheck && checkers.length === 1) {
         syncCheckNodes = results[0]
-      } else if (results.length === 2) {
+      }
+      if (checkers.length === 2) {
         ;[chainCheckNodes, syncCheckNodes] = results
       }
 
