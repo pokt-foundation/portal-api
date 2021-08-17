@@ -10,6 +10,8 @@ import { expect, sinon } from '@loopback/testlab'
 import MockAdapter from 'axios-mock-adapter'
 import axios from 'axios'
 
+const logger = require('../../src/services/logger')
+
 const SYNC_ALLOWANCE = 5
 
 const DEFAULT_RELAY_RESPONSE = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c9c" }'
@@ -254,8 +256,7 @@ describe('Sync checker service (unit)', () => {
     })
   })
 
-  // eslint-disable-next-line mocha/no-exclusive-tests
-  describe.only('consensusFilter function', () => {
+  describe('consensusFilter function', () => {
     it('performs the sync check successfully', async () => {
       axiosMock.onPost(ALTRUIST_URL).reply(200, DEFAULT_RELAY_RESPONSE)
 
@@ -386,6 +387,8 @@ describe('Sync checker service (unit)', () => {
     })
 
     it('penalize node failing sync check', async () => {
+      const logSpy = sinon.spy(logger, 'log')
+
       axiosMock.onPost(ALTRUIST_URL).reply(200, DEFAULT_RELAY_RESPONSE)
 
       const nodes = DEFAULT_NODES
@@ -418,6 +421,9 @@ describe('Sync checker service (unit)', () => {
       })
 
       expect(syncedNodes).to.have.length(4)
+
+      console.log(logSpy.args)
+      console.log(logSpy.calledWith('info', 'SYNC CHECK CHALLENGE'))
     })
 
     it('fails agreement of two highest nodes', async () => {
