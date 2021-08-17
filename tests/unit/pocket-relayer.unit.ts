@@ -18,7 +18,7 @@ import { metricsRecorderMock } from '../mocks/metricsRecorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
 import { gatewayTestDB } from '../fixtures/test.datasource'
-import { LimitError } from '../../src/errors/limit-error'
+import { LimitError } from '../../src/errors/types'
 
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
 
