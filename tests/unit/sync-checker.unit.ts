@@ -61,8 +61,10 @@ describe('Sync checker service (unit)', () => {
     pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
 
     axiosMock = new MockAdapter(axios)
+  })
 
-    // Mocks logger so we can assert the resultsplakataplakata
+  after(() => {
+    sinon.restore()
   })
 
   const clean = async () => {
