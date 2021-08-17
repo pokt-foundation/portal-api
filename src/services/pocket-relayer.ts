@@ -457,7 +457,12 @@ export class PocketRelayer {
 
       const results = await Promise.all(checkers)
 
+      /*
+       *  Depending if there is ChainIDCheck, SyncCheck or both,
+       *  we need to use either index 0 or 1, or both.
+       */
       if (blockchainIDCheck && checkers.length === 1) {
+        // chainCheck is always pushed first, if exists.
         chainCheckNodes = results[0]
       }
       if (blockchainSyncCheck && checkers.length === 1) {
