@@ -55,8 +55,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       DATABASE_ENCRYPTION_KEY,
       REDIS_ENDPOINT,
       REDIS_PORT,
-      PG_CONNECTION,
-      PG_CERTIFICATE,
       PSQL_CONNECTION,
       DISPATCH_URL,
       ALTRUISTS,
@@ -171,53 +169,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     this.bind('redisInstance').to(redis)
 
-    // Load Postgres for TimescaleDB metrics
-    const pgConnection: string = PG_CONNECTION || ''
-    const pgCertificate: string = PG_CERTIFICATE || ''
-
-    if (!pgConnection) {
-      throw new HttpErrors.InternalServerError('PG_CONNECTION required in ENV')
-    }
-
-    if (!pgCertificate && environment !== 'development') {
-      throw new HttpErrors.InternalServerError('PG_CERTIFICATE required in ENV')
-    }
-
-    // Pull public certificate from Redis or s3 if not there
-    const cachedCertificate = await redis.get('timescaleDBCertificate')
-    let publicCertificate
-
-    if (environment === 'production') {
-      if (!cachedCertificate) {
-        try {
-          const s3Certificate = await got(pgCertificate)
-
-          publicCertificate = s3Certificate.body
-        } catch (e) {
-          throw new HttpErrors.InternalServerError('Invalid Certificate')
-        }
-        await redis.set('timescaleDBCertificate', publicCertificate, 'EX', 600)
-      } else {
-        publicCertificate = cachedCertificate
-      }
-    }
-
-    const ssl =
-      environment === 'production'
-        ? {
-            rejectUnauthorized: false,
-            ca: publicCertificate,
-          }
-        : false
-
-    const pgConfig = {
-      connectionString: pgConnection,
-      ssl,
-    }
-    const pgPool = new pg.Pool(pgConfig)
-
-    this.bind('pgPool').to(pgPool)
-
     // New metrics postgres for error recording
     const psqlConnection: string = PSQL_CONNECTION || ''
 
@@ -228,9 +179,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       connectionString: psqlConnection,
       ssl: environment === 'production' ? true : false,
     }
-    const pgPool2 = new pg.Pool(psqlConfig)
+    const pgPool = new pg.Pool(psqlConfig)
 
-    this.bind('pgPool2').to(pgPool2)
+    this.bind('pgPool').to(pgPool)
 
     this.bind('databaseEncryptionKey').to(databaseEncryptionKey)
     this.bind('aatPlan').to(aatPlan)
