@@ -34,7 +34,6 @@ export class V1Controller {
     @inject('pocketConfiguration') private pocketConfiguration: Configuration,
     @inject('redisInstance') private redis: Redis,
     @inject('pgPool') private pgPool: PGPool,
-    @inject('pgPool2') private pgPool2: PGPool,
     @inject('databaseEncryptionKey') private databaseEncryptionKey: string,
     @inject('processUID') private processUID: string,
     @inject('altruists') private altruists: string,
@@ -56,7 +55,6 @@ export class V1Controller {
     this.metricsRecorder = new MetricsRecorder({
       redis: this.redis,
       pgPool: this.pgPool,
-      pgPool2: this.pgPool2,
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
     })
