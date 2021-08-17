@@ -29,7 +29,6 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'LOGZ_TOKEN',
     'DISPATCH_URL',
     'ALTRUISTS',
-    'REDIRECTS',
     'POCKET_SESSION_BLOCK_FREQUENCY',
     'POCKET_BLOCK_TIME',
     'POCKET_RELAY_RETRIES',
