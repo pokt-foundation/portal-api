@@ -409,6 +409,8 @@ export class PocketRelayer {
     )
 
     if (pocketSession instanceof Session) {
+      let syncCheckNodes: Node[] = []
+      let chainCheckNodes: Node[] = []
       let nodes: Node[] = pocketSession.sessionNodes
       const relayStart = process.hrtime()
 
@@ -453,38 +455,44 @@ export class PocketRelayer {
         checkers.push(this.syncChecker.consensusFilter(consensusFilterOptions))
       }
 
-      await Promise.all(checkers).then(async ([chainCheckNodes, syncCheckNodes]: [Node[], Node[]]) => {
-        console.log('chainCheckNodes.length', chainCheckNodes.length)
-        if (chainCheckNodes.length === 0) {
-          return new Error('ChainID check failure; using fallbacks')
-        } else {
-          nodes = chainCheckNodes
-        }
+      const results = await Promise.all(checkers)
 
-        console.log('syncCheckNodes.length', syncCheckNodes.length)
-        if (syncCheckNodes.length === 0) {
-          const error = 'Sync / chain check failure'
-          const method = 'checks'
+      if (blockchainIDCheck && results.length === 1) {
+        chainCheckNodes = results[0]
+      } else if (blockchainSyncCheck && results.length === 1) {
+        syncCheckNodes = results[0]
+      } else if (results.length === 2) {
+        ;[chainCheckNodes, syncCheckNodes] = results
+      }
 
-          await this.metricsRecorder.recordMetric({
-            requestID,
-            applicationID: application.id,
-            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-            blockchain,
-            serviceNode: 'session-failure',
-            relayStart,
-            result: 500,
-            bytes: Buffer.byteLength(error, 'utf8'),
-            delivered: false,
-            fallback: false,
-            method,
-            error,
-          })
-          return new Error('Sync / chain check failure; using fallbacks')
-        } else {
-          nodes = syncCheckNodes
-        }
-      })
+      if (chainCheckNodes.length === 0) {
+        return new Error('ChainID check failure; using fallbacks')
+      } else {
+        nodes = chainCheckNodes
+      }
+
+      if (syncCheckNodes.length === 0) {
+        const error = 'Sync / chain check failure'
+        const method = 'checks'
+
+        await this.metricsRecorder.recordMetric({
+          requestID,
+          applicationID: application.id,
+          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+          blockchain,
+          serviceNode: 'session-failure',
+          relayStart,
+          result: 500,
+          bytes: Buffer.byteLength(error, 'utf8'),
+          delivered: false,
+          fallback: false,
+          method,
+          error,
+        })
+        return new Error('Sync / chain check failure; using fallbacks')
+      } else {
+        nodes = syncCheckNodes
+      }
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchain, requestID)
     }
 
