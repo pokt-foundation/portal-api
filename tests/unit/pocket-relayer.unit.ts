@@ -67,6 +67,8 @@ const BLOCKCHAINS = [
     active: true,
     nodeCount: 1,
     logLimitBlocks: 10000,
+    chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
+    syncCheck: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
   },
 ]
 
@@ -408,38 +410,22 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     it('sends successful relay response as json', async () => {
-      const relayResponse = await pocketRelayer.sendRelay({
-        rawData,
-        relayPath: '',
-        httpMethod: HTTPMethod.POST,
-        application: APPLICATION as unknown as Applications,
-        requestID: '1234',
-        requestTimeOut: undefined,
-        overallTimeOut: undefined,
-        relayRetries: 0,
-      })
-      const expected = JSON.parse(pocketMock.relayResponse[rawData] as string)
-
-      expect(relayResponse).to.be.deepEqual(expected)
-    })
-
-    it('sends successful relay response as string', async () => {
       const mock = new PocketMock()
 
-      mock.relayResponse[rawData] = 'string response'
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
 
       const pocket = mock.object()
 
       const poktRelayer = new PocketRelayer({
-        host: 'eth-mainnet-string',
+        host: 'eth-mainnet',
         origin: '',
         userAgent: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
         metricsRecorder,
-        syncChecker,
-        chainChecker,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
         redis,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
@@ -460,7 +446,50 @@ describe('Pocket relayer service (unit)', () => {
         overallTimeOut: undefined,
         relayRetries: 0,
       })
+      const expected = JSON.parse(mock.relayResponse[rawData] as string)
 
+      expect(relayResponse).to.be.deepEqual(expected)
+    })
+
+    it('sends successful relay response as string', async () => {
+      const mock = new PocketMock()
+
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+
+      mock.relayResponse[rawData] = 'string response'
+
+      const pocket = mock.object()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet-string',
+        origin: '',
+        userAgent: '',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: true,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+      })
+
+      const relayResponse = await poktRelayer.sendRelay({
+        rawData,
+        relayPath: '',
+        httpMethod: HTTPMethod.POST,
+        application: APPLICATION as unknown as Applications,
+        requestID: '1234',
+        requestTimeOut: undefined,
+        overallTimeOut: undefined,
+        relayRetries: 0,
+      })
       const expected = mock.relayResponse[rawData]
 
       expect(relayResponse).to.be.deepEqual(expected)
