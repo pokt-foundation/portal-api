@@ -62,6 +62,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       POCKET_BLOCK_TIME,
       POCKET_RELAY_RETRIES,
       DEFAULT_SYNC_ALLOWANCE,
+      DEFAULT_LOG_LIMIT_BLOCKS,
       AAT_PLAN,
       REDIRECTS,
     } = await this.get('configuration.environment.values')
@@ -76,6 +77,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const relayRetries: string = POCKET_RELAY_RETRIES || ''
     const databaseEncryptionKey: string = DATABASE_ENCRYPTION_KEY || ''
     const defaultSyncAllowance: number = parseInt(DEFAULT_SYNC_ALLOWANCE) || -1
+    const defaultLogLimitBlocks: number = parseInt(DEFAULT_LOG_LIMIT_BLOCKS) || -1
     const aatPlan = AAT_PLAN || AatPlans.PREMIUM
     const redirects = REDIRECTS || '' // Can be empty
 
@@ -102,6 +104,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     }
     if (defaultSyncAllowance < 0) {
       throw new HttpErrors.InternalServerError('DEFAULT_SYNC_ALLOWANCE required in ENV')
+    }
+    if (defaultLogLimitBlocks < 0) {
+      throw new HttpErrors.InternalServerError('DEFAULT_LOG_LIMIT_BLOCKS required in ENV')
     }
     if (aatPlan !== AatPlans.PREMIUM && !AatPlans.values.includes(aatPlan)) {
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
@@ -141,6 +146,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('altruists').to(altruists)
     this.bind('logger').to(logger)
     this.bind('defaultSyncAllowance').to(defaultSyncAllowance)
+    this.bind('defaultLogLimitBlocks').to(defaultLogLimitBlocks)
     this.bind('redirects').to(redirects)
 
     // Unlock primary client account for relay signing

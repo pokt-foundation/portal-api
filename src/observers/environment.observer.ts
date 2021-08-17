@@ -30,6 +30,7 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'POCKET_BLOCK_TIME',
     'POCKET_RELAY_RETRIES',
     'DEFAULT_SYNC_ALLOWANCE',
+    'DEFAULT_LOG_LIMIT_BLOCKS',
     'AAT_PLAN',
     'WATCH',
   ]
