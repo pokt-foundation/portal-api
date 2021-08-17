@@ -5,7 +5,6 @@ export class Applications extends Entity {
   @property({
     type: 'string',
     id: true,
-    generated: true,
     required: true,
   })
   id: string

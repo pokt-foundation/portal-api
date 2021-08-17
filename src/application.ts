@@ -2,6 +2,7 @@ import { BootMixin } from '@loopback/boot'
 import { ApplicationConfig } from '@loopback/core'
 import { RepositoryMixin } from '@loopback/repository'
 import { RestApplication, HttpErrors } from '@loopback/rest'
+import { DEFAULT_POCKET_CONFIG } from './config/pocket-config'
 import { ServiceMixin } from '@loopback/service-proxy'
 import { GatewaySequence } from './sequence'
 import { Account } from '@pokt-network/pocket-js/dist/keybase/models/account'
@@ -11,8 +12,7 @@ import AatPlans from './config/aat-plans.json'
 
 const logger = require('./services/logger')
 
-const pocketJS = require('@pokt-network/pocket-js')
-const { Pocket, Configuration, HttpRpcProvider } = pocketJS
+import { Pocket, Configuration, HttpRpcProvider } from '@pokt-network/pocket-js'
 
 import Redis from 'ioredis'
 import crypto from 'crypto'
@@ -23,17 +23,6 @@ import got from 'got'
 
 require('log-timestamp')
 require('dotenv').config()
-
-const DEFAULT_POCKET_CONFIG = {
-  MAX_DISPATCHERS: 50,
-  MAX_SESSIONS: 100000,
-  CONSENSUS_NODE_COUNT: 0,
-  REQUEST_TIMEOUT: 120000, // 3 minutes
-  ACCEPT_DISPUTED_RESPONSES: false,
-  VALIDATE_RELAY_RESPONSES: undefined,
-  REJECT_SELF_SIGNED_CERTIFICATES: undefined,
-  USE_LEGACY_TX_CODEC: true,
-}
 
 export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryMixin(RestApplication))) {
   constructor(options: ApplicationConfig = {}) {
@@ -66,8 +55,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       DATABASE_ENCRYPTION_KEY,
       REDIS_ENDPOINT,
       REDIS_PORT,
-      PG_CONNECTION,
-      PG_CERTIFICATE,
       PSQL_CONNECTION,
       DISPATCH_URL,
       ALTRUISTS,
@@ -182,53 +169,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     this.bind('redisInstance').to(redis)
 
-    // Load Postgres for TimescaleDB metrics
-    const pgConnection: string = PG_CONNECTION || ''
-    const pgCertificate: string = PG_CERTIFICATE || ''
-
-    if (!pgConnection) {
-      throw new HttpErrors.InternalServerError('PG_CONNECTION required in ENV')
-    }
-
-    if (!pgCertificate && environment !== 'development') {
-      throw new HttpErrors.InternalServerError('PG_CERTIFICATE required in ENV')
-    }
-
-    // Pull public certificate from Redis or s3 if not there
-    const cachedCertificate = await redis.get('timescaleDBCertificate')
-    let publicCertificate
-
-    if (environment === 'production') {
-      if (!cachedCertificate) {
-        try {
-          const s3Certificate = await got(pgCertificate)
-
-          publicCertificate = s3Certificate.body
-        } catch (e) {
-          throw new HttpErrors.InternalServerError('Invalid Certificate')
-        }
-        await redis.set('timescaleDBCertificate', publicCertificate, 'EX', 600)
-      } else {
-        publicCertificate = cachedCertificate
-      }
-    }
-
-    const ssl =
-      environment === 'production'
-        ? {
-            rejectUnauthorized: false,
-            ca: publicCertificate,
-          }
-        : false
-
-    const pgConfig = {
-      connectionString: pgConnection,
-      ssl,
-    }
-    const pgPool = new pg.Pool(pgConfig)
-
-    this.bind('pgPool').to(pgPool)
-
     // New metrics postgres for error recording
     const psqlConnection: string = PSQL_CONNECTION || ''
 
@@ -239,9 +179,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       connectionString: psqlConnection,
       ssl: environment === 'production' ? true : false,
     }
-    const pgPool2 = new pg.Pool(psqlConfig)
+    const pgPool = new pg.Pool(psqlConfig)
 
-    this.bind('pgPool2').to(pgPool2)
+    this.bind('pgPool').to(pgPool)
 
     this.bind('databaseEncryptionKey').to(databaseEncryptionKey)
     this.bind('aatPlan').to(aatPlan)

@@ -224,6 +224,7 @@ export class PocketRelayer {
         })
       }
     }
+
     // Exhausted network relay attempts; use fallback
     if (fallbackAvailable) {
       const relayStart = process.hrtime()
@@ -287,10 +288,11 @@ export class PocketRelayer {
             blockchainEnforceResult && // Is this blockchain marked for result enforcement and
             blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON
             typeof responseParsed === 'string' &&
-            (responseParsed.match('{') || responseParsed.match('[{')) // and it matches JSON
+            (responseParsed.match('{') || responseParsed.match(/'\[{'/g)) // and it matches JSON
           ) {
             return JSON.parse(responseParsed)
           }
+
           return responseParsed
         } else {
           logger.log('error', JSON.stringify(fallbackResponse), {
@@ -694,7 +696,7 @@ interface BlockchainDetails {
 }
 
 export interface SendRelayOptions {
-  rawData: object
+  rawData: object | string
   relayPath: string
   httpMethod: HTTPMethod
   application: Applications

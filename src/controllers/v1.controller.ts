@@ -34,7 +34,6 @@ export class V1Controller {
     @inject('pocketConfiguration') private pocketConfiguration: Configuration,
     @inject('redisInstance') private redis: Redis,
     @inject('pgPool') private pgPool: PGPool,
-    @inject('pgPool2') private pgPool2: PGPool,
     @inject('databaseEncryptionKey') private databaseEncryptionKey: string,
     @inject('processUID') private processUID: string,
     @inject('altruists') private altruists: string,
@@ -56,7 +55,6 @@ export class V1Controller {
     this.metricsRecorder = new MetricsRecorder({
       redis: this.redis,
       pgPool: this.pgPool,
-      pgPool2: this.pgPool2,
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
     })
@@ -100,7 +98,7 @@ export class V1Controller {
     rawData: object
   ): Promise<string | Error> {
     if (!this.redirects) {
-      return new Error('No redirect domains allowed')
+      return new HttpErrors.InternalServerError('No redirect domains allowed')
     }
 
     for (const redirect of JSON.parse(this.redirects)) {
@@ -109,7 +107,7 @@ export class V1Controller {
         return this.loadBalancerRelay(redirect.loadBalancerID, rawData)
       }
     }
-    return new Error('Invalid domain')
+    return new HttpErrors.InternalServerError('Invalid domain')
   }
 
   /**
@@ -294,13 +292,14 @@ export class V1Controller {
     const cachedLoadBalancer = await this.redis.get(id)
 
     if (!cachedLoadBalancer) {
-      const loadBalancer = await this.loadBalancersRepository.findById(id, filter)
+      try {
+        const loadBalancer = await this.loadBalancersRepository.findById(id, filter)
 
-      if (loadBalancer?.id) {
         await this.redis.set(id, JSON.stringify(loadBalancer), 'EX', 60)
         return new LoadBalancers(loadBalancer)
+      } catch (e) {
+        return undefined
       }
-      return undefined
     }
     return new LoadBalancers(JSON.parse(cachedLoadBalancer))
   }
@@ -310,13 +309,14 @@ export class V1Controller {
     const cachedApplication = await this.redis.get(id)
 
     if (!cachedApplication) {
-      const application = await this.applicationsRepository.findById(id, filter)
+      try {
+        const application = await this.applicationsRepository.findById(id, filter)
 
-      if (application?.id) {
         await this.redis.set(id, JSON.stringify(application), 'EX', 60)
         return new Applications(application)
+      } catch (e) {
+        return undefined
       }
-      return undefined
     }
     return new Applications(JSON.parse(cachedApplication))
   }
