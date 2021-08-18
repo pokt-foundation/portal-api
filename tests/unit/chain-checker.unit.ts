@@ -49,9 +49,7 @@ describe('Chain checker service (unit)', () => {
 
   it('updates the configuration consensus to one already set', () => {
     const configuration = getPocketConfigOrDefault({ consensusNodeCount: 9 })
-
     const expectedConsensusCount = 5
-
     const newConfig = chainChecker.updateConfigurationConsensus(configuration)
 
     expect(newConfig.consensusNodeCount).to.be.equal(expectedConsensusCount)
@@ -61,9 +59,7 @@ describe('Chain checker service (unit)', () => {
     const configuration = getPocketConfigOrDefault({
       requestTimeout: 10000,
     })
-
     const expectedTimeout = 4000
-
     const newConfig = chainChecker.updateConfigurationTimeout(configuration)
 
     expect(newConfig.requestTimeOut).to.be.equal(expectedTimeout)
@@ -76,7 +72,6 @@ describe('Chain checker service (unit)', () => {
       pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
 
       const pocketClient = pocketMock.object()
-
       const nodeLog = await chainChecker.getNodeChainLog({
         node,
         requestID: '1234',
@@ -101,7 +96,6 @@ describe('Chain checker service (unit)', () => {
       pocketMock.fail = true
 
       const pocketClient = pocketMock.object()
-
       const nodeLog = await chainChecker.getNodeChainLog({
         node,
         requestID: '1234',
@@ -127,7 +121,6 @@ describe('Chain checker service (unit)', () => {
       pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = 'id":1,"jsonrp:"2.0","result": "0x64"}'
 
       const pocketClient = pocketMock.object()
-
       const nodeLog = await chainChecker.getNodeChainLog({
         node,
         requestID: '1234',
@@ -158,7 +151,6 @@ describe('Chain checker service (unit)', () => {
     const nodes = DEFAULT_NODES
 
     const pocketClient = pocketMock.object()
-
     const nodeLogs = await chainChecker.getNodeChainLogs({
       nodes,
       requestID: '1234',
@@ -183,9 +175,7 @@ describe('Chain checker service (unit)', () => {
     const nodes = DEFAULT_NODES
 
     const pocketClient = pocketMock.object()
-
     const chainID = 100
-
     const redisGetSpy = sinon.spy(redis, 'get')
     const redisSetSpy = sinon.spy(redis, 'set')
 
@@ -233,9 +223,7 @@ describe('Chain checker service (unit)', () => {
     pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = '{"id":1,"jsonrpc":"2.0","result":"0xC8"}' // 0xC8 to base 10: 200
 
     const pocketClient = pocketMock.object()
-
     const chainID = 100
-
     const checkedNodes = await chainChecker.chainIDFilter({
       nodes,
       requestID: '1234',

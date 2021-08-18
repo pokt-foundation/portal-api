@@ -127,7 +127,6 @@ describe('V1 controller (acceptance)', () => {
       '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}':
         '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}',
     }
-
     pocketMock = new PocketMock(undefined, undefined, undefined)
     pocketMock.relayResponse = relayResponses
 

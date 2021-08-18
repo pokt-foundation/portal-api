@@ -540,11 +540,8 @@ describe('Pocket relayer service (unit)', () => {
 
     it('chainIDCheck / syncCheck succeeds', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
-
       const mockCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
-
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
-
       const pocket = pocketMock.object()
 
       const poktRelayer = new PocketRelayer({
@@ -586,11 +583,8 @@ describe('Pocket relayer service (unit)', () => {
 
     it('chainIDCheck fails (no nodes returned)', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(0, 5)
-
       const mockCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
-
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
-
       const pocket = pocketMock.object()
 
       const poktRelayer = new PocketRelayer({
@@ -632,11 +626,8 @@ describe('Pocket relayer service (unit)', () => {
 
     it('syncCheck fails (no nodes returned)', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 0)
-
       const mockCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
-
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
-
       const pocket = pocketMock.object()
 
       const poktRelayer = new PocketRelayer({
@@ -794,7 +785,6 @@ describe('Pocket relayer service (unit)', () => {
         application.gatewaySettings = gatewaySettings
 
         const pocket = pocketMock.object()
-
         const invalidUserAgent = 'invalid-user-agent'
 
         const poktRelayer = new PocketRelayer({
@@ -843,7 +833,6 @@ describe('Pocket relayer service (unit)', () => {
       // Altruist is forced by simulating a chainIDCheck failure
       const getAltruistRelayer = (): PocketRelayer => {
         const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(0, 5)
-
         const pocket = pocketMock.object()
 
         const poktRelayer = new PocketRelayer({

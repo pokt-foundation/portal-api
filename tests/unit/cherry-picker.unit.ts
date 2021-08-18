@@ -407,7 +407,6 @@ describe('Cherry picker service (unit)', () => {
       },
     ]
     const failureItem = itemsToRank[itemsToRank.length - 1]
-
     const rankedItems = await cherryPicker.rankItems(blockchain, itemsToRank, 5)
 
     expect(rankedItems).to.be.Array()
