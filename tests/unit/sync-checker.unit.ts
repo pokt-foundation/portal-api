@@ -41,6 +41,7 @@ describe('Sync checker service (unit)', () => {
   let pocketMock: PocketMock
   let pocketConfiguration: Configuration
   let axiosMock: MockAdapter
+  let logSpy: sinon.SinonSpy
 
   before('initialize variables', async () => {
     redis = new RedisMock(0, '')
@@ -65,12 +66,14 @@ describe('Sync checker service (unit)', () => {
     axiosMock = new MockAdapter(axios)
   })
 
-  after(() => {
+  afterEach(() => {
     sinon.restore()
   })
 
   const clean = async () => {
-    beforeEach(axiosMock.reset)
+    logSpy = sinon.spy(logger, 'log')
+
+    axiosMock.reset()
 
     pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
     pocketMock.relayResponse[blockchain.syncCheck] = DEFAULT_RELAY_RESPONSE
@@ -308,7 +311,7 @@ describe('Sync checker service (unit)', () => {
     })
 
     it('fails sync check due to altruist and chain error', async () => {
-      axiosMock.onPost(ALTRUIST_URL).reply(500)
+      axiosMock.onPost(ALTRUIST_URL).networkError()
 
       const nodes = DEFAULT_NODES
 
@@ -332,6 +335,13 @@ describe('Sync checker service (unit)', () => {
       })
 
       expect(syncedNodes).to.have.length(5)
+
+      const expectedLog = logSpy.calledWith(
+        'info',
+        sinon.match((arg: string) => arg.startsWith('SYNC CHECK ALTRUIST FAILURE'))
+      )
+
+      expect(expectedLog).to.be.true()
     })
 
     it('fails the sync check due to all nodes failing', async () => {
@@ -387,8 +397,6 @@ describe('Sync checker service (unit)', () => {
     })
 
     it('penalize node failing sync check', async () => {
-      const logSpy = sinon.spy(logger, 'log')
-
       axiosMock.onPost(ALTRUIST_URL).reply(200, DEFAULT_RELAY_RESPONSE)
 
       const nodes = DEFAULT_NODES
@@ -422,8 +430,12 @@ describe('Sync checker service (unit)', () => {
 
       expect(syncedNodes).to.have.length(4)
 
-      console.log(logSpy.args)
-      console.log(logSpy.calledWith('info', 'SYNC CHECK CHALLENGE'))
+      const expectedLog = logSpy.calledWith(
+        'info',
+        sinon.match((arg: string) => arg.startsWith('SYNC CHECK CHALLENGE'))
+      )
+
+      expect(expectedLog).to.be.true()
     })
 
     it('fails agreement of two highest nodes', async () => {
@@ -462,6 +474,10 @@ describe('Sync checker service (unit)', () => {
       })
 
       expect(syncedNodes).to.have.length(1)
+
+      const expectedLog = logSpy.calledWith('error', 'SYNC CHECK ERROR: two highest nodes could not agree on sync')
+
+      expect(expectedLog).to.be.true()
     })
   })
 })
