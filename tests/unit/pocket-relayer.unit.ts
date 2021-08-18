@@ -21,20 +21,22 @@ import { gatewayTestDB } from '../fixtures/test.datasource'
 
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
 
-const DEFAULT_HOST = 'mainnet'
+const DEFAULT_HOST = 'eth-mainnet-x'
 
 const BLOCKCHAINS = [
   {
-    hash: '0001',
-    ticker: 'POKT',
-    networkID: 'mainnet',
-    network: 'POKT-mainnet',
-    description: 'Pocket Network Mainnet',
-    index: 1,
-    blockchain: 'mainnet',
+    hash: '0041',
+    ticker: 'ETHX',
+    networkID: '1',
+    network: 'ETH-2',
+    description: 'Ethereum Mainnet X',
+    index: 2,
+    blockchain: 'eth-mainnet-x',
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
+    chainID: '137',
+    syncAllowance: 5,
   },
   {
     hash: '0021',
@@ -473,7 +475,7 @@ describe('Pocket relayer service (unit)', () => {
       const pocket = mock.object()
 
       const poktRelayer = new PocketRelayer({
-        host: 'mainnet',
+        host: 'eth-mainnet',
         origin: '',
         userAgent: '',
         pocket,
@@ -514,7 +516,7 @@ describe('Pocket relayer service (unit)', () => {
       const pocket = mock.object()
 
       const poktRelayer = new PocketRelayer({
-        host: 'mainnet',
+        host: 'eth-mainnet-x',
         origin: '',
         userAgent: '',
         pocket,
@@ -701,7 +703,7 @@ describe('Pocket relayer service (unit)', () => {
         const pocket = pocketMock.object()
 
         const poktRelayer = new PocketRelayer({
-          host: 'mainnet',
+          host: 'eth-mainnet-x',
           origin: '',
           userAgent: '',
           pocket,
@@ -754,7 +756,7 @@ describe('Pocket relayer service (unit)', () => {
         const invalidOrigin = 'invalid-origin'
 
         const poktRelayer = new PocketRelayer({
-          host: 'mainnet',
+          host: 'eth-mainnet-x',
           origin: invalidOrigin,
           userAgent: '',
           pocket,
@@ -807,7 +809,7 @@ describe('Pocket relayer service (unit)', () => {
         const invalidUserAgent = 'invalid-user-agent'
 
         const poktRelayer = new PocketRelayer({
-          host: 'mainnet',
+          host: 'eth-mainnet-x',
           origin: '',
           userAgent: invalidUserAgent,
           pocket,
