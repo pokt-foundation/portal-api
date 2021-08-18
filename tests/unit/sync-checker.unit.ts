@@ -49,7 +49,7 @@ describe('Sync checker service (unit)', () => {
     metricsRecorder = metricsRecorderMock(redis, cherryPicker)
     syncChecker = new SyncChecker(redis, metricsRecorder, SYNC_ALLOWANCE)
     pocketConfiguration = getPocketConfigOrDefault()
-    pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
+    pocketMock = new PocketMock()
     axiosMock = new MockAdapter(axios)
   })
 
@@ -57,7 +57,7 @@ describe('Sync checker service (unit)', () => {
     sinon.restore()
   })
 
-  const clean = async () => {
+  beforeEach(async () => {
     logSpy = sinon.spy(logger, 'log')
 
     axiosMock.reset()
@@ -66,9 +66,7 @@ describe('Sync checker service (unit)', () => {
     pocketMock.relayResponse[blockchain.syncCheck] = DEFAULT_RELAY_RESPONSE
 
     await redis.flushall()
-  }
-
-  beforeEach(clean)
+  })
 
   it('should be defined', async () => {
     expect(syncChecker).to.be.ok()

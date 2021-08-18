@@ -9,6 +9,8 @@ import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { metricsRecorderMock } from '../mocks/metricsRecorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
+const logger = require('../../src/services/logger')
+
 const CHAINCHECK_PAYLOAD = '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'
 
 describe('Chain checker service (unit)', () => {
@@ -18,6 +20,7 @@ describe('Chain checker service (unit)', () => {
   let cherryPicker: CherryPicker
   let pocketConfiguration: Configuration
   let pocketMock: PocketMock
+  let logSpy: sinon.SinonSpy
 
   before('initialize variables', async () => {
     redis = new RedisMock(0, '')
@@ -27,17 +30,16 @@ describe('Chain checker service (unit)', () => {
     pocketConfiguration = getPocketConfigOrDefault()
   })
 
-  const clean = async () => {
-    pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
+  beforeEach(async () => {
+    logSpy = sinon.spy(logger, 'log')
+
+    pocketMock = new PocketMock()
     pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
 
     await redis.flushall()
-    sinon.restore()
-  }
+  })
 
-  beforeEach(clean)
-
-  after(() => {
+  afterEach(() => {
     sinon.restore()
   })
 
@@ -142,6 +144,13 @@ describe('Chain checker service (unit)', () => {
 
       expect(nodeLog.node).to.be.equal(node)
       expect(nodeLog.chainID).to.be.equal(expectedChainID)
+
+      const expectedLog = logSpy.calledWith(
+        'error',
+        sinon.match((arg: string) => arg.startsWith('CHAIN CHECK ERROR UNHANDLED'))
+      )
+
+      expect(expectedLog).to.be.true()
     })
   })
 
