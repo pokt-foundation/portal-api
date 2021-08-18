@@ -1,6 +1,3 @@
-import { HttpErrors } from '@loopback/rest'
-import LogzioWinstonTransport from 'winston-logzio'
-
 require('dotenv').config()
 
 const { createLogger, format, transports: winstonTransports } = require('winston')
@@ -18,11 +15,6 @@ interface Log {
 }
 
 const environment: string = process.env.NODE_ENV || 'production'
-const logzToken: string = process.env.LOGZ_TOKEN || ''
-
-if (!logzToken && environment === 'production') {
-  throw new HttpErrors.InternalServerError('LOGZ_TOKEN required in ENV')
-}
 
 const timestampUTC = () => {
   const timestamp = new Date()
@@ -50,18 +42,9 @@ const options = {
       consoleFormat
     ),
   },
-  logzio: {
-    level: 'debug',
-    name: 'winston_logzio',
-    token: logzToken,
-    host: 'listener-uk.logz.io',
-  },
 }
 
-const getTransports = (env: string) =>
-  env === 'production'
-    ? [new LogzioWinstonTransport(options.logzio), new winstonTransports.Console(options.console)]
-    : [new winstonTransports.Console(options.console)]
+const getTransports = (env: string) => [new winstonTransports.Console(options.console)]
 
 const perEnvTransports = getTransports(environment)
 
