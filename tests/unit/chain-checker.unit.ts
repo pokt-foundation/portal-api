@@ -2,7 +2,7 @@ import RedisMock from 'ioredis-mock'
 import { expect, sinon } from '@loopback/testlab'
 import { Configuration } from '@pokt-network/pocket-js'
 
-import { DEFAULT_POCKET_CONFIG } from '../../src/config/pocket-config'
+import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
 import { ChainChecker } from '../../src/services/chain-checker'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
@@ -24,19 +24,7 @@ describe('Chain checker service (unit)', () => {
     cherryPicker = new CherryPicker({ redis, checkDebug: false })
     metricsRecorder = metricsRecorderMock(redis, cherryPicker)
     chainChecker = new ChainChecker(redis, metricsRecorder)
-
-    pocketConfiguration = new Configuration(
-      DEFAULT_POCKET_CONFIG.MAX_DISPATCHERS,
-      DEFAULT_POCKET_CONFIG.MAX_SESSIONS,
-      DEFAULT_POCKET_CONFIG.CONSENSUS_NODE_COUNT,
-      DEFAULT_POCKET_CONFIG.REQUEST_TIMEOUT,
-      DEFAULT_POCKET_CONFIG.ACCEPT_DISPUTED_RESPONSES,
-      4,
-      10200,
-      DEFAULT_POCKET_CONFIG.VALIDATE_RELAY_RESPONSES,
-      DEFAULT_POCKET_CONFIG.REJECT_SELF_SIGNED_CERTIFICATES,
-      DEFAULT_POCKET_CONFIG.USE_LEGACY_TX_CODEC
-    )
+    pocketConfiguration = getPocketConfigOrDefault()
   })
 
   const clean = async () => {
@@ -57,20 +45,8 @@ describe('Chain checker service (unit)', () => {
     expect(chainChecker).to.be.ok()
   })
 
-  // TODO: Refactor update configuration methods
   it('updates the configuration consensus to one already set', () => {
-    const configuration = new Configuration(
-      DEFAULT_POCKET_CONFIG.MAX_DISPATCHERS,
-      DEFAULT_POCKET_CONFIG.MAX_SESSIONS,
-      9,
-      DEFAULT_POCKET_CONFIG.REQUEST_TIMEOUT,
-      DEFAULT_POCKET_CONFIG.ACCEPT_DISPUTED_RESPONSES,
-      4,
-      10200,
-      DEFAULT_POCKET_CONFIG.VALIDATE_RELAY_RESPONSES,
-      DEFAULT_POCKET_CONFIG.REJECT_SELF_SIGNED_CERTIFICATES,
-      DEFAULT_POCKET_CONFIG.USE_LEGACY_TX_CODEC
-    )
+    const configuration = getPocketConfigOrDefault({ consensusNodeCount: 9 })
 
     const expectedConsensusCount = 5
 
@@ -80,18 +56,9 @@ describe('Chain checker service (unit)', () => {
   })
 
   it('updates the configuration request timeout to one already set', () => {
-    const configuration = new Configuration(
-      DEFAULT_POCKET_CONFIG.MAX_DISPATCHERS,
-      DEFAULT_POCKET_CONFIG.MAX_SESSIONS,
-      9,
-      DEFAULT_POCKET_CONFIG.REQUEST_TIMEOUT,
-      DEFAULT_POCKET_CONFIG.ACCEPT_DISPUTED_RESPONSES,
-      4,
-      10200,
-      DEFAULT_POCKET_CONFIG.VALIDATE_RELAY_RESPONSES,
-      DEFAULT_POCKET_CONFIG.REJECT_SELF_SIGNED_CERTIFICATES,
-      DEFAULT_POCKET_CONFIG.USE_LEGACY_TX_CODEC
-    )
+    const configuration = getPocketConfigOrDefault({
+      requestTimeout: 10000,
+    })
 
     const expectedTimeout = 4000
 

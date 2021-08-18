@@ -7,7 +7,7 @@ import { expect, sinon } from '@loopback/testlab'
 import { HTTPMethod, Configuration, Node } from '@pokt-network/pocket-js'
 
 import AatPlans from '../../src/config/aat-plans.json'
-import { DEFAULT_POCKET_CONFIG } from '../../src/config/pocket-config'
+import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
 import { ChainChecker, ChainIDFilterOptions } from '../../src/services/chain-checker'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
@@ -127,18 +127,7 @@ describe('Pocket relayer service (unit)', () => {
     syncChecker = new SyncChecker(redis, metricsRecorder, 5)
     blockchainRepository = new BlockchainsRepository(gatewayTestDB)
 
-    pocketConfiguration = new Configuration(
-      DEFAULT_POCKET_CONFIG.MAX_DISPATCHERS,
-      DEFAULT_POCKET_CONFIG.MAX_SESSIONS,
-      DEFAULT_POCKET_CONFIG.CONSENSUS_NODE_COUNT,
-      DEFAULT_POCKET_CONFIG.REQUEST_TIMEOUT,
-      DEFAULT_POCKET_CONFIG.ACCEPT_DISPUTED_RESPONSES,
-      4,
-      10200,
-      DEFAULT_POCKET_CONFIG.VALIDATE_RELAY_RESPONSES,
-      DEFAULT_POCKET_CONFIG.REJECT_SELF_SIGNED_CERTIFICATES,
-      DEFAULT_POCKET_CONFIG.USE_LEGACY_TX_CODEC
-    )
+    pocketConfiguration = getPocketConfigOrDefault()
 
     pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
 

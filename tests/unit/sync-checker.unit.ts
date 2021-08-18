@@ -5,7 +5,7 @@ import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 import { Configuration } from '@pokt-network/pocket-js'
-import { DEFAULT_POCKET_CONFIG } from '../../src/config/pocket-config'
+import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
 import { expect, sinon } from '@loopback/testlab'
 import MockAdapter from 'axios-mock-adapter'
 import axios from 'axios'
@@ -48,21 +48,8 @@ describe('Sync checker service (unit)', () => {
     cherryPicker = new CherryPicker({ redis, checkDebug: false })
     metricsRecorder = metricsRecorderMock(redis, cherryPicker)
     syncChecker = new SyncChecker(redis, metricsRecorder, SYNC_ALLOWANCE)
-
-    pocketConfiguration = new Configuration(
-      DEFAULT_POCKET_CONFIG.MAX_DISPATCHERS,
-      DEFAULT_POCKET_CONFIG.MAX_SESSIONS,
-      DEFAULT_POCKET_CONFIG.CONSENSUS_NODE_COUNT,
-      DEFAULT_POCKET_CONFIG.REQUEST_TIMEOUT,
-      DEFAULT_POCKET_CONFIG.ACCEPT_DISPUTED_RESPONSES,
-      4,
-      10200,
-      DEFAULT_POCKET_CONFIG.VALIDATE_RELAY_RESPONSES,
-      DEFAULT_POCKET_CONFIG.REJECT_SELF_SIGNED_CERTIFICATES,
-      DEFAULT_POCKET_CONFIG.USE_LEGACY_TX_CODEC
-    )
+    pocketConfiguration = getPocketConfigOrDefault()
     pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
-
     axiosMock = new MockAdapter(axios)
   })
 
@@ -88,18 +75,7 @@ describe('Sync checker service (unit)', () => {
   })
 
   it('updates the configuration consensus to one already set', () => {
-    const configuration = new Configuration(
-      DEFAULT_POCKET_CONFIG.MAX_DISPATCHERS,
-      DEFAULT_POCKET_CONFIG.MAX_SESSIONS,
-      9,
-      DEFAULT_POCKET_CONFIG.REQUEST_TIMEOUT,
-      DEFAULT_POCKET_CONFIG.ACCEPT_DISPUTED_RESPONSES,
-      4,
-      10200,
-      DEFAULT_POCKET_CONFIG.VALIDATE_RELAY_RESPONSES,
-      DEFAULT_POCKET_CONFIG.REJECT_SELF_SIGNED_CERTIFICATES,
-      DEFAULT_POCKET_CONFIG.USE_LEGACY_TX_CODEC
-    )
+    const configuration = getPocketConfigOrDefault({ consensusNodeCount: 9 })
 
     const expectedConsensusCount = 5
 
@@ -109,18 +85,7 @@ describe('Sync checker service (unit)', () => {
   })
 
   it('updates the configuration request timeout to one already set', () => {
-    const configuration = new Configuration(
-      DEFAULT_POCKET_CONFIG.MAX_DISPATCHERS,
-      DEFAULT_POCKET_CONFIG.MAX_SESSIONS,
-      9,
-      DEFAULT_POCKET_CONFIG.REQUEST_TIMEOUT,
-      DEFAULT_POCKET_CONFIG.ACCEPT_DISPUTED_RESPONSES,
-      4,
-      10200,
-      DEFAULT_POCKET_CONFIG.VALIDATE_RELAY_RESPONSES,
-      DEFAULT_POCKET_CONFIG.REJECT_SELF_SIGNED_CERTIFICATES,
-      DEFAULT_POCKET_CONFIG.USE_LEGACY_TX_CODEC
-    )
+    const configuration = getPocketConfigOrDefault({ requestTimeout: 10200 })
 
     const expectedTimeout = 4000
 

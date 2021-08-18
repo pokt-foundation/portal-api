@@ -122,16 +122,16 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     }
 
     const configuration = new Configuration(
-      DEFAULT_POCKET_CONFIG.MAX_DISPATCHERS,
-      DEFAULT_POCKET_CONFIG.MAX_SESSIONS,
-      DEFAULT_POCKET_CONFIG.CONSENSUS_NODE_COUNT,
-      DEFAULT_POCKET_CONFIG.REQUEST_TIMEOUT,
-      DEFAULT_POCKET_CONFIG.ACCEPT_DISPUTED_RESPONSES,
+      DEFAULT_POCKET_CONFIG.maxDispatchers,
+      DEFAULT_POCKET_CONFIG.maxSessions,
+      DEFAULT_POCKET_CONFIG.consensusNodeCount,
+      DEFAULT_POCKET_CONFIG.requestTimeout,
+      DEFAULT_POCKET_CONFIG.acceptDisputedResponses,
       parseInt(pocketSessionBlockFrequency),
       parseInt(pocketBlockTime),
-      DEFAULT_POCKET_CONFIG.VALIDATE_RELAY_RESPONSES,
-      DEFAULT_POCKET_CONFIG.REJECT_SELF_SIGNED_CERTIFICATES,
-      DEFAULT_POCKET_CONFIG.USE_LEGACY_TX_CODEC
+      DEFAULT_POCKET_CONFIG.validateRelayResponses,
+      DEFAULT_POCKET_CONFIG.rejectSelfSignedCertificates,
+      DEFAULT_POCKET_CONFIG.useLegacyTxCodec
     )
     const rpcProvider = new HttpRpcProvider(dispatchers[0])
     const pocket = new Pocket(dispatchers, rpcProvider, configuration)
