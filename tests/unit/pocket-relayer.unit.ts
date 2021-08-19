@@ -454,6 +454,7 @@ describe('Pocket relayer service (unit)', () => {
       expect(relayResponse).to.be.deepEqual(expected)
     })
 
+    // eslint-disable-next-line mocha/no-exclusive-tests
     it('sends successful relay response as string', async () => {
       const mock = new PocketMock()
 

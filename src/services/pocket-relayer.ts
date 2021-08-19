@@ -409,13 +409,11 @@ export class PocketRelayer {
     )
 
     if (pocketSession instanceof Session) {
-      let syncCheckNodes: Node[] = []
-      let chainCheckNodes: Node[] = []
+      let syncCheckPromise: Promise<Node[]>
+      let chainCheckPromise: Promise<Node[]>
+
       let nodes: Node[] = pocketSession.sessionNodes
       const relayStart = process.hrtime()
-
-      // Array of checker's promises (chain checker, sync checker, etc.)
-      const checkers: Promise<Node[]>[] = []
 
       if (blockchainIDCheck) {
         // Check Chain ID
@@ -432,7 +430,7 @@ export class PocketRelayer {
           pocketConfiguration: this.pocketConfiguration,
         }
 
-        checkers.push(this.chainChecker.chainIDFilter(chainIDOptions))
+        chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
       }
 
       if (blockchainSyncCheck) {
@@ -452,33 +450,22 @@ export class PocketRelayer {
           pocketConfiguration: this.pocketConfiguration,
         }
 
-        checkers.push(this.syncChecker.consensusFilter(consensusFilterOptions))
+        syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
       }
 
-      const results = await Promise.all(checkers)
+      const checkersPromise = Promise.allSettled([chainCheckPromise, syncCheckPromise])
 
-      /*
-       *  Depending if there is ChainIDCheck, SyncCheck or both,
-       *  we need to use either index 0 or 1, or both.
-       */
-      if (blockchainIDCheck && checkers.length === 1) {
-        // chainCheck is always pushed first, if exists.
-        chainCheckNodes = results[0]
-      }
-      if (blockchainSyncCheck && checkers.length === 1) {
-        syncCheckNodes = results[0]
-      }
-      if (checkers.length === 2) {
-        ;[chainCheckNodes, syncCheckNodes] = results
-      }
+      const [chainCheckResult, syncCheckResult] = await checkersPromise
 
-      if (chainCheckNodes.length === 0) {
-        return new Error('ChainID check failure; using fallbacks')
+      if (chainCheckResult.status === 'fulfilled' && chainCheckResult.value) {
+        nodes = chainCheckResult.value
       } else {
-        nodes = chainCheckNodes
+        return new Error('ChainID check failure; using fallbacks')
       }
 
-      if (syncCheckNodes.length === 0) {
+      if (syncCheckResult.status === 'fulfilled' && syncCheckResult.value) {
+        nodes = syncCheckResult.value
+      } else {
         const error = 'Sync / chain check failure'
         const method = 'checks'
 
@@ -497,8 +484,6 @@ export class PocketRelayer {
           error,
         })
         return new Error('Sync / chain check failure; using fallbacks')
-      } else {
-        nodes = syncCheckNodes
       }
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchain, requestID)
     }
