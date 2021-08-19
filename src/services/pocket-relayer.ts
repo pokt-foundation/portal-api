@@ -8,9 +8,9 @@ import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, N
 import { Redis } from 'ioredis'
 import { BlockchainsRepository } from '../repositories'
 import { Applications } from '../models'
-import { RelayError } from '../errors/relay-error'
+import { RelayError, LimitError } from '../errors/types'
 import AatPlans from '../config/aat-plans.json'
-import { checkEnforcementJSON } from '../utils'
+import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
 
 import { JSONObject } from '@loopback/context'
 
@@ -116,6 +116,7 @@ export class PocketRelayer {
       blockchainSyncAllowance,
       blockchainIDCheck,
       blockchainID,
+      blockchainLogLimitBlocks,
     } = await this.loadBlockchain()
     const overallStart = process.hrtime()
 
@@ -125,6 +126,17 @@ export class PocketRelayer {
     // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
 
     const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
+    const limitation = await this.enforceLimits(parsedRawData, blockchain, blockchainLogLimitBlocks)
+
+    if (limitation instanceof Error) {
+      logger.log('error', `${parsedRawData.method} method limitations exceeded.`, {
+        requestID: requestID,
+        relayType: 'APP',
+        typeID: application.id,
+        serviceNode: '',
+      })
+      return limitation
+    }
     const data = JSON.stringify(parsedRawData)
     const method = this.parseMethod(parsedRawData)
     const fallbackAvailable = this.altruists[blockchain] !== undefined ? true : false
@@ -234,7 +246,7 @@ export class PocketRelayer {
       const altruistURL =
         relayPath === undefined || relayPath === ''
           ? this.altruists[blockchain]
-          : `${this.altruists[blockchain]}/${relayPath}`
+          : `${this.altruists[blockchain]}${relayPath}`
 
       // Remove user/pass from the altruist URL
       const redactedAltruistURL = String(this.altruists[blockchain])?.replace(/[\w]*:\/\/[^\/]*@/g, '')
@@ -606,6 +618,7 @@ export class PocketRelayer {
       let blockchainSyncAllowance = 0
       let blockchainIDCheck = ''
       let blockchainID = ''
+      let blockchainLogLimitBlocks = 0
       const blockchain = blockchainFilter[0].hash as string
 
       // Record the necessary format for the result; example: JSON
@@ -629,6 +642,11 @@ export class PocketRelayer {
       if (blockchainFilter[0].syncAllowance) {
         blockchainSyncAllowance = parseInt(blockchainFilter[0].syncAllowance)
       }
+      // Max number of blocks to request logs for
+      if (blockchainFilter[0].logLimitBlocks) {
+        blockchainLogLimitBlocks = parseInt(blockchainFilter[0].logLimitBlocks)
+      }
+
       return Promise.resolve({
         blockchain,
         blockchainEnforceResult,
@@ -637,9 +655,77 @@ export class PocketRelayer {
         blockchainSyncAllowance,
         blockchainIDCheck,
         blockchainID,
+        blockchainLogLimitBlocks,
       })
     } else {
       throw new HttpErrors.BadRequest('Incorrect blockchain: ' + this.host)
+    }
+  }
+
+  async enforceLimits(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    parsedRawData: Record<string, any>,
+    blockchain: string,
+    logLimitBlocks: number
+  ): Promise<string | Error> {
+    if (parsedRawData.method === 'eth_getLogs') {
+      let toBlock: number
+      let fromBlock: number
+      let isToBlockHex = false
+      let isFromBlockHex = false
+      const altruistUrl = String(this.altruists[blockchain])
+      const [{ fromBlock: fromBlockParam, toBlock: toBlockParam }] = parsedRawData.params as [
+        { fromBlock: string; toBlock: string }
+      ]
+
+      if (toBlockParam !== undefined && toBlockParam !== 'latest') {
+        toBlock = blockHexToDecimal(toBlockParam)
+        isToBlockHex = true
+      }
+      if (fromBlockParam !== undefined && fromBlockParam !== 'latest') {
+        fromBlock = blockHexToDecimal(fromBlockParam)
+        isFromBlockHex = true
+      }
+
+      if ((toBlock !== 0 || fromBlock !== 0) && altruistUrl !== 'undefined') {
+        // Altruist
+        const rawData = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] })
+
+        let axiosConfig = {}
+
+        try {
+          axiosConfig = {
+            method: 'POST',
+            url: altruistUrl,
+            data: rawData,
+            headers: { 'Content-Type': 'application/json' },
+          }
+          const { data } = await axios(axiosConfig)
+
+          const latestBlock = blockHexToDecimal(data.result)
+
+          if (!isToBlockHex) {
+            toBlock = latestBlock
+          }
+          if (!isFromBlockHex) {
+            fromBlock = latestBlock
+          }
+        } catch (e) {
+          logger.log('error', `Failed trying to reach altruist (${altruistUrl}) to fetch block number.`)
+          return new HttpErrors.InternalServerError('Internal error. Try again with a explicit block number.')
+        }
+      } else {
+        // We cannot move forward if there is no altruist available.
+        if (!isToBlockHex || !isFromBlockHex) {
+          return new LimitError(`Please use an explicit block number instead of 'latest'.`, parsedRawData.method)
+        }
+      }
+      if (toBlock - fromBlock > logLimitBlocks) {
+        return new LimitError(
+          `You cannot query logs for more than ${logLimitBlocks} blocks at once.`,
+          parsedRawData.method
+        )
+      }
     }
   }
 
@@ -693,6 +779,7 @@ interface BlockchainDetails {
   blockchainSyncAllowance: number
   blockchainIDCheck: string
   blockchainID: string
+  blockchainLogLimitBlocks: number
 }
 
 export interface SendRelayOptions {

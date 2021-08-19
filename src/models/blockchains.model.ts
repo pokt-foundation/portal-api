@@ -55,7 +55,12 @@ export class Blockchains extends Entity {
   @property({
     type: 'string',
   })
-  syncCheck?: string;
+  syncCheck?: string
+
+  @property({
+    type: 'number',
+  })
+  logLimitBlocks?: number;
 
   // Indexer property to allow additional data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

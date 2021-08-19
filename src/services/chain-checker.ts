@@ -1,7 +1,7 @@
 import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
-import { checkEnforcementJSON } from '../utils'
+import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
 import { createHash } from 'crypto'
 
 const logger = require('../services/logger')
@@ -253,7 +253,7 @@ export class ChainChecker {
       // Create a NodeChainLog for each node with current chainID
       const nodeChainLog = {
         node: node,
-        chainID: parseInt(payload.result, 16),
+        chainID: blockHexToDecimal(payload.result),
       } as NodeChainLog
 
       logger.log('info', 'CHAIN CHECK RESULT: ' + JSON.stringify(nodeChainLog), {

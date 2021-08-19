@@ -1,7 +1,7 @@
 import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
-import { checkEnforcementJSON } from '../utils'
+import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
 import crypto from 'crypto'
 
 const logger = require('../services/logger')
@@ -284,7 +284,7 @@ export class SyncChecker {
       if (!(syncResponse instanceof Error)) {
         // Pull the blockHeight from payload.result for all chains except Pocket; this
         // can go in the database if we have more than two
-        return syncResponse.data.result ? parseInt(syncResponse.data.result, 16) : syncResponse.data.height
+        return syncResponse.data.result ? blockHexToDecimal(syncResponse.data.result) : syncResponse.data.height
       }
       return 0
     } catch (e) {
@@ -392,7 +392,7 @@ export class SyncChecker {
 
       // Pull the blockHeight from payload.result for all chains except Pocket; this
       // can go in the database if we have more than two
-      const blockHeight = payload.result ? parseInt(payload.result, 16) : payload.height
+      const blockHeight = payload.result ? blockHexToDecimal(payload.result) : payload.height
 
       // Create a NodeSyncLog for each node with current block
       const nodeSyncLog = {
