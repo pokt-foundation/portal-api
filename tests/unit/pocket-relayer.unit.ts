@@ -664,6 +664,7 @@ describe('Pocket relayer service (unit)', () => {
       expect(syncCherckerSpy.callCount).to.be.equal(1)
     })
 
+    // eslint-disable-next-line mocha/no-exclusive-tests
     it('syncCheck fails (no nodes returned)', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 0)
 

@@ -456,33 +456,45 @@ export class PocketRelayer {
 
       const [chainCheckResult, syncCheckResult] = await checkersPromise
 
-      if (chainCheckResult.status === 'fulfilled' && chainCheckResult.value) {
-        nodes = chainCheckResult.value
-      } else {
-        return new Error('ChainID check failure; using fallbacks')
+      if (blockchainIDCheck) {
+        if (
+          chainCheckResult.status === 'fulfilled' &&
+          chainCheckResult.value !== undefined &&
+          chainCheckResult.value.length > 0
+        ) {
+          nodes = chainCheckResult.value
+        } else {
+          return new Error('ChainID check failure; using fallbacks')
+        }
       }
 
-      if (syncCheckResult.status === 'fulfilled' && syncCheckResult.value) {
-        nodes = syncCheckResult.value
-      } else {
-        const error = 'Sync / chain check failure'
-        const method = 'checks'
+      if (blockchainSyncCheck) {
+        if (
+          syncCheckResult.status === 'fulfilled' &&
+          syncCheckResult.value !== undefined &&
+          syncCheckResult.value.length > 0
+        ) {
+          nodes = syncCheckResult.value
+        } else {
+          const error = 'Sync / chain check failure'
+          const method = 'checks'
 
-        await this.metricsRecorder.recordMetric({
-          requestID,
-          applicationID: application.id,
-          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-          blockchain,
-          serviceNode: 'session-failure',
-          relayStart,
-          result: 500,
-          bytes: Buffer.byteLength(error, 'utf8'),
-          delivered: false,
-          fallback: false,
-          method,
-          error,
-        })
-        return new Error('Sync / chain check failure; using fallbacks')
+          await this.metricsRecorder.recordMetric({
+            requestID,
+            applicationID: application.id,
+            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+            blockchain,
+            serviceNode: 'session-failure',
+            relayStart,
+            result: 500,
+            bytes: Buffer.byteLength(error, 'utf8'),
+            delivered: false,
+            fallback: false,
+            method,
+            error,
+          })
+          return new Error('Sync / chain check failure; using fallbacks')
+        }
       }
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchain, requestID)
     }
