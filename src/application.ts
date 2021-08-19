@@ -19,7 +19,6 @@ import crypto from 'crypto'
 import os from 'os'
 import process from 'process'
 import pg from 'pg'
-import got from 'got'
 
 require('log-timestamp')
 require('dotenv').config()
@@ -55,8 +54,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       DATABASE_ENCRYPTION_KEY,
       REDIS_ENDPOINT,
       REDIS_PORT,
-      PG_CONNECTION,
-      PG_CERTIFICATE,
       PSQL_CONNECTION,
       DISPATCH_URL,
       ALTRUISTS,
@@ -127,16 +124,16 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     }
 
     const configuration = new Configuration(
-      DEFAULT_POCKET_CONFIG.MAX_DISPATCHERS,
-      DEFAULT_POCKET_CONFIG.MAX_SESSIONS,
-      DEFAULT_POCKET_CONFIG.CONSENSUS_NODE_COUNT,
-      DEFAULT_POCKET_CONFIG.REQUEST_TIMEOUT,
-      DEFAULT_POCKET_CONFIG.ACCEPT_DISPUTED_RESPONSES,
+      DEFAULT_POCKET_CONFIG.maxDispatchers,
+      DEFAULT_POCKET_CONFIG.maxSessions,
+      DEFAULT_POCKET_CONFIG.consensusNodeCount,
+      DEFAULT_POCKET_CONFIG.requestTimeout,
+      DEFAULT_POCKET_CONFIG.acceptDisputedResponses,
       parseInt(pocketSessionBlockFrequency),
       parseInt(pocketBlockTime),
-      DEFAULT_POCKET_CONFIG.VALIDATE_RELAY_RESPONSES,
-      DEFAULT_POCKET_CONFIG.REJECT_SELF_SIGNED_CERTIFICATES,
-      DEFAULT_POCKET_CONFIG.USE_LEGACY_TX_CODEC
+      DEFAULT_POCKET_CONFIG.validateRelayResponses,
+      DEFAULT_POCKET_CONFIG.rejectSelfSignedCertificates,
+      DEFAULT_POCKET_CONFIG.useLegacyTxCodec
     )
     const rpcProvider = new HttpRpcProvider(dispatchers[0])
     const pocket = new Pocket(dispatchers, rpcProvider, configuration)
@@ -177,53 +174,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     this.bind('redisInstance').to(redis)
 
-    // Load Postgres for TimescaleDB metrics
-    const pgConnection: string = PG_CONNECTION || ''
-    const pgCertificate: string = PG_CERTIFICATE || ''
-
-    if (!pgConnection) {
-      throw new HttpErrors.InternalServerError('PG_CONNECTION required in ENV')
-    }
-
-    if (!pgCertificate && environment !== 'development') {
-      throw new HttpErrors.InternalServerError('PG_CERTIFICATE required in ENV')
-    }
-
-    // Pull public certificate from Redis or s3 if not there
-    const cachedCertificate = await redis.get('timescaleDBCertificate')
-    let publicCertificate
-
-    if (environment === 'production') {
-      if (!cachedCertificate) {
-        try {
-          const s3Certificate = await got(pgCertificate)
-
-          publicCertificate = s3Certificate.body
-        } catch (e) {
-          throw new HttpErrors.InternalServerError('Invalid Certificate')
-        }
-        await redis.set('timescaleDBCertificate', publicCertificate, 'EX', 600)
-      } else {
-        publicCertificate = cachedCertificate
-      }
-    }
-
-    const ssl =
-      environment === 'production'
-        ? {
-            rejectUnauthorized: false,
-            ca: publicCertificate,
-          }
-        : false
-
-    const pgConfig = {
-      connectionString: pgConnection,
-      ssl,
-    }
-    const pgPool = new pg.Pool(pgConfig)
-
-    this.bind('pgPool').to(pgPool)
-
     // New metrics postgres for error recording
     const psqlConnection: string = PSQL_CONNECTION || ''
 
@@ -234,9 +184,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       connectionString: psqlConnection,
       ssl: environment === 'production' ? true : false,
     }
-    const pgPool2 = new pg.Pool(psqlConfig)
+    const pgPool = new pg.Pool(psqlConfig)
 
-    this.bind('pgPool2').to(pgPool2)
+    this.bind('pgPool').to(pgPool)
 
     this.bind('databaseEncryptionKey').to(databaseEncryptionKey)
     this.bind('aatPlan').to(aatPlan)

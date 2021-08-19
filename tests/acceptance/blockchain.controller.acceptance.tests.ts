@@ -46,7 +46,6 @@ describe('Blockchains controller (acceptance)', () => {
     )
 
     await blockchainRepository.create(expected)
-
     const res = await client.get('/blockchains').expect(200)
 
     expect(res.body).to.be.Array()
@@ -56,7 +55,6 @@ describe('Blockchains controller (acceptance)', () => {
 
   it('retrieves the total count of blockchains', async () => {
     await generateBlockchains(5)
-
     const res = await client.get('/blockchains/count').expect(200)
 
     expect(res.body).to.be.Object()
@@ -66,7 +64,6 @@ describe('Blockchains controller (acceptance)', () => {
 
   it('retrieves the information of a specific blockchain', async () => {
     const [blockchain] = await generateBlockchains(1)
-
     const res = await client.get(`/blockchains/${blockchain.hash}`).expect(200)
 
     expect(res.body).to.be.Object()

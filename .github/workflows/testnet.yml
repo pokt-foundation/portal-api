@@ -31,9 +31,6 @@ jobs:
           envkey_GATEWAY_CLIENT_PASSPHRASE: ${{ secrets.POCKET_NETWORK_TESTNET_CLIENT_PASSPHRASE }}
           envkey_MONGO_ENDPOINT: ${{ secrets.MONGO_TESTNET_ENDPOINT }}
           envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_TESTNET_ENCRYPTION_KEY }}
-          envkey_PG_CONNECTION: ${{ secrets.PG_TESTNET_CONNECTION }}
-          envkey_PG_CERTIFICATE: ${{ secrets.PG_TESTNET_CERTIFICATE }}
-          envkey_LOGZ_TOKEN: ${{ secrets.LOGZ_TOKEN }}
           envkey_DISPATCH_URL: https://node1.testnet.pokt.network,https://node2.testnet.pokt.network,https://node3.testnet.pokt.network
           envkey_ALTRUISTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_ALTRUISTS }}
           envkey_REDIS_ENDPOINT: dashboard-testnet.js6zbp.ng.0001.usw2.cache.amazonaws.com

@@ -5,7 +5,7 @@ import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 import { Configuration } from '@pokt-network/pocket-js'
-import { DEFAULT_POCKET_CONFIG } from '../../src/config/pocket-config'
+import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
 import { expect, sinon } from '@loopback/testlab'
 import MockAdapter from 'axios-mock-adapter'
 import axios from 'axios'
@@ -41,62 +41,39 @@ describe('Sync checker service (unit)', () => {
   let pocketMock: PocketMock
   let pocketConfiguration: Configuration
   let axiosMock: MockAdapter
+  let logSpy: sinon.SinonSpy
 
   before('initialize variables', async () => {
     redis = new RedisMock(0, '')
     cherryPicker = new CherryPicker({ redis, checkDebug: false })
     metricsRecorder = metricsRecorderMock(redis, cherryPicker)
     syncChecker = new SyncChecker(redis, metricsRecorder, SYNC_ALLOWANCE)
-
-    pocketConfiguration = new Configuration(
-      DEFAULT_POCKET_CONFIG.MAX_DISPATCHERS,
-      DEFAULT_POCKET_CONFIG.MAX_SESSIONS,
-      DEFAULT_POCKET_CONFIG.CONSENSUS_NODE_COUNT,
-      DEFAULT_POCKET_CONFIG.REQUEST_TIMEOUT,
-      DEFAULT_POCKET_CONFIG.ACCEPT_DISPUTED_RESPONSES,
-      4,
-      10200,
-      DEFAULT_POCKET_CONFIG.VALIDATE_RELAY_RESPONSES,
-      DEFAULT_POCKET_CONFIG.REJECT_SELF_SIGNED_CERTIFICATES,
-      DEFAULT_POCKET_CONFIG.USE_LEGACY_TX_CODEC
-    )
-    pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
-
+    pocketConfiguration = getPocketConfigOrDefault()
+    pocketMock = new PocketMock()
     axiosMock = new MockAdapter(axios)
   })
-
-  after(() => {
+  
+  afterEach(() => {
     sinon.restore()
   })
 
-  const clean = async () => {
-    beforeEach(axiosMock.reset)
+  beforeEach(async () => {
+    logSpy = sinon.spy(logger, 'log')
+
+    axiosMock.reset()
 
     pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
     pocketMock.relayResponse[blockchain.syncCheck] = DEFAULT_RELAY_RESPONSE
 
     await redis.flushall()
-  }
-
-  beforeEach(clean)
+  })
 
   it('should be defined', async () => {
     expect(syncChecker).to.be.ok()
   })
 
   it('updates the configuration consensus to one already set', () => {
-    const configuration = new Configuration(
-      DEFAULT_POCKET_CONFIG.MAX_DISPATCHERS,
-      DEFAULT_POCKET_CONFIG.MAX_SESSIONS,
-      9,
-      DEFAULT_POCKET_CONFIG.REQUEST_TIMEOUT,
-      DEFAULT_POCKET_CONFIG.ACCEPT_DISPUTED_RESPONSES,
-      4,
-      10200,
-      DEFAULT_POCKET_CONFIG.VALIDATE_RELAY_RESPONSES,
-      DEFAULT_POCKET_CONFIG.REJECT_SELF_SIGNED_CERTIFICATES,
-      DEFAULT_POCKET_CONFIG.USE_LEGACY_TX_CODEC
-    )
+    const configuration = getPocketConfigOrDefault({ consensusNodeCount: 9 })
 
     const expectedConsensusCount = 5
 
@@ -106,18 +83,7 @@ describe('Sync checker service (unit)', () => {
   })
 
   it('updates the configuration request timeout to one already set', () => {
-    const configuration = new Configuration(
-      DEFAULT_POCKET_CONFIG.MAX_DISPATCHERS,
-      DEFAULT_POCKET_CONFIG.MAX_SESSIONS,
-      9,
-      DEFAULT_POCKET_CONFIG.REQUEST_TIMEOUT,
-      DEFAULT_POCKET_CONFIG.ACCEPT_DISPUTED_RESPONSES,
-      4,
-      10200,
-      DEFAULT_POCKET_CONFIG.VALIDATE_RELAY_RESPONSES,
-      DEFAULT_POCKET_CONFIG.REJECT_SELF_SIGNED_CERTIFICATES,
-      DEFAULT_POCKET_CONFIG.USE_LEGACY_TX_CODEC
-    )
+    const configuration = getPocketConfigOrDefault({ requestTimeout: 10200 })
 
     const expectedTimeout = 4000
 
@@ -308,7 +274,7 @@ describe('Sync checker service (unit)', () => {
     })
 
     it('fails sync check due to altruist and chain error', async () => {
-      axiosMock.onPost(ALTRUIST_URL).reply(500)
+      axiosMock.onPost(ALTRUIST_URL).networkError()
 
       const nodes = DEFAULT_NODES
 
@@ -332,6 +298,65 @@ describe('Sync checker service (unit)', () => {
       })
 
       expect(syncedNodes).to.have.length(5)
+
+      const expectedLog = logSpy.calledWith(
+        'info',
+        sinon.match((arg: string) => arg.startsWith('SYNC CHECK ALTRUIST FAILURE'))
+      )
+
+      expect(expectedLog).to.be.true()
+    })
+
+    it('fails the sync check due to all nodes failing', async () => {
+      axiosMock.onPost(ALTRUIST_URL).reply(200, DEFAULT_RELAY_RESPONSE)
+
+      const nodes = DEFAULT_NODES
+
+      pocketMock.fail = true
+
+      const pocketClient = pocketMock.object()
+
+      const syncedNodes = await syncChecker.consensusFilter({
+        nodes,
+        requestID: '1234',
+        blockchain: blockchain.blockchain,
+        syncCheck: blockchain.syncCheck,
+        pocket: pocketClient,
+        applicationID: '',
+        applicationPublicKey: '',
+        blockchainSyncBackup: ALTRUIST_URL,
+        pocketAAT: undefined,
+        pocketConfiguration,
+        syncAllowance: SYNC_ALLOWANCE,
+        syncCheckPath: '',
+      })
+
+      expect(syncedNodes).to.have.length(0)
+    })
+
+    it('pass session sync check but fails due to behind altruist', async () => {
+      axiosMock.onPost(ALTRUIST_URL).reply(200, '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0d00" }') // 100 blocks after the DEFAULT_RELAY_RESPONSE
+
+      const nodes = DEFAULT_NODES
+
+      const pocketClient = pocketMock.object()
+
+      const syncedNodes = await syncChecker.consensusFilter({
+        nodes,
+        requestID: '1234',
+        blockchain: blockchain.blockchain,
+        syncCheck: blockchain.syncCheck,
+        pocket: pocketClient,
+        applicationID: '',
+        applicationPublicKey: '',
+        blockchainSyncBackup: ALTRUIST_URL,
+        pocketAAT: undefined,
+        pocketConfiguration,
+        syncAllowance: SYNC_ALLOWANCE,
+        syncCheckPath: '',
+      })
+
+      expect(syncedNodes).to.have.length(0)
     })
 
     it('fails the sync check due to all nodes failing', async () => {
@@ -388,7 +413,7 @@ describe('Sync checker service (unit)', () => {
 
     it('penalize node failing sync check', async () => {
       const logSpy = sinon.spy(logger, 'log')
-
+      
       axiosMock.onPost(ALTRUIST_URL).reply(200, DEFAULT_RELAY_RESPONSE)
 
       const nodes = DEFAULT_NODES
@@ -422,8 +447,12 @@ describe('Sync checker service (unit)', () => {
 
       expect(syncedNodes).to.have.length(4)
 
-      console.log(logSpy.args)
-      console.log(logSpy.calledWith('info', 'SYNC CHECK CHALLENGE'))
+      const expectedLog = logSpy.calledWith(
+        'info',
+        sinon.match((arg: string) => arg.startsWith('SYNC CHECK CHALLENGE'))
+      )
+
+      expect(expectedLog).to.be.true()
     })
 
     it('fails agreement of two highest nodes', async () => {
@@ -462,6 +491,10 @@ describe('Sync checker service (unit)', () => {
       })
 
       expect(syncedNodes).to.have.length(1)
+
+      const expectedLog = logSpy.calledWith('error', 'SYNC CHECK ERROR: two highest nodes could not agree on sync')
+
+      expect(expectedLog).to.be.true()
     })
   })
 })

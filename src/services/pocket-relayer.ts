@@ -8,8 +8,7 @@ import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, N
 import { Redis } from 'ioredis'
 import { BlockchainsRepository } from '../repositories'
 import { Applications } from '../models'
-import { RelayError } from '../errors/relay-error'
-import { LimitError } from '../errors/limit-error'
+import { RelayError, LimitError } from '../errors/types'
 import AatPlans from '../config/aat-plans.json'
 import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
 
@@ -247,7 +246,7 @@ export class PocketRelayer {
       const altruistURL =
         relayPath === undefined || relayPath === ''
           ? this.altruists[blockchain]
-          : `${this.altruists[blockchain]}/${relayPath}`
+          : `${this.altruists[blockchain]}${relayPath}`
 
       // Remove user/pass from the altruist URL
       const redactedAltruistURL = String(this.altruists[blockchain])?.replace(/[\w]*:\/\/[^\/]*@/g, '')
