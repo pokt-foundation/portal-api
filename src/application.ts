@@ -19,7 +19,6 @@ import crypto from 'crypto'
 import os from 'os'
 import process from 'process'
 import pg from 'pg'
-import got from 'got'
 
 require('log-timestamp')
 require('dotenv').config()
