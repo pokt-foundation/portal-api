@@ -246,7 +246,7 @@ export class PocketRelayer {
       const altruistURL =
         relayPath === undefined || relayPath === ''
           ? this.altruists[blockchain]
-          : `${this.altruists[blockchain]}/${relayPath}`
+          : `${this.altruists[blockchain]}${relayPath}`
 
       // Remove user/pass from the altruist URL
       const redactedAltruistURL = String(this.altruists[blockchain])?.replace(/[\w]*:\/\/[^\/]*@/g, '')
