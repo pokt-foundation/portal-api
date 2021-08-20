@@ -7,7 +7,7 @@ import { expect, sinon } from '@loopback/testlab'
 import { HTTPMethod, Configuration, Node } from '@pokt-network/pocket-js'
 
 import AatPlans from '../../src/config/aat-plans.json'
-import { DEFAULT_POCKET_CONFIG } from '../../src/config/pocket-config'
+import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
 import { ChainChecker, ChainIDFilterOptions } from '../../src/services/chain-checker'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
@@ -22,20 +22,22 @@ import { LimitError } from '../../src/errors/types'
 
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
 
-const DEFAULT_HOST = 'mainnet'
+const DEFAULT_HOST = 'eth-mainnet-x'
 
 const BLOCKCHAINS = [
   {
-    hash: '0001',
-    ticker: 'POKT',
-    networkID: 'mainnet',
-    network: 'POKT-mainnet',
-    description: 'Pocket Network Mainnet',
-    index: 1,
-    blockchain: 'mainnet',
+    hash: '0041',
+    ticker: 'ETHX',
+    networkID: '1',
+    network: 'ETH-2',
+    description: 'Ethereum Mainnet X',
+    index: 2,
+    blockchain: 'eth-mainnet-x',
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
+    chainID: '137',
+    syncAllowance: 5,
     logLimitBlocks: 10000,
   },
   {
@@ -129,18 +131,7 @@ describe('Pocket relayer service (unit)', () => {
     syncChecker = new SyncChecker(redis, metricsRecorder, 5)
     blockchainRepository = new BlockchainsRepository(gatewayTestDB)
 
-    pocketConfiguration = new Configuration(
-      DEFAULT_POCKET_CONFIG.MAX_DISPATCHERS,
-      DEFAULT_POCKET_CONFIG.MAX_SESSIONS,
-      DEFAULT_POCKET_CONFIG.CONSENSUS_NODE_COUNT,
-      DEFAULT_POCKET_CONFIG.REQUEST_TIMEOUT,
-      DEFAULT_POCKET_CONFIG.ACCEPT_DISPUTED_RESPONSES,
-      4,
-      10200,
-      DEFAULT_POCKET_CONFIG.VALIDATE_RELAY_RESPONSES,
-      DEFAULT_POCKET_CONFIG.REJECT_SELF_SIGNED_CERTIFICATES,
-      DEFAULT_POCKET_CONFIG.USE_LEGACY_TX_CODEC
-    )
+    pocketConfiguration = getPocketConfigOrDefault()
 
     pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
 
@@ -477,7 +468,7 @@ describe('Pocket relayer service (unit)', () => {
       const pocket = mock.object()
 
       const poktRelayer = new PocketRelayer({
-        host: 'mainnet',
+        host: 'eth-mainnet',
         origin: '',
         userAgent: '',
         pocket,
@@ -518,7 +509,7 @@ describe('Pocket relayer service (unit)', () => {
       const pocket = mock.object()
 
       const poktRelayer = new PocketRelayer({
-        host: 'mainnet',
+        host: 'eth-mainnet-x',
         origin: '',
         userAgent: '',
         pocket,
@@ -553,7 +544,6 @@ describe('Pocket relayer service (unit)', () => {
 
     it('chainIDCheck / syncCheck succeeds', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
-
       const mockCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
 
       const syncCherckerSpy = sinon.spy(mockSyncChecker, 'consensusFilter')
@@ -599,11 +589,8 @@ describe('Pocket relayer service (unit)', () => {
 
     it('chainIDCheck fails (no nodes returned)', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(0, 5)
-
       const mockCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
-
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
-
       const pocket = pocketMock.object()
 
       const poktRelayer = new PocketRelayer({
@@ -645,11 +632,8 @@ describe('Pocket relayer service (unit)', () => {
 
     it('syncCheck fails (no nodes returned)', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 0)
-
       const mockCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
-
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
-
       const pocket = pocketMock.object()
 
       const poktRelayer = new PocketRelayer({
@@ -842,7 +826,7 @@ describe('Pocket relayer service (unit)', () => {
         const pocket = pocketMock.object()
 
         const poktRelayer = new PocketRelayer({
-          host: 'mainnet',
+          host: 'eth-mainnet-x',
           origin: '',
           userAgent: '',
           pocket,
@@ -895,7 +879,7 @@ describe('Pocket relayer service (unit)', () => {
         const invalidOrigin = 'invalid-origin'
 
         const poktRelayer = new PocketRelayer({
-          host: 'mainnet',
+          host: 'eth-mainnet-x',
           origin: invalidOrigin,
           userAgent: '',
           pocket,
@@ -944,11 +928,10 @@ describe('Pocket relayer service (unit)', () => {
         application.gatewaySettings = gatewaySettings
 
         const pocket = pocketMock.object()
-
         const invalidUserAgent = 'invalid-user-agent'
 
         const poktRelayer = new PocketRelayer({
-          host: 'mainnet',
+          host: 'eth-mainnet-x',
           origin: '',
           userAgent: invalidUserAgent,
           pocket,
@@ -996,7 +979,6 @@ describe('Pocket relayer service (unit)', () => {
       // Altruist is forced by simulating a chainIDCheck failure
       const getAltruistRelayer = (relayResponse?: string): PocketRelayer => {
         const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(0, 5)
-
         const pocket = pocketMock.object()
 
         if (relayResponse) {
