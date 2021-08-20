@@ -2,7 +2,7 @@ name: Staging Deployment us-west-2
 
 on:
   push:
-    branches: [staging]
+    branches: [staging, logs/fix-datadog-logging]
 
 jobs:
   deploy:
@@ -44,11 +44,14 @@ jobs:
           envkey_NODE_TLS_REJECT_UNAUTHORIZED: 0
           envkey_AAT_PLAN: 'premium'
           envkey_NODE_ENV: 'production'
-          envkey_REGION: 'staging'
+          envkey_REGION: 'us-west-2'
+          envkey_REGION_NAME: 'staging'
           envkey_INFLUX_URL: 'https://influx.portal.pokt.network:8086'
           envkey_INFLUX_ORG: 'pocket'
           envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
           envkey_PSQL_CONNECTION: ${{ secrets.PSQL_CONNECTION }}
+          envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
