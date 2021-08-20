@@ -33,6 +33,7 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'DEFAULT_LOG_LIMIT_BLOCKS',
     'AAT_PLAN',
     'WATCH',
+    'REDIRECTS',
   ]
 
   /*
