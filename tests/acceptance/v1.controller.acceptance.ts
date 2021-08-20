@@ -44,16 +44,18 @@ const BLOCKCHAINS = [
     syncAllowance: 5,
   },
   {
-    hash: '0040',
-    ticker: 'ETHS',
+    hash: '0041',
+    ticker: 'ETHX',
     networkID: '1',
-    network: 'ETH-1S',
-    description: 'Ethereum Mainnet String',
-    index: 3,
-    blockchain: 'eth-mainnet-string',
+    network: 'ETH-2',
+    description: 'Ethereum Mainnet X',
+    index: 2,
+    blockchain: 'eth-mainnet-x',
     active: true,
+    enforceResult: 'JSON',
     nodeCount: 1,
-    chainID: '64',
+    chainID: '137',
+    syncAllowance: 5,
   },
 ]
 
@@ -125,7 +127,6 @@ describe('V1 controller (acceptance)', () => {
       '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}':
         '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}',
     }
-
     pocketMock = new PocketMock(undefined, undefined, undefined)
     pocketMock.relayResponse = relayResponses
 
@@ -440,8 +441,6 @@ describe('V1 controller (acceptance)', () => {
       .set('Accept', 'application/json')
       .set('host', 'invalid host')
       .expect(200)
-
-    console.log('BODY', response.body)
 
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
     expect(response.body).to.have.property('message')
