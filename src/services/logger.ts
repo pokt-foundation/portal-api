@@ -2,6 +2,7 @@ import { string } from 'pg-format'
 import { LogEntry } from 'winston'
 import WinstonCloudwatch from 'winston-cloudwatch'
 import crypto from 'crypto'
+import { HttpErrors } from '@loopback/rest'
 
 require('dotenv').config()
 
@@ -19,7 +20,10 @@ interface Log {
   elapsedTime: number
 }
 
-const environment: string = process.env.NODE_ENV || 'production'
+const environment = process.env.NODE_ENV || 'production'
+const logToCloudWatch = process.env.LOG_TO_CLOUDWATCH === 'true'
+const accessKeyID = process.env.AWS_ACCESS_KEY_ID || ''
+const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || ''
 
 const timestampUTC = () => {
   const timestamp = new Date()
@@ -35,13 +39,6 @@ const consoleFormat = printf(
 
 const startTime = new Date().toISOString()
 
-const awsFormat = (
-  level: string,
-  message: string,
-  { requestID, relayType, typeID, serviceNode, error, elapsedTime }: Log
-) =>
-  `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${error}] [${elapsedTime}] ${message}`
-
 const logFormat = format.combine(
   format.colorize(),
   format.simple(),
@@ -51,7 +48,7 @@ const logFormat = format.combine(
   consoleFormat
 )
 
-const logGroup = `${process.env.REGION_NAME || ''}/ecs/gateway`
+const logGroup = process.env.REGION_NAME || '' + '/ecs/gateway'
 
 const options = {
   console: {
@@ -64,14 +61,14 @@ const options = {
     name: 'cloudwatch-log',
     logGroupName: logGroup,
     logStreamName: function () {
-      // Spread log streams across dates as the server stays up
-      const date = new Date().toISOString().split('T')[0]
+      // Spread log streams across hours as the server stays up
+      const date = new Date().toISOString().slice(0, 13)
 
-      return logGroup + date + '-' + crypto.createHash('md5').update(startTime).digest('hex')
+      return logGroup + '-' + date + '-' + crypto.createHash('md5').update(startTime).digest('hex')
     },
     awsRegion: process.env.REGION,
-    awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    awsSecretKey: process.env.AWS_SECRET_ACCESS_KEY,
+    awsAccessKeyId: accessKeyID,
+    awsSecretKey: awsSecretAccessKey,
     level: 'verbose',
     messageFormatter: (logObject: LogEntry) => {
       const { level, requestID, relayType, typeID, serviceNode, error, elapsedTime, message } = logObject
@@ -91,17 +88,24 @@ const options = {
   },
 }
 
-const getTransports = (env: string) => {
+const getTransports = () => {
   const transports = [new winstonTransports.Console(options.console)]
 
-  if (environment === 'production') {
+  if (environment === 'production' && logToCloudWatch) {
+    if (!accessKeyID) {
+      throw new HttpErrors.InternalServerError('AWS_ACCESS_KEY_ID required in ENV')
+    }
+    if (!awsSecretAccessKey) {
+      throw new HttpErrors.InternalServerError('AWS_SECRET_ACCESS_KEY required in ENV')
+    }
+
     transports.push(new WinstonCloudwatch(options.aws))
   }
 
   return transports
 }
 
-const perEnvTransports = getTransports(environment)
+const perEnvTransports = getTransports()
 
 module.exports = createLogger({
   format: format.json(),
