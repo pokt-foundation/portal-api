@@ -18,6 +18,8 @@ const logger = require('../services/logger')
 
 import axios from 'axios'
 
+const BLACKLISTED_HOSTNAMES = ['infura.io', 'pokt.network', 'alchemyapi.io', 'quiknode.pro']
+
 export class PocketRelayer {
   host: string
   origin: string
@@ -497,7 +499,7 @@ export class PocketRelayer {
         }
       }
 
-      nodes = this.filterBlacklistedNodes(nodes)
+      nodes = nodes.filter(this.checkServiceUrl)
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchain, requestID)
     }
 
@@ -756,25 +758,8 @@ export class PocketRelayer {
     }
   }
 
-  filterBlacklistedNodes(nodes: Node[]): Node[] {
-    const filteredNodes = []
-
-    for (const node of nodes) {
-      if (this.isServiceUrlBlacklisted(node.serviceURL.hostname)) {
-        filteredNodes.push(node)
-      }
-    }
-    return filteredNodes
-  }
-
-  isServiceUrlBlacklisted(serviceUrl: string): boolean {
-    return (
-      serviceUrl.includes('infura.io') ||
-      serviceUrl.includes('pokt.network') ||
-      serviceUrl.includes('alchemyapi.io') ||
-      serviceUrl.includes('quiknode.pro')
-    )
-  }
+  checkServiceUrl = (node: Node): boolean =>
+    !BLACKLISTED_HOSTNAMES.some((blacklistedHostname) => node.serviceURL.hostname.includes(blacklistedHostname))
 
   checkSecretKey(application: Applications): boolean {
     // Check secretKey; is it required? does it pass? -- temp allowance for unencrypted keys
