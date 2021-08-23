@@ -1,4 +1,3 @@
-import { string } from 'pg-format'
 import { LogEntry } from 'winston'
 import WinstonCloudwatch from 'winston-cloudwatch'
 import crypto from 'crypto'
@@ -24,6 +23,7 @@ const environment = process.env.NODE_ENV || 'production'
 const logToCloudWatch = process.env.LOG_TO_CLOUDWATCH === 'true'
 const accessKeyID = process.env.AWS_ACCESS_KEY_ID || ''
 const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || ''
+const region = process.env.REGION || ''
 
 const timestampUTC = () => {
   const timestamp = new Date()
@@ -66,7 +66,7 @@ const options = {
 
       return logGroup + '-' + date + '-' + crypto.createHash('md5').update(startTime).digest('hex')
     },
-    awsRegion: process.env.REGION,
+    awsRegion: region,
     awsAccessKeyId: accessKeyID,
     awsSecretKey: awsSecretAccessKey,
     level: 'verbose',
@@ -97,6 +97,9 @@ const getTransports = () => {
     }
     if (!awsSecretAccessKey) {
       throw new HttpErrors.InternalServerError('AWS_SECRET_ACCESS_KEY required in ENV')
+    }
+    if (!region) {
+      throw new HttpErrors.InternalServerError('REGION required in ENV')
     }
 
     transports.push(new WinstonCloudwatch(options.aws))
