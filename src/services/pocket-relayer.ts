@@ -496,6 +496,8 @@ export class PocketRelayer {
           return new Error('Sync / chain check failure; using fallbacks')
         }
       }
+
+      nodes = this.filterBlacklistedNodes(nodes)
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchain, requestID)
     }
 
@@ -752,6 +754,26 @@ export class PocketRelayer {
         )
       }
     }
+  }
+
+  filterBlacklistedNodes(nodes: Node[]): Node[] {
+    const filteredNodes = []
+
+    for (const node of nodes) {
+      if (this.isServiceUrlBlacklisted(node.serviceURL.hostname)) {
+        filteredNodes.push(node)
+      }
+    }
+    return filteredNodes
+  }
+
+  isServiceUrlBlacklisted(serviceUrl: string): boolean {
+    return (
+      serviceUrl.includes('infura.io') ||
+      serviceUrl.includes('pokt.network') ||
+      serviceUrl.includes('alchemyapi.io') ||
+      serviceUrl.includes('quiknode.pro')
+    )
   }
 
   checkSecretKey(application: Applications): boolean {
