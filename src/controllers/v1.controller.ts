@@ -97,10 +97,6 @@ export class V1Controller {
     })
     rawData: object
   ): Promise<string | Error> {
-    if (!this.redirects) {
-      return new HttpErrors.InternalServerError('No redirect domains allowed')
-    }
-
     for (const redirect of JSON.parse(this.redirects)) {
       if (this.pocketRelayer.host.toLowerCase().includes(redirect.domain, 0)) {
         this.pocketRelayer.host = redirect.blockchain
