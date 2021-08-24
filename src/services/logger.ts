@@ -71,18 +71,9 @@ const options = {
     awsSecretKey: awsSecretAccessKey,
     level: 'verbose',
     messageFormatter: (logObject: LogEntry) => {
-      const { level, requestID, relayType, typeID, serviceNode, error, elapsedTime, message } = logObject
-
       return JSON.stringify({
         timestamp: timestampUTC(),
-        level,
-        requestID,
-        relayType,
-        typeID,
-        serviceNode,
-        error,
-        elapsedTime,
-        message,
+        ...logObject,
       })
     },
   },
