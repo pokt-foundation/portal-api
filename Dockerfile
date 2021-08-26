@@ -1,5 +1,5 @@
 # Check out https://hub.docker.com/_/node to select a new base image
-FROM node:10-slim
+FROM node:12-slim
 
 # Bind to all network interfaces so that it can be mapped to the host OS
 ENV WATCH=true
