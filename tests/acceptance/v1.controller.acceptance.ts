@@ -7,6 +7,7 @@ import { MockRelayResponse, PocketMock } from '../mocks/pocketjs'
 import { ApplicationsRepository } from '../../src/repositories/applications.repository'
 import { Encryptor } from 'strong-cryptor'
 import { LoadBalancersRepository } from '../../src/repositories/load-balancers.repository'
+import { HttpErrors } from '@loopback/rest'
 
 // Must be the same one from the test environment
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
@@ -437,6 +438,16 @@ describe('V1 controller (acceptance)', () => {
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
     expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
     expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+  })
+
+  it("app doesn't initialize when no redirects are set", async () => {
+    const pocket = pocketMock.class()
+
+    await expect(
+      setupApplication(pocket, {
+        REDIRECTS: '',
+      })
+    ).to.rejectedWith(HttpErrors.InternalServerError)
   })
 
   it('fails on invalid redirect load balancer', async () => {

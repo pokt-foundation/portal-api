@@ -76,9 +76,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const relayRetries: string = POCKET_RELAY_RETRIES || ''
     const databaseEncryptionKey: string = DATABASE_ENCRYPTION_KEY || ''
     const defaultSyncAllowance: number = parseInt(DEFAULT_SYNC_ALLOWANCE) || -1
-    const defaultLogLimitBlocks: number = parseInt(DEFAULT_LOG_LIMIT_BLOCKS) || -1
+    const defaultLogLimitBlocks: number = parseInt(DEFAULT_LOG_LIMIT_BLOCKS) || 10000
     const aatPlan = AAT_PLAN || AatPlans.PREMIUM
-    const redirects = REDIRECTS || '' // Can be empty
+    const redirects: string | object[] = REDIRECTS || ''
 
     if (!dispatchURL) {
       throw new HttpErrors.InternalServerError('DISPATCH_URL required in ENV')
@@ -109,6 +109,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     }
     if (aatPlan !== AatPlans.PREMIUM && !AatPlans.values.includes(aatPlan)) {
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
+    }
+    if (!redirects) {
+      throw new HttpErrors.InternalServerError('REDIRECTS required in ENV')
     }
 
     const dispatchers = []

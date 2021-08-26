@@ -22,6 +22,8 @@ import { LimitError } from '../../src/errors/types'
 
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
 
+const DEFAULT_LOG_LIMIT = 10000
+
 const DEFAULT_HOST = 'eth-mainnet-x'
 
 const BLOCKCHAINS = [
@@ -76,6 +78,7 @@ const BLOCKCHAINS = [
 
 const ALTRUISTS = {
   '0021': 'https://user:pass@backups.example.org:18081',
+  '0040': 'https://user:pass@backups.example.org:18081',
 }
 
 const APPLICATION = {
@@ -157,6 +160,7 @@ describe('Pocket relayer service (unit)', () => {
       checkDebug: true,
       altruists: '{}',
       aatPlan: AatPlans.FREEMIUM,
+      defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
     })
   })
 
@@ -258,6 +262,7 @@ describe('Pocket relayer service (unit)', () => {
       checkDebug: true,
       altruists: '{}',
       aatPlan: AatPlans.FREEMIUM,
+      defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
     })
 
     const application = {
@@ -293,6 +298,7 @@ describe('Pocket relayer service (unit)', () => {
       checkDebug: true,
       altruists: '{}',
       aatPlan: AatPlans.FREEMIUM,
+      defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
     })
 
     const isInvalidApp = poktRelayer.checkSecretKey(application as unknown as Applications)
@@ -472,6 +478,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -514,6 +521,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -555,6 +563,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -598,6 +607,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -644,6 +654,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -689,6 +700,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -733,6 +745,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       rawData =
@@ -778,6 +791,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       rawData =
@@ -829,6 +843,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -878,6 +893,7 @@ describe('Pocket relayer service (unit)', () => {
           checkDebug: true,
           altruists: '{}',
           aatPlan: AatPlans.FREEMIUM,
+          defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         })
 
         try {
@@ -931,6 +947,7 @@ describe('Pocket relayer service (unit)', () => {
           checkDebug: true,
           altruists: '{}',
           aatPlan: AatPlans.FREEMIUM,
+          defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         })
 
         try {
@@ -983,6 +1000,7 @@ describe('Pocket relayer service (unit)', () => {
           checkDebug: true,
           altruists: '{}',
           aatPlan: AatPlans.FREEMIUM,
+          defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         })
 
         try {
@@ -1038,6 +1056,7 @@ describe('Pocket relayer service (unit)', () => {
           checkDebug: true,
           altruists: JSON.stringify(ALTRUISTS),
           aatPlan: AatPlans.FREEMIUM,
+          defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         }) as PocketRelayer
 
         return poktRelayer
@@ -1185,6 +1204,63 @@ describe('Pocket relayer service (unit)', () => {
         })
 
         expect(relayResponse).to.be.deepEqual(JSON.parse(mockRelayResponse as string))
+      })
+
+      it('should succeed if `eth_getLogs` call is within permitted blocks range (using latest) even with not default value set on db or environment', async () => {
+        const blockNumberRespose = {
+          jsonrpc: '2.0',
+          id: 1,
+          result: '0x9c5bb8',
+        }
+
+        const mockRelayResponse =
+          '{"jsonrpc":"2.0","id":1,"result":[{"address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff","blockHash":"0x2ad90e24266edd835bb03071c0c0b58ee8356c2feb4576d15b3c2c2b2ef319c5","blockNumber":"0xc5bdc9","data":"0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000767fe9edc9e0df98e07454847909b5e959d7ca0e0000000000000000000000000000000000000000000000019274b259f653fc110000000000000000000000000000000000000000000000104bf2ffa4dcbf8de5","logIndex":"0x4c","removed":false,"topics":["0x0f6672f78a59ba8e5e5b5d38df3ebc67f3c792e2c9259b8d97d7f00dd78ba1b3","0x000000000000000000000000e5feeac09d36b18b3fa757e5cf3f8da6b8e27f4c"],"transactionHash":"0x14430f1e344b5f95ea68a5f4c0538fc732cc97efdc68f6ee0ba20e2c633542f6","transactionIndex":"0x1a"}]}'
+
+        rawData =
+          '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
+
+        const pocket = pocketMock.object()
+
+        if (mockRelayResponse) {
+          pocketMock.relayResponse[rawData] = mockRelayResponse
+        }
+
+        axiosMock.onPost(ALTRUISTS['0040'], blockNumberData).reply(200, blockNumberRespose)
+        axiosMock.onPost(ALTRUISTS['0040'], JSON.parse(rawData)).reply(200, mockRelayResponse)
+
+        const poktRelayer = new PocketRelayer({
+          host: 'eth-mainnet-string',
+          origin: '',
+          userAgent: '',
+          pocket,
+          pocketConfiguration,
+          cherryPicker,
+          metricsRecorder,
+          syncChecker,
+          chainChecker,
+          redis,
+          databaseEncryptionKey: DB_ENCRYPTION_KEY,
+          secretKey: '',
+          relayRetries: 0,
+          blockchainsRepository: blockchainRepository,
+          checkDebug: true,
+          altruists: JSON.stringify(ALTRUISTS),
+          aatPlan: AatPlans.FREEMIUM,
+          defaultLogLimitBlocks: 0,
+        }) as PocketRelayer
+
+        const relayResponse = await poktRelayer.sendRelay({
+          rawData,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          relayRetries: 0,
+        })
+
+        expect(JSON.parse(relayResponse as string)).to.be.deepEqual(JSON.parse(mockRelayResponse as string))
       })
     })
   })
