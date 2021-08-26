@@ -434,6 +434,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
