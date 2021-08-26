@@ -41,6 +41,7 @@ export class V1Controller {
     @inject('defaultSyncAllowance') private defaultSyncAllowance: number,
     @inject('aatPlan') private aatPlan: string,
     @inject('redirects') private redirects: string,
+    @inject('defaultLogLimitBlocks') private defaultLogLimitBlocks: number,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -78,6 +79,7 @@ export class V1Controller {
       checkDebug: this.checkDebug(),
       altruists: this.altruists,
       aatPlan: this.aatPlan,
+      defaultLogLimitBlocks: this.defaultLogLimitBlocks,
     })
   }
 

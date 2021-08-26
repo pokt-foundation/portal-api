@@ -76,7 +76,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const relayRetries: string = POCKET_RELAY_RETRIES || ''
     const databaseEncryptionKey: string = DATABASE_ENCRYPTION_KEY || ''
     const defaultSyncAllowance: number = parseInt(DEFAULT_SYNC_ALLOWANCE) || -1
-    const defaultLogLimitBlocks: number = parseInt(DEFAULT_LOG_LIMIT_BLOCKS) || -1
+    const defaultLogLimitBlocks: number = parseInt(DEFAULT_LOG_LIMIT_BLOCKS) || 10000
     const aatPlan = AAT_PLAN || AatPlans.PREMIUM
     const redirects: string | object[] = REDIRECTS || ''
 
