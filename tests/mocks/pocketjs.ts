@@ -32,7 +32,7 @@ export const DEFAULT_NODES = [
     StakingStatus.Staked,
     BigInt(15145000000),
     'https://validator0.org/',
-    ['0001', '0027', '0021']
+    ['0001', '0027', '0021', '0040']
   ),
   new Node(
     '4ebc3a58b2c3e6ea59762f7d9f502e97a6901bac',
@@ -41,7 +41,7 @@ export const DEFAULT_NODES = [
     StakingStatus.Staked,
     BigInt(15145000000),
     'https://validator1.org/',
-    ['0009', '0027', '0012', '0010']
+    ['0009', '0027', '0012', '0010', '0040']
   ),
   new Node(
     'b8c70edb826a33d15876d0926ab08d98d6f0bb23',
@@ -50,7 +50,7 @@ export const DEFAULT_NODES = [
     StakingStatus.Staked,
     BigInt(15150000000),
     'https://validator2.org/',
-    ['0008', '0015', '0020', '0018']
+    ['0008', '0015', '0020', '0018', '0040']
   ),
   new Node(
     '1bf7e0bda6e0e3deea77a5044d11840e73b39e63',
@@ -59,7 +59,7 @@ export const DEFAULT_NODES = [
     StakingStatus.Staked,
     BigInt(15373984626),
     'https://validator3.org/',
-    ['0012', '0021', '0022', '0015']
+    ['0012', '0021', '0022', '0015', '0040']
   ),
   new Node(
     'fb519210c9c0c531a5e73b2c114c5ff8354b301c',
@@ -68,7 +68,7 @@ export const DEFAULT_NODES = [
     StakingStatus.Staked,
     BigInt(15369984630),
     'https://validator4.org/',
-    ['0027', '0002', '0004', '0022']
+    ['0027', '0002', '0004', '0022', '0040']
   ),
 ]
 
