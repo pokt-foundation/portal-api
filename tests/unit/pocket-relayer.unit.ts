@@ -70,6 +70,9 @@ const BLOCKCHAINS = [
     blockchain: 'eth-mainnet-string',
     active: true,
     nodeCount: 1,
+    logLimitBlocks: 10000,
+    chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
+    syncCheck: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
   },
 ]
 
@@ -407,7 +410,33 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     it('sends successful relay response as json', async () => {
-      const relayResponse = await pocketRelayer.sendRelay({
+      const mock = new PocketMock()
+
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+
+      const pocket = mock.object()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: true,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+      })
+
+      const relayResponse = await poktRelayer.sendRelay({
         rawData,
         relayPath: '',
         httpMethod: HTTPMethod.POST,
@@ -417,13 +446,15 @@ describe('Pocket relayer service (unit)', () => {
         overallTimeOut: undefined,
         relayRetries: 0,
       })
-      const expected = JSON.parse(pocketMock.relayResponse[rawData] as string)
+      const expected = JSON.parse(mock.relayResponse[rawData] as string)
 
       expect(relayResponse).to.be.deepEqual(expected)
     })
 
     it('sends successful relay response as string', async () => {
       const mock = new PocketMock()
+
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
 
       mock.relayResponse[rawData] = 'string response'
 
@@ -437,8 +468,8 @@ describe('Pocket relayer service (unit)', () => {
         pocketConfiguration,
         cherryPicker,
         metricsRecorder,
-        syncChecker,
-        chainChecker,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
         redis,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
@@ -460,7 +491,6 @@ describe('Pocket relayer service (unit)', () => {
         overallTimeOut: undefined,
         relayRetries: 0,
       })
-
       const expected = mock.relayResponse[rawData]
 
       expect(relayResponse).to.be.deepEqual(expected)
@@ -552,7 +582,8 @@ describe('Pocket relayer service (unit)', () => {
 
     it('chainIDCheck / syncCheck succeeds', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
-      const mockCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
+
+      const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
 
       const syncCherckerSpy = sinon.spy(mockSyncChecker, 'consensusFilter')
 
@@ -592,14 +623,17 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(relayResponse).to.be.deepEqual(JSON.parse(pocketMock.relayResponse[rawData] as string))
 
-      expect(mockCheckerSpy.callCount).to.be.equal(1)
+      expect(mockChainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
     })
 
     it('chainIDCheck fails (no nodes returned)', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(0, 5)
-      const mockCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
-      const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
+
+      const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
+
+      const syncCherckerSpy = sinon.spy(mockSyncChecker, 'consensusFilter')
+
       const pocket = pocketMock.object()
 
       const poktRelayer = new PocketRelayer({
@@ -636,14 +670,16 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(relayResponse).to.be.instanceOf(Error)
 
-      expect(mockCheckerSpy.callCount).to.be.equal(1)
-      expect(syncCherckerSpy.callCount).to.be.equal(0)
+      expect(mockChainCheckerSpy.callCount).to.be.equal(1)
+      expect(syncCherckerSpy.callCount).to.be.equal(1)
     })
 
     it('syncCheck fails (no nodes returned)', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 0)
-      const mockCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
-      const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
+
+      const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
+      const syncCherckerSpy = sinon.spy(mockSyncChecker, 'consensusFilter')
+
       const pocket = pocketMock.object()
 
       const poktRelayer = new PocketRelayer({
@@ -680,7 +716,7 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(relayResponse).to.be.instanceOf(Error)
 
-      expect(mockCheckerSpy.callCount).to.be.equal(1)
+      expect(mockChainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
     })
 

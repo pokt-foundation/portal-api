@@ -412,6 +412,9 @@ export class PocketRelayer {
     )
 
     if (pocketSession instanceof Session) {
+      let syncCheckPromise: Promise<Node[]>
+      let chainCheckPromise: Promise<Node[]>
+
       let nodes: Node[] = pocketSession.sessionNodes
       const relayStart = process.hrtime()
 
@@ -430,10 +433,7 @@ export class PocketRelayer {
           pocketConfiguration: this.pocketConfiguration,
         }
 
-        nodes = await this.chainChecker.chainIDFilter(chainIDOptions)
-        if (nodes.length === 0) {
-          return new Error('ChainID check failure; using fallbacks')
-        }
+        chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
       }
 
       if (blockchainSyncCheck) {
@@ -453,8 +453,33 @@ export class PocketRelayer {
           pocketConfiguration: this.pocketConfiguration,
         }
 
-        nodes = await this.syncChecker.consensusFilter(consensusFilterOptions)
-        if (nodes.length === 0) {
+        syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
+      }
+
+      const checkersPromise = Promise.allSettled([chainCheckPromise, syncCheckPromise])
+
+      const [chainCheckResult, syncCheckResult] = await checkersPromise
+
+      if (blockchainIDCheck) {
+        if (
+          chainCheckResult.status === 'fulfilled' &&
+          chainCheckResult.value !== undefined &&
+          chainCheckResult.value.length > 0
+        ) {
+          nodes = chainCheckResult.value
+        } else {
+          return new Error('ChainID check failure; using fallbacks')
+        }
+      }
+
+      if (blockchainSyncCheck) {
+        if (
+          syncCheckResult.status === 'fulfilled' &&
+          syncCheckResult.value !== undefined &&
+          syncCheckResult.value.length > 0
+        ) {
+          nodes = syncCheckResult.value
+        } else {
           const error = 'Sync / chain check failure'
           const method = 'checks'
 
