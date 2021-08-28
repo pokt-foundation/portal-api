@@ -98,4 +98,4 @@ volumes:
 
 networks:
   pocket:
-    name: pocket
+    driver: bridge
