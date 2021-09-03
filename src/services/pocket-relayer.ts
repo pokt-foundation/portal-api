@@ -36,6 +36,7 @@ export class PocketRelayer {
   checkDebug: boolean
   altruists: JSONObject
   aatPlan: string
+  defaultLogLimitBlocks: number
 
   constructor({
     host,
@@ -55,6 +56,7 @@ export class PocketRelayer {
     checkDebug,
     altruists,
     aatPlan,
+    defaultLogLimitBlocks,
   }: {
     host: string
     origin: string
@@ -73,6 +75,7 @@ export class PocketRelayer {
     checkDebug: boolean
     altruists: string
     aatPlan: string
+    defaultLogLimitBlocks: number
   }) {
     this.host = host
     this.origin = origin
@@ -90,6 +93,7 @@ export class PocketRelayer {
     this.blockchainsRepository = blockchainsRepository
     this.checkDebug = checkDebug
     this.aatPlan = aatPlan
+    this.defaultLogLimitBlocks = defaultLogLimitBlocks
 
     // Create the array of altruist relayers as last resort
     this.altruists = JSON.parse(altruists)
@@ -408,6 +412,9 @@ export class PocketRelayer {
     )
 
     if (pocketSession instanceof Session) {
+      let syncCheckPromise: Promise<Node[]>
+      let chainCheckPromise: Promise<Node[]>
+
       let nodes: Node[] = pocketSession.sessionNodes
       const relayStart = process.hrtime()
 
@@ -426,10 +433,7 @@ export class PocketRelayer {
           pocketConfiguration: this.pocketConfiguration,
         }
 
-        nodes = await this.chainChecker.chainIDFilter(chainIDOptions)
-        if (nodes.length === 0) {
-          return new Error('ChainID check failure; using fallbacks')
-        }
+        chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
       }
 
       if (blockchainSyncCheck) {
@@ -449,8 +453,33 @@ export class PocketRelayer {
           pocketConfiguration: this.pocketConfiguration,
         }
 
-        nodes = await this.syncChecker.consensusFilter(consensusFilterOptions)
-        if (nodes.length === 0) {
+        syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
+      }
+
+      const checkersPromise = Promise.allSettled([chainCheckPromise, syncCheckPromise])
+
+      const [chainCheckResult, syncCheckResult] = await checkersPromise
+
+      if (blockchainIDCheck) {
+        if (
+          chainCheckResult.status === 'fulfilled' &&
+          chainCheckResult.value !== undefined &&
+          chainCheckResult.value.length > 0
+        ) {
+          nodes = chainCheckResult.value
+        } else {
+          return new Error('ChainID check failure; using fallbacks')
+        }
+      }
+
+      if (blockchainSyncCheck) {
+        if (
+          syncCheckResult.status === 'fulfilled' &&
+          syncCheckResult.value !== undefined &&
+          syncCheckResult.value.length > 0
+        ) {
+          nodes = syncCheckResult.value
+        } else {
           const error = 'Sync / chain check failure'
           const method = 'checks'
 
@@ -618,7 +647,8 @@ export class PocketRelayer {
       let blockchainSyncAllowance = 0
       let blockchainIDCheck = ''
       let blockchainID = ''
-      let blockchainLogLimitBlocks = 0
+      // Should never be 0
+      let blockchainLogLimitBlocks = 10000
       const blockchain = blockchainFilter[0].hash as string
 
       // Record the necessary format for the result; example: JSON
@@ -642,9 +672,11 @@ export class PocketRelayer {
       if (blockchainFilter[0].syncAllowance) {
         blockchainSyncAllowance = parseInt(blockchainFilter[0].syncAllowance)
       }
-      // Max number of blocks to request logs for
+      // Max number of blocks to request logs for, if not available, result to env
       if (blockchainFilter[0].logLimitBlocks) {
         blockchainLogLimitBlocks = parseInt(blockchainFilter[0].logLimitBlocks)
+      } else if (this.defaultLogLimitBlocks > 0) {
+        blockchainLogLimitBlocks = this.defaultLogLimitBlocks
       }
 
       return Promise.resolve({

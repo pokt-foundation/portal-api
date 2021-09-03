@@ -41,6 +41,7 @@ export class V1Controller {
     @inject('defaultSyncAllowance') private defaultSyncAllowance: number,
     @inject('aatPlan') private aatPlan: string,
     @inject('redirects') private redirects: string,
+    @inject('defaultLogLimitBlocks') private defaultLogLimitBlocks: number,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -78,6 +79,7 @@ export class V1Controller {
       checkDebug: this.checkDebug(),
       altruists: this.altruists,
       aatPlan: this.aatPlan,
+      defaultLogLimitBlocks: this.defaultLogLimitBlocks,
     })
   }
 
@@ -97,10 +99,6 @@ export class V1Controller {
     })
     rawData: object
   ): Promise<string | Error> {
-    if (!this.redirects) {
-      return new HttpErrors.InternalServerError('No redirect domains allowed')
-    }
-
     for (const redirect of JSON.parse(this.redirects)) {
       if (this.pocketRelayer.host.toLowerCase().includes(redirect.domain, 0)) {
         this.pocketRelayer.host = redirect.blockchain

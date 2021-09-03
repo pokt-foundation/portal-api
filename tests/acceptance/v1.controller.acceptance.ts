@@ -7,6 +7,7 @@ import { MockRelayResponse, PocketMock } from '../mocks/pocketjs'
 import { ApplicationsRepository } from '../../src/repositories/applications.repository'
 import { Encryptor } from 'strong-cryptor'
 import { LoadBalancersRepository } from '../../src/repositories/load-balancers.repository'
+import { HttpErrors } from '@loopback/rest'
 
 // Must be the same one from the test environment
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
@@ -42,6 +43,18 @@ const BLOCKCHAINS = [
     syncCheck: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
     syncCheckPath: '/v1/query/height',
     syncAllowance: 5,
+  },
+  {
+    hash: '0040',
+    ticker: 'ETHS',
+    networkID: '1',
+    network: 'ETH-1S',
+    description: 'Ethereum Mainnet String',
+    index: 3,
+    blockchain: 'eth-mainnet-string',
+    active: true,
+    nodeCount: 1,
+    chainID: '64',
   },
   {
     hash: '0041',
@@ -127,6 +140,7 @@ describe('V1 controller (acceptance)', () => {
       '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}':
         '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}',
     }
+
     pocketMock = new PocketMock(undefined, undefined, undefined)
     pocketMock.relayResponse = relayResponses
 
@@ -149,10 +163,10 @@ describe('V1 controller (acceptance)', () => {
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh/query')
+      .post('/v1/sd9fj31d714kgos42e68f9gh')
       .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
-      .set('host', 'mainnet')
+      .set('host', 'eth-mainnet-x')
       .expect(200)
 
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
@@ -171,7 +185,7 @@ describe('V1 controller (acceptance)', () => {
       .post('/v1/sd9fj31d714kgos42e68f9gh')
       .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
-      .set('host', 'mainnet')
+      .set('host', 'eth-mainnet')
       .expect(200)
 
     expect(res.body).to.have.property('message')
@@ -189,7 +203,7 @@ describe('V1 controller (acceptance)', () => {
       .post('/v1/sd9fj31d714kgos42e68f9gh')
       .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
-      .set('host', 'mainnet')
+      .set('host', 'eth-mainnet')
       .expect(200)
 
     expect(res.body).to.have.property('message')
@@ -206,7 +220,7 @@ describe('V1 controller (acceptance)', () => {
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh/query/height')
+      .post('/v1/sd9fj31d714kgos42e68f9gh')
       .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
@@ -240,10 +254,10 @@ describe('V1 controller (acceptance)', () => {
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh/query/height')
+      .post('/v1/sd9fj31d714kgos42e68f9gh')
       .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
-      .set('host', 'mainnet')
+      .set('host', 'eth-mainnet')
       .set('authorization', 'invalid key')
       .expect(200)
 
@@ -271,10 +285,10 @@ describe('V1 controller (acceptance)', () => {
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh/query/height')
+      .post('/v1/sd9fj31d714kgos42e68f9gh')
       .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
-      .set('host', 'mainnet')
+      .set('host', 'eth-mainnet')
       .set('origin', 'localhost')
       .expect(200)
 
@@ -309,7 +323,7 @@ describe('V1 controller (acceptance)', () => {
       .post('/v1/sd9fj31d714kgos42e68f9gh')
       .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
-      .set('host', 'mainnet')
+      .set('host', 'eth-mainnet-x')
       .set('origin', 'unlocalhost')
       .set('authorization', `Basic ${Buffer.from(':' + key).toString('base64')}`)
       .set('user-agent', 'Mozilla/5.0')
@@ -327,10 +341,10 @@ describe('V1 controller (acceptance)', () => {
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh/query')
+      .post('/v1/sd9fj31d714kgos42e68f9gh')
       .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
-      .set('host', 'mainnet')
+      .set('host', 'eth-mainnet')
       .expect(200)
 
     expect(response.body).to.have.property('message')
@@ -340,17 +354,14 @@ describe('V1 controller (acceptance)', () => {
   it('returns error on chain check failure', async () => {
     // Failing chain check
     relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
-    // Successfull sync check
-    relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
-      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
 
     const pocket = pocketMock.class()
 
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh/query')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .post('/v1/sd9fj31d714kgos42e68f9gh')
+      .send({ method: 'eth_chainId', params: [], id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .expect(200)
@@ -365,10 +376,10 @@ describe('V1 controller (acceptance)', () => {
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc04/query/height')
+      .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc04')
       .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
-      .set('host', 'mainnet')
+      .set('host', 'eth-mainnet-x')
       .expect(200)
 
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
@@ -385,7 +396,7 @@ describe('V1 controller (acceptance)', () => {
       .post('/v1/lb/invalid')
       .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
-      .set('host', 'mainnet')
+      .set('host', 'eth-mainnet')
       .expect(200)
 
     expect(response.body).to.have.property('message')
@@ -402,7 +413,7 @@ describe('V1 controller (acceptance)', () => {
       .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc04')
       .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
-      .set('host', 'mainnet')
+      .set('host', 'eth-mainnet')
       .expect(200)
 
     expect(response.body).to.have.property('message')
@@ -413,14 +424,15 @@ describe('V1 controller (acceptance)', () => {
     const pocket = pocketMock.class()
 
     ;({ app, client } = await setupApplication(pocket, {
-      REDIRECTS: '[{"domain": "mainnet", "blockchain": "mainnet", "loadBalancerID" : "gt4a1s9rfrebaf8g31bsdc04"}]',
+      REDIRECTS:
+        '[{"domain": "eth-mainnet-x", "blockchain": "eth-mainnet-x", "loadBalancerID" : "gt4a1s9rfrebaf8g31bsdc04"}]',
     }))
 
     const response = await client
       .post('/')
       .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
-      .set('host', 'mainnet')
+      .set('host', 'eth-mainnet-x')
       .expect(200)
 
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
@@ -428,11 +440,22 @@ describe('V1 controller (acceptance)', () => {
     expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
   })
 
+  it("app doesn't initialize when no redirects are set", async () => {
+    const pocket = pocketMock.class()
+
+    await expect(
+      setupApplication(pocket, {
+        REDIRECTS: '',
+      })
+    ).to.rejectedWith(HttpErrors.InternalServerError)
+  })
+
   it('fails on invalid redirect load balancer', async () => {
     const pocket = pocketMock.class()
 
     ;({ app, client } = await setupApplication(pocket, {
-      REDIRECTS: '[{"domain": "mainnet", "blockchain": "mainnet", "loadBalancerID" : "gt4a1s9rfrebaf8g31bsdc04"}]',
+      REDIRECTS:
+        '[{"domain": "eth-mainnet", "blockchain": "eth-mainnet", "loadBalancerID" : "gt4a1s9rfrebaf8g31bsdc04"}]',
     }))
 
     const response = await client

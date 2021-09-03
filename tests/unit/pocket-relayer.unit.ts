@@ -22,6 +22,8 @@ import { LimitError } from '../../src/errors/types'
 
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
 
+const DEFAULT_LOG_LIMIT = 10000
+
 const DEFAULT_HOST = 'eth-mainnet-x'
 
 const BLOCKCHAINS = [
@@ -69,11 +71,14 @@ const BLOCKCHAINS = [
     active: true,
     nodeCount: 1,
     logLimitBlocks: 10000,
+    chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
+    syncCheck: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
   },
 ]
 
 const ALTRUISTS = {
   '0021': 'https://user:pass@backups.example.org:18081',
+  '0040': 'https://user:pass@backups.example.org:18081',
 }
 
 const APPLICATION = {
@@ -155,6 +160,7 @@ describe('Pocket relayer service (unit)', () => {
       checkDebug: true,
       altruists: '{}',
       aatPlan: AatPlans.FREEMIUM,
+      defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
     })
   })
 
@@ -256,6 +262,7 @@ describe('Pocket relayer service (unit)', () => {
       checkDebug: true,
       altruists: '{}',
       aatPlan: AatPlans.FREEMIUM,
+      defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
     })
 
     const application = {
@@ -291,6 +298,7 @@ describe('Pocket relayer service (unit)', () => {
       checkDebug: true,
       altruists: '{}',
       aatPlan: AatPlans.FREEMIUM,
+      defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
     })
 
     const isInvalidApp = poktRelayer.checkSecretKey(application as unknown as Applications)
@@ -402,7 +410,34 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     it('sends successful relay response as json', async () => {
-      const relayResponse = await pocketRelayer.sendRelay({
+      const mock = new PocketMock()
+
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+
+      const pocket = mock.object()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: true,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+      })
+
+      const relayResponse = await poktRelayer.sendRelay({
         rawData,
         relayPath: '',
         httpMethod: HTTPMethod.POST,
@@ -412,13 +447,15 @@ describe('Pocket relayer service (unit)', () => {
         overallTimeOut: undefined,
         relayRetries: 0,
       })
-      const expected = JSON.parse(pocketMock.relayResponse[rawData] as string)
+      const expected = JSON.parse(mock.relayResponse[rawData] as string)
 
       expect(relayResponse).to.be.deepEqual(expected)
     })
 
     it('sends successful relay response as string', async () => {
       const mock = new PocketMock()
+
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
 
       mock.relayResponse[rawData] = 'string response'
 
@@ -432,8 +469,8 @@ describe('Pocket relayer service (unit)', () => {
         pocketConfiguration,
         cherryPicker,
         metricsRecorder,
-        syncChecker,
-        chainChecker,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
         redis,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
@@ -442,6 +479,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -454,7 +492,6 @@ describe('Pocket relayer service (unit)', () => {
         overallTimeOut: undefined,
         relayRetries: 0,
       })
-
       const expected = mock.relayResponse[rawData]
 
       expect(relayResponse).to.be.deepEqual(expected)
@@ -485,6 +522,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -526,6 +564,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -544,7 +583,8 @@ describe('Pocket relayer service (unit)', () => {
 
     it('chainIDCheck / syncCheck succeeds', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
-      const mockCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
+
+      const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
 
       const syncCherckerSpy = sinon.spy(mockSyncChecker, 'consensusFilter')
 
@@ -568,6 +608,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -583,14 +624,17 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(relayResponse).to.be.deepEqual(JSON.parse(pocketMock.relayResponse[rawData] as string))
 
-      expect(mockCheckerSpy.callCount).to.be.equal(1)
+      expect(mockChainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
     })
 
     it('chainIDCheck fails (no nodes returned)', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(0, 5)
-      const mockCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
-      const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
+
+      const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
+
+      const syncCherckerSpy = sinon.spy(mockSyncChecker, 'consensusFilter')
+
       const pocket = pocketMock.object()
 
       const poktRelayer = new PocketRelayer({
@@ -611,6 +655,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -626,14 +671,16 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(relayResponse).to.be.instanceOf(Error)
 
-      expect(mockCheckerSpy.callCount).to.be.equal(1)
-      expect(syncCherckerSpy.callCount).to.be.equal(0)
+      expect(mockChainCheckerSpy.callCount).to.be.equal(1)
+      expect(syncCherckerSpy.callCount).to.be.equal(1)
     })
 
     it('syncCheck fails (no nodes returned)', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 0)
-      const mockCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
-      const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
+
+      const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
+      const syncCherckerSpy = sinon.spy(mockSyncChecker, 'consensusFilter')
+
       const pocket = pocketMock.object()
 
       const poktRelayer = new PocketRelayer({
@@ -654,6 +701,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -669,7 +717,7 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(relayResponse).to.be.instanceOf(Error)
 
-      expect(mockCheckerSpy.callCount).to.be.equal(1)
+      expect(mockChainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
     })
 
@@ -698,6 +746,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       rawData =
@@ -743,6 +792,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       rawData =
@@ -794,6 +844,7 @@ describe('Pocket relayer service (unit)', () => {
         checkDebug: true,
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -843,6 +894,7 @@ describe('Pocket relayer service (unit)', () => {
           checkDebug: true,
           altruists: '{}',
           aatPlan: AatPlans.FREEMIUM,
+          defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         })
 
         try {
@@ -896,6 +948,7 @@ describe('Pocket relayer service (unit)', () => {
           checkDebug: true,
           altruists: '{}',
           aatPlan: AatPlans.FREEMIUM,
+          defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         })
 
         try {
@@ -948,6 +1001,7 @@ describe('Pocket relayer service (unit)', () => {
           checkDebug: true,
           altruists: '{}',
           aatPlan: AatPlans.FREEMIUM,
+          defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         })
 
         try {
@@ -1003,6 +1057,7 @@ describe('Pocket relayer service (unit)', () => {
           checkDebug: true,
           altruists: JSON.stringify(ALTRUISTS),
           aatPlan: AatPlans.FREEMIUM,
+          defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         }) as PocketRelayer
 
         return poktRelayer
@@ -1150,6 +1205,63 @@ describe('Pocket relayer service (unit)', () => {
         })
 
         expect(relayResponse).to.be.deepEqual(JSON.parse(mockRelayResponse as string))
+      })
+
+      it('should succeed if `eth_getLogs` call is within permitted blocks range (using latest) even with not default value set on db or environment', async () => {
+        const blockNumberRespose = {
+          jsonrpc: '2.0',
+          id: 1,
+          result: '0x9c5bb8',
+        }
+
+        const mockRelayResponse =
+          '{"jsonrpc":"2.0","id":1,"result":[{"address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff","blockHash":"0x2ad90e24266edd835bb03071c0c0b58ee8356c2feb4576d15b3c2c2b2ef319c5","blockNumber":"0xc5bdc9","data":"0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000767fe9edc9e0df98e07454847909b5e959d7ca0e0000000000000000000000000000000000000000000000019274b259f653fc110000000000000000000000000000000000000000000000104bf2ffa4dcbf8de5","logIndex":"0x4c","removed":false,"topics":["0x0f6672f78a59ba8e5e5b5d38df3ebc67f3c792e2c9259b8d97d7f00dd78ba1b3","0x000000000000000000000000e5feeac09d36b18b3fa757e5cf3f8da6b8e27f4c"],"transactionHash":"0x14430f1e344b5f95ea68a5f4c0538fc732cc97efdc68f6ee0ba20e2c633542f6","transactionIndex":"0x1a"}]}'
+
+        rawData =
+          '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
+
+        const pocket = pocketMock.object()
+
+        if (mockRelayResponse) {
+          pocketMock.relayResponse[rawData] = mockRelayResponse
+        }
+
+        axiosMock.onPost(ALTRUISTS['0040'], blockNumberData).reply(200, blockNumberRespose)
+        axiosMock.onPost(ALTRUISTS['0040'], JSON.parse(rawData)).reply(200, mockRelayResponse)
+
+        const poktRelayer = new PocketRelayer({
+          host: 'eth-mainnet-string',
+          origin: '',
+          userAgent: '',
+          pocket,
+          pocketConfiguration,
+          cherryPicker,
+          metricsRecorder,
+          syncChecker,
+          chainChecker,
+          redis,
+          databaseEncryptionKey: DB_ENCRYPTION_KEY,
+          secretKey: '',
+          relayRetries: 0,
+          blockchainsRepository: blockchainRepository,
+          checkDebug: true,
+          altruists: JSON.stringify(ALTRUISTS),
+          aatPlan: AatPlans.FREEMIUM,
+          defaultLogLimitBlocks: 0,
+        }) as PocketRelayer
+
+        const relayResponse = await poktRelayer.sendRelay({
+          rawData,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          relayRetries: 0,
+        })
+
+        expect(JSON.parse(relayResponse as string)).to.be.deepEqual(JSON.parse(mockRelayResponse as string))
       })
     })
   })
