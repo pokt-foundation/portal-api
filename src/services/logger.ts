@@ -17,7 +17,7 @@ interface Log {
   serviceNode: string
   error: string | undefined
   elapsedTime: number
-  blockchain: string
+  blockchainID: string
   origin: string
 }
 
@@ -34,8 +34,8 @@ const timestampUTC = () => {
 }
 
 const consoleFormat = printf(
-  ({ level, message, requestID, relayType, typeID, serviceNode, error, elapsedTime, blockchain, origin }: Log) => {
-    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${error}] [${elapsedTime}] [${blockchain}] [${origin}] ${message}`
+  ({ level, message, requestID, relayType, typeID, serviceNode, error, elapsedTime, blockchainID, origin }: Log) => {
+    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${error}] [${elapsedTime}] [${blockchainID}] [${origin}] ${message}`
   }
 )
 
