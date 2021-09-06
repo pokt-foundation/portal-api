@@ -158,7 +158,7 @@ export class MetricsRecorder {
         .tag('nodePublicKey', serviceNode)
         .tag('method', method)
         .tag('result', result.toString())
-        .tag('blockchainID', blockchainID)
+        .tag('blockchain', blockchainID)
         .tag('origin', origin)
         .floatField('bytes', bytes)
         .floatField('elapsedTime', elapsedTime.toFixed(4))
