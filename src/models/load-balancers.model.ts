@@ -25,7 +25,12 @@ export class LoadBalancers extends Entity {
     itemType: 'string',
     required: true,
   })
-  applicationIDs: string[];
+  applicationIDs: string[]
+
+  @property({
+    type: 'number',
+  })
+  logLimitBlocks?: number;
 
   // Define well-known properties here
 

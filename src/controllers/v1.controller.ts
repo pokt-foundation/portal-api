@@ -186,6 +186,10 @@ export class V1Controller {
             relayRetries: parseInt(loadBalancer.relayRetries),
           }
 
+          if (loadBalancer.logLimitBlocks) {
+            Object.assign(options, { logLimitBlocks: loadBalancer.logLimitBlocks })
+          }
+
           return await this.pocketRelayer.sendRelay(options)
         }
       }

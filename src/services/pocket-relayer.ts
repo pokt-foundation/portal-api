@@ -108,6 +108,7 @@ export class PocketRelayer {
     requestTimeOut,
     overallTimeOut,
     relayRetries,
+    logLimitBlocks,
   }: SendRelayOptions): Promise<string | Error> {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries
@@ -124,13 +125,18 @@ export class PocketRelayer {
     } = await this.loadBlockchain()
     const overallStart = process.hrtime()
 
+    // Check for lb-specific log limits
+    if (logLimitBlocks === undefined || logLimitBlocks <= 0) {
+      logLimitBlocks = blockchainLogLimitBlocks
+    }
+
     // This converts the raw data into formatted JSON then back to a string for relaying.
     // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
     // extraneous characters like newlines and tabs from the rawData.
     // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
 
     const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
-    const limitation = await this.enforceLimits(parsedRawData, blockchain, blockchainLogLimitBlocks)
+    const limitation = await this.enforceLimits(parsedRawData, blockchain, logLimitBlocks)
 
     if (limitation instanceof Error) {
       logger.log('error', `${parsedRawData.method} method limitations exceeded.`, {
@@ -823,4 +829,5 @@ export interface SendRelayOptions {
   requestTimeOut?: number
   overallTimeOut?: number
   relayRetries?: number
+  logLimitBlocks?: number
 }
