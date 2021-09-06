@@ -224,6 +224,7 @@ export class SyncChecker {
           fallback: false,
           method: 'synccheck',
           error: `OUT OF SYNC: current block height on chain ${blockchain}: ${currentBlockHeight} altruist block height: ${altruistBlockHeight} nodes height: ${nodeSyncLog.blockHeight} sync allowance: ${syncAllowance}`,
+          origin: 'synccheck',
         })
       }
     }
@@ -443,6 +444,7 @@ export class SyncChecker {
         fallback: false,
         method: 'synccheck',
         error,
+        origin: 'synccheck',
       })
     } else {
       logger.log('error', 'SYNC CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
@@ -467,6 +469,7 @@ export class SyncChecker {
         fallback: false,
         method: 'synccheck',
         error: JSON.stringify(relayResponse),
+        origin: 'synccheck',
       })
     }
     // Failed
