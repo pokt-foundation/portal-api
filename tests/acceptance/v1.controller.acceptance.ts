@@ -108,13 +108,23 @@ const APPLICATION = {
   },
 }
 
-const LOAD_BALANCER = {
-  id: 'gt4a1s9rfrebaf8g31bsdc04',
-  user: 'test@test.com',
-  name: 'test load balancer',
-  requestTimeout: 5000,
-  applicationIDs: Array(10).fill(APPLICATION.id),
-}
+const LOAD_BALANCERS = [
+  {
+    id: 'gt4a1s9rfrebaf8g31bsdc04',
+    user: 'test@test.com',
+    name: 'test load balancer',
+    requestTimeout: 5000,
+    applicationIDs: Array(10).fill(APPLICATION.id),
+  },
+  {
+    id: 'gt4a1s9rfrebaf8g31bsdc05',
+    user: 'test@test.com',
+    name: 'test load balancer',
+    requestTimeout: 5000,
+    applicationIDs: Array(10).fill(APPLICATION.id),
+    logLimitBlocks: 25000,
+  },
+]
 
 describe('V1 controller (acceptance)', () => {
   let app: PocketGatewayApplication
@@ -139,12 +149,14 @@ describe('V1 controller (acceptance)', () => {
     relayResponses = {
       '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}':
         '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}',
+      '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","toBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}':
+        '{"jsonrpc":"2.0","id":1,"result":[{"address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff","blockHash":"0x2ad90e24266edd835bb03071c0c0b58ee8356c2feb4576d15b3c2c2b2ef319c5","blockNumber":"0xc5bdc9","data":"0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000767fe9edc9e0df98e07454847909b5e959d7ca0e0000000000000000000000000000000000000000000000019274b259f653fc110000000000000000000000000000000000000000000000104bf2ffa4dcbf8de5","logIndex":"0x4c","removed":false,"topics":["0x0f6672f78a59ba8e5e5b5d38df3ebc67f3c792e2c9259b8d97d7f00dd78ba1b3","0x000000000000000000000000e5feeac09d36b18b3fa757e5cf3f8da6b8e27f4c"],"transactionHash":"0x14430f1e344b5f95ea68a5f4c0538fc732cc97efdc68f6ee0ba20e2c633542f6","transactionIndex":"0x1a"}]}',
     }
 
     pocketMock = new PocketMock(undefined, undefined, undefined)
     pocketMock.relayResponse = relayResponses
 
-    await loadBalancersRepository.create(LOAD_BALANCER)
+    await loadBalancersRepository.createAll(LOAD_BALANCERS)
     await blockchainsRepository.createAll(BLOCKCHAINS)
     await applicationsRepository.create(APPLICATION)
   })
@@ -385,6 +397,33 @@ describe('V1 controller (acceptance)', () => {
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
     expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
     expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+  })
+
+  it('succesfully relays a loadbalancer application with log limits', async () => {
+    const pocket = pocketMock.class()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    const response = await client
+      .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc05')
+      .send({
+        method: 'eth_getLogs',
+        params: [
+          {
+            fromBlock: '0x9c5bb6',
+            toBlock: '0x9c5bb6',
+            address: '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
+          },
+        ],
+        id: 1,
+        jsonrpc: '2.0',
+      })
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet-x')
+      .expect(200)
+
+    expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
   })
 
   it('returns error when no load balancer is found', async () => {
