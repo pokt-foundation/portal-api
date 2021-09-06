@@ -288,6 +288,10 @@ export class PocketRelayer {
             relayType: 'FALLBACK',
             typeID: application.id,
             serviceNode: 'fallback:' + redactedAltruistURL,
+            error: '',
+            elapsedTime: '',
+            blockchainID: '',
+            origin: 'synccheck',
           })
         }
 
@@ -328,6 +332,8 @@ export class PocketRelayer {
             relayType: 'FALLBACK',
             typeID: application.id,
             serviceNode: 'fallback:' + redactedAltruistURL,
+            blockchainID,
+            origin: this.origin,
           })
         }
       } catch (e) {
@@ -336,6 +342,8 @@ export class PocketRelayer {
           relayType: 'FALLBACK',
           typeID: application.id,
           serviceNode: 'fallback:' + redactedAltruistURL,
+          blockchainID,
+          origin: this.origin,
         })
       }
     }

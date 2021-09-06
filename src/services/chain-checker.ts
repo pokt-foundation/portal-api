@@ -98,6 +98,7 @@ export class ChainChecker {
             error: '',
             elapsedTime: '',
             blockchainID: nodeChainLog.chainID,
+            origin: 'chaincheck',
           }
         )
 
@@ -116,6 +117,7 @@ export class ChainChecker {
             error: '',
             elapsedTime: '',
             blockchainID: nodeChainLog.chainID,
+            origin: 'chaincheck',
           }
         )
       }
@@ -128,6 +130,8 @@ export class ChainChecker {
       serviceNode: '',
       error: '',
       elapsedTime: '',
+      blockchainID: blockchain,
+      origin: 'chaincheck',
     })
     await this.redis.set(
       CheckedNodesKey,
@@ -158,6 +162,8 @@ export class ChainChecker {
         serviceNode: '',
         error: '',
         elapsedTime: '',
+        blockchainID: '',
+        origin: 'chaincheck',
       })
     }
     return CheckedNodes
@@ -232,6 +238,7 @@ export class ChainChecker {
       error: '',
       elapsedTime: '',
       blockchainID: blockchain,
+      origin: 'chaincheck',
     })
 
     // Pull the current block from each node using the blockchain's chainCheck as the relay
@@ -267,6 +274,7 @@ export class ChainChecker {
         error: '',
         elapsedTime: '',
         blockchainID: blockchain,
+        origin: 'chaincheck',
       })
 
       // Success
@@ -280,6 +288,7 @@ export class ChainChecker {
         error: '',
         elapsedTime: '',
         blockchainID: blockchain,
+        origin: 'chaincheck',
       })
 
       let error = relayResponse.message
@@ -312,6 +321,8 @@ export class ChainChecker {
         serviceNode: node.publicKey,
         error: '',
         elapsedTime: '',
+        blockchainID: blockchain,
+        origin: 'chaincheck',
       })
 
       await this.metricsRecorder.recordMetric({

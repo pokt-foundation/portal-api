@@ -101,6 +101,8 @@ export class SyncChecker {
         serviceNode: '',
         error: '',
         elapsedTime: '',
+        blockchainID: '',
+        origin: 'synccheck',
       })
       errorState = true
     }
@@ -124,6 +126,8 @@ export class SyncChecker {
         serviceNode: '',
         error: '',
         elapsedTime: '',
+        blockchainID: '',
+        origin: 'synccheck',
       })
       errorState = true
     } else {
@@ -139,6 +143,8 @@ export class SyncChecker {
         serviceNode: '',
         error: '',
         elapsedTime: '',
+        blockchainID: '',
+        origin: 'synccheck',
       })
       errorState = true
     }
@@ -155,6 +161,8 @@ export class SyncChecker {
         serviceNode: 'ALTRUIST',
         error: '',
         elapsedTime: '',
+        blockchainID: '',
+        origin: 'synccheck',
       })
 
       if (errorState) {
@@ -168,6 +176,8 @@ export class SyncChecker {
         serviceNode: 'ALTRUIST',
         error: '',
         elapsedTime: '',
+        blockchainID: '',
+        origin: 'synccheck',
       })
     }
 
@@ -187,6 +197,8 @@ export class SyncChecker {
             serviceNode: nodeSyncLog.node.publicKey,
             error: '',
             elapsedTime: '',
+            blockchainID: '',
+            origin: 'synccheck',
           }
         )
 
@@ -209,6 +221,8 @@ export class SyncChecker {
           serviceNode: nodeSyncLog.node.publicKey,
           error: '',
           elapsedTime: '',
+          blockchainID: '',
+          origin: 'synccheck',
         })
 
         await this.metricsRecorder.recordMetric({
@@ -237,6 +251,8 @@ export class SyncChecker {
       serviceNode: '',
       error: '',
       elapsedTime: '',
+      blockchainID: '',
+      origin: 'synccheck',
     })
     await this.redis.set(
       syncedNodesKey,
@@ -268,6 +284,8 @@ export class SyncChecker {
         serviceNode: '',
         error: '',
         elapsedTime: '',
+        blockchainID: '',
+        origin: 'synccheck',
       })
     }
     return syncedNodes
@@ -297,6 +315,10 @@ export class SyncChecker {
         relayType: 'FALLBACK',
         typeID: '',
         serviceNode: 'fallback:' + redactedAltruistURL,
+        error: '',
+        elapsedTime: '',
+        blockchainID: '',
+        origin: 'synccheck',
       })
     }
     return 0
@@ -373,6 +395,8 @@ export class SyncChecker {
       serviceNode: node.publicKey,
       error: '',
       elapsedTime: '',
+      blockchainID: '',
+      origin: 'synccheck',
     })
 
     // Pull the current block from each node using the blockchain's syncCheck as the relay
@@ -412,6 +436,8 @@ export class SyncChecker {
         serviceNode: node.publicKey,
         error: '',
         elapsedTime: '',
+        blockchainID: '',
+        origin: 'synccheck',
       })
 
       // Success
@@ -424,6 +450,8 @@ export class SyncChecker {
         serviceNode: node.publicKey,
         error: '',
         elapsedTime: '',
+        blockchainID: '',
+        origin: 'synccheck',
       })
 
       let error = relayResponse.message
@@ -456,6 +484,8 @@ export class SyncChecker {
         serviceNode: node.publicKey,
         error: '',
         elapsedTime: '',
+        blockchainID: '',
+        origin: 'synccheck',
       })
 
       await this.metricsRecorder.recordMetric({
