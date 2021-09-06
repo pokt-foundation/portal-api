@@ -295,6 +295,7 @@ export class ChainChecker {
         fallback: false,
         method: 'chaincheck',
         error,
+        origin: 'chaincheck',
       })
     } else {
       logger.log('error', 'CHAIN CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
@@ -319,6 +320,7 @@ export class ChainChecker {
         fallback: false,
         method: 'chaincheck',
         error: JSON.stringify(relayResponse),
+        origin: 'chaincheck',
       })
     }
     // Failed
