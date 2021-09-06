@@ -97,6 +97,7 @@ export class ChainChecker {
             serviceNode: nodeChainLog.node.publicKey,
             error: '',
             elapsedTime: '',
+            blockchainID: nodeChainLog.chainID,
           }
         )
 
@@ -114,6 +115,7 @@ export class ChainChecker {
             serviceNode: nodeChainLog.node.publicKey,
             error: '',
             elapsedTime: '',
+            blockchainID: nodeChainLog.chainID,
           }
         )
       }
@@ -229,6 +231,7 @@ export class ChainChecker {
       serviceNode: node.publicKey,
       error: '',
       elapsedTime: '',
+      blockchainID: blockchain,
     })
 
     // Pull the current block from each node using the blockchain's chainCheck as the relay
@@ -263,6 +266,7 @@ export class ChainChecker {
         serviceNode: node.publicKey,
         error: '',
         elapsedTime: '',
+        blockchainID: blockchain,
       })
 
       // Success
@@ -275,6 +279,7 @@ export class ChainChecker {
         serviceNode: node.publicKey,
         error: '',
         elapsedTime: '',
+        blockchainID: blockchain,
       })
 
       let error = relayResponse.message
@@ -282,6 +287,7 @@ export class ChainChecker {
       if (typeof relayResponse.message === 'object') {
         error = JSON.stringify(relayResponse.message)
       }
+
       await this.metricsRecorder.recordMetric({
         requestID: requestID,
         applicationID: applicationID,
@@ -295,6 +301,8 @@ export class ChainChecker {
         fallback: false,
         method: 'chaincheck',
         error,
+        origin: 'chaincheck',
+        blockchainID: blockchain,
       })
     } else {
       logger.log('error', 'CHAIN CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
@@ -319,6 +327,8 @@ export class ChainChecker {
         fallback: false,
         method: 'chaincheck',
         error: JSON.stringify(relayResponse),
+        origin: 'chaincheck',
+        blockchainID: blockchain,
       })
     }
     // Failed

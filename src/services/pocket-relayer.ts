@@ -202,6 +202,8 @@ export class PocketRelayer {
           fallback: false,
           method: method,
           error: undefined,
+          origin: this.origin,
+          blockchainID,
         })
 
         // Clear error log
@@ -243,6 +245,8 @@ export class PocketRelayer {
           fallback: false,
           method,
           error,
+          origin: this.origin,
+          blockchainID,
         })
       }
     }
@@ -303,6 +307,8 @@ export class PocketRelayer {
             fallback: true,
             method: method,
             error: undefined,
+            origin: this.origin,
+            blockchainID,
           })
 
           // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
@@ -502,6 +508,8 @@ export class PocketRelayer {
             fallback: false,
             method,
             error,
+            origin: this.origin,
+            blockchainID,
           })
           return new Error('Sync / chain check failure; using fallbacks')
         }
