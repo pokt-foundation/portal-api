@@ -97,7 +97,7 @@ export class ChainChecker {
             serviceNode: nodeChainLog.node.publicKey,
             error: '',
             elapsedTime: '',
-            blockchainID: nodeChainLog.chainID,
+            blockchainID: blockchain,
             origin: 'chaincheck',
           }
         )
@@ -116,7 +116,7 @@ export class ChainChecker {
             serviceNode: nodeChainLog.node.publicKey,
             error: '',
             elapsedTime: '',
-            blockchainID: nodeChainLog.chainID,
+            blockchainID: blockchain,
             origin: 'chaincheck',
           }
         )
