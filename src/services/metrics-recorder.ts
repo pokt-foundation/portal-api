@@ -69,6 +69,8 @@ export class MetricsRecorder {
     fallback,
     method,
     error,
+    origin,
+    blockchainID,
   }: {
     requestID: string
     applicationID: string
@@ -82,6 +84,8 @@ export class MetricsRecorder {
     fallback: boolean
     method: string | undefined
     error: string | undefined
+    origin: string | undefined
+    blockchainID: string | undefined
   }): Promise<void> {
     try {
       let elapsedTime = 0
@@ -103,6 +107,8 @@ export class MetricsRecorder {
           serviceNode,
           elapsedTime,
           error: undefined,
+          origin,
+          blockchainID,
         })
       } else if (result === 500) {
         logger.log('error', 'FAILURE' + fallbackTag, {
@@ -112,6 +118,8 @@ export class MetricsRecorder {
           serviceNode,
           elapsedTime,
           error,
+          origin,
+          blockchainID,
         })
       } else if (result === 503) {
         logger.log('error', 'INVALID RESPONSE' + fallbackTag, {
@@ -121,6 +129,8 @@ export class MetricsRecorder {
           serviceNode,
           elapsedTime,
           error,
+          origin,
+          blockchainID,
         })
       }
 
