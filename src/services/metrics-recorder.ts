@@ -150,6 +150,7 @@ export class MetricsRecorder {
         error,
       ]
 
+      console.log('Influx Blockchain Tag:', blockchainID)
       // Influx
       const point = new Point('relay')
         .tag('applicationPublicKey', applicationPublicKey)
