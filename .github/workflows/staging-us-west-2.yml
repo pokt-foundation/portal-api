@@ -43,7 +43,7 @@ jobs:
           envkey_DEFAULT_LOG_LIMIT_BLOCKS: 10000
           envkey_NODE_TLS_REJECT_UNAUTHORIZED: 0
           envkey_AAT_PLAN: 'premium'
-          envkey_NODE_ENV: 'production'
+          envkey_NODE_ENV: 'staging'
           envkey_REGION: 'us-west-2'
           envkey_REGION_NAME: 'staging'
           envkey_INFLUX_URL: 'https://influx.portal.pokt.network:8086'
