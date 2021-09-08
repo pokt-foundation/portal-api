@@ -95,7 +95,7 @@ const options = {
 const getTransports = () => {
   const transports = [new winstonTransports.Console(options.console)]
 
-  if (environment === 'production' && logToCloudWatch) {
+  if (environment === 'production' || (environment === 'staging' && logToCloudWatch)) {
     if (!accessKeyID) {
       throw new HttpErrors.InternalServerError('AWS_ACCESS_KEY_ID required in ENV')
     }
