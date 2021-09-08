@@ -15,8 +15,7 @@ Access the full range of Pocket Network's supported blockchains through a single
 
 ## Quick start
 
-Only the steps 1 and 2 are required, steps 3 and 4 are only needed if you want to
-bootstrap the app with existing data.
+Only the steps 1 and 2 are required, steps 3 and 4 are only needed if you want to bootstrap the app with existing data.
 
 <!-- markdownlint-disable -->
 
