@@ -25,7 +25,7 @@ if (!influxOrg) {
   throw new HttpErrors.InternalServerError('INFLUX_ORG required in ENV')
 }
 
-const influxBucket = 'mainnetRelay'
+const influxBucket = process.env.NODE_ENV === 'production' ? 'mainnetRelay' : 'mainnetRelayStaging'
 const influxClient = new InfluxDB({ url: influxURL, token: influxToken })
 
 const writeApi = influxClient.getWriteApi(influxOrg, influxBucket)
