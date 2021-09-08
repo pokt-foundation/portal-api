@@ -34,7 +34,18 @@ const timestampUTC = () => {
 }
 
 const consoleFormat = printf(
-  ({ level, message, requestID, relayType, typeID, serviceNode, error, elapsedTime, blockchainID, origin }: Log) => {
+  ({
+    level,
+    message,
+    requestID,
+    relayType,
+    typeID,
+    serviceNode = '',
+    error = '',
+    elapsedTime,
+    blockchainID = '',
+    origin = '',
+  }: Log) => {
     return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${error}] [${elapsedTime}] [${blockchainID}] [${origin}] ${message}`
   }
 )

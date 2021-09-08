@@ -25,7 +25,7 @@ if (!influxOrg) {
   throw new HttpErrors.InternalServerError('INFLUX_ORG required in ENV')
 }
 
-const influxBucket = 'mainnetRelay'
+const influxBucket = process.env.NODE_ENV === 'production' ? 'mainnetRelay' : 'mainnetRelayStaging'
 const influxClient = new InfluxDB({ url: influxURL, token: influxToken })
 
 const writeApi = influxClient.getWriteApi(influxOrg, influxBucket)
@@ -60,7 +60,7 @@ export class MetricsRecorder {
     requestID,
     applicationID,
     applicationPublicKey,
-    blockchain,
+    blockchainID,
     serviceNode,
     relayStart,
     result,
@@ -70,12 +70,11 @@ export class MetricsRecorder {
     method,
     error,
     origin,
-    blockchainID,
   }: {
     requestID: string
     applicationID: string
     applicationPublicKey: string
-    blockchain: string
+    blockchainID: string
     serviceNode: string | undefined
     relayStart: [number, number]
     result: number
@@ -85,7 +84,6 @@ export class MetricsRecorder {
     method: string | undefined
     error: string | undefined
     origin: string | undefined
-    blockchainID: string | undefined
   }): Promise<void> {
     try {
       let elapsedTime = 0
@@ -106,7 +104,7 @@ export class MetricsRecorder {
           typeID: applicationID,
           serviceNode,
           elapsedTime,
-          error: undefined,
+          error: '',
           origin,
           blockchainID,
         })
@@ -136,7 +134,7 @@ export class MetricsRecorder {
 
       // Update service node quality with cherry picker
       if (serviceNode) {
-        await this.cherryPicker.updateServiceQuality(blockchain, applicationID, serviceNode, elapsedTime, result)
+        await this.cherryPicker.updateServiceQuality(blockchainID, applicationID, serviceNode, elapsedTime, result)
       }
 
       // Bulk insert relay / error metrics
@@ -144,7 +142,7 @@ export class MetricsRecorder {
       const errorValues = [
         postgresTimestamp,
         applicationPublicKey,
-        blockchain,
+        blockchainID,
         serviceNode,
         elapsedTime,
         bytes,
@@ -158,7 +156,7 @@ export class MetricsRecorder {
         .tag('nodePublicKey', serviceNode)
         .tag('method', method)
         .tag('result', result.toString())
-        .tag('blockchain', blockchain) // 0021
+        .tag('blockchain', blockchainID) // 0021
         .floatField('bytes', bytes)
         .floatField('elapsedTime', elapsedTime.toFixed(4))
         .timestamp(postgresTimestamp)

@@ -79,7 +79,7 @@ describe('Chain checker service (unit)', () => {
       const nodeLog = await chainChecker.getNodeChainLog({
         node,
         requestID: '1234',
-        blockchain: '100',
+        blockchainID: '0027',
         chainCheck: CHAINCHECK_PAYLOAD,
         pocket: pocketClient,
         applicationID: '',
@@ -103,7 +103,7 @@ describe('Chain checker service (unit)', () => {
       const nodeLog = await chainChecker.getNodeChainLog({
         node,
         requestID: '1234',
-        blockchain: '100',
+        blockchainID: '0027',
         chainCheck: CHAINCHECK_PAYLOAD,
         pocket: pocketClient,
         applicationID: '',
@@ -128,7 +128,7 @@ describe('Chain checker service (unit)', () => {
       const nodeLog = await chainChecker.getNodeChainLog({
         node,
         requestID: '1234',
-        blockchain: '100',
+        blockchainID: '0027',
         chainCheck: CHAINCHECK_PAYLOAD,
         pocket: pocketClient,
         applicationID: '',
@@ -158,7 +158,7 @@ describe('Chain checker service (unit)', () => {
     const nodeLogs = await chainChecker.getNodeChainLogs({
       nodes,
       requestID: '1234',
-      blockchain: '100',
+      blockchainID: '0027',
       chainCheck: CHAINCHECK_PAYLOAD,
       pocket: pocketClient,
       applicationID: '',
@@ -186,7 +186,7 @@ describe('Chain checker service (unit)', () => {
     let checkedNodes = await chainChecker.chainIDFilter({
       nodes,
       requestID: '1234',
-      blockchain: '100',
+      blockchainID: '0027',
       chainCheck: CHAINCHECK_PAYLOAD,
       pocket: pocketClient,
       applicationID: '',
@@ -206,7 +206,7 @@ describe('Chain checker service (unit)', () => {
     checkedNodes = await chainChecker.chainIDFilter({
       nodes,
       requestID: '1234',
-      blockchain: '100',
+      blockchainID: '0027',
       chainCheck: CHAINCHECK_PAYLOAD,
       pocket: pocketClient,
       applicationID: '',
@@ -231,7 +231,7 @@ describe('Chain checker service (unit)', () => {
     const checkedNodes = await chainChecker.chainIDFilter({
       nodes,
       requestID: '1234',
-      blockchain: chainID.toString(),
+      blockchainID: '0027',
       chainCheck: CHAINCHECK_PAYLOAD,
       pocket: pocketClient,
       applicationID: '',
