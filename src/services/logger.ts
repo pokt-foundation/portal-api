@@ -50,7 +50,7 @@ const logFormat = format.combine(
   consoleFormat
 )
 
-const logGroup = process.env.REGION_NAME || '' + '/ecs/gateway'
+const logGroup = (process.env.REGION_NAME || '') + '/ecs/gateway'
 
 const options = {
   console: {
