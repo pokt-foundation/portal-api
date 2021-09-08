@@ -216,7 +216,7 @@ describe('Pocket relayer service (unit)', () => {
     let blockchainResult = await pocketRelayer.loadBlockchain()
 
     expect(blockchainResult).to.be.ok()
-    expect(blockchainResult.blockchain).to.be.equal(BLOCKCHAINS[0].hash)
+    expect(blockchainResult.blockchainID).to.be.equal(BLOCKCHAINS[0].hash)
 
     expect(repositorySpy.callCount).to.be.equal(1)
     expect(redisGetSpy.callCount).to.be.equal(1)
@@ -226,7 +226,7 @@ describe('Pocket relayer service (unit)', () => {
     blockchainResult = await pocketRelayer.loadBlockchain()
 
     expect(blockchainResult).to.be.ok()
-    expect(blockchainResult.blockchain).to.be.equal(BLOCKCHAINS[0].hash)
+    expect(blockchainResult.blockchainID).to.be.equal(BLOCKCHAINS[0].hash)
 
     expect(repositorySpy.callCount).to.be.equal(1)
     expect(redisGetSpy.callCount).to.be.equal(2)
@@ -364,7 +364,7 @@ describe('Pocket relayer service (unit)', () => {
           requestID,
           chainCheck,
           chainID,
-          blockchain,
+          blockchainID,
           pocket,
           applicationID,
           applicationPublicKey,
@@ -384,7 +384,7 @@ describe('Pocket relayer service (unit)', () => {
           syncCheck,
           syncCheckPath,
           syncAllowance,
-          blockchain,
+          blockchainID,
           blockchainSyncBackup,
           applicationID,
           applicationPublicKey,
