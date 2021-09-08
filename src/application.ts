@@ -86,6 +86,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     if (!altruists) {
       throw new HttpErrors.InternalServerError('ALTRUISTS required in ENV')
     }
+    logger.log('info', `Altruists: ${altruists}`)
     if (!clientPrivateKey) {
       throw new HttpErrors.InternalServerError('GATEWAY_CLIENT_PRIVATE_KEY required in ENV')
     }

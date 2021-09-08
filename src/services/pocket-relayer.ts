@@ -151,6 +151,8 @@ export class PocketRelayer {
     const method = this.parseMethod(parsedRawData)
     const fallbackAvailable = this.altruists[blockchain] !== undefined ? true : false
 
+    logger.log('info', `this altruist: ${this.altruists[blockchain]} blockchain: ${blockchain}`)
+
     // Retries if applicable
     for (let x = 0; x <= this.relayRetries; x++) {
       const relayStart = process.hrtime()
