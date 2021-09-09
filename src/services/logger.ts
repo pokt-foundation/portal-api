@@ -34,7 +34,18 @@ const timestampUTC = () => {
 }
 
 const consoleFormat = printf(
-  ({ level, message, requestID, relayType, typeID, serviceNode, error, elapsedTime, blockchainID, origin }: Log) => {
+  ({
+    level,
+    message,
+    requestID,
+    relayType,
+    typeID,
+    serviceNode = '',
+    error = '',
+    elapsedTime,
+    blockchainID = '',
+    origin = '',
+  }: Log) => {
     return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${error}] [${elapsedTime}] [${blockchainID}] [${origin}] ${message}`
   }
 )
@@ -50,7 +61,7 @@ const logFormat = format.combine(
   consoleFormat
 )
 
-const logGroup = process.env.REGION_NAME || '' + '/ecs/gateway'
+const logGroup = (process.env.REGION_NAME || '') + '/ecs/gateway'
 
 const options = {
   console: {
@@ -84,7 +95,7 @@ const options = {
 const getTransports = () => {
   const transports = [new winstonTransports.Console(options.console)]
 
-  if (environment === 'production' && logToCloudWatch) {
+  if ((environment === 'production' || environment === 'staging') && logToCloudWatch) {
     if (!accessKeyID) {
       throw new HttpErrors.InternalServerError('AWS_ACCESS_KEY_ID required in ENV')
     }

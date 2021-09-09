@@ -20,7 +20,7 @@ export class ChainChecker {
     requestID,
     chainCheck,
     chainID,
-    blockchain,
+    blockchainID,
     pocket,
     applicationID,
     applicationPublicKey,
@@ -73,7 +73,7 @@ export class ChainChecker {
       nodes,
       requestID,
       chainCheck,
-      blockchain,
+      blockchainID,
       applicationID,
       applicationPublicKey,
       pocket,
@@ -97,7 +97,8 @@ export class ChainChecker {
             serviceNode: nodeChainLog.node.publicKey,
             error: '',
             elapsedTime: '',
-            blockchainID: nodeChainLog.chainID,
+            blockchainID,
+            origin: 'chaincheck',
           }
         )
 
@@ -115,7 +116,8 @@ export class ChainChecker {
             serviceNode: nodeChainLog.node.publicKey,
             error: '',
             elapsedTime: '',
-            blockchainID: nodeChainLog.chainID,
+            blockchainID,
+            origin: 'chaincheck',
           }
         )
       }
@@ -128,6 +130,8 @@ export class ChainChecker {
       serviceNode: '',
       error: '',
       elapsedTime: '',
+      blockchainID,
+      origin: 'chaincheck',
     })
     await this.redis.set(
       CheckedNodesKey,
@@ -141,7 +145,7 @@ export class ChainChecker {
     if (CheckedNodes.length < 5) {
       const consensusResponse = await pocket.sendRelay(
         chainCheck,
-        blockchain,
+        blockchainID,
         pocketAAT,
         this.updateConfigurationConsensus(pocketConfiguration),
         undefined,
@@ -158,6 +162,8 @@ export class ChainChecker {
         serviceNode: '',
         error: '',
         elapsedTime: '',
+        blockchainID,
+        origin: 'chaincheck',
       })
     }
     return CheckedNodes
@@ -167,7 +173,7 @@ export class ChainChecker {
     nodes,
     requestID,
     chainCheck,
-    blockchain,
+    blockchainID,
     applicationID,
     applicationPublicKey,
     pocket,
@@ -191,7 +197,7 @@ export class ChainChecker {
         node,
         requestID,
         chainCheck,
-        blockchain,
+        blockchainID,
         applicationID,
         applicationPublicKey,
         pocket,
@@ -217,7 +223,7 @@ export class ChainChecker {
     node,
     requestID,
     chainCheck,
-    blockchain,
+    blockchainID,
     pocket,
     applicationID,
     applicationPublicKey,
@@ -231,7 +237,8 @@ export class ChainChecker {
       serviceNode: node.publicKey,
       error: '',
       elapsedTime: '',
-      blockchainID: blockchain,
+      blockchainID,
+      origin: 'chaincheck',
     })
 
     // Pull the current block from each node using the blockchain's chainCheck as the relay
@@ -239,7 +246,7 @@ export class ChainChecker {
 
     const relayResponse = await pocket.sendRelay(
       chainCheck,
-      blockchain,
+      blockchainID,
       pocketAAT,
       this.updateConfigurationTimeout(pocketConfiguration),
       undefined,
@@ -266,7 +273,8 @@ export class ChainChecker {
         serviceNode: node.publicKey,
         error: '',
         elapsedTime: '',
-        blockchainID: blockchain,
+        blockchainID,
+        origin: 'chaincheck',
       })
 
       // Success
@@ -279,7 +287,8 @@ export class ChainChecker {
         serviceNode: node.publicKey,
         error: '',
         elapsedTime: '',
-        blockchainID: blockchain,
+        blockchainID,
+        origin: 'chaincheck',
       })
 
       let error = relayResponse.message
@@ -292,7 +301,7 @@ export class ChainChecker {
         requestID: requestID,
         applicationID: applicationID,
         applicationPublicKey: applicationPublicKey,
-        blockchain,
+        blockchainID,
         serviceNode: node.publicKey,
         relayStart,
         result: 500,
@@ -302,7 +311,6 @@ export class ChainChecker {
         method: 'chaincheck',
         error,
         origin: 'chaincheck',
-        blockchainID: blockchain,
       })
     } else {
       logger.log('error', 'CHAIN CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
@@ -312,13 +320,15 @@ export class ChainChecker {
         serviceNode: node.publicKey,
         error: '',
         elapsedTime: '',
+        blockchainID,
+        origin: 'chaincheck',
       })
 
       await this.metricsRecorder.recordMetric({
         requestID: requestID,
         applicationID: applicationID,
         applicationPublicKey: applicationPublicKey,
-        blockchain,
+        blockchainID,
         serviceNode: node.publicKey,
         relayStart,
         result: 500,
@@ -328,7 +338,6 @@ export class ChainChecker {
         method: 'chaincheck',
         error: JSON.stringify(relayResponse),
         origin: 'chaincheck',
-        blockchainID: blockchain,
       })
     }
     // Failed
@@ -376,7 +385,7 @@ type NodeChainLog = {
 interface BaseChainLogOptions {
   requestID: string
   chainCheck: string
-  blockchain: string
+  blockchainID: string
   applicationID: string
   applicationPublicKey: string
   pocket: Pocket
@@ -397,7 +406,7 @@ export type ChainIDFilterOptions = {
   requestID: string
   chainCheck: string
   chainID: number
-  blockchain: string
+  blockchainID: string
   pocket: Pocket
   applicationID: string
   applicationPublicKey: string

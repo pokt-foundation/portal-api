@@ -103,7 +103,7 @@ describe('Sync checker service (unit)', () => {
         '1234',
         blockchain.syncCheck,
         '',
-        blockchain.blockchain,
+        blockchain.hash,
         '',
         '',
         pocket,
@@ -115,7 +115,7 @@ describe('Sync checker service (unit)', () => {
 
       expect(nodeSyncLog.node).to.be.equal(node)
       expect(nodeSyncLog.blockHeight).to.be.equal(expectedBlockHeight)
-      expect(nodeSyncLog.blockchain).to.be.equal(blockchain.blockchain)
+      expect(nodeSyncLog.blockchainID).to.be.equal(blockchain.hash)
     })
 
     it('Fails gracefully on handled error result', async () => {
@@ -130,7 +130,7 @@ describe('Sync checker service (unit)', () => {
         '1234',
         blockchain.syncCheck,
         '',
-        blockchain.blockchain,
+        blockchain.hash,
         '',
         '',
         pocket,
@@ -142,7 +142,7 @@ describe('Sync checker service (unit)', () => {
 
       expect(nodeSyncLog.node).to.be.equal(node)
       expect(nodeSyncLog.blockHeight).to.be.equal(expectedBlockHeight)
-      expect(nodeSyncLog.blockchain).to.be.equal(blockchain.blockchain)
+      expect(nodeSyncLog.blockchainID).to.be.equal(blockchain.hash)
     })
 
     it('Fails gracefully on unhandled error result', async () => {
@@ -158,7 +158,7 @@ describe('Sync checker service (unit)', () => {
         '1234',
         blockchain.syncCheck,
         '',
-        blockchain.blockchain,
+        blockchain.hash,
         '',
         '',
         pocket,
@@ -170,7 +170,7 @@ describe('Sync checker service (unit)', () => {
 
       expect(nodeSyncLog.node).to.be.equal(node)
       expect(nodeSyncLog.blockHeight).to.be.equal(expectedBlockHeight)
-      expect(nodeSyncLog.blockchain).to.be.equal(blockchain.blockchain)
+      expect(nodeSyncLog.blockchainID).to.be.equal(blockchain.hash)
     })
   })
 
@@ -206,7 +206,7 @@ describe('Sync checker service (unit)', () => {
       '1234',
       blockchain.syncCheck,
       '',
-      blockchain.blockchain,
+      blockchain.hash,
       '',
       '',
       pocketClient,
@@ -236,7 +236,7 @@ describe('Sync checker service (unit)', () => {
       let syncedNodes = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchain: blockchain.blockchain,
+        blockchainID: blockchain.hash,
         syncCheck: blockchain.syncCheck,
         pocket: pocketClient,
         applicationID: '',
@@ -257,7 +257,7 @@ describe('Sync checker service (unit)', () => {
       syncedNodes = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchain: blockchain.blockchain,
+        blockchainID: blockchain.hash,
         syncCheck: blockchain.syncCheck,
         pocket: pocketClient,
         applicationID: '',
@@ -285,7 +285,7 @@ describe('Sync checker service (unit)', () => {
       const syncedNodes = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchain: blockchain.blockchain,
+        blockchainID: blockchain.hash,
         syncCheck: blockchain.syncCheck,
         pocket: pocketClient,
         applicationID: '',
@@ -319,7 +319,7 @@ describe('Sync checker service (unit)', () => {
       const syncedNodes = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchain: blockchain.blockchain,
+        blockchainID: blockchain.hash,
         syncCheck: blockchain.syncCheck,
         pocket: pocketClient,
         applicationID: '',
@@ -344,7 +344,7 @@ describe('Sync checker service (unit)', () => {
       const syncedNodes = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchain: blockchain.blockchain,
+        blockchainID: blockchain.hash,
         syncCheck: blockchain.syncCheck,
         pocket: pocketClient,
         applicationID: '',
@@ -379,7 +379,7 @@ describe('Sync checker service (unit)', () => {
       const syncedNodes = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchain: blockchain.blockchain,
+        blockchainID: blockchain.hash,
         syncCheck: blockchain.syncCheck,
         pocket: pocketClient,
         applicationID: '',
@@ -424,7 +424,7 @@ describe('Sync checker service (unit)', () => {
       const syncedNodes = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchain: blockchain.blockchain,
+        blockchainID: blockchain.hash,
         syncCheck: blockchain.syncCheck,
         pocket: pocketClient,
         applicationID: '',
