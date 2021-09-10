@@ -12,7 +12,6 @@ export class SyncChecker {
   redis: Redis
   metricsRecorder: MetricsRecorder
   defaultSyncAllowance: number
-  origin: string
 
   constructor(redis: Redis, metricsRecorder: MetricsRecorder, defaultSyncAllowance: number) {
     this.redis = redis
@@ -37,7 +36,6 @@ export class SyncChecker {
   }: ConsensusFilterOptions): Promise<Node[]> {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
     syncAllowance = syncAllowance <= 0 ? syncAllowance : this.defaultSyncAllowance
-    this.origin = origin ? origin : 'synccheck'
 
     const syncedNodes: Node[] = []
     let syncedNodesList: string[] = []
@@ -90,7 +88,8 @@ export class SyncChecker {
       applicationPublicKey,
       pocket,
       pocketAAT,
-      pocketConfiguration
+      pocketConfiguration,
+      origin
     )
 
     let errorState = false
@@ -105,7 +104,7 @@ export class SyncChecker {
         serviceNode: '',
         error: '',
         elapsedTime: '',
-        origin: this.origin,
+        origin,
       })
       errorState = true
     }
@@ -130,7 +129,7 @@ export class SyncChecker {
         serviceNode: '',
         error: '',
         elapsedTime: '',
-        origin: this.origin,
+        origin,
       })
       errorState = true
     } else {
@@ -147,13 +146,13 @@ export class SyncChecker {
         serviceNode: '',
         error: '',
         elapsedTime: '',
-        origin: this.origin,
+        origin,
       })
       errorState = true
     }
 
     // Consult Altruist for sync source of truth
-    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheck, syncCheckPath, blockchainSyncBackup)
+    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheck, syncCheckPath, blockchainSyncBackup, origin)
 
     if (altruistBlockHeight === 0) {
       // Failure to find sync from consensus and altruist
@@ -165,7 +164,7 @@ export class SyncChecker {
         serviceNode: 'ALTRUIST',
         error: '',
         elapsedTime: '',
-        origin: this.origin,
+        origin,
       })
 
       if (errorState) {
@@ -180,7 +179,7 @@ export class SyncChecker {
         serviceNode: 'ALTRUIST',
         error: '',
         elapsedTime: '',
-        origin: this.origin,
+        origin,
       })
     }
 
@@ -201,7 +200,7 @@ export class SyncChecker {
             serviceNode: nodeSyncLog.node.publicKey,
             error: '',
             elapsedTime: '',
-            origin: this.origin,
+            origin,
           }
         )
 
@@ -226,7 +225,7 @@ export class SyncChecker {
           serviceNode: nodeSyncLog.node.publicKey,
           error: '',
           elapsedTime: '',
-          origin: this.origin,
+          origin,
         })
 
         await this.metricsRecorder.recordMetric({
@@ -242,7 +241,7 @@ export class SyncChecker {
           fallback: false,
           method: 'synccheck',
           error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${currentBlockHeight} altruist block height: ${altruistBlockHeight} nodes height: ${nodeSyncLog.blockHeight} sync allowance: ${syncAllowance}`,
-          origin: this.origin,
+          origin,
         })
       }
     }
@@ -255,7 +254,7 @@ export class SyncChecker {
       error: '',
       elapsedTime: '',
       blockchainID,
-      origin: this.origin,
+      origin,
     })
     await this.redis.set(
       syncedNodesKey,
@@ -288,13 +287,18 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin: this.origin,
+        origin,
       })
     }
     return syncedNodes
   }
 
-  async getSyncFromAltruist(syncCheck: string, syncCheckPath: string, blockchainSyncBackup: string): Promise<number> {
+  async getSyncFromAltruist(
+    syncCheck: string,
+    syncCheckPath: string,
+    blockchainSyncBackup: string,
+    origin: string
+  ): Promise<number> {
     // Remove user/pass from the altruist URL
     const redactedAltruistURL = blockchainSyncBackup.replace(/[\w]*:\/\/[^\/]*@/g, '')
 
@@ -320,7 +324,7 @@ export class SyncChecker {
         serviceNode: 'fallback:' + redactedAltruistURL,
         error: '',
         elapsedTime: '',
-        origin: this.origin,
+        origin,
       })
     }
     return 0
@@ -336,7 +340,8 @@ export class SyncChecker {
     applicationPublicKey: string,
     pocket: Pocket,
     pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration
+    pocketConfiguration: Configuration,
+    origin: string
   ): Promise<NodeSyncLog[]> {
     const nodeSyncLogs: NodeSyncLog[] = []
     const promiseStack: Promise<NodeSyncLog>[] = []
@@ -398,7 +403,7 @@ export class SyncChecker {
       error: '',
       elapsedTime: '',
       blockchainID,
-      origin: this.origin,
+      origin,
     })
 
     // Pull the current block from each node using the blockchain's syncCheck as the relay
@@ -439,7 +444,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin: this.origin,
+        origin,
       })
 
       // Success
@@ -453,7 +458,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin: this.origin,
+        origin,
       })
 
       let error = relayResponse.message
@@ -475,7 +480,7 @@ export class SyncChecker {
         fallback: false,
         method: 'synccheck',
         error,
-        origin: this.origin,
+        origin,
       })
     } else {
       logger.log('error', 'SYNC CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
@@ -486,7 +491,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin: this.origin,
+        origin,
       })
 
       await this.metricsRecorder.recordMetric({
@@ -502,7 +507,7 @@ export class SyncChecker {
         fallback: false,
         method: 'synccheck',
         error: JSON.stringify(relayResponse),
-        origin: this.origin,
+        origin,
       })
     }
     // Failed
