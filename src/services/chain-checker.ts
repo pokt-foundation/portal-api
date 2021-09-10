@@ -151,7 +151,7 @@ export class ChainChecker {
         chainCheck,
         blockchainID,
         pocketAAT,
-        this.updateConfigurationConsensus(pocketConfiguration, nodes.length),
+        this.updateConfigurationConsensus(pocketConfiguration),
         undefined,
         'POST' as HTTPMethod,
         undefined,
@@ -357,11 +357,11 @@ export class ChainChecker {
     return nodeChainLog
   }
 
-  updateConfigurationConsensus(pocketConfiguration: Configuration, consensusNodeCount: number): Configuration {
+  updateConfigurationConsensus(pocketConfiguration: Configuration): Configuration {
     return new Configuration(
       pocketConfiguration.maxDispatchers,
       pocketConfiguration.maxSessions,
-      consensusNodeCount,
+      5,
       2000,
       false,
       pocketConfiguration.sessionBlockFrequency,
@@ -402,7 +402,7 @@ interface BaseChainLogOptions {
   pocket: Pocket
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
-  sessionKey?: string
+  sessionKey: string
 }
 
 interface GetNodesChainLogsOptions extends BaseChainLogOptions {
@@ -424,5 +424,5 @@ export type ChainIDFilterOptions = {
   applicationPublicKey: string
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
-  sessionKey?: string
+  sessionKey: string
 }

@@ -272,7 +272,7 @@ export class SyncChecker {
         syncCheck,
         blockchainID,
         pocketAAT,
-        this.updateConfigurationConsensus(pocketConfiguration, nodes.length),
+        this.updateConfigurationConsensus(pocketConfiguration),
         undefined,
         'POST' as HTTPMethod,
         undefined,
@@ -338,7 +338,7 @@ export class SyncChecker {
     pocket: Pocket,
     pocketAAT: PocketAAT,
     pocketConfiguration: Configuration,
-    sessionKey?: string
+    sessionKey: string
   ): Promise<NodeSyncLog[]> {
     const nodeSyncLogs: NodeSyncLog[] = []
     const promiseStack: Promise<NodeSyncLog>[] = []
@@ -392,7 +392,7 @@ export class SyncChecker {
     pocket: Pocket,
     pocketAAT: PocketAAT,
     pocketConfiguration: Configuration,
-    sessionKey?: string
+    sessionKey: string
   ): Promise<NodeSyncLog> {
     logger.log('info', 'SYNC CHECK START', {
       requestID: requestID,
@@ -523,11 +523,11 @@ export class SyncChecker {
     return nodeSyncLog
   }
 
-  updateConfigurationConsensus(pocketConfiguration: Configuration, consensusNodeCount: number): Configuration {
+  updateConfigurationConsensus(pocketConfiguration: Configuration): Configuration {
     return new Configuration(
       pocketConfiguration.maxDispatchers,
       pocketConfiguration.maxSessions,
-      consensusNodeCount,
+      5,
       2000,
       false,
       pocketConfiguration.sessionBlockFrequency,
@@ -573,5 +573,5 @@ export type ConsensusFilterOptions = {
   pocket: Pocket
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
-  sessionKey?: string
+  sessionKey: string
 }
