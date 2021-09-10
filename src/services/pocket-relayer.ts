@@ -291,7 +291,7 @@ export class PocketRelayer {
             error: '',
             elapsedTime: '',
             blockchainID: '',
-            origin: 'synccheck',
+            origin: this.origin,
           })
         }
 
@@ -453,6 +453,7 @@ export class PocketRelayer {
           chainID: parseInt(blockchainChainID),
           pocket: this.pocket,
           pocketConfiguration: this.pocketConfiguration,
+          origin: this.origin,
         }
 
         chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
@@ -473,6 +474,7 @@ export class PocketRelayer {
           pocket: this.pocket,
           pocketAAT,
           pocketConfiguration: this.pocketConfiguration,
+          origin: this.origin,
         }
 
         syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
