@@ -57,7 +57,7 @@ describe('Chain checker service (unit)', () => {
   it('updates the configuration consensus to one already set', () => {
     const configuration = getPocketConfigOrDefault({ consensusNodeCount: 9 })
     const expectedConsensusCount = 5
-    const newConfig = chainChecker.updateConfigurationConsensus(configuration, 5)
+    const newConfig = chainChecker.updateConfigurationConsensus(configuration)
 
     expect(newConfig.consensusNodeCount).to.be.equal(expectedConsensusCount)
   })
@@ -89,6 +89,7 @@ describe('Chain checker service (unit)', () => {
         applicationPublicKey: '',
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
       })
 
       const expectedChainID = 100 // 0x64 to base 10
@@ -113,6 +114,7 @@ describe('Chain checker service (unit)', () => {
         applicationPublicKey: '',
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
       })
 
       const expectedChainID = 0
@@ -138,6 +140,7 @@ describe('Chain checker service (unit)', () => {
         applicationPublicKey: '',
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
       })
 
       const expectedChainID = 0
@@ -168,6 +171,7 @@ describe('Chain checker service (unit)', () => {
       applicationPublicKey: '',
       pocketAAT: undefined,
       pocketConfiguration,
+      sessionKey: '',
     })
 
     const expectedChainID = 100 // 0x64 to base 10
@@ -196,6 +200,7 @@ describe('Chain checker service (unit)', () => {
       applicationPublicKey: '',
       pocketAAT: undefined,
       pocketConfiguration,
+      sessionKey: '',
       chainID,
     })
 
@@ -216,6 +221,7 @@ describe('Chain checker service (unit)', () => {
       applicationPublicKey: '',
       pocketAAT: undefined,
       pocketConfiguration,
+      sessionKey: '',
       chainID,
     })
 
@@ -241,6 +247,7 @@ describe('Chain checker service (unit)', () => {
       applicationPublicKey: '',
       pocketAAT: undefined,
       pocketConfiguration,
+      sessionKey: '',
       chainID,
     })
 

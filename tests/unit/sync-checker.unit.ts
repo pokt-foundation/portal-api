@@ -78,7 +78,7 @@ describe('Sync checker service (unit)', () => {
 
     const expectedConsensusCount = 5
 
-    const newConfig = syncChecker.updateConfigurationConsensus(configuration, 5)
+    const newConfig = syncChecker.updateConfigurationConsensus(configuration)
 
     expect(newConfig.consensusNodeCount).to.be.equal(expectedConsensusCount)
   })
@@ -109,7 +109,8 @@ describe('Sync checker service (unit)', () => {
         '',
         pocket,
         undefined,
-        pocketConfiguration
+        pocketConfiguration,
+        ''
       )
 
       const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
@@ -136,7 +137,8 @@ describe('Sync checker service (unit)', () => {
         '',
         pocket,
         undefined,
-        pocketConfiguration
+        pocketConfiguration,
+        ''
       )
 
       const expectedBlockHeight = 0
@@ -164,7 +166,8 @@ describe('Sync checker service (unit)', () => {
         '',
         pocket,
         undefined,
-        pocketConfiguration
+        pocketConfiguration,
+        ''
       )
 
       const expectedBlockHeight = 0
@@ -212,7 +215,8 @@ describe('Sync checker service (unit)', () => {
       '',
       pocketClient,
       undefined,
-      pocketConfiguration
+      pocketConfiguration,
+      ''
     )
 
     const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
@@ -245,6 +249,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
       })
@@ -266,6 +271,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
       })
@@ -294,6 +300,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
       })
@@ -328,6 +335,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
       })
@@ -353,6 +361,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
       })
@@ -388,6 +397,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
       })
@@ -433,6 +443,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
       })

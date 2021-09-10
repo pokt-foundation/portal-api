@@ -582,8 +582,7 @@ describe('Pocket relayer service (unit)', () => {
       expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
     })
 
-    // eslint-disable-next-line mocha/no-exclusive-tests
-    it.only('Fails relay due to all nodes in session running out of relays, subsequent relays should not attempt to perform checks', async () => {
+    it('Fails relay due to all nodes in session running out of relays, subsequent relays should not attempt to perform checks', async () => {
       const mock = new PocketMock()
 
       const maxRelaysError = new RpcError('90', MAX_RELAYS_ERROR)
@@ -642,7 +641,6 @@ describe('Pocket relayer service (unit)', () => {
       expect(chainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
 
-      console.log('\n\n LLAMANDO OTRA VE MMG\n\n')
       // Subsequent calls should not go to sync or chain checker
       const secondRelayResponse = await poktRelayer.sendRelay({
         rawData,
