@@ -43,6 +43,8 @@ describe('Sync checker service (unit)', () => {
   let axiosMock: MockAdapter
   let logSpy: sinon.SinonSpy
 
+  const origin = 'unit-test'
+
   before('initialize variables', async () => {
     redis = new RedisMock(0, '')
     cherryPicker = new CherryPicker({ redis, checkDebug: false })
@@ -180,7 +182,7 @@ describe('Sync checker service (unit)', () => {
 
       const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
 
-      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', ALTRUIST_URL)
+      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', ALTRUIST_URL, origin)
 
       expect(blockHeight).to.be.equal(expectedBlockHeight)
     })
@@ -190,7 +192,7 @@ describe('Sync checker service (unit)', () => {
 
       const expectedBlockHeight = 0
 
-      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', ALTRUIST_URL)
+      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', ALTRUIST_URL, origin)
 
       expect(blockHeight).to.be.equal(expectedBlockHeight)
     })
@@ -211,7 +213,8 @@ describe('Sync checker service (unit)', () => {
       '',
       pocketClient,
       undefined,
-      pocketConfiguration
+      pocketConfiguration,
+      origin
     )
 
     const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
@@ -246,7 +249,7 @@ describe('Sync checker service (unit)', () => {
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
-        origin: 'unit-test',
+        origin,
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -268,7 +271,7 @@ describe('Sync checker service (unit)', () => {
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
-        origin: 'unit-test',
+        origin,
       })
 
       expect(redisGetSpy.callCount).to.be.equal(3)
@@ -297,7 +300,7 @@ describe('Sync checker service (unit)', () => {
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
-        origin: 'unit-test',
+        origin,
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -332,7 +335,7 @@ describe('Sync checker service (unit)', () => {
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
-        origin: 'unit-test',
+        origin,
       })
 
       expect(syncedNodes).to.have.length(0)
@@ -358,7 +361,7 @@ describe('Sync checker service (unit)', () => {
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
-        origin: 'unit-test',
+        origin,
       })
 
       expect(syncedNodes).to.have.length(0)
@@ -394,7 +397,7 @@ describe('Sync checker service (unit)', () => {
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
-        origin: 'unit-test',
+        origin,
       })
 
       expect(syncedNodes).to.have.length(4)
@@ -440,7 +443,7 @@ describe('Sync checker service (unit)', () => {
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
-        origin: 'unit-test',
+        origin,
       })
 
       expect(syncedNodes).to.have.length(1)

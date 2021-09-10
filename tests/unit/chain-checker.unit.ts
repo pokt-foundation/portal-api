@@ -22,6 +22,8 @@ describe('Chain checker service (unit)', () => {
   let pocketMock: PocketMock
   let logSpy: sinon.SinonSpy
 
+  const origin = 'unit-test'
+
   before('initialize variables', async () => {
     redis = new RedisMock(0, '')
     cherryPicker = new CherryPicker({ redis, checkDebug: false })
@@ -86,6 +88,7 @@ describe('Chain checker service (unit)', () => {
         applicationPublicKey: '',
         pocketAAT: undefined,
         pocketConfiguration,
+        origin,
       })
 
       const expectedChainID = 100 // 0x64 to base 10
@@ -110,6 +113,7 @@ describe('Chain checker service (unit)', () => {
         applicationPublicKey: '',
         pocketAAT: undefined,
         pocketConfiguration,
+        origin,
       })
 
       const expectedChainID = 0
@@ -135,6 +139,7 @@ describe('Chain checker service (unit)', () => {
         applicationPublicKey: '',
         pocketAAT: undefined,
         pocketConfiguration,
+        origin,
       })
 
       const expectedChainID = 0
@@ -165,6 +170,7 @@ describe('Chain checker service (unit)', () => {
       applicationPublicKey: '',
       pocketAAT: undefined,
       pocketConfiguration,
+      origin,
     })
 
     const expectedChainID = 100 // 0x64 to base 10
@@ -194,7 +200,7 @@ describe('Chain checker service (unit)', () => {
       pocketAAT: undefined,
       pocketConfiguration,
       chainID,
-      origin: 'unit-test',
+      origin,
     })
 
     expect(checkedNodes).to.be.Array()
@@ -215,7 +221,7 @@ describe('Chain checker service (unit)', () => {
       pocketAAT: undefined,
       pocketConfiguration,
       chainID,
-      origin: 'unit-test',
+      origin,
     })
 
     expect(redisGetSpy.callCount).to.be.equal(3)
@@ -241,7 +247,7 @@ describe('Chain checker service (unit)', () => {
       pocketAAT: undefined,
       pocketConfiguration,
       chainID,
-      origin: 'unit-test',
+      origin,
     })
 
     expect(checkedNodes).to.be.Array()
