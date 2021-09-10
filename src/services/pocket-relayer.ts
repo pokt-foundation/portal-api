@@ -435,24 +435,22 @@ export class PocketRelayer {
     )
 
     if (pocketSession instanceof Session) {
+      const { sessionKey } = pocketSession
+
       let syncCheckPromise: Promise<Node[]>
       let chainCheckPromise: Promise<Node[]>
 
       let nodes: Node[] = pocketSession.sessionNodes
       const relayStart = process.hrtime()
 
-      const cachedRemovedSessionNodes = await this.redis.get(`session-${pocketSession.sessionKey}`)
+      const cachedRemovedSessionNodes = await this.redis.get(`session-${sessionKey}`)
 
       if (cachedRemovedSessionNodes) {
         const nodesToRemove: string[] = JSON.parse(cachedRemovedSessionNodes)
 
         nodes = nodes.filter((n) => !nodesToRemove.includes(n.publicKey))
       } else {
-        // Maximum time in milliseconds for the next session to be rolloved,
-        // assuming the session was created now
-        const maxSessionTime = this.pocketConfiguration.sessionBlockFrequency * this.pocketConfiguration.blockTime
-
-        await this.redis.set(`session-${pocketSession.sessionKey}`, JSON.stringify([]), 'PX', maxSessionTime)
+        await this.redis.set(`session-${sessionKey}`, JSON.stringify([]), 'EX', 7200) // 2 hours
       }
 
       if (nodes.length === 0) {
