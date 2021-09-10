@@ -14,7 +14,7 @@ export class SyncChecker {
   defaultSyncAllowance: number
   origin: string
 
-  constructor(redis: Redis, metricsRecorder: MetricsRecorder, defaultSyncAllowance: number, origin: string) {
+  constructor(redis: Redis, metricsRecorder: MetricsRecorder, defaultSyncAllowance: number) {
     this.redis = redis
     this.metricsRecorder = metricsRecorder
     this.defaultSyncAllowance = defaultSyncAllowance
