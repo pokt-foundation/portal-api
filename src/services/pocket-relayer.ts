@@ -424,7 +424,7 @@ export class PocketRelayer {
     // Checks pass; create AAT
     const pocketAAT = new PocketAAT(...aatParams)
 
-    let node
+    let node: Node
 
     // Pull the session so we can get a list of nodes and cherry pick which one to use
     const pocketSession = await this.pocket.sessionManager.getCurrentSession(
@@ -439,6 +439,24 @@ export class PocketRelayer {
 
       let nodes: Node[] = pocketSession.sessionNodes
       const relayStart = process.hrtime()
+
+      const cachedRemovedSessionNodes = await this.redis.get(`session-${pocketSession.sessionKey}`)
+
+      if (cachedRemovedSessionNodes) {
+        const nodesToRemove: string[] = JSON.parse(cachedRemovedSessionNodes)
+
+        nodes.filter((n) => nodesToRemove.includes(n.publicKey))
+      } else {
+        // Maximum time in milliseconds for the next session to be rolloved,
+        // assuming the session was created now
+        const maxSessionTime = this.pocketConfiguration.sessionBlockFrequency * this.pocketConfiguration.blockTime
+
+        await this.redis.set(`session-${pocketSession.sessionKey}`, JSON.stringify([]), 'PX', maxSessionTime)
+      }
+
+      if (nodes.length === 0) {
+        return new Error("session doesn't have any available nodes")
+      }
 
       if (blockchainIDCheck) {
         // Check Chain ID
