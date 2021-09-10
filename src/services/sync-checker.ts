@@ -12,11 +12,13 @@ export class SyncChecker {
   redis: Redis
   metricsRecorder: MetricsRecorder
   defaultSyncAllowance: number
+  origin: string
 
-  constructor(redis: Redis, metricsRecorder: MetricsRecorder, defaultSyncAllowance: number) {
+  constructor(redis: Redis, metricsRecorder: MetricsRecorder, defaultSyncAllowance: number, origin: string) {
     this.redis = redis
     this.metricsRecorder = metricsRecorder
     this.defaultSyncAllowance = defaultSyncAllowance
+    this.origin = origin
   }
 
   async consensusFilter({
@@ -32,7 +34,6 @@ export class SyncChecker {
     pocket,
     pocketAAT,
     pocketConfiguration,
-    origin,
   }: ConsensusFilterOptions): Promise<Node[]> {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
     syncAllowance = syncAllowance <= 0 ? syncAllowance : this.defaultSyncAllowance
@@ -88,8 +89,7 @@ export class SyncChecker {
       applicationPublicKey,
       pocket,
       pocketAAT,
-      pocketConfiguration,
-      origin
+      pocketConfiguration
     )
 
     let errorState = false
@@ -104,7 +104,7 @@ export class SyncChecker {
         serviceNode: '',
         error: '',
         elapsedTime: '',
-        origin,
+        origin: this.origin,
       })
       errorState = true
     }
@@ -129,7 +129,7 @@ export class SyncChecker {
         serviceNode: '',
         error: '',
         elapsedTime: '',
-        origin,
+        origin: this.origin,
       })
       errorState = true
     } else {
@@ -146,13 +146,13 @@ export class SyncChecker {
         serviceNode: '',
         error: '',
         elapsedTime: '',
-        origin,
+        origin: this.origin,
       })
       errorState = true
     }
 
     // Consult Altruist for sync source of truth
-    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheck, syncCheckPath, blockchainSyncBackup, origin)
+    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheck, syncCheckPath, blockchainSyncBackup)
 
     if (altruistBlockHeight === 0) {
       // Failure to find sync from consensus and altruist
@@ -164,7 +164,7 @@ export class SyncChecker {
         serviceNode: 'ALTRUIST',
         error: '',
         elapsedTime: '',
-        origin,
+        origin: this.origin,
       })
 
       if (errorState) {
@@ -179,7 +179,7 @@ export class SyncChecker {
         serviceNode: 'ALTRUIST',
         error: '',
         elapsedTime: '',
-        origin,
+        origin: this.origin,
       })
     }
 
@@ -200,7 +200,7 @@ export class SyncChecker {
             serviceNode: nodeSyncLog.node.publicKey,
             error: '',
             elapsedTime: '',
-            origin,
+            origin: this.origin,
           }
         )
 
@@ -225,7 +225,7 @@ export class SyncChecker {
           serviceNode: nodeSyncLog.node.publicKey,
           error: '',
           elapsedTime: '',
-          origin,
+          origin: this.origin,
         })
 
         await this.metricsRecorder.recordMetric({
@@ -241,7 +241,7 @@ export class SyncChecker {
           fallback: false,
           method: 'synccheck',
           error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${currentBlockHeight} altruist block height: ${altruistBlockHeight} nodes height: ${nodeSyncLog.blockHeight} sync allowance: ${syncAllowance}`,
-          origin,
+          origin: this.origin,
         })
       }
     }
@@ -254,7 +254,7 @@ export class SyncChecker {
       error: '',
       elapsedTime: '',
       blockchainID,
-      origin,
+      origin: this.origin,
     })
     await this.redis.set(
       syncedNodesKey,
@@ -287,18 +287,13 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin,
+        origin: this.origin,
       })
     }
     return syncedNodes
   }
 
-  async getSyncFromAltruist(
-    syncCheck: string,
-    syncCheckPath: string,
-    blockchainSyncBackup: string,
-    origin: string
-  ): Promise<number> {
+  async getSyncFromAltruist(syncCheck: string, syncCheckPath: string, blockchainSyncBackup: string): Promise<number> {
     // Remove user/pass from the altruist URL
     const redactedAltruistURL = blockchainSyncBackup.replace(/[\w]*:\/\/[^\/]*@/g, '')
 
@@ -324,7 +319,7 @@ export class SyncChecker {
         serviceNode: 'fallback:' + redactedAltruistURL,
         error: '',
         elapsedTime: '',
-        origin,
+        origin: this.origin,
       })
     }
     return 0
@@ -340,8 +335,7 @@ export class SyncChecker {
     applicationPublicKey: string,
     pocket: Pocket,
     pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration,
-    origin: string
+    pocketConfiguration: Configuration
   ): Promise<NodeSyncLog[]> {
     const nodeSyncLogs: NodeSyncLog[] = []
     const promiseStack: Promise<NodeSyncLog>[] = []
@@ -403,7 +397,7 @@ export class SyncChecker {
       error: '',
       elapsedTime: '',
       blockchainID,
-      origin,
+      origin: this.origin,
     })
 
     // Pull the current block from each node using the blockchain's syncCheck as the relay
@@ -444,7 +438,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin,
+        origin: this.origin,
       })
 
       // Success
@@ -458,7 +452,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin,
+        origin: this.origin,
       })
 
       let error = relayResponse.message
@@ -480,7 +474,7 @@ export class SyncChecker {
         fallback: false,
         method: 'synccheck',
         error,
-        origin,
+        origin: this.origin,
       })
     } else {
       logger.log('error', 'SYNC CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
@@ -491,7 +485,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin,
+        origin: this.origin,
       })
 
       await this.metricsRecorder.recordMetric({
@@ -507,7 +501,7 @@ export class SyncChecker {
         fallback: false,
         method: 'synccheck',
         error: JSON.stringify(relayResponse),
-        origin,
+        origin: this.origin,
       })
     }
     // Failed

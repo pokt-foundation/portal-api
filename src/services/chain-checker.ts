@@ -9,10 +9,12 @@ const logger = require('../services/logger')
 export class ChainChecker {
   redis: Redis
   metricsRecorder: MetricsRecorder
+  origin: string
 
-  constructor(redis: Redis, metricsRecorder: MetricsRecorder) {
+  constructor(redis: Redis, metricsRecorder: MetricsRecorder, origin: string) {
     this.redis = redis
     this.metricsRecorder = metricsRecorder
+    this.origin = origin
   }
 
   async chainIDFilter({
@@ -26,7 +28,6 @@ export class ChainChecker {
     applicationPublicKey,
     pocketAAT,
     pocketConfiguration,
-    origin,
   }: ChainIDFilterOptions): Promise<Node[]> {
     const CheckedNodes: Node[] = []
     let CheckedNodesList: string[] = []
@@ -80,7 +81,6 @@ export class ChainChecker {
       pocket,
       pocketAAT,
       pocketConfiguration,
-      origin,
     }
     const nodeChainLogs = await this.getNodeChainLogs(options)
 
@@ -100,7 +100,7 @@ export class ChainChecker {
             error: '',
             elapsedTime: '',
             blockchainID,
-            origin,
+            origin: this.origin,
           }
         )
 
@@ -119,7 +119,7 @@ export class ChainChecker {
             error: '',
             elapsedTime: '',
             blockchainID,
-            origin,
+            origin: this.origin,
           }
         )
       }
@@ -133,7 +133,7 @@ export class ChainChecker {
       error: '',
       elapsedTime: '',
       blockchainID,
-      origin,
+      origin: this.origin,
     })
     await this.redis.set(
       CheckedNodesKey,
@@ -165,7 +165,7 @@ export class ChainChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin,
+        origin: this.origin,
       })
     }
     return CheckedNodes
@@ -205,7 +205,6 @@ export class ChainChecker {
         pocket,
         pocketAAT,
         pocketConfiguration,
-        origin,
       }
 
       promiseStack.push(this.getNodeChainLog(options))
@@ -241,7 +240,7 @@ export class ChainChecker {
       error: '',
       elapsedTime: '',
       blockchainID,
-      origin,
+      origin: this.origin,
     })
 
     // Pull the current block from each node using the blockchain's chainCheck as the relay
@@ -277,7 +276,7 @@ export class ChainChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin,
+        origin: this.origin,
       })
 
       // Success
@@ -291,7 +290,7 @@ export class ChainChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin,
+        origin: this.origin,
       })
 
       let error = relayResponse.message
@@ -313,7 +312,7 @@ export class ChainChecker {
         fallback: false,
         method: 'chaincheck',
         error,
-        origin,
+        origin: this.origin,
       })
     } else {
       logger.log('error', 'CHAIN CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
@@ -324,7 +323,7 @@ export class ChainChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin,
+        origin: this.origin,
       })
 
       await this.metricsRecorder.recordMetric({
@@ -340,7 +339,7 @@ export class ChainChecker {
         fallback: false,
         method: 'chaincheck',
         error: JSON.stringify(relayResponse),
-        origin,
+        origin: this.origin,
       })
     }
     // Failed
@@ -394,7 +393,6 @@ interface BaseChainLogOptions {
   pocket: Pocket
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
-  origin: string
 }
 
 interface GetNodesChainLogsOptions extends BaseChainLogOptions {
@@ -416,5 +414,4 @@ export type ChainIDFilterOptions = {
   applicationPublicKey: string
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
-  origin: string
 }

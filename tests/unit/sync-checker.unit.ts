@@ -49,7 +49,7 @@ describe('Sync checker service (unit)', () => {
     redis = new RedisMock(0, '')
     cherryPicker = new CherryPicker({ redis, checkDebug: false })
     metricsRecorder = metricsRecorderMock(redis, cherryPicker)
-    syncChecker = new SyncChecker(redis, metricsRecorder, SYNC_ALLOWANCE)
+    syncChecker = new SyncChecker(redis, metricsRecorder, SYNC_ALLOWANCE, origin)
     pocketConfiguration = getPocketConfigOrDefault()
     pocketMock = new PocketMock()
     axiosMock = new MockAdapter(axios)
@@ -182,7 +182,7 @@ describe('Sync checker service (unit)', () => {
 
       const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
 
-      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', ALTRUIST_URL, origin)
+      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', ALTRUIST_URL)
 
       expect(blockHeight).to.be.equal(expectedBlockHeight)
     })
@@ -192,7 +192,7 @@ describe('Sync checker service (unit)', () => {
 
       const expectedBlockHeight = 0
 
-      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', ALTRUIST_URL, origin)
+      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', ALTRUIST_URL)
 
       expect(blockHeight).to.be.equal(expectedBlockHeight)
     })
@@ -213,8 +213,7 @@ describe('Sync checker service (unit)', () => {
       '',
       pocketClient,
       undefined,
-      pocketConfiguration,
-      origin
+      pocketConfiguration
     )
 
     const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10

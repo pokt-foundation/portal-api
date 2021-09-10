@@ -453,7 +453,6 @@ export class PocketRelayer {
           chainID: parseInt(blockchainChainID),
           pocket: this.pocket,
           pocketConfiguration: this.pocketConfiguration,
-          origin: this.origin,
         }
 
         chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
