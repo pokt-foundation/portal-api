@@ -194,6 +194,7 @@ describe('Chain checker service (unit)', () => {
       pocketAAT: undefined,
       pocketConfiguration,
       chainID,
+      origin: 'unit-test',
     })
 
     expect(checkedNodes).to.be.Array()
@@ -214,6 +215,7 @@ describe('Chain checker service (unit)', () => {
       pocketAAT: undefined,
       pocketConfiguration,
       chainID,
+      origin: 'unit-test',
     })
 
     expect(redisGetSpy.callCount).to.be.equal(3)
@@ -239,6 +241,7 @@ describe('Chain checker service (unit)', () => {
       pocketAAT: undefined,
       pocketConfiguration,
       chainID,
+      origin: 'unit-test',
     })
 
     expect(checkedNodes).to.be.Array()
