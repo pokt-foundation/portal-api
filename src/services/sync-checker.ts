@@ -564,5 +564,4 @@ export type ConsensusFilterOptions = {
   pocket: Pocket
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
-  origin: string
 }

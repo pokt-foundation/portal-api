@@ -248,7 +248,6 @@ describe('Sync checker service (unit)', () => {
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
-        origin,
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -270,7 +269,6 @@ describe('Sync checker service (unit)', () => {
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
-        origin,
       })
 
       expect(redisGetSpy.callCount).to.be.equal(3)
@@ -299,7 +297,6 @@ describe('Sync checker service (unit)', () => {
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
-        origin,
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -334,7 +331,6 @@ describe('Sync checker service (unit)', () => {
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
-        origin,
       })
 
       expect(syncedNodes).to.have.length(0)
@@ -360,7 +356,6 @@ describe('Sync checker service (unit)', () => {
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
-        origin,
       })
 
       expect(syncedNodes).to.have.length(0)
@@ -396,7 +391,6 @@ describe('Sync checker service (unit)', () => {
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
-        origin,
       })
 
       expect(syncedNodes).to.have.length(4)
@@ -442,7 +436,6 @@ describe('Sync checker service (unit)', () => {
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
-        origin,
       })
 
       expect(syncedNodes).to.have.length(1)

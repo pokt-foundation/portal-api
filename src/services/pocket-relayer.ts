@@ -473,7 +473,6 @@ export class PocketRelayer {
           pocket: this.pocket,
           pocketAAT,
           pocketConfiguration: this.pocketConfiguration,
-          origin: this.origin,
         }
 
         syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
