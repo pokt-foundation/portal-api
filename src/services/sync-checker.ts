@@ -7,6 +7,8 @@ import crypto from 'crypto'
 const logger = require('../services/logger')
 
 import axios from 'axios'
+import { MAX_RELAYS_ERROR } from '../errors/types'
+import { removeNodeFromSession } from '../utils/cache'
 
 export class SyncChecker {
   redis: Redis
@@ -32,6 +34,7 @@ export class SyncChecker {
     pocket,
     pocketAAT,
     pocketConfiguration,
+    sessionKey,
   }: ConsensusFilterOptions): Promise<Node[]> {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
     syncAllowance = syncAllowance <= 0 ? syncAllowance : this.defaultSyncAllowance
@@ -87,7 +90,8 @@ export class SyncChecker {
       applicationPublicKey,
       pocket,
       pocketAAT,
-      pocketConfiguration
+      pocketConfiguration,
+      sessionKey
     )
 
     let errorState = false
@@ -263,12 +267,12 @@ export class SyncChecker {
 
     // If one or more nodes of this session are not in sync, fire a consensus relay with the same check.
     // This will penalize the out-of-sync nodes and cause them to get slashed for reporting incorrect data.
-    if (syncedNodes.length < 5) {
+    if (syncedNodes.length < nodes.length) {
       const consensusResponse = await pocket.sendRelay(
         syncCheck,
         blockchainID,
         pocketAAT,
-        this.updateConfigurationConsensus(pocketConfiguration),
+        this.updateConfigurationConsensus(pocketConfiguration, nodes.length),
         undefined,
         'POST' as HTTPMethod,
         undefined,
@@ -333,7 +337,8 @@ export class SyncChecker {
     applicationPublicKey: string,
     pocket: Pocket,
     pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration
+    pocketConfiguration: Configuration,
+    sessionKey?: string
   ): Promise<NodeSyncLog[]> {
     const nodeSyncLogs: NodeSyncLog[] = []
     const promiseStack: Promise<NodeSyncLog>[] = []
@@ -359,7 +364,8 @@ export class SyncChecker {
           applicationPublicKey,
           pocket,
           pocketAAT,
-          pocketConfiguration
+          pocketConfiguration,
+          sessionKey
         )
       )
     }
@@ -385,7 +391,8 @@ export class SyncChecker {
     applicationPublicKey: string,
     pocket: Pocket,
     pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration
+    pocketConfiguration: Configuration,
+    sessionKey?: string
   ): Promise<NodeSyncLog> {
     logger.log('info', 'SYNC CHECK START', {
       requestID: requestID,
@@ -455,6 +462,10 @@ export class SyncChecker {
 
       let error = relayResponse.message
 
+      if (error === MAX_RELAYS_ERROR) {
+        await removeNodeFromSession(this.redis, sessionKey, node)
+      }
+
       if (typeof relayResponse.message === 'object') {
         error = JSON.stringify(relayResponse.message)
       }
@@ -512,11 +523,11 @@ export class SyncChecker {
     return nodeSyncLog
   }
 
-  updateConfigurationConsensus(pocketConfiguration: Configuration): Configuration {
+  updateConfigurationConsensus(pocketConfiguration: Configuration, consensusNodeCount: number): Configuration {
     return new Configuration(
       pocketConfiguration.maxDispatchers,
       pocketConfiguration.maxSessions,
-      5,
+      consensusNodeCount,
       2000,
       false,
       pocketConfiguration.sessionBlockFrequency,
@@ -562,4 +573,5 @@ export type ConsensusFilterOptions = {
   pocket: Pocket
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
+  sessionKey?: string
 }

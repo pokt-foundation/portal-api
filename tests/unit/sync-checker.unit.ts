@@ -77,7 +77,7 @@ describe('Sync checker service (unit)', () => {
 
     const expectedConsensusCount = 5
 
-    const newConfig = syncChecker.updateConfigurationConsensus(configuration)
+    const newConfig = syncChecker.updateConfigurationConsensus(configuration, 5)
 
     expect(newConfig.consensusNodeCount).to.be.equal(expectedConsensusCount)
   })
