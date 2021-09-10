@@ -8,7 +8,7 @@ import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, N
 import { Redis } from 'ioredis'
 import { BlockchainsRepository } from '../repositories'
 import { Applications } from '../models'
-import { RelayError, LimitError } from '../errors/types'
+import { RelayError, LimitError, MAX_RELAYS_ERROR } from '../errors/types'
 import AatPlans from '../config/aat-plans.json'
 import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
 
@@ -17,6 +17,7 @@ import { JSONObject } from '@loopback/context'
 const logger = require('../services/logger')
 
 import axios from 'axios'
+import { removeNodeFromSession } from '../utils/cache'
 
 export class PocketRelayer {
   host: string
@@ -445,7 +446,7 @@ export class PocketRelayer {
       if (cachedRemovedSessionNodes) {
         const nodesToRemove: string[] = JSON.parse(cachedRemovedSessionNodes)
 
-        nodes.filter((n) => nodesToRemove.includes(n.publicKey))
+        nodes = nodes.filter((n) => !nodesToRemove.includes(n.publicKey))
       } else {
         // Maximum time in milliseconds for the next session to be rolloved,
         // assuming the session was created now
@@ -471,12 +472,13 @@ export class PocketRelayer {
           chainID: parseInt(blockchainChainID),
           pocket: this.pocket,
           pocketConfiguration: this.pocketConfiguration,
+          sessionKey: pocketSession.sessionKey,
         }
 
         chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
       }
 
-      if (blockchainSyncCheck) {
+      if (blockchainSyncCheck && nodes.length >= 3) {
         // Check Sync
         const consensusFilterOptions: ConsensusFilterOptions = {
           nodes,
@@ -491,6 +493,7 @@ export class PocketRelayer {
           pocket: this.pocket,
           pocketAAT,
           pocketConfiguration: this.pocketConfiguration,
+          sessionKey: pocketSession.sessionKey,
         }
 
         syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
@@ -610,6 +613,11 @@ export class PocketRelayer {
       }
       // Error
     } else if (relayResponse instanceof Error) {
+      // Remove node from session if error is due to max relays allowed reached
+      if (relayResponse.message === MAX_RELAYS_ERROR) {
+        await removeNodeFromSession(this.redis, (pocketSession as Session).sessionKey, node)
+      }
+
       return new RelayError(relayResponse.message, 500, node?.publicKey)
       // ConsensusNode
     } else {

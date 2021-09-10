@@ -1,6 +1,6 @@
 import RedisMock from 'ioredis-mock'
 import { expect, sinon } from '@loopback/testlab'
-import { Configuration } from '@pokt-network/pocket-js'
+import { Configuration, Session, RpcError } from '@pokt-network/pocket-js'
 
 import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
 import { ChainChecker } from '../../src/services/chain-checker'
@@ -8,10 +8,13 @@ import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { metricsRecorderMock } from '../mocks/metricsRecorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
+import { MAX_RELAYS_ERROR } from '../../src/errors/types'
 
 const logger = require('../../src/services/logger')
 
 const CHAINCHECK_PAYLOAD = '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'
+
+const DEFAULT_CHAINCHECK_RESPONSE = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
 
 describe('Chain checker service (unit)', () => {
   let chainChecker: ChainChecker
@@ -34,7 +37,7 @@ describe('Chain checker service (unit)', () => {
     logSpy = sinon.spy(logger, 'log')
 
     pocketMock = new PocketMock()
-    pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+    pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = DEFAULT_CHAINCHECK_RESPONSE
 
     await redis.flushall()
   })
@@ -243,5 +246,48 @@ describe('Chain checker service (unit)', () => {
 
     expect(checkedNodes).to.be.Array()
     expect(checkedNodes).to.have.length(0)
+  })
+
+  it('Fails the chain check due to max relays error on a node', async () => {
+    const nodes = DEFAULT_NODES
+
+    // Fails last node due to max relays
+    pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = [
+      DEFAULT_CHAINCHECK_RESPONSE,
+      DEFAULT_CHAINCHECK_RESPONSE,
+      DEFAULT_CHAINCHECK_RESPONSE,
+      DEFAULT_CHAINCHECK_RESPONSE,
+      new RpcError('90', MAX_RELAYS_ERROR),
+    ]
+
+    const pocketClient = pocketMock.object()
+    const chainID = 100
+
+    const sessionKey = (
+      (await pocketClient.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session
+    ).sessionKey
+
+    await redis.set(`session-${sessionKey}`, JSON.stringify([]), 'EX', 500)
+
+    const checkedNodes = await chainChecker.chainIDFilter({
+      nodes,
+      requestID: '1234',
+      blockchainID: '0027',
+      chainCheck: CHAINCHECK_PAYLOAD,
+      pocket: pocketClient,
+      applicationID: '',
+      applicationPublicKey: '',
+      pocketAAT: undefined,
+      pocketConfiguration,
+      chainID,
+      sessionKey,
+    })
+
+    expect(checkedNodes).to.be.Array()
+    expect(checkedNodes).to.have.length(4)
+
+    const removedNode = await redis.get(`session-${sessionKey}`)
+
+    expect(JSON.parse(removedNode)).to.have.length(1)
   })
 })
