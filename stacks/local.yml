@@ -74,7 +74,7 @@ services:
       - influxdb
     image: quay.io/influxdb/influxdb:v2.0.3
     container_name: influxdb_cli
-    entrypoint: influx setup --bucket mainnetRelay -t mytoken -o myorg --username=influxuser --password=influxpassword --host=http://influxdb:8086 -f
+    entrypoint: influx setup --bucket mainnetRelayStaging -t mytoken -o myorg --username=influxuser --password=influxpassword --host=http://influxdb:8086 -f
     restart: on-failure:10
     depends_on:
       - influxdb
