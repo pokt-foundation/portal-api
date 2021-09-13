@@ -9,10 +9,12 @@ const logger = require('../services/logger')
 export class ChainChecker {
   redis: Redis
   metricsRecorder: MetricsRecorder
+  origin: string
 
-  constructor(redis: Redis, metricsRecorder: MetricsRecorder) {
+  constructor(redis: Redis, metricsRecorder: MetricsRecorder, origin: string) {
     this.redis = redis
     this.metricsRecorder = metricsRecorder
+    this.origin = origin
   }
 
   async chainIDFilter({
@@ -98,7 +100,7 @@ export class ChainChecker {
             error: '',
             elapsedTime: '',
             blockchainID,
-            origin: 'chaincheck',
+            origin: this.origin,
           }
         )
 
@@ -117,7 +119,7 @@ export class ChainChecker {
             error: '',
             elapsedTime: '',
             blockchainID,
-            origin: 'chaincheck',
+            origin: this.origin,
           }
         )
       }
@@ -131,7 +133,7 @@ export class ChainChecker {
       error: '',
       elapsedTime: '',
       blockchainID,
-      origin: 'chaincheck',
+      origin: this.origin,
     })
     await this.redis.set(
       CheckedNodesKey,
@@ -163,7 +165,7 @@ export class ChainChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin: 'chaincheck',
+        origin: this.origin,
       })
     }
     return CheckedNodes
@@ -238,7 +240,7 @@ export class ChainChecker {
       error: '',
       elapsedTime: '',
       blockchainID,
-      origin: 'chaincheck',
+      origin: this.origin,
     })
 
     // Pull the current block from each node using the blockchain's chainCheck as the relay
@@ -274,7 +276,7 @@ export class ChainChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin: 'chaincheck',
+        origin: this.origin,
       })
 
       // Success
@@ -288,7 +290,7 @@ export class ChainChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin: 'chaincheck',
+        origin: this.origin,
       })
 
       let error = relayResponse.message
@@ -310,7 +312,7 @@ export class ChainChecker {
         fallback: false,
         method: 'chaincheck',
         error,
-        origin: 'chaincheck',
+        origin: this.origin,
       })
     } else {
       logger.log('error', 'CHAIN CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
@@ -321,7 +323,7 @@ export class ChainChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin: 'chaincheck',
+        origin: this.origin,
       })
 
       await this.metricsRecorder.recordMetric({
@@ -337,7 +339,7 @@ export class ChainChecker {
         fallback: false,
         method: 'chaincheck',
         error: JSON.stringify(relayResponse),
-        origin: 'chaincheck',
+        origin: this.origin,
       })
     }
     // Failed
