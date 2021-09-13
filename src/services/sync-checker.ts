@@ -204,8 +204,7 @@ export class SyncChecker {
 
         // Erase failure mark
         await this.redis.set(
-          blockchainID,
-          +'-' + nodeSyncLog.node.publicKey + '-failure',
+          blockchainID + '-' + nodeSyncLog.node.publicKey + '-failure',
           'false',
           'EX',
           60 * 60 * 24 * 30
