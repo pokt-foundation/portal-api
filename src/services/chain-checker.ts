@@ -218,7 +218,7 @@ export class ChainChecker {
       await Promise.all(promiseStack)
 
     for (const rawNodeChainLog of rawNodeChainLogs) {
-      if (typeof rawNodeChainLog === 'object' && (rawNodeChainLog.chainID as unknown as string) !== '') {
+      if (typeof rawNodeChainLog === 'object' && (rawNodeChainLog?.chainID as unknown as string) !== '') {
         nodeChainLogs.push(rawNodeChainLog)
       }
     }

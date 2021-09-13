@@ -450,7 +450,7 @@ export class PocketRelayer {
 
         nodes = nodes.filter((n) => !nodesToRemove.includes(n.publicKey))
       } else {
-        await this.redis.set(`session-${sessionKey}`, JSON.stringify([]), 'EX', 7200) // 2 hours
+        await this.redis.set(`session-${sessionKey}`, JSON.stringify([]), 'EX', 60 * 60 * 2) // 2 hours
       }
 
       if (nodes.length === 0) {
@@ -476,7 +476,7 @@ export class PocketRelayer {
         chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
       }
 
-      if (blockchainSyncCheck && nodes.length >= 3) {
+      if (blockchainSyncCheck) {
         // Check Sync
         const consensusFilterOptions: ConsensusFilterOptions = {
           nodes,

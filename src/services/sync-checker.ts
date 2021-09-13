@@ -97,7 +97,7 @@ export class SyncChecker {
     let errorState = false
 
     // This should never happen
-    if (nodeSyncLogs.length <= 2) {
+    if (nodes.length > 2 && nodeSyncLogs.length <= 2) {
       logger.log('error', 'SYNC CHECK ERROR: fewer than 3 nodes returned sync', {
         requestID: requestID,
         relayType: '',
@@ -138,8 +138,13 @@ export class SyncChecker {
       currentBlockHeight = nodeSyncLogs[0].blockHeight
     }
 
-    // Make sure at least 2 nodes agree on current highest block to prevent one node from being wildly off
-    if (!errorState && nodeSyncLogs[0].blockHeight > nodeSyncLogs[1].blockHeight + syncAllowance) {
+    // If there's at least 2 nodes, make sure at least two of them agree on current highest block to prevent one node
+    // from being wildly off
+    if (
+      !errorState &&
+      nodeSyncLogs.length >= 2 &&
+      nodeSyncLogs[0].blockHeight > nodeSyncLogs[1].blockHeight + syncAllowance
+    ) {
       logger.log('error', 'SYNC CHECK ERROR: two highest nodes could not agree on sync', {
         requestID: requestID,
         relayType: '',
@@ -374,7 +379,7 @@ export class SyncChecker {
       await Promise.all(promiseStack)
 
     for (const rawNodeSyncLog of rawNodeSyncLogs) {
-      if (typeof rawNodeSyncLog === 'object') {
+      if (typeof rawNodeSyncLog === 'object' && rawNodeSyncLog?.blockHeight > 0) {
         nodeSyncLogs.push(rawNodeSyncLog)
       }
     }
