@@ -151,7 +151,7 @@ export class MetricsRecorder {
       ]
 
       // Influx
-      const point = new Point('relay')
+      const pointRelay = new Point('relay')
         .tag('applicationPublicKey', applicationPublicKey)
         .tag('nodePublicKey', serviceNode)
         .tag('method', method)
@@ -161,7 +161,14 @@ export class MetricsRecorder {
         .floatField('elapsedTime', elapsedTime.toFixed(4))
         .timestamp(postgresTimestamp)
 
-      writeApi.writePoint(point)
+      writeApi.writePoint(pointRelay)
+
+      const pointOrigin = new Point('origin')
+        .tag('applicationPublicKey', applicationPublicKey)
+        .tag('origin', origin)
+        .timestamp(postgresTimestamp)
+
+      writeApi.writePoint(pointOrigin)
       await writeApi.flush()
 
       // Store errors in redis and every 10 seconds, push to postgres
