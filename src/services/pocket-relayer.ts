@@ -509,6 +509,14 @@ export class PocketRelayer {
         ) {
           nodes = chainCheckResult.value
         } else {
+          if (chainCheckResult.status === 'rejected') {
+            logger.log('error', `Error while running chain check: ${chainCheckResult.reason}.`, {
+              requestID: requestID,
+              relayType: 'APP',
+              typeID: application.id,
+              serviceNode: '',
+            })
+          }
           return new Error('ChainID check failure; using fallbacks')
         }
       }
@@ -539,6 +547,16 @@ export class PocketRelayer {
             error,
             origin: this.origin,
           })
+
+          if (syncCheckResult.status === 'rejected') {
+            logger.log('error', `Error while running sync check: ${syncCheckResult.reason}.`, {
+              requestID: requestID,
+              relayType: 'APP',
+              typeID: application.id,
+              serviceNode: '',
+            })
+          }
+
           return new Error('Sync / chain check failure; using fallbacks')
         }
       }
