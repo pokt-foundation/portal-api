@@ -43,11 +43,13 @@ describe('Sync checker service (unit)', () => {
   let axiosMock: MockAdapter
   let logSpy: sinon.SinonSpy
 
+  const origin = 'unit-test'
+
   before('initialize variables', async () => {
     redis = new RedisMock(0, '')
     cherryPicker = new CherryPicker({ redis, checkDebug: false })
     metricsRecorder = metricsRecorderMock(redis, cherryPicker)
-    syncChecker = new SyncChecker(redis, metricsRecorder, SYNC_ALLOWANCE)
+    syncChecker = new SyncChecker(redis, metricsRecorder, SYNC_ALLOWANCE, origin)
     pocketConfiguration = getPocketConfigOrDefault()
     pocketMock = new PocketMock()
     axiosMock = new MockAdapter(axios)
