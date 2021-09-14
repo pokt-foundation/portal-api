@@ -291,7 +291,7 @@ export class PocketRelayer {
             error: '',
             elapsedTime: '',
             blockchainID: '',
-            origin: 'synccheck',
+            origin: this.origin,
           })
         }
 

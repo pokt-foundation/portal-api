@@ -22,11 +22,13 @@ describe('Chain checker service (unit)', () => {
   let pocketMock: PocketMock
   let logSpy: sinon.SinonSpy
 
+  const origin = 'unit-test'
+
   before('initialize variables', async () => {
     redis = new RedisMock(0, '')
     cherryPicker = new CherryPicker({ redis, checkDebug: false })
     metricsRecorder = metricsRecorderMock(redis, cherryPicker)
-    chainChecker = new ChainChecker(redis, metricsRecorder)
+    chainChecker = new ChainChecker(redis, metricsRecorder, origin)
     pocketConfiguration = getPocketConfigOrDefault()
   })
 

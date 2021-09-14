@@ -128,12 +128,14 @@ describe('Pocket relayer service (unit)', () => {
   let pocketMock: PocketMock
   let pocketRelayer: PocketRelayer
 
+  const origin = 'unit-test'
+
   before('initialize variables', async () => {
     redis = new RedisMock(0, '')
     cherryPicker = new CherryPicker({ redis, checkDebug: false })
     metricsRecorder = metricsRecorderMock(redis, cherryPicker)
-    chainChecker = new ChainChecker(redis, metricsRecorder)
-    syncChecker = new SyncChecker(redis, metricsRecorder, 5)
+    chainChecker = new ChainChecker(redis, metricsRecorder, origin)
+    syncChecker = new SyncChecker(redis, metricsRecorder, 5, origin)
     blockchainRepository = new BlockchainsRepository(gatewayTestDB)
 
     pocketConfiguration = getPocketConfigOrDefault()

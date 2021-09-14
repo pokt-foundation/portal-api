@@ -27,10 +27,7 @@ if (!influxOrg) {
 
 const influxBucket = process.env.NODE_ENV === 'production' ? 'mainnetRelay' : 'mainnetRelayStaging'
 const influxClient = new InfluxDB({ url: influxURL, token: influxToken })
-
 const writeApi = influxClient.getWriteApi(influxOrg, influxBucket)
-
-writeApi.useDefaultTags({ host: os.hostname(), region: region })
 
 export class MetricsRecorder {
   redis: Redis
@@ -151,17 +148,26 @@ export class MetricsRecorder {
       ]
 
       // Influx
-      const point = new Point('relay')
+      const pointRelay = new Point('relay')
         .tag('applicationPublicKey', applicationPublicKey)
         .tag('nodePublicKey', serviceNode)
         .tag('method', method)
         .tag('result', result.toString())
         .tag('blockchain', blockchainID) // 0021
+        .tag('host', os.hostname())
+        .tag('region', region)
         .floatField('bytes', bytes)
         .floatField('elapsedTime', elapsedTime.toFixed(4))
         .timestamp(postgresTimestamp)
 
-      writeApi.writePoint(point)
+      writeApi.writePoint(pointRelay)
+
+      const pointOrigin = new Point('origin')
+        .tag('applicationPublicKey', applicationPublicKey)
+        .stringField('origin', origin)
+        .timestamp(postgresTimestamp)
+
+      writeApi.writePoint(pointOrigin)
       await writeApi.flush()
 
       // Store errors in redis and every 10 seconds, push to postgres
