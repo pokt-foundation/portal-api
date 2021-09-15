@@ -36,7 +36,7 @@ export async function removeNodeFromSession(redis: Redis, sessionKey: string, no
     }
 
     nodes.push(node.publicKey)
-    await redis.set(`session-nodes-${sessionKey}`, JSON.stringify(nodes), 'KEEPTTL')
+    await redis.set(`session-${sessionKey}`, JSON.stringify(nodes), 'KEEPTTL')
   }
 
   // Prevent write clashes in case multiple nodes fail at the same time
