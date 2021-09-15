@@ -3,6 +3,8 @@ import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
 import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
 import { createHash } from 'crypto'
+import { MAX_RELAYS_ERROR } from '../errors/types'
+import { removeNodeFromSession } from '../utils/cache'
 
 const logger = require('../services/logger')
 
@@ -28,6 +30,7 @@ export class ChainChecker {
     applicationPublicKey,
     pocketAAT,
     pocketConfiguration,
+    sessionKey,
   }: ChainIDFilterOptions): Promise<Node[]> {
     const CheckedNodes: Node[] = []
     let CheckedNodesList: string[] = []
@@ -81,6 +84,7 @@ export class ChainChecker {
       pocket,
       pocketAAT,
       pocketConfiguration,
+      sessionKey,
     }
     const nodeChainLogs = await this.getNodeChainLogs(options)
 
@@ -144,7 +148,7 @@ export class ChainChecker {
 
     // If one or more nodes of this session are not in Chain, fire a consensus relay with the same check.
     // This will penalize the out-of-Chain nodes and cause them to get slashed for reporting incorrect data.
-    if (CheckedNodes.length < 5) {
+    if (CheckedNodes.length < nodes.length) {
       const consensusResponse = await pocket.sendRelay(
         chainCheck,
         blockchainID,
@@ -181,6 +185,7 @@ export class ChainChecker {
     pocket,
     pocketAAT,
     pocketConfiguration,
+    sessionKey,
   }: GetNodesChainLogsOptions): Promise<NodeChainLog[]> {
     const nodeChainLogs: NodeChainLog[] = []
     const promiseStack: Promise<NodeChainLog>[] = []
@@ -205,6 +210,7 @@ export class ChainChecker {
         pocket,
         pocketAAT,
         pocketConfiguration,
+        sessionKey,
       }
 
       promiseStack.push(this.getNodeChainLog(options))
@@ -214,7 +220,7 @@ export class ChainChecker {
       await Promise.all(promiseStack)
 
     for (const rawNodeChainLog of rawNodeChainLogs) {
-      if (typeof rawNodeChainLog === 'object' && (rawNodeChainLog.chainID as unknown as string) !== '') {
+      if (typeof rawNodeChainLog === 'object' && (rawNodeChainLog?.chainID as unknown as string) !== '') {
         nodeChainLogs.push(rawNodeChainLog)
       }
     }
@@ -231,6 +237,7 @@ export class ChainChecker {
     applicationPublicKey,
     pocketAAT,
     pocketConfiguration,
+    sessionKey,
   }: GetNodeChainLogOptions): Promise<NodeChainLog> {
     logger.log('info', 'CHAIN CHECK START', {
       requestID: requestID,
@@ -294,6 +301,10 @@ export class ChainChecker {
       })
 
       let error = relayResponse.message
+
+      if (error === MAX_RELAYS_ERROR) {
+        await removeNodeFromSession(this.redis, sessionKey, node)
+      }
 
       if (typeof relayResponse.message === 'object') {
         error = JSON.stringify(relayResponse.message)
@@ -393,6 +404,7 @@ interface BaseChainLogOptions {
   pocket: Pocket
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
+  sessionKey: string
 }
 
 interface GetNodesChainLogsOptions extends BaseChainLogOptions {
@@ -414,4 +426,5 @@ export type ChainIDFilterOptions = {
   applicationPublicKey: string
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
+  sessionKey: string
 }

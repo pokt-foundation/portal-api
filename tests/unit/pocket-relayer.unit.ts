@@ -4,8 +4,7 @@ import RedisMock from 'ioredis-mock'
 import { Encryptor } from 'strong-cryptor'
 import { HttpErrors } from '@loopback/rest'
 import { expect, sinon } from '@loopback/testlab'
-import { HTTPMethod, Configuration, Node } from '@pokt-network/pocket-js'
-
+import { HTTPMethod, Configuration, Node, RpcError, Session } from '@pokt-network/pocket-js'
 import AatPlans from '../../src/config/aat-plans.json'
 import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
 import { ChainChecker, ChainIDFilterOptions } from '../../src/services/chain-checker'
@@ -18,7 +17,7 @@ import { metricsRecorderMock } from '../mocks/metricsRecorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
 import { gatewayTestDB } from '../fixtures/test.datasource'
-import { LimitError } from '../../src/errors/types'
+import { LimitError, MAX_RELAYS_ERROR } from '../../src/errors/types'
 
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
 
@@ -26,6 +25,7 @@ const DEFAULT_LOG_LIMIT = 10000
 
 const DEFAULT_HOST = 'eth-mainnet-x'
 
+// Properties below might not reflect real-world values
 const BLOCKCHAINS = [
   {
     hash: '0041',
@@ -59,6 +59,7 @@ const BLOCKCHAINS = [
     // Does not actually exist on this chain, only for testing purposes
     syncCheckPath: '/v1/query/height',
     syncAllowance: 2,
+    chainID: 100,
   },
   {
     hash: '0040',
@@ -581,6 +582,87 @@ describe('Pocket relayer service (unit)', () => {
       })
 
       expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+    })
+
+    it('Fails relay due to all nodes in session running out of relays, subsequent relays should not attempt to perform checks', async () => {
+      const mock = new PocketMock()
+
+      const maxRelaysError = new RpcError('90', MAX_RELAYS_ERROR)
+
+      mock.relayResponse[BLOCKCHAINS[1].chainIDCheck] = Array(5).fill(maxRelaysError)
+      mock.relayResponse[BLOCKCHAINS[1].syncCheck] = Array(5).fill(maxRelaysError)
+      mock.relayResponse[rawData] = '{"error": "a relay error"}'
+
+      const chainCheckerSpy = sinon.spy(chainChecker, 'chainIDFilter')
+
+      const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
+
+      const pocket = mock.object()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker,
+        chainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: true,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+      })
+
+      const relayResponse = await poktRelayer.sendRelay({
+        rawData,
+        relayPath: '',
+        httpMethod: HTTPMethod.POST,
+        application: APPLICATION as unknown as Applications,
+        requestID: '1234',
+        requestTimeOut: undefined,
+        overallTimeOut: undefined,
+        relayRetries: 0,
+      })
+
+      expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+
+      const sessionKey = ((await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session)
+        .sessionKey
+
+      let removedNodes = await redis.get(`session-${sessionKey}`)
+
+      expect(JSON.parse(removedNodes)).to.have.length(5)
+
+      expect(chainCheckerSpy.callCount).to.be.equal(1)
+      expect(syncCherckerSpy.callCount).to.be.equal(1)
+
+      // Subsequent calls should not go to sync or chain checker
+      const secondRelayResponse = await poktRelayer.sendRelay({
+        rawData,
+        relayPath: '',
+        httpMethod: HTTPMethod.POST,
+        application: APPLICATION as unknown as Applications,
+        requestID: '1234',
+        requestTimeOut: undefined,
+        overallTimeOut: undefined,
+        relayRetries: 0,
+      })
+
+      expect(secondRelayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+
+      removedNodes = await redis.get(`session-${sessionKey}`)
+
+      expect(JSON.parse(removedNodes)).to.have.length(5)
+
+      expect(chainCheckerSpy.callCount).to.be.equal(1)
+      expect(syncCherckerSpy.callCount).to.be.equal(1)
     })
 
     it('chainIDCheck / syncCheck succeeds', async () => {
