@@ -2,7 +2,6 @@ import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } fro
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
 import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
-import { createHash } from 'crypto'
 import { MAX_RELAYS_ERROR } from '../errors/types'
 import { removeNodeFromSession } from '../utils/cache'
 

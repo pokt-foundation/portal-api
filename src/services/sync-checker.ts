@@ -2,7 +2,6 @@ import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } fro
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
 import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
-import crypto from 'crypto'
 
 const logger = require('../services/logger')
 
