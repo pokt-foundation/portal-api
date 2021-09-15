@@ -7,6 +7,8 @@ import crypto from 'crypto'
 const logger = require('../services/logger')
 
 import axios from 'axios'
+import { MAX_RELAYS_ERROR } from '../errors/types'
+import { removeNodeFromSession } from '../utils/cache'
 
 export class SyncChecker {
   redis: Redis
@@ -34,6 +36,7 @@ export class SyncChecker {
     pocket,
     pocketAAT,
     pocketConfiguration,
+    sessionKey,
   }: ConsensusFilterOptions): Promise<Node[]> {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
     syncAllowance = syncAllowance <= 0 ? syncAllowance : this.defaultSyncAllowance
@@ -89,13 +92,14 @@ export class SyncChecker {
       applicationPublicKey,
       pocket,
       pocketAAT,
-      pocketConfiguration
+      pocketConfiguration,
+      sessionKey
     )
 
     let errorState = false
 
     // This should never happen
-    if (nodeSyncLogs.length <= 2) {
+    if (nodes.length > 2 && nodeSyncLogs.length <= 2) {
       logger.log('error', 'SYNC CHECK ERROR: fewer than 3 nodes returned sync', {
         requestID: requestID,
         relayType: '',
@@ -136,8 +140,13 @@ export class SyncChecker {
       currentBlockHeight = nodeSyncLogs[0].blockHeight
     }
 
-    // Make sure at least 2 nodes agree on current highest block to prevent one node from being wildly off
-    if (!errorState && nodeSyncLogs[0].blockHeight > nodeSyncLogs[1].blockHeight + syncAllowance) {
+    // If there's at least 2 nodes, make sure at least two of them agree on current highest block to prevent one node
+    // from being wildly off
+    if (
+      !errorState &&
+      nodeSyncLogs.length >= 2 &&
+      nodeSyncLogs[0].blockHeight > nodeSyncLogs[1].blockHeight + syncAllowance
+    ) {
       logger.log('error', 'SYNC CHECK ERROR: two highest nodes could not agree on sync', {
         requestID: requestID,
         relayType: '',
@@ -264,7 +273,7 @@ export class SyncChecker {
 
     // If one or more nodes of this session are not in sync, fire a consensus relay with the same check.
     // This will penalize the out-of-sync nodes and cause them to get slashed for reporting incorrect data.
-    if (syncedNodes.length < 5) {
+    if (syncedNodes.length < nodes.length) {
       const consensusResponse = await pocket.sendRelay(
         syncCheck,
         blockchainID,
@@ -334,7 +343,8 @@ export class SyncChecker {
     applicationPublicKey: string,
     pocket: Pocket,
     pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration
+    pocketConfiguration: Configuration,
+    sessionKey: string
   ): Promise<NodeSyncLog[]> {
     const nodeSyncLogs: NodeSyncLog[] = []
     const promiseStack: Promise<NodeSyncLog>[] = []
@@ -360,7 +370,8 @@ export class SyncChecker {
           applicationPublicKey,
           pocket,
           pocketAAT,
-          pocketConfiguration
+          pocketConfiguration,
+          sessionKey
         )
       )
     }
@@ -369,7 +380,7 @@ export class SyncChecker {
       await Promise.all(promiseStack)
 
     for (const rawNodeSyncLog of rawNodeSyncLogs) {
-      if (typeof rawNodeSyncLog === 'object') {
+      if (typeof rawNodeSyncLog === 'object' && rawNodeSyncLog?.blockHeight > 0) {
         nodeSyncLogs.push(rawNodeSyncLog)
       }
     }
@@ -386,7 +397,8 @@ export class SyncChecker {
     applicationPublicKey: string,
     pocket: Pocket,
     pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration
+    pocketConfiguration: Configuration,
+    sessionKey: string
   ): Promise<NodeSyncLog> {
     logger.log('info', 'SYNC CHECK START', {
       requestID: requestID,
@@ -455,6 +467,10 @@ export class SyncChecker {
       })
 
       let error = relayResponse.message
+
+      if (error === MAX_RELAYS_ERROR) {
+        await removeNodeFromSession(this.redis, sessionKey, node)
+      }
 
       if (typeof relayResponse.message === 'object') {
         error = JSON.stringify(relayResponse.message)
@@ -563,4 +579,5 @@ export type ConsensusFilterOptions = {
   pocket: Pocket
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
+  sessionKey: string
 }

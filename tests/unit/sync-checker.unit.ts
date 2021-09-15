@@ -4,11 +4,12 @@ import { metricsRecorderMock } from '../mocks/metricsRecorder'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
-import { Configuration } from '@pokt-network/pocket-js'
+import { Configuration, Session, RpcError } from '@pokt-network/pocket-js'
 import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
 import { expect, sinon } from '@loopback/testlab'
 import MockAdapter from 'axios-mock-adapter'
 import axios from 'axios'
+import { MAX_RELAYS_ERROR } from '../../src/errors/types'
 
 const logger = require('../../src/services/logger')
 
@@ -110,7 +111,8 @@ describe('Sync checker service (unit)', () => {
         '',
         pocket,
         undefined,
-        pocketConfiguration
+        pocketConfiguration,
+        ''
       )
 
       const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
@@ -137,7 +139,8 @@ describe('Sync checker service (unit)', () => {
         '',
         pocket,
         undefined,
-        pocketConfiguration
+        pocketConfiguration,
+        ''
       )
 
       const expectedBlockHeight = 0
@@ -165,7 +168,8 @@ describe('Sync checker service (unit)', () => {
         '',
         pocket,
         undefined,
-        pocketConfiguration
+        pocketConfiguration,
+        ''
       )
 
       const expectedBlockHeight = 0
@@ -213,7 +217,8 @@ describe('Sync checker service (unit)', () => {
       '',
       pocketClient,
       undefined,
-      pocketConfiguration
+      pocketConfiguration,
+      ''
     )
 
     const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
@@ -246,6 +251,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
       })
@@ -267,6 +273,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
       })
@@ -295,6 +302,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
       })
@@ -329,6 +337,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
       })
@@ -354,6 +363,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
       })
@@ -389,6 +399,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
       })
@@ -434,6 +445,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
       })
@@ -443,6 +455,49 @@ describe('Sync checker service (unit)', () => {
       const expectedLog = logSpy.calledWith('error', 'SYNC CHECK ERROR: two highest nodes could not agree on sync')
 
       expect(expectedLog).to.be.true()
+    })
+
+    it('Fails the sync check due to max relays error on a node', async () => {
+      axiosMock.onPost(ALTRUIST_URL).reply(200, DEFAULT_RELAY_RESPONSE)
+
+      const nodes = DEFAULT_NODES
+
+      pocketMock.relayResponse[blockchain.syncCheck] = [
+        DEFAULT_RELAY_RESPONSE,
+        DEFAULT_RELAY_RESPONSE,
+        DEFAULT_RELAY_RESPONSE,
+        DEFAULT_RELAY_RESPONSE,
+        new RpcError('90', MAX_RELAYS_ERROR),
+      ]
+      const pocketClient = pocketMock.object()
+
+      const sessionKey = (
+        (await pocketClient.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session
+      ).sessionKey
+
+      await redis.set(`session-${sessionKey}`, JSON.stringify([]), 'EX', 500)
+
+      const syncedNodes = await syncChecker.consensusFilter({
+        nodes,
+        requestID: '1234',
+        blockchainID: blockchain.hash,
+        syncCheck: blockchain.syncCheck,
+        pocket: pocketClient,
+        applicationID: '',
+        applicationPublicKey: '',
+        blockchainSyncBackup: ALTRUIST_URL,
+        pocketAAT: undefined,
+        pocketConfiguration,
+        syncAllowance: SYNC_ALLOWANCE,
+        syncCheckPath: '',
+        sessionKey,
+      })
+
+      expect(syncedNodes).to.have.length(4)
+
+      const removedNode = await redis.get(`session-${sessionKey}`)
+
+      expect(JSON.parse(removedNode)).to.have.length(1)
     })
   })
 })

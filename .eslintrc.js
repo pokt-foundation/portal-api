@@ -40,7 +40,6 @@ module.exports = {
     curly: 'error',
     'brace-style': ['error', '1tbs'],
     'object-curly-spacing': ['error', 'always'],
-    'function-call-argument-newline': ['error', 'consistent'],
     'one-var-declaration-per-line': ['error', 'always'],
     'import/no-named-as-default-member': 'off',
     'import/no-named-as-default': 'off',

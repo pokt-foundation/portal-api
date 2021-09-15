@@ -8,7 +8,7 @@ import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, N
 import { Redis } from 'ioredis'
 import { BlockchainsRepository } from '../repositories'
 import { Applications } from '../models'
-import { RelayError, LimitError } from '../errors/types'
+import { RelayError, LimitError, MAX_RELAYS_ERROR } from '../errors/types'
 import AatPlans from '../config/aat-plans.json'
 import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
 
@@ -17,6 +17,7 @@ import { JSONObject } from '@loopback/context'
 const logger = require('../services/logger')
 
 import axios from 'axios'
+import { removeNodeFromSession } from '../utils/cache'
 
 export class PocketRelayer {
   host: string
@@ -424,7 +425,7 @@ export class PocketRelayer {
     // Checks pass; create AAT
     const pocketAAT = new PocketAAT(...aatParams)
 
-    let node
+    let node: Node
 
     // Pull the session so we can get a list of nodes and cherry pick which one to use
     const pocketSession = await this.pocket.sessionManager.getCurrentSession(
@@ -434,11 +435,27 @@ export class PocketRelayer {
     )
 
     if (pocketSession instanceof Session) {
+      const { sessionKey } = pocketSession
+
       let syncCheckPromise: Promise<Node[]>
       let chainCheckPromise: Promise<Node[]>
 
       let nodes: Node[] = pocketSession.sessionNodes
       const relayStart = process.hrtime()
+
+      const cachedRemovedSessionNodes = await this.redis.get(`session-${sessionKey}`)
+
+      if (cachedRemovedSessionNodes) {
+        const nodesToRemove: string[] = JSON.parse(cachedRemovedSessionNodes)
+
+        nodes = nodes.filter((n) => !nodesToRemove.includes(n.publicKey))
+      } else {
+        await this.redis.set(`session-${sessionKey}`, JSON.stringify([]), 'EX', 60 * 60 * 2) // 2 hours
+      }
+
+      if (nodes.length === 0) {
+        return new Error("session doesn't have any available nodes")
+      }
 
       if (blockchainIDCheck) {
         // Check Chain ID
@@ -453,6 +470,7 @@ export class PocketRelayer {
           chainID: parseInt(blockchainChainID),
           pocket: this.pocket,
           pocketConfiguration: this.pocketConfiguration,
+          sessionKey: pocketSession.sessionKey,
         }
 
         chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
@@ -473,6 +491,7 @@ export class PocketRelayer {
           pocket: this.pocket,
           pocketAAT,
           pocketConfiguration: this.pocketConfiguration,
+          sessionKey: pocketSession.sessionKey,
         }
 
         syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
@@ -610,6 +629,11 @@ export class PocketRelayer {
       }
       // Error
     } else if (relayResponse instanceof Error) {
+      // Remove node from session if error is due to max relays allowed reached
+      if (relayResponse.message === MAX_RELAYS_ERROR) {
+        await removeNodeFromSession(this.redis, (pocketSession as Session).sessionKey, node)
+      }
+
       return new RelayError(relayResponse.message, 500, node?.publicKey)
       // ConsensusNode
     } else {
