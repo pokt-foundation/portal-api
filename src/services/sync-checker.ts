@@ -44,18 +44,8 @@ export class SyncChecker {
     const syncedNodes: Node[] = []
     let syncedNodesList: string[] = []
 
-    // Key is "blockchain - a hash of the all the nodes in this session, sorted by public key"
     // Value is an array of node public keys that have passed sync checks for this session in the past 5 minutes
-
-    const sortedNodes = nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0))
-
-    const syncedNodesKey =
-      blockchainID +
-      '-' +
-      crypto
-        .createHash('sha256')
-        .update(JSON.stringify(sortedNodes, (k, v) => (k !== 'publicKey' ? v : undefined)))
-        .digest('hex')
+    const syncedNodesKey = `sync-check-${sessionKey}`
     const syncedNodesCached = await this.redis.get(syncedNodesKey)
 
     if (syncedNodesCached) {

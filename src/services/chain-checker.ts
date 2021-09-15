@@ -35,20 +35,9 @@ export class ChainChecker {
     const CheckedNodes: Node[] = []
     let CheckedNodesList: string[] = []
 
-    // Key is "chainID - a hash of the all the nodes in this session, sorted by public key"
     // Value is an array of node public keys that have passed Chain checks for this session in the past 5 minutes
-    const CheckedNodesKey =
-      chainID +
-      '-' +
-      createHash('sha256')
-        .update(
-          JSON.stringify(
-            nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0)),
-            (k, v) => (k !== 'publicKey' ? v : undefined)
-          )
-        )
-        .digest('hex')
-    const CheckedNodesCached = await this.redis.get(CheckedNodesKey)
+    const checkedNodesKey = `chain-check-${sessionKey}`
+    const CheckedNodesCached = await this.redis.get(checkedNodesKey)
 
     if (CheckedNodesCached) {
       CheckedNodesList = JSON.parse(CheckedNodesCached)
@@ -63,14 +52,14 @@ export class ChainChecker {
 
     // Cache is stale, start a new cache fill
     // First check cache lock key; if lock key exists, return full node set
-    const ChainLock = await this.redis.get('lock-' + CheckedNodesKey)
+    const ChainLock = await this.redis.get('lock-' + checkedNodesKey)
 
     if (ChainLock) {
       return nodes
     } else {
       // Set lock as this thread checks the Chain with 60 second ttl.
       // If any major errors happen below, it will retry the Chain check every 60 seconds.
-      await this.redis.set('lock-' + CheckedNodesKey, 'true', 'EX', 60)
+      await this.redis.set('lock-' + checkedNodesKey, 'true', 'EX', 60)
     }
 
     // Fires all 5 Chain checks Chainhronously then assembles the results
@@ -140,7 +129,7 @@ export class ChainChecker {
       origin: this.origin,
     })
     await this.redis.set(
-      CheckedNodesKey,
+      checkedNodesKey,
       JSON.stringify(CheckedNodesList),
       'EX',
       CheckedNodes.length > 0 ? 600 : 30 // will retry Chain check every 30 seconds if no nodes are in Chain
