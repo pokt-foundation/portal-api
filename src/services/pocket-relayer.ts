@@ -454,6 +454,12 @@ export class PocketRelayer {
       }
 
       if (nodes.length === 0) {
+        logger.log('warn', `SESSION: ${sessionKey} has exhausted all node relays`, {
+          requestID: requestID,
+          relayType: 'APP',
+          typeID: application.id,
+          serviceNode: '',
+        })
         return new Error("session doesn't have any available nodes")
       }
 
