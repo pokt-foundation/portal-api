@@ -206,6 +206,7 @@ export class PocketRelayer {
           method: method,
           error: undefined,
           origin: this.origin,
+          data,
         })
 
         // Clear error log
@@ -248,6 +249,7 @@ export class PocketRelayer {
           method,
           error,
           origin: this.origin,
+          data,
         })
       }
     }
@@ -313,6 +315,7 @@ export class PocketRelayer {
             method: method,
             error: undefined,
             origin: this.origin,
+            data,
           })
 
           // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
@@ -384,14 +387,6 @@ export class PocketRelayer {
     blockchainID: string
     blockchainChainID: string
   }): Promise<RelayResponse | Error> {
-    logger.log('info', 'RELAYING ' + blockchainID + ' req: ' + data, {
-      requestID: requestID,
-      relayType: 'APP',
-      typeID: application.id,
-      serviceNode: '',
-      elapsedTime: '',
-    })
-
     // Secret key check
     if (!this.checkSecretKey(application)) {
       throw new HttpErrors.Forbidden('SecretKey does not match')
@@ -552,6 +547,7 @@ export class PocketRelayer {
             method,
             error,
             origin: this.origin,
+            data,
           })
 
           if (syncCheckResult.status === 'rejected') {
