@@ -250,6 +250,7 @@ export class SyncChecker {
           method: 'synccheck',
           error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${currentBlockHeight} altruist block height: ${altruistBlockHeight} nodes height: ${nodeSyncLog.blockHeight} sync allowance: ${syncAllowance}`,
           origin: this.origin,
+          data: undefined,
         })
       }
     }
@@ -400,17 +401,6 @@ export class SyncChecker {
     pocketConfiguration: Configuration,
     sessionKey: string
   ): Promise<NodeSyncLog> {
-    logger.log('info', 'SYNC CHECK START', {
-      requestID: requestID,
-      relayType: '',
-      typeID: '',
-      serviceNode: node.publicKey,
-      error: '',
-      elapsedTime: '',
-      blockchainID,
-      origin: this.origin,
-    })
-
     // Pull the current block from each node using the blockchain's syncCheck as the relay
     const relayStart = process.hrtime()
 
@@ -490,6 +480,7 @@ export class SyncChecker {
         method: 'synccheck',
         error,
         origin: this.origin,
+        data: undefined,
       })
     } else {
       logger.log('error', 'SYNC CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
@@ -517,6 +508,7 @@ export class SyncChecker {
         method: 'synccheck',
         error: JSON.stringify(relayResponse),
         origin: this.origin,
+        data: undefined,
       })
     }
     // Failed

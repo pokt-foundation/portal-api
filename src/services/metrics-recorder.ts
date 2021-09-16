@@ -67,6 +67,7 @@ export class MetricsRecorder {
     method,
     error,
     origin,
+    data,
   }: {
     requestID: string
     applicationID: string
@@ -81,6 +82,7 @@ export class MetricsRecorder {
     method: string | undefined
     error: string | undefined
     origin: string | undefined
+    data: string | undefined
   }): Promise<void> {
     try {
       let elapsedTime = 0
@@ -95,7 +97,7 @@ export class MetricsRecorder {
       }
 
       if (result === 200) {
-        logger.log('info', 'SUCCESS' + fallbackTag, {
+        logger.log('info', 'SUCCESS' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
           requestID,
           relayType: 'APP',
           typeID: applicationID,
@@ -106,7 +108,7 @@ export class MetricsRecorder {
           blockchainID,
         })
       } else if (result === 500) {
-        logger.log('error', 'FAILURE' + fallbackTag, {
+        logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
           requestID,
           relayType: 'APP',
           typeID: applicationID,
@@ -117,7 +119,7 @@ export class MetricsRecorder {
           blockchainID,
         })
       } else if (result === 503) {
-        logger.log('error', 'INVALID RESPONSE' + fallbackTag, {
+        logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
           requestID,
           relayType: 'APP',
           typeID: applicationID,

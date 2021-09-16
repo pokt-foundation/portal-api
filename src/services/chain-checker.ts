@@ -239,17 +239,6 @@ export class ChainChecker {
     pocketConfiguration,
     sessionKey,
   }: GetNodeChainLogOptions): Promise<NodeChainLog> {
-    logger.log('info', 'CHAIN CHECK START', {
-      requestID: requestID,
-      relayType: '',
-      typeID: '',
-      serviceNode: node.publicKey,
-      error: '',
-      elapsedTime: '',
-      blockchainID,
-      origin: this.origin,
-    })
-
     // Pull the current block from each node using the blockchain's chainCheck as the relay
     const relayStart = process.hrtime()
 
@@ -324,6 +313,7 @@ export class ChainChecker {
         method: 'chaincheck',
         error,
         origin: this.origin,
+        data: undefined,
       })
     } else {
       logger.log('error', 'CHAIN CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
@@ -351,6 +341,7 @@ export class ChainChecker {
         method: 'chaincheck',
         error: JSON.stringify(relayResponse),
         origin: this.origin,
+        data: undefined,
       })
     }
     // Failed
