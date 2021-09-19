@@ -475,8 +475,6 @@ describe('Sync checker service (unit)', () => {
         (await pocketClient.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session
       ).sessionKey
 
-      await redis.set(`session-${sessionKey}`, JSON.stringify([]), 'EX', 500)
-
       const syncedNodes = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
@@ -495,9 +493,9 @@ describe('Sync checker service (unit)', () => {
 
       expect(syncedNodes).to.have.length(4)
 
-      const removedNode = await redis.get(`session-${sessionKey}`)
+      const removedNode = await redis.smembers(`session-${sessionKey}`)
 
-      expect(JSON.parse(removedNode)).to.have.length(1)
+      expect(removedNode).to.have.length(1)
     })
   })
 })
