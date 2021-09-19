@@ -17,7 +17,6 @@ import { JSONObject } from '@loopback/context'
 const logger = require('../services/logger')
 
 import axios from 'axios'
-import { removeNodeFromSession } from '../utils/cache'
 
 export class PocketRelayer {
   host: string
@@ -431,6 +430,7 @@ export class PocketRelayer {
 
     if (pocketSession instanceof Session) {
       const { sessionKey } = pocketSession
+      const sessionCacheKey = `session-${sessionKey}`
 
       let syncCheckPromise: Promise<Node[]>
       let chainCheckPromise: Promise<Node[]>
@@ -438,14 +438,13 @@ export class PocketRelayer {
       let nodes: Node[] = pocketSession.sessionNodes
       const relayStart = process.hrtime()
 
-      const cachedRemovedSessionNodes = await this.redis.get(`session-${sessionKey}`)
+      const nodesToRemove = await this.redis.smembers(sessionCacheKey)
 
-      if (cachedRemovedSessionNodes) {
-        const nodesToRemove: string[] = JSON.parse(cachedRemovedSessionNodes)
-
+      if (nodesToRemove.length > 0) {
         nodes = nodes.filter((n) => !nodesToRemove.includes(n.publicKey))
       } else {
-        await this.redis.set(`session-${sessionKey}`, JSON.stringify([]), 'EX', 60 * 60 * 2) // 2 hours
+        await this.redis.sadd(sessionCacheKey)
+        await this.redis.expire(sessionCacheKey, 60 * 60 * 2) // 2 Hours
       }
 
       if (nodes.length === 0) {
@@ -633,7 +632,7 @@ export class PocketRelayer {
     } else if (relayResponse instanceof Error) {
       // Remove node from session if error is due to max relays allowed reached
       if (relayResponse.message === MAX_RELAYS_ERROR) {
-        await removeNodeFromSession(this.redis, (pocketSession as Session).sessionKey, node)
+        await this.redis.sadd(`session-${(pocketSession as Session).sessionKey}`, node.publicKey)
       }
 
       return new RelayError(relayResponse.message, 500, node?.publicKey)
