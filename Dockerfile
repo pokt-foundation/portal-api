@@ -1,5 +1,5 @@
 # Check out https://hub.docker.com/_/node to select a new base image
-FROM node:12-slim
+FROM keymetrics/pm2:12-slim
 
 # Bind to all network interfaces so that it can be mapped to the host OS
 ENV WATCH=true
@@ -25,6 +25,8 @@ COPY package*.json ./
 # and may trigger errors
 RUN npm ci --ignore-scripts
 
+RUN npm install -g pm2
+
 # Bundle app source code
 COPY . .
 
@@ -33,4 +35,4 @@ RUN npm run build
 
 EXPOSE ${PORT}
 
-CMD [ "node", "." ]
+CMD ["pm2-runtime", "ecosystem.config.js" ]
