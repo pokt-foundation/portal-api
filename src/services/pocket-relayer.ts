@@ -17,6 +17,7 @@ import { JSONObject } from '@loopback/context'
 const logger = require('../services/logger')
 
 import axios from 'axios'
+import { removeNodeFromSession } from '../utils/cache'
 
 export class PocketRelayer {
   host: string
@@ -634,7 +635,7 @@ export class PocketRelayer {
     } else if (relayResponse instanceof Error) {
       // Remove node from session if error is due to max relays allowed reached
       if (relayResponse.message === MAX_RELAYS_ERROR) {
-        await this.redis.sadd(`session-${(pocketSession as Session).sessionKey}`, node.publicKey)
+        await removeNodeFromSession(this.redis, (pocketSession as Session).sessionKey, node.publicKey)
       }
 
       return new RelayError(relayResponse.message, 500, node?.publicKey)
