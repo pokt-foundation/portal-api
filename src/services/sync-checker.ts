@@ -7,6 +7,7 @@ const logger = require('../services/logger')
 
 import axios from 'axios'
 import { MAX_RELAYS_ERROR } from '../errors/types'
+import { removeNodeFromSession } from '../utils/cache'
 
 export class SyncChecker {
   redis: Redis
@@ -447,7 +448,7 @@ export class SyncChecker {
       let error = relayResponse.message
 
       if (error === MAX_RELAYS_ERROR) {
-        await this.redis.sadd(`session-${sessionKey}`, node.publicKey)
+        await removeNodeFromSession(this.redis, sessionKey, node.publicKey)
       }
 
       if (typeof relayResponse.message === 'object') {
