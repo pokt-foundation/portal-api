@@ -3,7 +3,6 @@ import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
 import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
 import { MAX_RELAYS_ERROR } from '../errors/types'
-import { removeNodeFromSession } from '../utils/cache'
 
 const logger = require('../services/logger')
 
@@ -280,7 +279,7 @@ export class ChainChecker {
       let error = relayResponse.message
 
       if (error === MAX_RELAYS_ERROR) {
-        await removeNodeFromSession(this.redis, sessionKey, node)
+        await this.redis.sadd(`session-${sessionKey}`, node.publicKey)
       }
 
       if (typeof relayResponse.message === 'object') {

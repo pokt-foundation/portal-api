@@ -636,9 +636,9 @@ describe('Pocket relayer service (unit)', () => {
       const sessionKey = ((await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session)
         .sessionKey
 
-      let removedNodes = await redis.get(`session-${sessionKey}`)
+      let removedNodes = await redis.smembers(`session-${sessionKey}`)
 
-      expect(JSON.parse(removedNodes)).to.have.length(5)
+      expect(removedNodes).to.have.length(5)
 
       expect(chainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
@@ -657,9 +657,9 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(secondRelayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
 
-      removedNodes = await redis.get(`session-${sessionKey}`)
+      removedNodes = await redis.smembers(`session-${sessionKey}`)
 
-      expect(JSON.parse(removedNodes)).to.have.length(5)
+      expect(removedNodes).to.have.length(5)
 
       expect(chainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
