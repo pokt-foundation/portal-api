@@ -1,11 +1,14 @@
 # Check out https://hub.docker.com/_/node to select a new base image
-FROM keymetrics/pm2:12-slim
+FROM node:12-slim
 
 # Bind to all network interfaces so that it can be mapped to the host OS
 ENV WATCH=true
 ENV HOST=0.0.0.0
 ENV PORT=3000
 ENV PATH="${PATH}:/usr/src/gateway/node_modules/.bin"
+
+# Increases the maximum amount of available threads for some I/O operations
+ENV UV_THREADPOOL_SIZE=128
 
 RUN apt-get update && \
   apt-get upgrade -y && \
@@ -25,8 +28,6 @@ COPY package*.json ./
 # and may trigger errors
 RUN npm ci --ignore-scripts
 
-RUN npm install -g pm2
-
 # Bundle app source code
 COPY . .
 
@@ -35,4 +36,4 @@ RUN npm run build
 
 EXPOSE ${PORT}
 
-CMD ["pm2-runtime", "ecosystem.config.js" ]
+CMD ["npm", "run", "start:cluster"]
