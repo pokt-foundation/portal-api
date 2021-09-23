@@ -1348,8 +1348,7 @@ describe('Pocket relayer service (unit)', () => {
         expect(JSON.parse(relayResponse as string)).to.be.deepEqual(JSON.parse(mockRelayResponse as string))
       })
 
-      // eslint-disable-next-line mocha/no-exclusive-tests
-      it.only('should return an error if relay method requires WebSockets', async () => {
+      it('should return an error if relay method requires WebSockets', async () => {
         const newFilterResponse = {
           jsonrpc: '2.0',
           id: 1,
