@@ -2,7 +2,7 @@ name: Staging Deployment us-west-2
 
 on:
   push:
-    branches: [staging, cluster-mode]
+    branches: [staging]
 
 jobs:
   deploy:
