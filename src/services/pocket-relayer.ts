@@ -706,7 +706,7 @@ export class PocketRelayer {
 
     if (!cachedBlockchains) {
       blockchains = await this.blockchainsRepository.find()
-      await this.redis.set('blockchains', JSON.stringify(blockchains), 'EX', 60 * 60 * 2)
+      await this.redis.set('blockchains', JSON.stringify(blockchains), 'EX', 60)
     } else {
       blockchains = JSON.parse(cachedBlockchains)
     }
