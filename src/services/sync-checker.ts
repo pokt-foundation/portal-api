@@ -38,7 +38,7 @@ export class SyncChecker {
     sessionKey,
   }: ConsensusFilterOptions): Promise<Node[]> {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
-    syncAllowance = syncAllowance <= 0 ? syncAllowance : this.defaultSyncAllowance
+    syncAllowance = syncAllowance <= 0 ? this.defaultSyncAllowance : syncAllowance
 
     const syncedNodes: Node[] = []
     let syncedNodesList: string[] = []
@@ -448,7 +448,7 @@ export class SyncChecker {
       let error = relayResponse.message
 
       if (error === MAX_RELAYS_ERROR) {
-        await removeNodeFromSession(this.redis, sessionKey, node)
+        await removeNodeFromSession(this.redis, sessionKey, node.publicKey)
       }
 
       if (typeof relayResponse.message === 'object') {

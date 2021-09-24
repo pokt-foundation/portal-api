@@ -19,6 +19,14 @@ const logger = require('../services/logger')
 import axios from 'axios'
 import { removeNodeFromSession } from '../utils/cache'
 
+const WS_ONLY_METHODS = [
+  'eth_subscribe',
+  'eth_newFilter',
+  'newBlockFilter',
+  'eth_getFilterChanges',
+  'eth_getFilterLogs',
+]
+
 export class PocketRelayer {
   host: string
   origin: string
@@ -431,6 +439,7 @@ export class PocketRelayer {
 
     if (pocketSession instanceof Session) {
       const { sessionKey } = pocketSession
+      const sessionCacheKey = `session-${sessionKey}`
 
       let syncCheckPromise: Promise<Node[]>
       let chainCheckPromise: Promise<Node[]>
@@ -438,14 +447,15 @@ export class PocketRelayer {
       let nodes: Node[] = pocketSession.sessionNodes
       const relayStart = process.hrtime()
 
-      const cachedRemovedSessionNodes = await this.redis.get(`session-${sessionKey}`)
+      const nodesToRemove = await this.redis.smembers(sessionCacheKey)
 
-      if (cachedRemovedSessionNodes) {
-        const nodesToRemove: string[] = JSON.parse(cachedRemovedSessionNodes)
-
+      if (nodesToRemove.length > 0) {
         nodes = nodes.filter((n) => !nodesToRemove.includes(n.publicKey))
       } else {
-        await this.redis.set(`session-${sessionKey}`, JSON.stringify([]), 'EX', 60 * 60 * 2) // 2 hours
+        // Adds and removes dummy value as you cannot set EXPIRE on empty redis set
+        await this.redis.sadd(sessionCacheKey, '0')
+        await this.redis.expire(sessionCacheKey, 60 * 60 * 2) // 2 Hours
+        await this.redis.spop(sessionCacheKey)
       }
 
       if (nodes.length === 0) {
@@ -633,7 +643,7 @@ export class PocketRelayer {
     } else if (relayResponse instanceof Error) {
       // Remove node from session if error is due to max relays allowed reached
       if (relayResponse.message === MAX_RELAYS_ERROR) {
-        await removeNodeFromSession(this.redis, (pocketSession as Session).sessionKey, node)
+        await removeNodeFromSession(this.redis, (pocketSession as Session).sessionKey, node.publicKey)
       }
 
       return new RelayError(relayResponse.message, 500, node?.publicKey)
@@ -696,7 +706,7 @@ export class PocketRelayer {
 
     if (!cachedBlockchains) {
       blockchains = await this.blockchainsRepository.find()
-      await this.redis.set('blockchains', JSON.stringify(blockchains), 'EX', 1)
+      await this.redis.set('blockchains', JSON.stringify(blockchains), 'EX', 60 * 60 * 2)
     } else {
       blockchains = JSON.parse(cachedBlockchains)
     }
@@ -773,7 +783,11 @@ export class PocketRelayer {
     blockchainID: string,
     logLimitBlocks: number
   ): Promise<string | Error> {
-    if (parsedRawData.method === 'eth_getLogs') {
+    if (WS_ONLY_METHODS.includes(parsedRawData.method)) {
+      return new HttpErrors.BadRequest(
+        `We cannot serve ${parsedRawData.method} method over HTTPS. At the moment, we do not support WebSockets.`
+      )
+    } else if (parsedRawData.method === 'eth_getLogs') {
       let toBlock: number
       let fromBlock: number
       let isToBlockHex = false

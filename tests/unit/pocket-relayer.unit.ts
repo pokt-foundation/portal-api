@@ -636,9 +636,9 @@ describe('Pocket relayer service (unit)', () => {
       const sessionKey = ((await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session)
         .sessionKey
 
-      let removedNodes = await redis.get(`session-${sessionKey}`)
+      let removedNodes = await redis.smembers(`session-${sessionKey}`)
 
-      expect(JSON.parse(removedNodes)).to.have.length(5)
+      expect(removedNodes).to.have.length(5)
 
       expect(chainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
@@ -657,12 +657,88 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(secondRelayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
 
-      removedNodes = await redis.get(`session-${sessionKey}`)
+      removedNodes = await redis.smembers(`session-${sessionKey}`)
 
-      expect(JSON.parse(removedNodes)).to.have.length(5)
+      expect(removedNodes).to.have.length(5)
 
       expect(chainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
+    })
+
+    it('Fails relay due to one node in session running out of relays, subsequent relays should attempt to perform checks', async () => {
+      const mock = new PocketMock()
+
+      mock.relayResponse[rawData] = new RpcError('90', MAX_RELAYS_ERROR)
+
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+      const chainCheckerSpy = sinon.spy(chainChecker, 'chainIDFilter')
+      const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
+      const pocket = mock.object()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: true,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+      })
+
+      const relayResponse = await poktRelayer.sendRelay({
+        rawData,
+        relayPath: '',
+        httpMethod: HTTPMethod.POST,
+        application: APPLICATION as unknown as Applications,
+        requestID: '1234',
+        requestTimeOut: undefined,
+        overallTimeOut: undefined,
+        relayRetries: 0,
+      })
+
+      expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+
+      const sessionKey = ((await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session)
+        .sessionKey
+
+      let removedNodes = await redis.smembers(`session-${sessionKey}`)
+
+      expect(removedNodes).to.have.length(1)
+
+      expect(chainCheckerSpy.callCount).to.be.equal(1)
+      expect(syncCherckerSpy.callCount).to.be.equal(1)
+
+      // Subsequent calls should go to sync or chain checker
+      const secondRelayResponse = await poktRelayer.sendRelay({
+        rawData,
+        relayPath: '',
+        httpMethod: HTTPMethod.POST,
+        application: APPLICATION as unknown as Applications,
+        requestID: '1234',
+        requestTimeOut: undefined,
+        overallTimeOut: undefined,
+        relayRetries: 0,
+      })
+
+      expect(secondRelayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+
+      removedNodes = await redis.smembers(`session-${sessionKey}`)
+
+      expect(removedNodes.length).to.have.lessThanOrEqual(2)
+
+      expect(chainCheckerSpy.callCount).to.be.equal(2)
+      expect(syncCherckerSpy.callCount).to.be.equal(2)
     })
 
     it('chainIDCheck / syncCheck succeeds', async () => {
@@ -1346,6 +1422,35 @@ describe('Pocket relayer service (unit)', () => {
         })
 
         expect(JSON.parse(relayResponse as string)).to.be.deepEqual(JSON.parse(mockRelayResponse as string))
+      })
+
+      it('should return an error if relay method requires WebSockets', async () => {
+        const newFilterResponse = {
+          jsonrpc: '2.0',
+          id: 1,
+          result: '0x9c82c7',
+        }
+
+        const altruistRelayer = getAltruistRelayer()
+
+        rawData =
+          '{"jsonrpc":"2.0","method":"eth_newFilter","params":[{"topics": ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"]}],"id":1}'
+
+        axiosMock.onPost(ALTRUISTS['0021'], JSON.parse(rawData)).reply(200, newFilterResponse)
+
+        const relayResponse = (await altruistRelayer.sendRelay({
+          rawData,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          relayRetries: 0,
+        })) as Error
+
+        expect(relayResponse).to.be.instanceOf(HttpErrors.BadRequest)
+        expect(relayResponse.message).to.match(/We cannot serve/)
       })
     })
   })

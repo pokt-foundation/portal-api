@@ -280,7 +280,7 @@ export class ChainChecker {
       let error = relayResponse.message
 
       if (error === MAX_RELAYS_ERROR) {
-        await removeNodeFromSession(this.redis, sessionKey, node)
+        await removeNodeFromSession(this.redis, sessionKey, node.publicKey)
       }
 
       if (typeof relayResponse.message === 'object') {
