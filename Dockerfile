@@ -7,6 +7,9 @@ ENV HOST=0.0.0.0
 ENV PORT=3000
 ENV PATH="${PATH}:/usr/src/gateway/node_modules/.bin"
 
+# Increases the maximum amount of available threads for some I/O operations
+ENV UV_THREADPOOL_SIZE=128
+
 RUN apt-get update && \
   apt-get upgrade -y && \
   apt-get install -y git
@@ -33,4 +36,4 @@ RUN npm run build
 
 EXPOSE ${PORT}
 
-CMD [ "node", "." ]
+CMD ["npm", "run", "start:cluster"]
