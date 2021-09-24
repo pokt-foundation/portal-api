@@ -1423,6 +1423,35 @@ describe('Pocket relayer service (unit)', () => {
 
         expect(JSON.parse(relayResponse as string)).to.be.deepEqual(JSON.parse(mockRelayResponse as string))
       })
+
+      it('should return an error if relay method requires WebSockets', async () => {
+        const newFilterResponse = {
+          jsonrpc: '2.0',
+          id: 1,
+          result: '0x9c82c7',
+        }
+
+        const altruistRelayer = getAltruistRelayer()
+
+        rawData =
+          '{"jsonrpc":"2.0","method":"eth_newFilter","params":[{"topics": ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"]}],"id":1}'
+
+        axiosMock.onPost(ALTRUISTS['0021'], JSON.parse(rawData)).reply(200, newFilterResponse)
+
+        const relayResponse = (await altruistRelayer.sendRelay({
+          rawData,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          relayRetries: 0,
+        })) as Error
+
+        expect(relayResponse).to.be.instanceOf(HttpErrors.BadRequest)
+        expect(relayResponse.message).to.match(/We cannot serve/)
+      })
     })
   })
 })

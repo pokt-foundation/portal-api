@@ -19,6 +19,14 @@ const logger = require('../services/logger')
 import axios from 'axios'
 import { removeNodeFromSession } from '../utils/cache'
 
+const WS_ONLY_METHODS = [
+  'eth_subscribe',
+  'eth_newFilter',
+  'newBlockFilter',
+  'eth_getFilterChanges',
+  'eth_getFilterLogs',
+]
+
 export class PocketRelayer {
   host: string
   origin: string
@@ -775,7 +783,11 @@ export class PocketRelayer {
     blockchainID: string,
     logLimitBlocks: number
   ): Promise<string | Error> {
-    if (parsedRawData.method === 'eth_getLogs') {
+    if (WS_ONLY_METHODS.includes(parsedRawData.method)) {
+      return new HttpErrors.BadRequest(
+        `We cannot serve ${parsedRawData.method} method over HTTPS. At the moment, we do not support WebSockets.`
+      )
+    } else if (parsedRawData.method === 'eth_getLogs') {
       let toBlock: number
       let fromBlock: number
       let isToBlockHex = false
