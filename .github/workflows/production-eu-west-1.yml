@@ -70,7 +70,7 @@ jobs:
         id: task-def-eu-west-1
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: pocket-gateway/ecs-task-eu-west-1.json
+          task-definition: pocket-gateway/tasks/production/ecs-task-eu-west-1.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
 
