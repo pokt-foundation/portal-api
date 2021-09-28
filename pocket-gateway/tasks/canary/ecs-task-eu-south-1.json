@@ -9,7 +9,7 @@
 		  "logDriver": "awslogs",
 		  "secretOptions": null,
 		  "options": {
-			"awslogs-group": "/ecs/gateway",
+			"awslogs-group": "/canary/ecs/gateway",
 			"awslogs-region": "eu-south-1",
 			"awslogs-stream-prefix": "ecs"
 		  }
