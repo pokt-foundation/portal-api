@@ -59,13 +59,13 @@
 		"dockerLabels": null,
 		"systemControls": null,
 		"privileged": null,
-		"name": "gateway"
+		"name": "gateway-canary"
 	  }
 	],
 	"placementConstraints": [],
 	"memory": "4096",
 	"taskRoleArn": null,
-	"family": "gateway",
+	"family": "gateway-canary",
 	"pidMode": null,
 	"requiresCompatibilities": [
 	  "FARGATE"
