@@ -1,8 +1,8 @@
-name: Production Deployment us-east-2
+name: Canary Deployment us-east-2
 
 on:
   push:
-    branches: [master, canary-deployments-test]
+    branches: [master]
 
 jobs:
   deploy:
