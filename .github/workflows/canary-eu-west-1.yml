@@ -1,4 +1,4 @@
-name: Production Deployment eu-west-1
+name: Canary Deployment eu-west-1
 
 on:
   push:
@@ -50,7 +50,7 @@ jobs:
           envkey_INFLUX_ORG: 'pocket'
           envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
           envkey_PSQL_CONNECTION: ${{ secrets.PSQL_CONNECTION }}
-          envkey_LOG_TO_CLOUDWATCH: true
+          envkey_LOG_TO_CLOUDWATCH: false
           envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           file_name: .env
@@ -71,7 +71,7 @@ jobs:
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: pocket-gateway/tasks/canary/ecs-task-eu-west-1.json
-          container-name: gateway
+          container-name: gateway-canary
           image: ${{ steps.build-image.outputs.image }}
 
       - name: Deploy / eu-west-1
