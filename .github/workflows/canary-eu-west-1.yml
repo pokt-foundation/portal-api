@@ -2,7 +2,7 @@ name: Canary Deployment eu-west-1
 
 on:
   push:
-    branches: [master]
+    branches: [canary]
 
 jobs:
   deploy:
