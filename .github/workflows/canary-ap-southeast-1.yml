@@ -2,7 +2,7 @@ name: Canary Deployment ap-southeast-1
 
 on:
   push:
-    branches: [canary, canary-deployments]
+    branches: [canary]
 
 jobs:
   deploy:
