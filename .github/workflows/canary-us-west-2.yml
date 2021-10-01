@@ -45,12 +45,12 @@ jobs:
           envkey_AAT_PLAN: 'premium'
           envkey_NODE_ENV: 'production'
           envkey_REGION: 'us-west-2'
-          envkey_REGION_NAME: 'us-west-2'
+          envkey_REGION_NAME: '/canary/us-west-2'
           envkey_INFLUX_URL: 'https://influx.portal.pokt.network:8086'
           envkey_INFLUX_ORG: 'pocket'
           envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
           envkey_PSQL_CONNECTION: ${{ secrets.PSQL_CONNECTION }}
-          envkey_LOG_TO_CLOUDWATCH: false
+          envkey_LOG_TO_CLOUDWATCH: true
           envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           file_name: .env
