@@ -104,6 +104,7 @@ describe('Sync checker service (unit)', () => {
       const nodeSyncLog = await syncChecker.getNodeSyncLog(
         node,
         '1234',
+        '',
         blockchain.syncCheck,
         '',
         blockchain.hash,
@@ -134,6 +135,7 @@ describe('Sync checker service (unit)', () => {
         '1234',
         blockchain.syncCheck,
         '',
+        '',
         blockchain.hash,
         '',
         '',
@@ -163,6 +165,7 @@ describe('Sync checker service (unit)', () => {
         '1234',
         blockchain.syncCheck,
         '',
+        '',
         blockchain.hash,
         '',
         '',
@@ -186,7 +189,7 @@ describe('Sync checker service (unit)', () => {
 
       const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
 
-      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', ALTRUIST_URL)
+      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', '', ALTRUIST_URL)
 
       expect(blockHeight).to.be.equal(expectedBlockHeight)
     })
@@ -196,7 +199,7 @@ describe('Sync checker service (unit)', () => {
 
       const expectedBlockHeight = 0
 
-      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', ALTRUIST_URL)
+      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', '', ALTRUIST_URL)
 
       expect(blockHeight).to.be.equal(expectedBlockHeight)
     })
@@ -211,6 +214,7 @@ describe('Sync checker service (unit)', () => {
       nodes,
       '1234',
       blockchain.syncCheck,
+      '',
       '',
       blockchain.hash,
       '',
@@ -254,6 +258,7 @@ describe('Sync checker service (unit)', () => {
         sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
+        syncResultKey: '',
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -276,6 +281,7 @@ describe('Sync checker service (unit)', () => {
         sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
+        syncResultKey: '',
       })
 
       expect(redisGetSpy.callCount).to.be.equal(3)
@@ -305,6 +311,7 @@ describe('Sync checker service (unit)', () => {
         sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
+        syncResultKey: '',
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -340,6 +347,7 @@ describe('Sync checker service (unit)', () => {
         sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
+        syncResultKey: '',
       })
 
       expect(syncedNodes).to.have.length(0)
@@ -366,6 +374,7 @@ describe('Sync checker service (unit)', () => {
         sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
+        syncResultKey: '',
       })
 
       expect(syncedNodes).to.have.length(0)
@@ -402,6 +411,7 @@ describe('Sync checker service (unit)', () => {
         sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
+        syncResultKey: '',
       })
 
       expect(syncedNodes).to.have.length(4)
@@ -448,6 +458,7 @@ describe('Sync checker service (unit)', () => {
         sessionKey: '',
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
+        syncResultKey: '',
       })
 
       expect(syncedNodes).to.have.length(1)
@@ -488,6 +499,7 @@ describe('Sync checker service (unit)', () => {
         pocketConfiguration,
         syncAllowance: SYNC_ALLOWANCE,
         syncCheckPath: '',
+        syncResultKey: '',
         sessionKey,
       })
 

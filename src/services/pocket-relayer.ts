@@ -127,6 +127,7 @@ export class PocketRelayer {
       blockchainEnforceResult,
       blockchainSyncCheck,
       blockchainSyncCheckPath,
+      blockchainSyncResultKey,
       blockchainSyncAllowance,
       blockchainIDCheck,
       blockchainID,
@@ -192,6 +193,7 @@ export class PocketRelayer {
         blockchainEnforceResult,
         blockchainSyncCheck,
         blockchainSyncCheckPath,
+        blockchainSyncResultKey,
         blockchainSyncAllowance,
         blockchainIDCheck,
         blockchainChainID,
@@ -373,6 +375,7 @@ export class PocketRelayer {
     blockchainEnforceResult,
     blockchainSyncCheck,
     blockchainSyncCheckPath,
+    blockchainSyncResultKey,
     blockchainSyncAllowance,
     blockchainSyncBackup,
     blockchainIDCheck,
@@ -389,6 +392,7 @@ export class PocketRelayer {
     blockchainEnforceResult: string
     blockchainSyncCheck: string
     blockchainSyncCheckPath: string
+    blockchainSyncResultKey: string
     blockchainSyncAllowance: number
     blockchainSyncBackup: string
     blockchainIDCheck: string
@@ -497,6 +501,7 @@ export class PocketRelayer {
           requestID,
           syncCheck: blockchainSyncCheck,
           syncCheckPath: blockchainSyncCheckPath,
+          syncResultKey: blockchainSyncResultKey,
           syncAllowance: blockchainSyncAllowance,
           blockchainID,
           blockchainSyncBackup,
@@ -734,6 +739,7 @@ export class PocketRelayer {
       let blockchainEnforceResult = ''
       let blockchainSyncCheck = ''
       let blockchainSyncCheckPath = ''
+      let blockchainSyncResultKey = ''
       let blockchainSyncAllowance = 0
       let blockchainIDCheck = ''
       let blockchainID = ''
@@ -757,6 +763,11 @@ export class PocketRelayer {
       if (blockchainFilter[0].syncCheckPath) {
         blockchainSyncCheckPath = blockchainFilter[0].syncCheckPath
       }
+      // Sync Check result key, as it varies by chain
+      if (blockchainFilter[0].syncResultKey) {
+        blockchainSyncResultKey = blockchainFilter[0].syncResultKey
+      }
+
       // Chain ID Check to determine correct chain
       if (blockchainFilter[0].chainIDCheck) {
         blockchainIDCheck = blockchainFilter[0].chainIDCheck.replace(/\\"/g, '"')
@@ -778,6 +789,7 @@ export class PocketRelayer {
         blockchainEnforceResult,
         blockchainSyncCheck,
         blockchainSyncCheckPath,
+        blockchainSyncResultKey,
         blockchainSyncAllowance,
         blockchainIDCheck,
         blockchainID,
@@ -916,6 +928,7 @@ interface BlockchainDetails {
   blockchainEnforceResult: string
   blockchainSyncCheck: string
   blockchainSyncCheckPath: string
+  blockchainSyncResultKey: string
   blockchainSyncAllowance: number
   blockchainIDCheck: string
   blockchainID: string

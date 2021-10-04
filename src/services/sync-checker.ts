@@ -27,6 +27,7 @@ export class SyncChecker {
     requestID,
     syncCheck,
     syncCheckPath,
+    syncResultKey,
     syncAllowance = 5,
     blockchainID,
     blockchainSyncBackup,
@@ -76,6 +77,7 @@ export class SyncChecker {
       requestID,
       syncCheck,
       syncCheckPath,
+      syncResultKey,
       blockchainID,
       applicationID,
       applicationPublicKey,
@@ -150,7 +152,12 @@ export class SyncChecker {
     }
 
     // Consult Altruist for sync source of truth
-    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheck, syncCheckPath, blockchainSyncBackup)
+    const altruistBlockHeight = await this.getSyncFromAltruist(
+      syncCheck,
+      syncCheckPath,
+      syncResultKey,
+      blockchainSyncBackup
+    )
 
     if (altruistBlockHeight === 0) {
       // Failure to find sync from consensus and altruist
@@ -291,7 +298,12 @@ export class SyncChecker {
     return syncedNodes
   }
 
-  async getSyncFromAltruist(syncCheck: string, syncCheckPath: string, blockchainSyncBackup: string): Promise<number> {
+  async getSyncFromAltruist(
+    syncCheck: string,
+    syncCheckPath: string,
+    syncResultKey: string,
+    blockchainSyncBackup: string
+  ): Promise<number> {
     // Remove user/pass from the altruist URL
     const redactedAltruistURL = blockchainSyncBackup.replace(/[\w]*:\/\/[^\/]*@/g, '')
 
@@ -328,6 +340,7 @@ export class SyncChecker {
     requestID: string,
     syncCheck: string,
     syncCheckPath: string,
+    syncResultKey: string,
     blockchainID: string,
     applicationID: string,
     applicationPublicKey: string,
@@ -355,6 +368,7 @@ export class SyncChecker {
           requestID,
           syncCheck,
           syncCheckPath,
+          syncResultKey,
           blockchainID,
           applicationID,
           applicationPublicKey,
@@ -382,6 +396,7 @@ export class SyncChecker {
     requestID: string,
     syncCheck: string,
     syncCheckPath: string,
+    syncResultKey: string,
     blockchainID: string,
     applicationID: string,
     applicationPublicKey: string,
@@ -552,6 +567,7 @@ export type ConsensusFilterOptions = {
   requestID: string
   syncCheck: string
   syncCheckPath: string
+  syncResultKey: string
   syncAllowance: number
   blockchainID: string
   blockchainSyncBackup: string
