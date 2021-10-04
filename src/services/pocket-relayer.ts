@@ -1,6 +1,6 @@
 import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
-import { ConsensusFilterOptions, SyncChecker } from '../services/sync-checker'
+import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { ChainChecker, ChainIDFilterOptions } from '../services/chain-checker'
 import { Decryptor } from 'strong-cryptor'
 import { HttpErrors } from '@loopback/rest'
@@ -126,9 +126,6 @@ export class PocketRelayer {
       blockchain,
       blockchainEnforceResult,
       blockchainSyncCheck,
-      blockchainSyncCheckPath,
-      blockchainSyncResultKey,
-      blockchainSyncAllowance,
       blockchainIDCheck,
       blockchainID,
       blockchainChainID,
@@ -192,9 +189,6 @@ export class PocketRelayer {
         blockchainID,
         blockchainEnforceResult,
         blockchainSyncCheck,
-        blockchainSyncCheckPath,
-        blockchainSyncResultKey,
-        blockchainSyncAllowance,
         blockchainIDCheck,
         blockchainChainID,
         blockchainSyncBackup: String(this.altruists[blockchainID]),
@@ -374,9 +368,6 @@ export class PocketRelayer {
     blockchain,
     blockchainEnforceResult,
     blockchainSyncCheck,
-    blockchainSyncCheckPath,
-    blockchainSyncResultKey,
-    blockchainSyncAllowance,
     blockchainSyncBackup,
     blockchainIDCheck,
     blockchainID,
@@ -390,10 +381,7 @@ export class PocketRelayer {
     requestTimeOut: number | undefined
     blockchain: string
     blockchainEnforceResult: string
-    blockchainSyncCheck: string
-    blockchainSyncCheckPath: string
-    blockchainSyncResultKey: string
-    blockchainSyncAllowance: number
+    blockchainSyncCheck: SyncCheckOptions
     blockchainSyncBackup: string
     blockchainIDCheck: string
     blockchainID: string
@@ -500,9 +488,6 @@ export class PocketRelayer {
           nodes,
           requestID,
           syncCheck: blockchainSyncCheck,
-          syncCheckPath: blockchainSyncCheckPath,
-          syncResultKey: blockchainSyncResultKey,
-          syncAllowance: blockchainSyncAllowance,
           blockchainID,
           blockchainSyncBackup,
           applicationID: application.id,
@@ -737,15 +722,11 @@ export class PocketRelayer {
 
     if (blockchainFilter[0]) {
       let blockchainEnforceResult = ''
-      let blockchainSyncCheck = ''
-      let blockchainSyncCheckPath = ''
-      let blockchainSyncResultKey = ''
-      let blockchainSyncAllowance = 0
       let blockchainIDCheck = ''
       let blockchainID = ''
       let blockchainChainID = ''
-      // Should never be 0
-      let blockchainLogLimitBlocks = 10000
+      let blockchainLogLimitBlocks = 10000 // Should never be 0
+      let blockchainSyncCheck: SyncCheckOptions
 
       const blockchain = blockchainFilter[0].blockchain // ex. 'eth-mainnet'
 
@@ -757,25 +738,20 @@ export class PocketRelayer {
       }
       // Sync Check to determine current blockheight
       if (blockchainFilter[0].syncCheck) {
-        blockchainSyncCheck = blockchainFilter[0].syncCheck.replace(/\\"/g, '"')
+        blockchainSyncCheck.body = blockchainFilter[0].syncCheck.body.replace(/\\"/g, '"')
+        blockchainSyncCheck.resultKey = blockchainFilter[0].syncCheck.resultKey
+
+        // Allowance of blocks a data node can be behind
+        blockchainSyncCheck.allowance = parseInt(blockchainFilter[0].syncCheck.allowance)
       }
       // Sync Check path necessary for some chains
-      if (blockchainFilter[0].syncCheckPath) {
-        blockchainSyncCheckPath = blockchainFilter[0].syncCheckPath
+      if (blockchainFilter[0].syncCheck.path) {
+        blockchainSyncCheck.path = blockchainFilter[0].syncCheck.path
       }
-      // Sync Check result key, as it varies by chain
-      if (blockchainFilter[0].syncResultKey) {
-        blockchainSyncResultKey = blockchainFilter[0].syncResultKey
-      }
-
       // Chain ID Check to determine correct chain
       if (blockchainFilter[0].chainIDCheck) {
         blockchainIDCheck = blockchainFilter[0].chainIDCheck.replace(/\\"/g, '"')
         blockchainChainID = blockchainFilter[0].chainID // ex. '100' (xdai) - can also be undefined
-      }
-      // Allowance of blocks a data node can be behind
-      if (blockchainFilter[0].syncAllowance) {
-        blockchainSyncAllowance = parseInt(blockchainFilter[0].syncAllowance)
       }
       // Max number of blocks to request logs for, if not available, result to env
       if (blockchainFilter[0].logLimitBlocks) {
@@ -788,9 +764,6 @@ export class PocketRelayer {
         blockchain,
         blockchainEnforceResult,
         blockchainSyncCheck,
-        blockchainSyncCheckPath,
-        blockchainSyncResultKey,
-        blockchainSyncAllowance,
         blockchainIDCheck,
         blockchainID,
         blockchainChainID,
@@ -926,10 +899,7 @@ export class PocketRelayer {
 interface BlockchainDetails {
   blockchain: string
   blockchainEnforceResult: string
-  blockchainSyncCheck: string
-  blockchainSyncCheckPath: string
-  blockchainSyncResultKey: string
-  blockchainSyncAllowance: number
+  blockchainSyncCheck: SyncCheckOptions
   blockchainIDCheck: string
   blockchainID: string
   blockchainChainID: string
