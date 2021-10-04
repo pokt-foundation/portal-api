@@ -1,6 +1,7 @@
 import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
 import { CherryPicker } from './cherry-picker'
+import { getNodeNetworkData } from '../utils'
 
 import pgFormat from 'pg-format'
 import { CustomLogger } from 'ajv'
@@ -98,12 +99,24 @@ export class MetricsRecorder {
         fallbackTag = ' FALLBACK'
       }
 
+      let serviceURL = ''
+      let serviceDomain = ''
+
+      if (serviceNode && !fallback) {
+        const node = await getNodeNetworkData(this.redis, serviceNode, requestID)
+
+        serviceURL = node.serviceURL
+        serviceDomain = node.serviceDomain
+      }
+
       if (result === 200) {
         logger.log('info', 'SUCCESS' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
           requestID,
           relayType: 'APP',
           typeID: applicationID,
           serviceNode,
+          serviceURL,
+          serviceDomain,
           elapsedTime: elapsedTimeMs,
           error: '',
           origin,
@@ -115,6 +128,8 @@ export class MetricsRecorder {
           relayType: 'APP',
           typeID: applicationID,
           serviceNode,
+          serviceURL,
+          serviceDomain,
           elapsedTime: elapsedTimeMs,
           error,
           origin,
@@ -126,6 +141,8 @@ export class MetricsRecorder {
           relayType: 'APP',
           typeID: applicationID,
           serviceNode,
+          serviceURL,
+          serviceDomain,
           elapsedTime: elapsedTimeMs,
           error,
           origin,

@@ -1,7 +1,7 @@
 import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
-import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
+import { blockHexToDecimal, checkEnforcementJSON, getNodeNetworkData } from '../utils'
 
 const logger = require('../services/logger')
 
@@ -186,6 +186,8 @@ export class SyncChecker {
       const relayStart = process.hrtime()
       const allowedBlockHeight = nodeSyncLog.blockHeight + syncAllowance
 
+      const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, nodeSyncLog.node.publicKey, requestID)
+
       if (allowedBlockHeight >= currentBlockHeight && allowedBlockHeight >= altruistBlockHeight) {
         logger.log(
           'info',
@@ -199,6 +201,8 @@ export class SyncChecker {
             error: '',
             elapsedTime: '',
             origin: this.origin,
+            serviceURL,
+            serviceDomain,
           }
         )
 
@@ -223,6 +227,8 @@ export class SyncChecker {
           error: '',
           elapsedTime: '',
           origin: this.origin,
+          serviceURL,
+          serviceDomain,
         })
 
         await this.metricsRecorder.recordMetric({
@@ -406,6 +412,8 @@ export class SyncChecker {
       'synccheck'
     )
 
+    const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
+
     if (relayResponse instanceof RelayResponse && checkEnforcementJSON(relayResponse.payload)) {
       const payload = JSON.parse(relayResponse.payload)
 
@@ -429,6 +437,8 @@ export class SyncChecker {
         elapsedTime: '',
         blockchainID,
         origin: this.origin,
+        serviceURL,
+        serviceDomain,
       })
 
       // Success
@@ -443,6 +453,8 @@ export class SyncChecker {
         elapsedTime: '',
         blockchainID,
         origin: this.origin,
+        serviceURL,
+        serviceDomain,
       })
 
       let error = relayResponse.message
@@ -481,6 +493,8 @@ export class SyncChecker {
         elapsedTime: '',
         blockchainID,
         origin: this.origin,
+        serviceURL,
+        serviceDomain,
       })
 
       await this.metricsRecorder.recordMetric({

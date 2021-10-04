@@ -19,6 +19,8 @@ interface Log {
   elapsedTime: number
   blockchainID: string
   origin: string
+  serviceURL: string
+  serviceDomain: string
 }
 
 const environment = process.env.NODE_ENV || 'production'
@@ -40,13 +42,15 @@ const consoleFormat = printf(
     requestID,
     relayType,
     typeID,
-    serviceNode = '',
     error = '',
     elapsedTime,
     blockchainID = '',
     origin = '',
+    serviceNode = '',
+    serviceURL = '',
+    serviceDomain = '',
   }: Log) => {
-    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${error}] [${elapsedTime}] [${blockchainID}] [${origin}] ${message}`
+    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${serviceURL}] [${serviceDomain}] [${error}] [${elapsedTime}] [${blockchainID}] [${origin}] ${message}`
   }
 )
 

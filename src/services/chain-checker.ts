@@ -1,7 +1,7 @@
 import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
-import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
+import { blockHexToDecimal, checkEnforcementJSON, getNodeNetworkData } from '../utils'
 import { MAX_RELAYS_ERROR } from '../errors/types'
 import { removeNodeFromSession } from '../utils/cache'
 
@@ -80,6 +80,8 @@ export class ChainChecker {
     for (const nodeChainLog of nodeChainLogs) {
       // const relayStart = process.hrtime()
 
+      const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, nodeChainLog.node.publicKey, requestID)
+
       if (nodeChainLog.chainID === chainID) {
         logger.log(
           'info',
@@ -93,6 +95,8 @@ export class ChainChecker {
             elapsedTime: '',
             blockchainID,
             origin: this.origin,
+            serviceURL,
+            serviceDomain,
           }
         )
 
@@ -112,6 +116,8 @@ export class ChainChecker {
             elapsedTime: '',
             blockchainID,
             origin: this.origin,
+            serviceURL,
+            serviceDomain,
           }
         )
       }
@@ -243,6 +249,8 @@ export class ChainChecker {
       undefined
     )
 
+    const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
+
     if (relayResponse instanceof RelayResponse && checkEnforcementJSON(relayResponse.payload)) {
       const payload = JSON.parse(relayResponse.payload)
 
@@ -261,6 +269,8 @@ export class ChainChecker {
         elapsedTime: '',
         blockchainID,
         origin: this.origin,
+        serviceURL,
+        serviceDomain,
       })
 
       // Success
@@ -275,6 +285,8 @@ export class ChainChecker {
         elapsedTime: '',
         blockchainID,
         origin: this.origin,
+        serviceURL,
+        serviceDomain,
       })
 
       let error = relayResponse.message
@@ -313,6 +325,8 @@ export class ChainChecker {
         elapsedTime: '',
         blockchainID,
         origin: this.origin,
+        serviceURL,
+        serviceDomain,
       })
 
       await this.metricsRecorder.recordMetric({
