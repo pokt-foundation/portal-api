@@ -69,6 +69,7 @@ export class MetricsRecorder {
     error,
     origin,
     data,
+    sessionKey,
   }: {
     requestID: string
     applicationID: string
@@ -84,6 +85,7 @@ export class MetricsRecorder {
     error: string | undefined
     origin: string | undefined
     data: string | undefined
+    sessionKey: string | undefined
   }): Promise<void> {
     try {
       let elapsedTime = 0
@@ -121,6 +123,7 @@ export class MetricsRecorder {
           error: '',
           origin,
           blockchainID,
+          sessionKey,
         })
       } else if (result === 500) {
         logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -134,6 +137,7 @@ export class MetricsRecorder {
           error,
           origin,
           blockchainID,
+          sessionKey,
         })
       } else if (result === 503) {
         logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -147,6 +151,7 @@ export class MetricsRecorder {
           error,
           origin,
           blockchainID,
+          sessionKey,
         })
       }
 

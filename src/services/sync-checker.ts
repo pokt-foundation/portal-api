@@ -98,6 +98,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
+        sessionKey,
       })
       errorState = true
     }
@@ -123,6 +124,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
+        sessionKey,
       })
       errorState = true
     } else {
@@ -145,6 +147,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
+        sessionKey,
       })
       errorState = true
     }
@@ -163,6 +166,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
+        sessionKey,
       })
 
       if (errorState) {
@@ -178,6 +182,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
+        sessionKey,
       })
     }
 
@@ -203,6 +208,7 @@ export class SyncChecker {
             origin: this.origin,
             serviceURL,
             serviceDomain,
+            sessionKey,
           }
         )
 
@@ -229,6 +235,7 @@ export class SyncChecker {
           origin: this.origin,
           serviceURL,
           serviceDomain,
+          sessionKey,
         })
 
         await this.metricsRecorder.recordMetric({
@@ -246,6 +253,7 @@ export class SyncChecker {
           error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${currentBlockHeight} altruist block height: ${altruistBlockHeight} nodes height: ${nodeSyncLog.blockHeight} sync allowance: ${syncAllowance}`,
           origin: this.origin,
           data: undefined,
+          sessionKey,
         })
       }
     }
@@ -259,6 +267,7 @@ export class SyncChecker {
       elapsedTime: '',
       blockchainID,
       origin: this.origin,
+      sessionKey,
     })
     await this.redis.set(
       syncedNodesKey,
@@ -292,6 +301,7 @@ export class SyncChecker {
         elapsedTime: '',
         blockchainID,
         origin: this.origin,
+        sessionKey,
       })
     }
     return syncedNodes
@@ -439,6 +449,7 @@ export class SyncChecker {
         origin: this.origin,
         serviceURL,
         serviceDomain,
+        sessionKey,
       })
 
       // Success
@@ -455,6 +466,7 @@ export class SyncChecker {
         origin: this.origin,
         serviceURL,
         serviceDomain,
+        sessionKey,
       })
 
       let error = relayResponse.message
@@ -482,6 +494,7 @@ export class SyncChecker {
         error,
         origin: this.origin,
         data: undefined,
+        sessionKey,
       })
     } else {
       logger.log('error', 'SYNC CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
@@ -495,6 +508,7 @@ export class SyncChecker {
         origin: this.origin,
         serviceURL,
         serviceDomain,
+        sessionKey,
       })
 
       await this.metricsRecorder.recordMetric({
@@ -512,6 +526,7 @@ export class SyncChecker {
         error: JSON.stringify(relayResponse),
         origin: this.origin,
         data: undefined,
+        sessionKey,
       })
     }
     // Failed
