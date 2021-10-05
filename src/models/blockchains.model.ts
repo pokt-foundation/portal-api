@@ -1,11 +1,11 @@
 import { Entity, model, property } from '@loopback/repository'
 
 @model()
-export class SyncCheck extends Entity {
+class SyncCheck {
   @property({
     type: 'string',
   })
-  path: string
+  path?: string
 
   @property({
     type: 'string',
@@ -20,9 +20,9 @@ export class SyncCheck extends Entity {
   resultKey: string
 
   @property({
-    type: 'string',
+    type: 'number',
   })
-  allowance: number
+  allowance?: number
 }
 
 @model({ settings: { strict: false } })
