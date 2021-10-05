@@ -743,7 +743,7 @@ export class PocketRelayer {
       }
       // Sync Check path necessary for some chains
       if (blockchainFilter[0].syncCheck.path) {
-        blockchainSyncCheck.path = blockchainFilter[0].syncCheck.path
+        blockchainSyncCheck.path = blockchainFilter[0].syncCheck.path || ''
       }
       // Allowance of blocks a data node can be behind
       if (blockchainFilter[0].syncCheck.allowance) {
