@@ -1,5 +1,4 @@
 import { Redis } from 'ioredis'
-import { Node } from '@pokt-network/pocket-js'
 import { getAddressFromPublicKey } from 'pocket-tools'
 import axios, { AxiosError } from 'axios'
 
@@ -20,6 +19,13 @@ export async function removeNodeFromSession(redis: Redis, sessionKey: string, no
   await redis.del(`sync-check-${sessionKey}`, `chain-check-${sessionKey}`)
 }
 
+/**
+ * Retrieves node network information
+ * @param redis cache service to use
+ * @param publicKey node's public key
+ * @param requestID (optional) request identifier, for logging
+ * @returns
+ */
 export async function getNodeNetworkData(redis: Redis, publicKey: string, requestID?: string): Promise<NodeURLInfo> {
   const address = await getAddressFromPublicKey(publicKey)
 
