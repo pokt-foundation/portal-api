@@ -1,7 +1,7 @@
 import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
-import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
+import { blockHexToDecimal, checkEnforcementJSON, getNodeNetworkData } from '../utils'
 import { MAX_RELAYS_ERROR } from '../errors/types'
 import { removeNodeFromSession } from '../utils/cache'
 
@@ -80,6 +80,8 @@ export class ChainChecker {
     for (const nodeChainLog of nodeChainLogs) {
       // const relayStart = process.hrtime()
 
+      const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, nodeChainLog.node.publicKey, requestID)
+
       if (nodeChainLog.chainID === chainID) {
         logger.log(
           'info',
@@ -93,6 +95,9 @@ export class ChainChecker {
             elapsedTime: '',
             blockchainID,
             origin: this.origin,
+            serviceURL,
+            serviceDomain,
+            sessionKey,
           }
         )
 
@@ -112,6 +117,9 @@ export class ChainChecker {
             elapsedTime: '',
             blockchainID,
             origin: this.origin,
+            serviceURL,
+            serviceDomain,
+            sessionKey,
           }
         )
       }
@@ -126,6 +134,7 @@ export class ChainChecker {
       elapsedTime: '',
       blockchainID,
       origin: this.origin,
+      sessionKey,
     })
     await this.redis.set(
       checkedNodesKey,
@@ -158,6 +167,7 @@ export class ChainChecker {
         elapsedTime: '',
         blockchainID,
         origin: this.origin,
+        sessionKey,
       })
     }
     return CheckedNodes
@@ -243,6 +253,8 @@ export class ChainChecker {
       undefined
     )
 
+    const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
+
     if (relayResponse instanceof RelayResponse && checkEnforcementJSON(relayResponse.payload)) {
       const payload = JSON.parse(relayResponse.payload)
 
@@ -261,6 +273,9 @@ export class ChainChecker {
         elapsedTime: '',
         blockchainID,
         origin: this.origin,
+        serviceURL,
+        serviceDomain,
+        sessionKey,
       })
 
       // Success
@@ -275,6 +290,9 @@ export class ChainChecker {
         elapsedTime: '',
         blockchainID,
         origin: this.origin,
+        serviceURL,
+        serviceDomain,
+        sessionKey,
       })
 
       let error = relayResponse.message
@@ -302,6 +320,7 @@ export class ChainChecker {
         error,
         origin: this.origin,
         data: undefined,
+        sessionKey,
       })
     } else {
       logger.log('error', 'CHAIN CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
@@ -313,6 +332,9 @@ export class ChainChecker {
         elapsedTime: '',
         blockchainID,
         origin: this.origin,
+        serviceURL,
+        serviceDomain,
+        sessionKey,
       })
 
       await this.metricsRecorder.recordMetric({
@@ -330,6 +352,7 @@ export class ChainChecker {
         error: JSON.stringify(relayResponse),
         origin: this.origin,
         data: undefined,
+        sessionKey,
       })
     }
     // Failed

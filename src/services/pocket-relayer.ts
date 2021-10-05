@@ -46,6 +46,7 @@ export class PocketRelayer {
   altruists: JSONObject
   aatPlan: string
   defaultLogLimitBlocks: number
+  sessionKey: string
 
   constructor({
     host,
@@ -211,6 +212,7 @@ export class PocketRelayer {
           error: undefined,
           origin: this.origin,
           data,
+          sessionKey: this.sessionKey,
         })
 
         // Clear error log
@@ -254,6 +256,7 @@ export class PocketRelayer {
           error,
           origin: this.origin,
           data,
+          sessionKey: this.sessionKey,
         })
       }
     }
@@ -320,6 +323,7 @@ export class PocketRelayer {
             error: undefined,
             origin: this.origin,
             data,
+            sessionKey: this.sessionKey,
           })
 
           // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
@@ -431,6 +435,9 @@ export class PocketRelayer {
 
     if (pocketSession instanceof Session) {
       const { sessionKey } = pocketSession
+
+      this.sessionKey = sessionKey
+
       const sessionCacheKey = `session-${sessionKey}`
 
       let syncCheckPromise: Promise<Node[]>
@@ -551,6 +558,7 @@ export class PocketRelayer {
             error,
             origin: this.origin,
             data,
+            sessionKey,
           })
 
           if (syncCheckResult.status === 'rejected') {

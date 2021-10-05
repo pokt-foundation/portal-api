@@ -1,6 +1,7 @@
 import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
 import { CherryPicker } from './cherry-picker'
+import { getNodeNetworkData } from '../utils'
 
 import pgFormat from 'pg-format'
 import { CustomLogger } from 'ajv'
@@ -68,6 +69,7 @@ export class MetricsRecorder {
     error,
     origin,
     data,
+    sessionKey,
   }: {
     requestID: string
     applicationID: string
@@ -83,6 +85,7 @@ export class MetricsRecorder {
     error: string | undefined
     origin: string | undefined
     data: string | undefined
+    sessionKey: string | undefined
   }): Promise<void> {
     try {
       let elapsedTime = 0
@@ -96,16 +99,29 @@ export class MetricsRecorder {
         fallbackTag = ' FALLBACK'
       }
 
+      let serviceURL = ''
+      let serviceDomain = ''
+
+      if (serviceNode && !fallback) {
+        const node = await getNodeNetworkData(this.redis, serviceNode, requestID)
+
+        serviceURL = node.serviceURL
+        serviceDomain = node.serviceDomain
+      }
+
       if (result === 200) {
         logger.log('info', 'SUCCESS' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
           requestID,
           relayType: 'APP',
           typeID: applicationID,
           serviceNode,
+          serviceURL,
+          serviceDomain,
           elapsedTime,
           error: '',
           origin,
           blockchainID,
+          sessionKey,
         })
       } else if (result === 500) {
         logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -113,10 +129,13 @@ export class MetricsRecorder {
           relayType: 'APP',
           typeID: applicationID,
           serviceNode,
+          serviceURL,
+          serviceDomain,
           elapsedTime,
           error,
           origin,
           blockchainID,
+          sessionKey,
         })
       } else if (result === 503) {
         logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -124,10 +143,13 @@ export class MetricsRecorder {
           relayType: 'APP',
           typeID: applicationID,
           serviceNode,
+          serviceURL,
+          serviceDomain,
           elapsedTime,
           error,
           origin,
           blockchainID,
+          sessionKey,
         })
       }
 

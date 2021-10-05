@@ -9,6 +9,8 @@ import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { metricsRecorderMock } from '../mocks/metricsRecorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 import { MAX_RELAYS_ERROR } from '../../src/errors/types'
+import MockAdapter from 'axios-mock-adapter'
+import axios from 'axios'
 
 const logger = require('../../src/services/logger')
 
@@ -24,6 +26,7 @@ describe('Chain checker service (unit)', () => {
   let pocketConfiguration: Configuration
   let pocketMock: PocketMock
   let logSpy: sinon.SinonSpy
+  let axiosMock: MockAdapter
 
   const origin = 'unit-test'
 
@@ -33,6 +36,11 @@ describe('Chain checker service (unit)', () => {
     metricsRecorder = metricsRecorderMock(redis, cherryPicker)
     chainChecker = new ChainChecker(redis, metricsRecorder, origin)
     pocketConfiguration = getPocketConfigOrDefault()
+
+    axiosMock = new MockAdapter(axios)
+    axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
+      service_url: 'https://localhost:443',
+    })
   })
 
   beforeEach(async () => {
@@ -49,6 +57,7 @@ describe('Chain checker service (unit)', () => {
   })
 
   after(() => {
+    axiosMock.restore()
     sinon.restore()
   })
 
@@ -209,8 +218,8 @@ describe('Chain checker service (unit)', () => {
     expect(checkedNodes).to.be.Array()
     expect(checkedNodes).to.have.length(5)
 
-    expect(redisGetSpy.callCount).to.be.equal(2)
-    expect(redisSetSpy.callCount).to.be.equal(2)
+    expect(redisGetSpy.callCount).to.be.equal(12)
+    expect(redisSetSpy.callCount).to.be.equal(7)
 
     // Subsequent calls should retrieve results from redis instead
     checkedNodes = await chainChecker.chainIDFilter({
@@ -227,8 +236,8 @@ describe('Chain checker service (unit)', () => {
       chainID,
     })
 
-    expect(redisGetSpy.callCount).to.be.equal(3)
-    expect(redisSetSpy.callCount).to.be.equal(2)
+    expect(redisGetSpy.callCount).to.be.equal(13)
+    expect(redisSetSpy.callCount).to.be.equal(7)
   })
 
   it('fails the chain check', async () => {

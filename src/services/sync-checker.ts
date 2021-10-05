@@ -1,7 +1,7 @@
 import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
-import { blockHexToDecimal, checkEnforcementJSON, isBlockHex } from '../utils'
+import { blockHexToDecimal, checkEnforcementJSON, getNodeNetworkData, isBlockHex } from '../utils'
 
 const logger = require('../services/logger')
 
@@ -95,6 +95,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
+        sessionKey,
       })
       errorState = true
     }
@@ -120,6 +121,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
+        sessionKey,
       })
       errorState = true
     } else {
@@ -142,6 +144,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
+        sessionKey,
       })
       errorState = true
     }
@@ -160,6 +163,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
+        sessionKey,
       })
 
       if (errorState) {
@@ -175,6 +179,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
+        sessionKey,
       })
     }
 
@@ -182,6 +187,8 @@ export class SyncChecker {
     for (const nodeSyncLog of nodeSyncLogs) {
       const relayStart = process.hrtime()
       const allowedBlockHeight = nodeSyncLog.blockHeight + syncCheckOptions.allowance
+
+      const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, nodeSyncLog.node.publicKey, requestID)
 
       if (allowedBlockHeight >= currentBlockHeight && allowedBlockHeight >= altruistBlockHeight) {
         logger.log(
@@ -196,6 +203,9 @@ export class SyncChecker {
             error: '',
             elapsedTime: '',
             origin: this.origin,
+            serviceURL,
+            serviceDomain,
+            sessionKey,
           }
         )
 
@@ -220,6 +230,9 @@ export class SyncChecker {
           error: '',
           elapsedTime: '',
           origin: this.origin,
+          serviceURL,
+          serviceDomain,
+          sessionKey,
         })
 
         await this.metricsRecorder.recordMetric({
@@ -237,6 +250,7 @@ export class SyncChecker {
           error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${currentBlockHeight} altruist block height: ${altruistBlockHeight} nodes height: ${nodeSyncLog.blockHeight} sync allowance: ${syncCheckOptions.allowance}`,
           origin: this.origin,
           data: undefined,
+          sessionKey,
         })
       }
     }
@@ -250,6 +264,7 @@ export class SyncChecker {
       elapsedTime: '',
       blockchainID,
       origin: this.origin,
+      sessionKey,
     })
     await this.redis.set(
       syncedNodesKey,
@@ -283,6 +298,7 @@ export class SyncChecker {
         elapsedTime: '',
         blockchainID,
         origin: this.origin,
+        sessionKey,
       })
     }
     return syncedNodes
@@ -402,6 +418,8 @@ export class SyncChecker {
       'synccheck'
     )
 
+    const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
+
     if (relayResponse instanceof RelayResponse && checkEnforcementJSON(relayResponse.payload)) {
       const payload = JSON.parse(relayResponse.payload) // object that may not include 'resultKey'
 
@@ -423,6 +441,9 @@ export class SyncChecker {
         elapsedTime: '',
         blockchainID,
         origin: this.origin,
+        serviceURL,
+        serviceDomain,
+        sessionKey,
       })
       // Success
       return nodeSyncLog
@@ -436,6 +457,9 @@ export class SyncChecker {
         elapsedTime: '',
         blockchainID,
         origin: this.origin,
+        serviceURL,
+        serviceDomain,
+        sessionKey,
       })
 
       let error = relayResponse.message
@@ -463,6 +487,7 @@ export class SyncChecker {
         error,
         origin: this.origin,
         data: undefined,
+        sessionKey,
       })
     } else {
       logger.log('error', 'SYNC CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
@@ -474,6 +499,9 @@ export class SyncChecker {
         elapsedTime: '',
         blockchainID,
         origin: this.origin,
+        serviceURL,
+        serviceDomain,
+        sessionKey,
       })
 
       await this.metricsRecorder.recordMetric({
@@ -491,6 +519,7 @@ export class SyncChecker {
         error: JSON.stringify(relayResponse),
         origin: this.origin,
         data: undefined,
+        sessionKey,
       })
     }
     // Failed

@@ -138,6 +138,7 @@ describe('Pocket relayer service (unit)', () => {
   let pocketConfiguration: Configuration
   let pocketMock: PocketMock
   let pocketRelayer: PocketRelayer
+  let axiosMock: MockAdapter
 
   const origin = 'unit-test'
 
@@ -174,6 +175,11 @@ describe('Pocket relayer service (unit)', () => {
       altruists: '{}',
       aatPlan: AatPlans.FREEMIUM,
       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+    })
+
+    axiosMock = new MockAdapter(axios)
+    axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
+      service_url: 'https://localhost:443',
     })
   })
 
@@ -1191,11 +1197,14 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     describe('sendRelay function (with altruists)', () => {
-      const axiosMock = new MockAdapter(axios)
       const blockNumberData = { jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] }
 
       beforeEach(() => {
         axiosMock.reset()
+
+        axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
+          service_url: 'https://localhost:443',
+        })
       })
 
       // Altruist is forced by simulating a chainIDCheck failure
