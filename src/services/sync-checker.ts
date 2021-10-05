@@ -288,22 +288,22 @@ export class SyncChecker {
     return syncedNodes
   }
 
-  async getSyncFromAltruist(syncCheck: SyncCheckOptions, blockchainSyncBackup: string): Promise<number> {
+  async getSyncFromAltruist(blockchainSyncCheck: SyncCheckOptions, blockchainSyncBackup: string): Promise<number> {
     // Remove user/pass from the altruist URL
     const redactedAltruistURL = blockchainSyncBackup.replace(/[\w]*:\/\/[^\/]*@/g, '')
-    const syncCheckPath = syncCheck.path ? syncCheck.path : ''
+    const syncCheckPath = blockchainSyncCheck.path ? blockchainSyncCheck.path : ''
 
     try {
       const syncResponse = await axios({
         method: 'POST',
         url: `${blockchainSyncBackup}${syncCheckPath}`,
-        data: syncCheck.body,
+        data: blockchainSyncCheck.body,
         headers: { 'Content-Type': 'application/json' },
       })
 
       if (!(syncResponse instanceof Error)) {
         const payload = syncResponse.data // object that includes 'resultKey'
-        const blockHeight = this.parseBlockFromPayload(payload, syncCheck.resultKey)
+        const blockHeight = this.parseBlockFromPayload(payload, blockchainSyncCheck.resultKey)
 
         return blockHeight
       }
@@ -325,7 +325,7 @@ export class SyncChecker {
   async getNodeSyncLogs(
     nodes: Node[],
     requestID: string,
-    syncCheck: SyncCheckOptions,
+    blockchainSyncCheck: SyncCheckOptions,
     blockchainID: string,
     applicationID: string,
     applicationPublicKey: string,
@@ -351,7 +351,7 @@ export class SyncChecker {
         this.getNodeSyncLog(
           node,
           requestID,
-          syncCheck,
+          blockchainSyncCheck,
           blockchainID,
           applicationID,
           applicationPublicKey,
@@ -377,7 +377,7 @@ export class SyncChecker {
   async getNodeSyncLog(
     node: Node,
     requestID: string,
-    syncCheck: SyncCheckOptions,
+    blockchainSyncCheck: SyncCheckOptions,
     blockchainID: string,
     applicationID: string,
     applicationPublicKey: string,
@@ -390,13 +390,13 @@ export class SyncChecker {
     const relayStart = process.hrtime()
 
     const relayResponse = await pocket.sendRelay(
-      syncCheck.body,
+      blockchainSyncCheck.body,
       blockchainID,
       pocketAAT,
       this.updateConfigurationTimeout(pocketConfiguration),
       undefined,
       'POST' as HTTPMethod,
-      syncCheck.path,
+      blockchainSyncCheck.path,
       node,
       false,
       'synccheck'
@@ -404,7 +404,7 @@ export class SyncChecker {
 
     if (relayResponse instanceof RelayResponse && checkEnforcementJSON(relayResponse.payload)) {
       const payload = JSON.parse(relayResponse.payload) // object that includes 'resultKey'
-      const blockHeight = this.parseBlockFromPayload(payload, syncCheck.resultKey)
+      const blockHeight = this.parseBlockFromPayload(payload, blockchainSyncCheck.resultKey)
 
       // Create a NodeSyncLog for each node with current block
       const nodeSyncLog = {
@@ -551,7 +551,7 @@ export interface SyncCheckOptions {
   path?: string
   body: string
   resultKey: string
-  allowance: number
+  allowance?: number
 }
 
 export type ConsensusFilterOptions = {
