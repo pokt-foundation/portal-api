@@ -1,7 +1,7 @@
 import { Entity, model, property } from '@loopback/repository'
 
 @model()
-class SyncCheck {
+class SyncCheckOptions {
   @property({
     type: 'string',
   })
@@ -78,9 +78,14 @@ export class Blockchains extends Entity {
   active: boolean
 
   @property({
+    type: 'string',
+  })
+  syncCheck?: string
+
+  @property({
     type: 'object',
   })
-  syncCheck?: SyncCheck
+  syncCheckOptions?: SyncCheckOptions
 
   @property({
     type: 'number',

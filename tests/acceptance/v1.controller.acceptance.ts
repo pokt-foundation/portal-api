@@ -40,7 +40,7 @@ const BLOCKCHAINS = [
     nodeCount: 1,
     chainID: '100',
     chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
-    syncCheck: {
+    syncCheckOptions: {
       body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
       resultKey: 'result',
       allowance: 5,
@@ -72,7 +72,7 @@ const BLOCKCHAINS = [
     enforceResult: 'JSON',
     nodeCount: 1,
     chainID: '137',
-    syncCheck: {
+    syncCheckOptions: {
       body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
       resultKey: 'result',
       allowance: 5,

@@ -41,7 +41,8 @@ describe('Blockchains controller (acceptance)', () => {
         enforceResult: 'JSON',
         nodeCount: 23,
         hash: '1234',
-        syncCheck: {
+        syncCheck: '',
+        syncCheckOptions: {
           body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
           resultKey: 'result',
           allowance: 2,
@@ -97,7 +98,8 @@ describe('Blockchains controller (acceptance)', () => {
             enforceResult: 'JSON',
             nodeCount: 23,
             hash: i,
-            syncCheck: {
+            syncCheck: '',
+            syncCheckOptions: {
               body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
               resultKey: 'result',
               allowance: 2,

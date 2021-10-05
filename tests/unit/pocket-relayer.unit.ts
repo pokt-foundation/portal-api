@@ -39,7 +39,7 @@ const BLOCKCHAINS = [
     enforceResult: 'JSON',
     nodeCount: 1,
     chainID: '137',
-    syncCheck: {
+    syncCheckOptions: {
       body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
       resultKey: 'result',
       allowance: 5,
@@ -59,7 +59,7 @@ const BLOCKCHAINS = [
     nodeCount: 1,
     chainID: 100,
     chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
-    syncCheck: {
+    syncCheckOptions: {
       body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
       resultKey: 'result',
       allowance: 2,
@@ -79,7 +79,7 @@ const BLOCKCHAINS = [
     active: true,
     nodeCount: 1,
     chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
-    syncCheck: {
+    syncCheckOptions: {
       body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
       resultKey: 'result',
     } as SyncCheckOptions,
@@ -598,7 +598,7 @@ describe('Pocket relayer service (unit)', () => {
       const maxRelaysError = new RpcError('90', MAX_RELAYS_ERROR)
 
       mock.relayResponse[BLOCKCHAINS[1].chainIDCheck] = Array(5).fill(maxRelaysError)
-      mock.relayResponse[BLOCKCHAINS[1].syncCheck.body] = Array(5).fill(maxRelaysError)
+      mock.relayResponse[BLOCKCHAINS[1].syncCheckOptions.body] = Array(5).fill(maxRelaysError)
       mock.relayResponse[rawData] = '{"error": "a relay error"}'
 
       const chainCheckerSpy = sinon.spy(chainChecker, 'chainIDFilter')

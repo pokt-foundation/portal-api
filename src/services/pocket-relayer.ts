@@ -737,17 +737,17 @@ export class PocketRelayer {
         blockchainEnforceResult = blockchainFilter[0].enforceResult
       }
       // Sync Check to determine current blockheight
-      if (blockchainFilter[0].syncCheck) {
-        blockchainSyncCheck.body = blockchainFilter[0].syncCheck.body.replace(/\\"/g, '"')
-        blockchainSyncCheck.resultKey = blockchainFilter[0].syncCheck.resultKey
+      if (blockchainFilter[0].syncCheckOptions) {
+        blockchainSyncCheck.body = blockchainFilter[0].syncCheckOptions.body.replace(/\\"/g, '"')
+        blockchainSyncCheck.resultKey = blockchainFilter[0].syncCheckOptions.resultKey
       }
       // Sync Check path necessary for some chains
-      if (blockchainFilter[0].syncCheck.path) {
-        blockchainSyncCheck.path = blockchainFilter[0].syncCheck.path || ''
+      if (blockchainFilter[0].syncCheckOptions.path) {
+        blockchainSyncCheck.path = blockchainFilter[0].syncCheckOptions.path || ''
       }
       // Allowance of blocks a data node can be behind
-      if (blockchainFilter[0].syncCheck.allowance) {
-        blockchainSyncCheck.allowance = parseInt(blockchainFilter[0].syncCheck.allowance)
+      if (blockchainFilter[0].syncCheckOptions.allowance) {
+        blockchainSyncCheck.allowance = parseInt(blockchainFilter[0].syncCheckOptions.allowance)
       }
       // Chain ID Check to determine correct chain
       if (blockchainFilter[0].chainIDCheck) {
