@@ -86,11 +86,9 @@ export class MetricsRecorder {
   }): Promise<void> {
     try {
       let elapsedTime = 0
-      let elapsedTimeMs = 0
       const relayEnd = process.hrtime(relayStart)
 
       elapsedTime = (relayEnd[0] * 1e9 + relayEnd[1]) / 1e9
-      elapsedTimeMs = Math.ceil((relayEnd[0] * 1e9 + relayEnd[1]) / 1e6)
 
       let fallbackTag = ''
 
@@ -104,7 +102,7 @@ export class MetricsRecorder {
           relayType: 'APP',
           typeID: applicationID,
           serviceNode,
-          elapsedTime: elapsedTimeMs,
+          elapsedTime,
           error: '',
           origin,
           blockchainID,
@@ -115,7 +113,7 @@ export class MetricsRecorder {
           relayType: 'APP',
           typeID: applicationID,
           serviceNode,
-          elapsedTime: elapsedTimeMs,
+          elapsedTime,
           error,
           origin,
           blockchainID,
@@ -126,7 +124,7 @@ export class MetricsRecorder {
           relayType: 'APP',
           typeID: applicationID,
           serviceNode,
-          elapsedTime: elapsedTimeMs,
+          elapsedTime,
           error,
           origin,
           blockchainID,

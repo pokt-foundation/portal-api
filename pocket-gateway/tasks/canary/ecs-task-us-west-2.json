@@ -1,0 +1,78 @@
+{
+	"ipcMode": null,
+	"executionRoleArn": "arn:aws:iam::059424750518:role/ecsTaskExecutionRole",
+	"containerDefinitions": [
+	  {
+		"dnsSearchDomains": null,
+		"environmentFiles": null,
+		"logConfiguration": {
+		  "logDriver": "awslogs",
+		  "secretOptions": null,
+		  "options": {
+			"awslogs-group": "/canary/ecs/gateway",
+			"awslogs-region": "us-west-2",
+			"awslogs-stream-prefix": "ecs"
+		  }
+		},
+		"entryPoint": [],
+		"portMappings": [
+		  {
+			"hostPort": 3000,
+			"protocol": "tcp",
+			"containerPort": 3000
+		  }
+    ],
+    "environment": [],
+		"command": [],
+		"linuxParameters": null,
+		"cpu": 2048,
+		"resourceRequirements": null,
+		"ulimits": [
+			{
+				"name": "nofile",
+				"hardLimit": 65535,
+				"softLimit": 65535
+			}
+		],
+		"dnsServers": null,
+		"mountPoints": [],
+		"workingDirectory": null,
+		"dockerSecurityOptions": null,
+		"memory": null,
+		"memoryReservation": 4096,
+		"volumesFrom": [],
+		"stopTimeout": null,
+		"image": "059424750518.dkr.ecr.us-west-2.amazonaws.com/gateway-canary:latest",
+		"startTimeout": null,
+		"firelensConfiguration": null,
+		"dependsOn": null,
+		"disableNetworking": null,
+		"interactive": null,
+		"healthCheck": null,
+		"essential": true,
+		"links": [],
+		"hostname": null,
+		"extraHosts": null,
+		"pseudoTerminal": null,
+		"user": null,
+		"readonlyRootFilesystem": null,
+		"dockerLabels": null,
+		"systemControls": null,
+		"privileged": null,
+		"name": "gateway-canary"
+	  }
+	],
+	"placementConstraints": [],
+	"memory": "4096",
+	"taskRoleArn": null,
+	"family": "gateway-canary",
+	"pidMode": null,
+	"requiresCompatibilities": [
+	  "FARGATE"
+	],
+	"networkMode": "awsvpc",
+	"cpu": "2048",
+	"inferenceAccelerators": null,
+	"proxyConfiguration": null,
+	"volumes": []
+}
