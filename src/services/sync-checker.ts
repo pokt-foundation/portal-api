@@ -533,6 +533,7 @@ export class SyncChecker {
     )
   }
 
+  // TODO: We might want to support result keys in nested objects
   parseBlockFromPayload(payload: object, syncCheckResultKey: string): number {
     const rawHeight = payload[`${syncCheckResultKey}`]
     const blockHeight = isBlockHex(rawHeight) ? blockHexToDecimal(rawHeight) : parseInt(rawHeight)
