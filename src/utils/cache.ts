@@ -27,24 +27,28 @@ export async function removeNodeFromSession(redis: Redis, sessionKey: string, no
  * @returns
  */
 export async function getNodeNetworkData(redis: Redis, publicKey: string, requestID?: string): Promise<NodeURLInfo> {
+  let nodeUrl: NodeURLInfo = { serviceURL: '', serviceDomain: '' }
+
+  // Might come empty or undefined on relay failure
+  if (!publicKey) {
+    return nodeUrl
+  }
+
   const address = await getAddressFromPublicKey(publicKey)
-
-  let node: NodeURLInfo = { serviceURL: '', serviceDomain: '' }
-
   const nodeCached = await redis.get(`node-${publicKey}`)
 
   if (nodeCached) {
-    node = JSON.parse(nodeCached)
-    return node
+    nodeUrl = JSON.parse(nodeCached)
+    return nodeUrl
   }
 
   try {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const { service_url } = (await axios.post(`${ALTRUIST_URL}/v1/query/node`, { address })).data
 
-    node = { serviceURL: service_url, serviceDomain: new URL(service_url).hostname.replace('www.', '') }
+    nodeUrl = { serviceURL: service_url, serviceDomain: new URL(service_url).hostname.replace('www.', '') }
 
-    await redis.set(`node-${publicKey}`, JSON.stringify(node), 'EX', 60 * 60 * 6) // 6 hours
+    await redis.set(`node-${publicKey}`, JSON.stringify(nodeUrl), 'EX', 60 * 60 * 6) // 6 hours
   } catch (e) {
     logger.log('warn', `Failure getting node network data: ${(e as AxiosError).message}`, {
       serviceNode: publicKey,
@@ -52,7 +56,7 @@ export async function getNodeNetworkData(redis: Redis, publicKey: string, reques
     })
   }
 
-  return node
+  return nodeUrl
 }
 
 type NodeURLInfo = {
