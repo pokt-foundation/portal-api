@@ -13,7 +13,7 @@ import { MAX_RELAYS_ERROR } from '../../src/errors/types'
 
 const logger = require('../../src/services/logger')
 
-const SYNC_ALLOWANCE = 5
+const DEFAULT_SYNC_ALLOWANCE = 5
 
 const DEFAULT_RELAY_RESPONSE = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c9c" }'
 
@@ -30,8 +30,11 @@ const blockchain = {
   active: true,
   enforceResult: 'JSON',
   nodeCount: 1,
-  syncCheck: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
-  syncAllowance: 2,
+  syncCheck: {
+    body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+    resultKey: 'result',
+    allowance: 2,
+  },
 }
 
 describe('Sync checker service (unit)', () => {
@@ -50,7 +53,7 @@ describe('Sync checker service (unit)', () => {
     redis = new RedisMock(0, '')
     cherryPicker = new CherryPicker({ redis, checkDebug: false })
     metricsRecorder = metricsRecorderMock(redis, cherryPicker)
-    syncChecker = new SyncChecker(redis, metricsRecorder, SYNC_ALLOWANCE, origin)
+    syncChecker = new SyncChecker(redis, metricsRecorder, DEFAULT_SYNC_ALLOWANCE, origin)
     pocketConfiguration = getPocketConfigOrDefault()
     pocketMock = new PocketMock()
     axiosMock = new MockAdapter(axios)
@@ -66,7 +69,7 @@ describe('Sync checker service (unit)', () => {
     axiosMock.reset()
 
     pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
-    pocketMock.relayResponse[blockchain.syncCheck] = DEFAULT_RELAY_RESPONSE
+    pocketMock.relayResponse[blockchain.syncCheck.body] = DEFAULT_RELAY_RESPONSE
 
     await redis.flushall()
   })
@@ -104,9 +107,7 @@ describe('Sync checker service (unit)', () => {
       const nodeSyncLog = await syncChecker.getNodeSyncLog(
         node,
         '1234',
-        '',
         blockchain.syncCheck,
-        '',
         blockchain.hash,
         '',
         '',
@@ -134,8 +135,6 @@ describe('Sync checker service (unit)', () => {
         node,
         '1234',
         blockchain.syncCheck,
-        '',
-        '',
         blockchain.hash,
         '',
         '',
@@ -156,7 +155,7 @@ describe('Sync checker service (unit)', () => {
       const node = DEFAULT_NODES[0]
 
       // Invalid JSON string
-      pocketMock.relayResponse[blockchain.syncCheck] = 'method":eth_blockNumber","id":,"jsonrpc""2.0"}'
+      pocketMock.relayResponse[blockchain.syncCheck.body] = 'method":eth_blockNumber","id":,"jsonrpc""2.0"}'
 
       const pocket = pocketMock.object()
 
@@ -164,8 +163,6 @@ describe('Sync checker service (unit)', () => {
         node,
         '1234',
         blockchain.syncCheck,
-        '',
-        '',
         blockchain.hash,
         '',
         '',
@@ -189,7 +186,7 @@ describe('Sync checker service (unit)', () => {
 
       const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
 
-      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', '', ALTRUIST_URL)
+      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, ALTRUIST_URL)
 
       expect(blockHeight).to.be.equal(expectedBlockHeight)
     })
@@ -199,7 +196,7 @@ describe('Sync checker service (unit)', () => {
 
       const expectedBlockHeight = 0
 
-      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, '', '', ALTRUIST_URL)
+      const blockHeight = await syncChecker.getSyncFromAltruist(blockchain.syncCheck, ALTRUIST_URL)
 
       expect(blockHeight).to.be.equal(expectedBlockHeight)
     })
@@ -214,8 +211,6 @@ describe('Sync checker service (unit)', () => {
       nodes,
       '1234',
       blockchain.syncCheck,
-      '',
-      '',
       blockchain.hash,
       '',
       '',
@@ -256,9 +251,6 @@ describe('Sync checker service (unit)', () => {
         pocketAAT: undefined,
         pocketConfiguration,
         sessionKey: '',
-        syncAllowance: SYNC_ALLOWANCE,
-        syncCheckPath: '',
-        syncResultKey: '',
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -279,9 +271,6 @@ describe('Sync checker service (unit)', () => {
         pocketAAT: undefined,
         pocketConfiguration,
         sessionKey: '',
-        syncAllowance: SYNC_ALLOWANCE,
-        syncCheckPath: '',
-        syncResultKey: '',
       })
 
       expect(redisGetSpy.callCount).to.be.equal(3)
@@ -309,9 +298,6 @@ describe('Sync checker service (unit)', () => {
         pocketAAT: undefined,
         pocketConfiguration,
         sessionKey: '',
-        syncAllowance: SYNC_ALLOWANCE,
-        syncCheckPath: '',
-        syncResultKey: '',
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -345,9 +331,6 @@ describe('Sync checker service (unit)', () => {
         pocketAAT: undefined,
         pocketConfiguration,
         sessionKey: '',
-        syncAllowance: SYNC_ALLOWANCE,
-        syncCheckPath: '',
-        syncResultKey: '',
       })
 
       expect(syncedNodes).to.have.length(0)
@@ -372,9 +355,6 @@ describe('Sync checker service (unit)', () => {
         pocketAAT: undefined,
         pocketConfiguration,
         sessionKey: '',
-        syncAllowance: SYNC_ALLOWANCE,
-        syncCheckPath: '',
-        syncResultKey: '',
       })
 
       expect(syncedNodes).to.have.length(0)
@@ -387,7 +367,7 @@ describe('Sync checker service (unit)', () => {
 
       const penalizedNode = '{ "id": 1, "jsonrpc": "2.0", "result": "0x1aa38c" }'
 
-      pocketMock.relayResponse[blockchain.syncCheck] = [
+      pocketMock.relayResponse[blockchain.syncCheck.body] = [
         DEFAULT_RELAY_RESPONSE,
         DEFAULT_RELAY_RESPONSE,
         DEFAULT_RELAY_RESPONSE,
@@ -409,9 +389,6 @@ describe('Sync checker service (unit)', () => {
         pocketAAT: undefined,
         pocketConfiguration,
         sessionKey: '',
-        syncAllowance: SYNC_ALLOWANCE,
-        syncCheckPath: '',
-        syncResultKey: '',
       })
 
       expect(syncedNodes).to.have.length(4)
@@ -434,7 +411,7 @@ describe('Sync checker service (unit)', () => {
       // Difference is over the allowed sync check
       const secondHighestNode = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c7e" }' // 17435774
 
-      pocketMock.relayResponse[blockchain.syncCheck] = [
+      pocketMock.relayResponse[blockchain.syncCheck.body] = [
         highestNode,
         secondHighestNode,
         secondHighestNode,
@@ -456,9 +433,6 @@ describe('Sync checker service (unit)', () => {
         pocketAAT: undefined,
         pocketConfiguration,
         sessionKey: '',
-        syncAllowance: SYNC_ALLOWANCE,
-        syncCheckPath: '',
-        syncResultKey: '',
       })
 
       expect(syncedNodes).to.have.length(1)
@@ -473,7 +447,7 @@ describe('Sync checker service (unit)', () => {
 
       const nodes = DEFAULT_NODES
 
-      pocketMock.relayResponse[blockchain.syncCheck] = [
+      pocketMock.relayResponse[blockchain.syncCheck.body] = [
         DEFAULT_RELAY_RESPONSE,
         DEFAULT_RELAY_RESPONSE,
         DEFAULT_RELAY_RESPONSE,
@@ -497,9 +471,6 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL,
         pocketAAT: undefined,
         pocketConfiguration,
-        syncAllowance: SYNC_ALLOWANCE,
-        syncCheckPath: '',
-        syncResultKey: '',
         sessionKey,
       })
 
