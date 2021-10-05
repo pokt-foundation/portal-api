@@ -394,7 +394,7 @@ describe('Pocket relayer service (unit)', () => {
         ({
           nodes,
           requestID,
-          syncCheck,
+          syncCheckOptions,
           blockchainID,
           blockchainSyncBackup,
           applicationID,

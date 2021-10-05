@@ -294,7 +294,7 @@ describe('Sync checker service (unit)', () => {
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
-        syncCheck: blockchains['0021'].syncCheckOptions,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
@@ -314,7 +314,7 @@ describe('Sync checker service (unit)', () => {
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
-        syncCheck: blockchains['0021'].syncCheckOptions,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
@@ -340,7 +340,7 @@ describe('Sync checker service (unit)', () => {
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0006'].hash,
-        syncCheck: blockchains['0006'].syncCheckOptions,
+        syncCheckOptions: blockchains['0006'].syncCheckOptions,
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
@@ -359,12 +359,12 @@ describe('Sync checker service (unit)', () => {
       syncedNodes = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchainID: blockchains['0021'].hash,
-        syncCheck: blockchains['0021'].syncCheckOptions,
+        blockchainID: blockchains['0006'].hash,
+        syncCheckOptions: blockchains['0006'].syncCheckOptions,
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        blockchainSyncBackup: ALTRUIST_URL['0006'],
         pocketAAT: undefined,
         pocketConfiguration,
         sessionKey: '',
@@ -386,7 +386,7 @@ describe('Sync checker service (unit)', () => {
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0001'].hash,
-        syncCheck: blockchains['0001'].syncCheckOptions,
+        syncCheckOptions: blockchains['0001'].syncCheckOptions,
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
@@ -405,12 +405,12 @@ describe('Sync checker service (unit)', () => {
       syncedNodes = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchainID: blockchains['0021'].hash,
-        syncCheck: blockchains['0021'].syncCheckOptions,
+        blockchainID: blockchains['0001'].hash,
+        syncCheckOptions: blockchains['0001'].syncCheckOptions,
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        blockchainSyncBackup: ALTRUIST_URL['0001'],
         pocketAAT: undefined,
         pocketConfiguration,
         sessionKey: '',
@@ -425,16 +425,13 @@ describe('Sync checker service (unit)', () => {
 
       const pocketClient = pocketMock.object()
 
-      const redisGetSpy = sinon.spy(redis, 'get')
-      const redisSetSpy = sinon.spy(redis, 'set')
+      blockchains['0006'].syncCheckOptions.resultKey = 'height' // should be 'result'
 
-      blockchains['0006'].syncCheckOptions.resultKey = 'height'
-
-      let syncedNodes = await syncChecker.consensusFilter({
+      const syncedNodes = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0006'].hash,
-        syncCheck: blockchains['0006'].syncCheckOptions,
+        syncCheckOptions: blockchains['0006'].syncCheckOptions,
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
@@ -444,28 +441,14 @@ describe('Sync checker service (unit)', () => {
         sessionKey: '',
       })
 
-      expect(syncedNodes).to.have.length(0)
+      expect(syncedNodes).to.have.length(5)
 
-      expect(redisGetSpy.callCount).to.be.equal(2)
-      expect(redisSetSpy.callCount).to.be.equal(2)
+      const expectedLog = logSpy.calledWith(
+        'error',
+        sinon.match((arg: string) => arg.startsWith('SYNC CHECK ERROR'))
+      )
 
-      // Subsequent calls should retrieve results from redis instead
-      syncedNodes = await syncChecker.consensusFilter({
-        nodes,
-        requestID: '1234',
-        blockchainID: blockchains['0021'].hash,
-        syncCheck: blockchains['0021'].syncCheckOptions,
-        pocket: pocketClient,
-        applicationID: '',
-        applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0021'],
-        pocketAAT: undefined,
-        pocketConfiguration,
-        sessionKey: '',
-      })
-
-      expect(redisGetSpy.callCount).to.be.equal(3)
-      expect(redisSetSpy.callCount).to.be.equal(2)
+      expect(expectedLog).to.be.true()
     })
 
     it('fails sync check due to altruist and chain error', async () => {
@@ -481,7 +464,7 @@ describe('Sync checker service (unit)', () => {
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
-        syncCheck: blockchains['0021'].syncCheckOptions,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
@@ -512,7 +495,7 @@ describe('Sync checker service (unit)', () => {
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
-        syncCheck: blockchains['0021'].syncCheckOptions,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
@@ -536,7 +519,7 @@ describe('Sync checker service (unit)', () => {
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
-        syncCheck: blockchains['0021'].syncCheckOptions,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
@@ -568,7 +551,7 @@ describe('Sync checker service (unit)', () => {
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
-        syncCheck: blockchains['0021'].syncCheckOptions,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
@@ -610,7 +593,7 @@ describe('Sync checker service (unit)', () => {
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
-        syncCheck: blockchains['0021'].syncCheckOptions,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
@@ -647,7 +630,7 @@ describe('Sync checker service (unit)', () => {
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
-        syncCheck: blockchains['0021'].syncCheckOptions,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
