@@ -1,6 +1,7 @@
 import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
 import { CherryPicker } from './cherry-picker'
+import { getNodeNetworkData } from '../utils'
 
 import pgFormat from 'pg-format'
 import { CustomLogger } from 'ajv'
@@ -27,10 +28,7 @@ if (!influxOrg) {
 
 const influxBucket = process.env.NODE_ENV === 'production' ? 'mainnetRelay' : 'mainnetRelayStaging'
 const influxClient = new InfluxDB({ url: influxURL, token: influxToken })
-
 const writeApi = influxClient.getWriteApi(influxOrg, influxBucket)
-
-writeApi.useDefaultTags({ host: os.hostname(), region: region })
 
 export class MetricsRecorder {
   redis: Redis
@@ -70,6 +68,8 @@ export class MetricsRecorder {
     method,
     error,
     origin,
+    data,
+    sessionKey,
   }: {
     requestID: string
     applicationID: string
@@ -84,6 +84,8 @@ export class MetricsRecorder {
     method: string | undefined
     error: string | undefined
     origin: string | undefined
+    data: string | undefined
+    sessionKey: string | undefined
   }): Promise<void> {
     try {
       let elapsedTime = 0
@@ -97,38 +99,57 @@ export class MetricsRecorder {
         fallbackTag = ' FALLBACK'
       }
 
+      let serviceURL = ''
+      let serviceDomain = ''
+
+      if (serviceNode && !fallback) {
+        const node = await getNodeNetworkData(this.redis, serviceNode, requestID)
+
+        serviceURL = node.serviceURL
+        serviceDomain = node.serviceDomain
+      }
+
       if (result === 200) {
-        logger.log('info', 'SUCCESS' + fallbackTag, {
+        logger.log('info', 'SUCCESS' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
           requestID,
           relayType: 'APP',
           typeID: applicationID,
           serviceNode,
+          serviceURL,
+          serviceDomain,
           elapsedTime,
           error: '',
           origin,
           blockchainID,
+          sessionKey,
         })
       } else if (result === 500) {
-        logger.log('error', 'FAILURE' + fallbackTag, {
+        logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
           requestID,
           relayType: 'APP',
           typeID: applicationID,
           serviceNode,
+          serviceURL,
+          serviceDomain,
           elapsedTime,
           error,
           origin,
           blockchainID,
+          sessionKey,
         })
       } else if (result === 503) {
-        logger.log('error', 'INVALID RESPONSE' + fallbackTag, {
+        logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
           requestID,
           relayType: 'APP',
           typeID: applicationID,
           serviceNode,
+          serviceURL,
+          serviceDomain,
           elapsedTime,
           error,
           origin,
           blockchainID,
+          sessionKey,
         })
       }
 
@@ -151,17 +172,26 @@ export class MetricsRecorder {
       ]
 
       // Influx
-      const point = new Point('relay')
+      const pointRelay = new Point('relay')
         .tag('applicationPublicKey', applicationPublicKey)
         .tag('nodePublicKey', serviceNode)
         .tag('method', method)
         .tag('result', result.toString())
         .tag('blockchain', blockchainID) // 0021
+        .tag('host', os.hostname())
+        .tag('region', region)
         .floatField('bytes', bytes)
         .floatField('elapsedTime', elapsedTime.toFixed(4))
         .timestamp(postgresTimestamp)
 
-      writeApi.writePoint(point)
+      writeApi.writePoint(pointRelay)
+
+      const pointOrigin = new Point('origin')
+        .tag('applicationPublicKey', applicationPublicKey)
+        .stringField('origin', origin)
+        .timestamp(postgresTimestamp)
+
+      writeApi.writePoint(pointOrigin)
       await writeApi.flush()
 
       // Store errors in redis and every 10 seconds, push to postgres

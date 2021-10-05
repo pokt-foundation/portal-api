@@ -11,7 +11,7 @@ import { ChainChecker, ChainIDFilterOptions } from '../../src/services/chain-che
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { PocketRelayer } from '../../src/services/pocket-relayer'
-import { ConsensusFilterOptions, SyncChecker } from '../../src/services/sync-checker'
+import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../../src/services/sync-checker'
 import { Applications } from '../../src/models/applications.model'
 import { metricsRecorderMock } from '../mocks/metricsRecorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
@@ -39,7 +39,11 @@ const BLOCKCHAINS = [
     enforceResult: 'JSON',
     nodeCount: 1,
     chainID: '137',
-    syncAllowance: 5,
+    syncCheckOptions: {
+      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+      resultKey: 'result',
+      allowance: 5,
+    } as SyncCheckOptions,
     logLimitBlocks: 10000,
   },
   {
@@ -53,13 +57,16 @@ const BLOCKCHAINS = [
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
-    logLimitBlocks: 10000,
-    chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
-    syncCheck: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
-    // Does not actually exist on this chain, only for testing purposes
-    syncCheckPath: '/v1/query/height',
-    syncAllowance: 2,
     chainID: 100,
+    chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
+    syncCheckOptions: {
+      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+      resultKey: 'result',
+      allowance: 2,
+      // Does not actually exist on this chain, only for testing purposes
+      path: '/v1/query/height',
+    } as SyncCheckOptions,
+    logLimitBlocks: 10000,
   },
   {
     hash: '0040',
@@ -71,9 +78,12 @@ const BLOCKCHAINS = [
     blockchain: 'eth-mainnet-string',
     active: true,
     nodeCount: 1,
-    logLimitBlocks: 10000,
     chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
-    syncCheck: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+    syncCheckOptions: {
+      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+      resultKey: 'result',
+    } as SyncCheckOptions,
+    logLimitBlocks: 10000,
   },
 ]
 
@@ -128,13 +138,16 @@ describe('Pocket relayer service (unit)', () => {
   let pocketConfiguration: Configuration
   let pocketMock: PocketMock
   let pocketRelayer: PocketRelayer
+  let axiosMock: MockAdapter
+
+  const origin = 'unit-test'
 
   before('initialize variables', async () => {
     redis = new RedisMock(0, '')
     cherryPicker = new CherryPicker({ redis, checkDebug: false })
     metricsRecorder = metricsRecorderMock(redis, cherryPicker)
-    chainChecker = new ChainChecker(redis, metricsRecorder)
-    syncChecker = new SyncChecker(redis, metricsRecorder, 5)
+    chainChecker = new ChainChecker(redis, metricsRecorder, origin)
+    syncChecker = new SyncChecker(redis, metricsRecorder, 5, origin)
     blockchainRepository = new BlockchainsRepository(gatewayTestDB)
 
     pocketConfiguration = getPocketConfigOrDefault()
@@ -162,6 +175,11 @@ describe('Pocket relayer service (unit)', () => {
       altruists: '{}',
       aatPlan: AatPlans.FREEMIUM,
       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+    })
+
+    axiosMock = new MockAdapter(axios)
+    axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
+      service_url: 'https://localhost:443',
     })
   })
 
@@ -382,9 +400,7 @@ describe('Pocket relayer service (unit)', () => {
         ({
           nodes,
           requestID,
-          syncCheck,
-          syncCheckPath,
-          syncAllowance,
+          syncCheckOptions,
           blockchainID,
           blockchainSyncBackup,
           applicationID,
@@ -588,7 +604,7 @@ describe('Pocket relayer service (unit)', () => {
       const maxRelaysError = new RpcError('90', MAX_RELAYS_ERROR)
 
       mock.relayResponse[BLOCKCHAINS[1].chainIDCheck] = Array(5).fill(maxRelaysError)
-      mock.relayResponse[BLOCKCHAINS[1].syncCheck] = Array(5).fill(maxRelaysError)
+      mock.relayResponse[BLOCKCHAINS[1].syncCheckOptions.body] = Array(5).fill(maxRelaysError)
       mock.relayResponse[rawData] = '{"error": "a relay error"}'
 
       const chainCheckerSpy = sinon.spy(chainChecker, 'chainIDFilter')
@@ -634,9 +650,9 @@ describe('Pocket relayer service (unit)', () => {
       const sessionKey = ((await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session)
         .sessionKey
 
-      let removedNodes = await redis.get(`session-${sessionKey}`)
+      let removedNodes = await redis.smembers(`session-${sessionKey}`)
 
-      expect(JSON.parse(removedNodes)).to.have.length(5)
+      expect(removedNodes).to.have.length(5)
 
       expect(chainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
@@ -655,12 +671,88 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(secondRelayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
 
-      removedNodes = await redis.get(`session-${sessionKey}`)
+      removedNodes = await redis.smembers(`session-${sessionKey}`)
 
-      expect(JSON.parse(removedNodes)).to.have.length(5)
+      expect(removedNodes).to.have.length(5)
 
       expect(chainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
+    })
+
+    it('Fails relay due to one node in session running out of relays, subsequent relays should attempt to perform checks', async () => {
+      const mock = new PocketMock()
+
+      mock.relayResponse[rawData] = new RpcError('90', MAX_RELAYS_ERROR)
+
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+      const chainCheckerSpy = sinon.spy(chainChecker, 'chainIDFilter')
+      const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
+      const pocket = mock.object()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: true,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+      })
+
+      const relayResponse = await poktRelayer.sendRelay({
+        rawData,
+        relayPath: '',
+        httpMethod: HTTPMethod.POST,
+        application: APPLICATION as unknown as Applications,
+        requestID: '1234',
+        requestTimeOut: undefined,
+        overallTimeOut: undefined,
+        relayRetries: 0,
+      })
+
+      expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+
+      const sessionKey = ((await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session)
+        .sessionKey
+
+      let removedNodes = await redis.smembers(`session-${sessionKey}`)
+
+      expect(removedNodes).to.have.length(1)
+
+      expect(chainCheckerSpy.callCount).to.be.equal(1)
+      expect(syncCherckerSpy.callCount).to.be.equal(1)
+
+      // Subsequent calls should go to sync or chain checker
+      const secondRelayResponse = await poktRelayer.sendRelay({
+        rawData,
+        relayPath: '',
+        httpMethod: HTTPMethod.POST,
+        application: APPLICATION as unknown as Applications,
+        requestID: '1234',
+        requestTimeOut: undefined,
+        overallTimeOut: undefined,
+        relayRetries: 0,
+      })
+
+      expect(secondRelayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+
+      removedNodes = await redis.smembers(`session-${sessionKey}`)
+
+      expect(removedNodes.length).to.have.lessThanOrEqual(2)
+
+      expect(chainCheckerSpy.callCount).to.be.equal(2)
+      expect(syncCherckerSpy.callCount).to.be.equal(2)
     })
 
     it('chainIDCheck / syncCheck succeeds', async () => {
@@ -1105,11 +1197,14 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     describe('sendRelay function (with altruists)', () => {
-      const axiosMock = new MockAdapter(axios)
       const blockNumberData = { jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] }
 
       beforeEach(() => {
         axiosMock.reset()
+
+        axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
+          service_url: 'https://localhost:443',
+        })
       })
 
       // Altruist is forced by simulating a chainIDCheck failure
@@ -1344,6 +1439,35 @@ describe('Pocket relayer service (unit)', () => {
         })
 
         expect(JSON.parse(relayResponse as string)).to.be.deepEqual(JSON.parse(mockRelayResponse as string))
+      })
+
+      it('should return an error if relay method requires WebSockets', async () => {
+        const newFilterResponse = {
+          jsonrpc: '2.0',
+          id: 1,
+          result: '0x9c82c7',
+        }
+
+        const altruistRelayer = getAltruistRelayer()
+
+        rawData =
+          '{"jsonrpc":"2.0","method":"eth_newFilter","params":[{"topics": ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"]}],"id":1}'
+
+        axiosMock.onPost(ALTRUISTS['0021'], JSON.parse(rawData)).reply(200, newFilterResponse)
+
+        const relayResponse = (await altruistRelayer.sendRelay({
+          rawData,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          relayRetries: 0,
+        })) as Error
+
+        expect(relayResponse).to.be.instanceOf(HttpErrors.BadRequest)
+        expect(relayResponse.message).to.match(/We cannot serve/)
       })
     })
   })

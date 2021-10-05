@@ -1,8 +1,7 @@
 import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
-import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
-import crypto from 'crypto'
+import { blockHexToDecimal, checkEnforcementJSON, getNodeNetworkData, isBlockHex } from '../utils'
 
 const logger = require('../services/logger')
 
@@ -14,19 +13,19 @@ export class SyncChecker {
   redis: Redis
   metricsRecorder: MetricsRecorder
   defaultSyncAllowance: number
+  origin: string
 
-  constructor(redis: Redis, metricsRecorder: MetricsRecorder, defaultSyncAllowance: number) {
+  constructor(redis: Redis, metricsRecorder: MetricsRecorder, defaultSyncAllowance: number, origin: string) {
     this.redis = redis
     this.metricsRecorder = metricsRecorder
     this.defaultSyncAllowance = defaultSyncAllowance
+    this.origin = origin
   }
 
   async consensusFilter({
     nodes,
     requestID,
-    syncCheck,
-    syncCheckPath,
-    syncAllowance = 5,
+    syncCheckOptions,
     blockchainID,
     blockchainSyncBackup,
     applicationID,
@@ -37,23 +36,13 @@ export class SyncChecker {
     sessionKey,
   }: ConsensusFilterOptions): Promise<Node[]> {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
-    syncAllowance = syncAllowance <= 0 ? syncAllowance : this.defaultSyncAllowance
+    syncCheckOptions.allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
 
     const syncedNodes: Node[] = []
     let syncedNodesList: string[] = []
 
-    // Key is "blockchain - a hash of the all the nodes in this session, sorted by public key"
     // Value is an array of node public keys that have passed sync checks for this session in the past 5 minutes
-
-    const sortedNodes = nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0))
-
-    const syncedNodesKey =
-      blockchainID +
-      '-' +
-      crypto
-        .createHash('sha256')
-        .update(JSON.stringify(sortedNodes, (k, v) => (k !== 'publicKey' ? v : undefined)))
-        .digest('hex')
+    const syncedNodesKey = `sync-check-${sessionKey}`
     const syncedNodesCached = await this.redis.get(syncedNodesKey)
 
     if (syncedNodesCached) {
@@ -83,8 +72,7 @@ export class SyncChecker {
     const nodeSyncLogs = await this.getNodeSyncLogs(
       nodes,
       requestID,
-      syncCheck,
-      syncCheckPath,
+      syncCheckOptions,
       blockchainID,
       applicationID,
       applicationPublicKey,
@@ -97,7 +85,7 @@ export class SyncChecker {
     let errorState = false
 
     // This should never happen
-    if (nodeSyncLogs.length <= 2) {
+    if (nodes.length > 2 && nodeSyncLogs.length <= 2) {
       logger.log('error', 'SYNC CHECK ERROR: fewer than 3 nodes returned sync', {
         requestID: requestID,
         relayType: '',
@@ -106,7 +94,8 @@ export class SyncChecker {
         serviceNode: '',
         error: '',
         elapsedTime: '',
-        origin: 'synccheck',
+        origin: this.origin,
+        sessionKey,
       })
       errorState = true
     }
@@ -131,15 +120,21 @@ export class SyncChecker {
         serviceNode: '',
         error: '',
         elapsedTime: '',
-        origin: 'synccheck',
+        origin: this.origin,
+        sessionKey,
       })
       errorState = true
     } else {
       currentBlockHeight = nodeSyncLogs[0].blockHeight
     }
 
-    // Make sure at least 2 nodes agree on current highest block to prevent one node from being wildly off
-    if (!errorState && nodeSyncLogs[0].blockHeight > nodeSyncLogs[1].blockHeight + syncAllowance) {
+    // If there's at least 2 nodes, make sure at least two of them agree on current highest block to prevent one node
+    // from being wildly off
+    if (
+      !errorState &&
+      nodeSyncLogs.length >= 2 &&
+      nodeSyncLogs[0].blockHeight > nodeSyncLogs[1].blockHeight + syncCheckOptions.allowance
+    ) {
       logger.log('error', 'SYNC CHECK ERROR: two highest nodes could not agree on sync', {
         requestID: requestID,
         relayType: '',
@@ -148,15 +143,16 @@ export class SyncChecker {
         serviceNode: '',
         error: '',
         elapsedTime: '',
-        origin: 'synccheck',
+        origin: this.origin,
+        sessionKey,
       })
       errorState = true
     }
 
     // Consult Altruist for sync source of truth
-    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheck, syncCheckPath, blockchainSyncBackup)
+    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
 
-    if (altruistBlockHeight === 0) {
+    if (altruistBlockHeight === 0 || isNaN(altruistBlockHeight)) {
       // Failure to find sync from consensus and altruist
       logger.log('info', 'SYNC CHECK ALTRUIST FAILURE: ' + altruistBlockHeight, {
         requestID: requestID,
@@ -166,7 +162,8 @@ export class SyncChecker {
         serviceNode: 'ALTRUIST',
         error: '',
         elapsedTime: '',
-        origin: 'synccheck',
+        origin: this.origin,
+        sessionKey,
       })
 
       if (errorState) {
@@ -181,14 +178,17 @@ export class SyncChecker {
         serviceNode: 'ALTRUIST',
         error: '',
         elapsedTime: '',
-        origin: 'synccheck',
+        origin: this.origin,
+        sessionKey,
       })
     }
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
     for (const nodeSyncLog of nodeSyncLogs) {
       const relayStart = process.hrtime()
-      const allowedBlockHeight = nodeSyncLog.blockHeight + syncAllowance
+      const allowedBlockHeight = nodeSyncLog.blockHeight + syncCheckOptions.allowance
+
+      const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, nodeSyncLog.node.publicKey, requestID)
 
       if (allowedBlockHeight >= currentBlockHeight && allowedBlockHeight >= altruistBlockHeight) {
         logger.log(
@@ -202,14 +202,16 @@ export class SyncChecker {
             serviceNode: nodeSyncLog.node.publicKey,
             error: '',
             elapsedTime: '',
-            origin: 'synccheck',
+            origin: this.origin,
+            serviceURL,
+            serviceDomain,
+            sessionKey,
           }
         )
 
         // Erase failure mark
         await this.redis.set(
-          blockchainID,
-          +'-' + nodeSyncLog.node.publicKey + '-failure',
+          blockchainID + '-' + nodeSyncLog.node.publicKey + '-failure',
           'false',
           'EX',
           60 * 60 * 24 * 30
@@ -227,7 +229,10 @@ export class SyncChecker {
           serviceNode: nodeSyncLog.node.publicKey,
           error: '',
           elapsedTime: '',
-          origin: 'synccheck',
+          origin: this.origin,
+          serviceURL,
+          serviceDomain,
+          sessionKey,
         })
 
         await this.metricsRecorder.recordMetric({
@@ -242,8 +247,10 @@ export class SyncChecker {
           delivered: false,
           fallback: false,
           method: 'synccheck',
-          error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${currentBlockHeight} altruist block height: ${altruistBlockHeight} nodes height: ${nodeSyncLog.blockHeight} sync allowance: ${syncAllowance}`,
-          origin: 'synccheck',
+          error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${currentBlockHeight} altruist block height: ${altruistBlockHeight} nodes height: ${nodeSyncLog.blockHeight} sync allowance: ${syncCheckOptions.allowance}`,
+          origin: this.origin,
+          data: undefined,
+          sessionKey,
         })
       }
     }
@@ -256,7 +263,8 @@ export class SyncChecker {
       error: '',
       elapsedTime: '',
       blockchainID,
-      origin: 'synccheck',
+      origin: this.origin,
+      sessionKey,
     })
     await this.redis.set(
       syncedNodesKey,
@@ -269,7 +277,7 @@ export class SyncChecker {
     // This will penalize the out-of-sync nodes and cause them to get slashed for reporting incorrect data.
     if (syncedNodes.length < nodes.length) {
       const consensusResponse = await pocket.sendRelay(
-        syncCheck,
+        syncCheckOptions.body,
         blockchainID,
         pocketAAT,
         this.updateConfigurationConsensus(pocketConfiguration),
@@ -289,28 +297,31 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin: 'synccheck',
+        origin: this.origin,
+        sessionKey,
       })
     }
     return syncedNodes
   }
 
-  async getSyncFromAltruist(syncCheck: string, syncCheckPath: string, blockchainSyncBackup: string): Promise<number> {
+  async getSyncFromAltruist(syncCheckOptions: SyncCheckOptions, blockchainSyncBackup: string): Promise<number> {
     // Remove user/pass from the altruist URL
     const redactedAltruistURL = blockchainSyncBackup.replace(/[\w]*:\/\/[^\/]*@/g, '')
+    const syncCheckPath = syncCheckOptions.path ? syncCheckOptions.path : ''
 
     try {
       const syncResponse = await axios({
         method: 'POST',
         url: `${blockchainSyncBackup}${syncCheckPath}`,
-        data: syncCheck,
+        data: syncCheckOptions.body,
         headers: { 'Content-Type': 'application/json' },
       })
 
       if (!(syncResponse instanceof Error)) {
-        // Pull the blockHeight from payload.result for all chains except Pocket; this
-        // can go in the database if we have more than two
-        return syncResponse.data.result ? blockHexToDecimal(syncResponse.data.result) : syncResponse.data.height
+        const payload = syncResponse.data // object that includes 'resultKey'
+        const blockHeight = this.parseBlockFromPayload(payload, syncCheckOptions.resultKey)
+
+        return blockHeight
       }
       return 0
     } catch (e) {
@@ -321,7 +332,7 @@ export class SyncChecker {
         serviceNode: 'fallback:' + redactedAltruistURL,
         error: '',
         elapsedTime: '',
-        origin: 'synccheck',
+        origin: this.origin,
       })
     }
     return 0
@@ -330,8 +341,7 @@ export class SyncChecker {
   async getNodeSyncLogs(
     nodes: Node[],
     requestID: string,
-    syncCheck: string,
-    syncCheckPath: string,
+    syncCheckOptions: SyncCheckOptions,
     blockchainID: string,
     applicationID: string,
     applicationPublicKey: string,
@@ -357,8 +367,7 @@ export class SyncChecker {
         this.getNodeSyncLog(
           node,
           requestID,
-          syncCheck,
-          syncCheckPath,
+          syncCheckOptions,
           blockchainID,
           applicationID,
           applicationPublicKey,
@@ -374,7 +383,7 @@ export class SyncChecker {
       await Promise.all(promiseStack)
 
     for (const rawNodeSyncLog of rawNodeSyncLogs) {
-      if (typeof rawNodeSyncLog === 'object') {
+      if (typeof rawNodeSyncLog === 'object' && rawNodeSyncLog?.blockHeight > 0) {
         nodeSyncLogs.push(rawNodeSyncLog)
       }
     }
@@ -384,8 +393,7 @@ export class SyncChecker {
   async getNodeSyncLog(
     node: Node,
     requestID: string,
-    syncCheck: string,
-    syncCheckPath: string,
+    syncCheckOptions: SyncCheckOptions,
     blockchainID: string,
     applicationID: string,
     applicationPublicKey: string,
@@ -394,39 +402,28 @@ export class SyncChecker {
     pocketConfiguration: Configuration,
     sessionKey: string
   ): Promise<NodeSyncLog> {
-    logger.log('info', 'SYNC CHECK START', {
-      requestID: requestID,
-      relayType: '',
-      typeID: '',
-      serviceNode: node.publicKey,
-      error: '',
-      elapsedTime: '',
-      blockchainID,
-      origin: 'synccheck',
-    })
-
     // Pull the current block from each node using the blockchain's syncCheck as the relay
     const relayStart = process.hrtime()
 
     const relayResponse = await pocket.sendRelay(
-      syncCheck,
+      syncCheckOptions.body,
       blockchainID,
       pocketAAT,
       this.updateConfigurationTimeout(pocketConfiguration),
       undefined,
       'POST' as HTTPMethod,
-      syncCheckPath,
+      syncCheckOptions.path,
       node,
       false,
       'synccheck'
     )
 
-    if (relayResponse instanceof RelayResponse && checkEnforcementJSON(relayResponse.payload)) {
-      const payload = JSON.parse(relayResponse.payload)
+    const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
 
-      // Pull the blockHeight from payload.result for all chains except Pocket; this
-      // can go in the database if we have more than two
-      const blockHeight = payload.result ? blockHexToDecimal(payload.result) : payload.height
+    if (relayResponse instanceof RelayResponse && checkEnforcementJSON(relayResponse.payload)) {
+      const payload = JSON.parse(relayResponse.payload) // object that may not include 'resultKey'
+
+      const blockHeight = this.parseBlockFromPayload(payload, syncCheckOptions.resultKey)
 
       // Create a NodeSyncLog for each node with current block
       const nodeSyncLog = {
@@ -443,9 +440,11 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin: 'synccheck',
+        origin: this.origin,
+        serviceURL,
+        serviceDomain,
+        sessionKey,
       })
-
       // Success
       return nodeSyncLog
     } else if (relayResponse instanceof Error) {
@@ -457,13 +456,16 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin: 'synccheck',
+        origin: this.origin,
+        serviceURL,
+        serviceDomain,
+        sessionKey,
       })
 
       let error = relayResponse.message
 
       if (error === MAX_RELAYS_ERROR) {
-        await removeNodeFromSession(this.redis, sessionKey, node)
+        await removeNodeFromSession(this.redis, sessionKey, node.publicKey)
       }
 
       if (typeof relayResponse.message === 'object') {
@@ -483,7 +485,9 @@ export class SyncChecker {
         fallback: false,
         method: 'synccheck',
         error,
-        origin: 'synccheck',
+        origin: this.origin,
+        data: undefined,
+        sessionKey,
       })
     } else {
       logger.log('error', 'SYNC CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
@@ -494,7 +498,10 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin: 'synccheck',
+        origin: this.origin,
+        serviceURL,
+        serviceDomain,
+        sessionKey,
       })
 
       await this.metricsRecorder.recordMetric({
@@ -510,7 +517,9 @@ export class SyncChecker {
         fallback: false,
         method: 'synccheck',
         error: JSON.stringify(relayResponse),
-        origin: 'synccheck',
+        origin: this.origin,
+        data: undefined,
+        sessionKey,
       })
     }
     // Failed
@@ -552,6 +561,15 @@ export class SyncChecker {
       pocketConfiguration.rejectSelfSignedCertificates
     )
   }
+
+  // TODO: We might want to support result keys in nested objects
+  parseBlockFromPayload(payload: object, syncCheckResultKey: string): number {
+    const rawHeight = payload[`${syncCheckResultKey}`] || '0'
+
+    const blockHeight = isBlockHex(rawHeight) ? blockHexToDecimal(rawHeight) : parseInt(rawHeight)
+
+    return blockHeight
+  }
 }
 
 type NodeSyncLog = {
@@ -560,12 +578,17 @@ type NodeSyncLog = {
   blockHeight: number
 }
 
+export interface SyncCheckOptions {
+  path?: string
+  body: string
+  resultKey: string
+  allowance?: number
+}
+
 export type ConsensusFilterOptions = {
   nodes: Node[]
   requestID: string
-  syncCheck: string
-  syncCheckPath: string
-  syncAllowance: number
+  syncCheckOptions: SyncCheckOptions
   blockchainID: string
   blockchainSyncBackup: string
   applicationID: string

@@ -60,7 +60,7 @@ jobs:
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: pocket-gateway/ecs-task-testnet.json
+          task-definition: pocket-gateway/tasks/staging/ecs-task-testnet.json
           container-name: gateway-testnet
           image: ${{ steps.build-image.outputs.image }}
 

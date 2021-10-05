@@ -1,8 +1,7 @@
 import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
-import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
-import { createHash } from 'crypto'
+import { blockHexToDecimal, checkEnforcementJSON, getNodeNetworkData } from '../utils'
 import { MAX_RELAYS_ERROR } from '../errors/types'
 import { removeNodeFromSession } from '../utils/cache'
 
@@ -11,10 +10,12 @@ const logger = require('../services/logger')
 export class ChainChecker {
   redis: Redis
   metricsRecorder: MetricsRecorder
+  origin: string
 
-  constructor(redis: Redis, metricsRecorder: MetricsRecorder) {
+  constructor(redis: Redis, metricsRecorder: MetricsRecorder, origin: string) {
     this.redis = redis
     this.metricsRecorder = metricsRecorder
+    this.origin = origin
   }
 
   async chainIDFilter({
@@ -33,20 +34,9 @@ export class ChainChecker {
     const CheckedNodes: Node[] = []
     let CheckedNodesList: string[] = []
 
-    // Key is "chainID - a hash of the all the nodes in this session, sorted by public key"
     // Value is an array of node public keys that have passed Chain checks for this session in the past 5 minutes
-    const CheckedNodesKey =
-      chainID +
-      '-' +
-      createHash('sha256')
-        .update(
-          JSON.stringify(
-            nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0)),
-            (k, v) => (k !== 'publicKey' ? v : undefined)
-          )
-        )
-        .digest('hex')
-    const CheckedNodesCached = await this.redis.get(CheckedNodesKey)
+    const checkedNodesKey = `chain-check-${sessionKey}`
+    const CheckedNodesCached = await this.redis.get(checkedNodesKey)
 
     if (CheckedNodesCached) {
       CheckedNodesList = JSON.parse(CheckedNodesCached)
@@ -61,14 +51,14 @@ export class ChainChecker {
 
     // Cache is stale, start a new cache fill
     // First check cache lock key; if lock key exists, return full node set
-    const ChainLock = await this.redis.get('lock-' + CheckedNodesKey)
+    const ChainLock = await this.redis.get('lock-' + checkedNodesKey)
 
     if (ChainLock) {
       return nodes
     } else {
       // Set lock as this thread checks the Chain with 60 second ttl.
       // If any major errors happen below, it will retry the Chain check every 60 seconds.
-      await this.redis.set('lock-' + CheckedNodesKey, 'true', 'EX', 60)
+      await this.redis.set('lock-' + checkedNodesKey, 'true', 'EX', 60)
     }
 
     // Fires all 5 Chain checks Chainhronously then assembles the results
@@ -90,6 +80,8 @@ export class ChainChecker {
     for (const nodeChainLog of nodeChainLogs) {
       // const relayStart = process.hrtime()
 
+      const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, nodeChainLog.node.publicKey, requestID)
+
       if (nodeChainLog.chainID === chainID) {
         logger.log(
           'info',
@@ -102,7 +94,10 @@ export class ChainChecker {
             error: '',
             elapsedTime: '',
             blockchainID,
-            origin: 'chaincheck',
+            origin: this.origin,
+            serviceURL,
+            serviceDomain,
+            sessionKey,
           }
         )
 
@@ -121,7 +116,10 @@ export class ChainChecker {
             error: '',
             elapsedTime: '',
             blockchainID,
-            origin: 'chaincheck',
+            origin: this.origin,
+            serviceURL,
+            serviceDomain,
+            sessionKey,
           }
         )
       }
@@ -135,10 +133,11 @@ export class ChainChecker {
       error: '',
       elapsedTime: '',
       blockchainID,
-      origin: 'chaincheck',
+      origin: this.origin,
+      sessionKey,
     })
     await this.redis.set(
-      CheckedNodesKey,
+      checkedNodesKey,
       JSON.stringify(CheckedNodesList),
       'EX',
       CheckedNodes.length > 0 ? 600 : 30 // will retry Chain check every 30 seconds if no nodes are in Chain
@@ -167,7 +166,8 @@ export class ChainChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin: 'chaincheck',
+        origin: this.origin,
+        sessionKey,
       })
     }
     return CheckedNodes
@@ -218,7 +218,7 @@ export class ChainChecker {
       await Promise.all(promiseStack)
 
     for (const rawNodeChainLog of rawNodeChainLogs) {
-      if (typeof rawNodeChainLog === 'object' && (rawNodeChainLog.chainID as unknown as string) !== '') {
+      if (typeof rawNodeChainLog === 'object' && (rawNodeChainLog?.chainID as unknown as string) !== '') {
         nodeChainLogs.push(rawNodeChainLog)
       }
     }
@@ -237,17 +237,6 @@ export class ChainChecker {
     pocketConfiguration,
     sessionKey,
   }: GetNodeChainLogOptions): Promise<NodeChainLog> {
-    logger.log('info', 'CHAIN CHECK START', {
-      requestID: requestID,
-      relayType: '',
-      typeID: '',
-      serviceNode: node.publicKey,
-      error: '',
-      elapsedTime: '',
-      blockchainID,
-      origin: 'chaincheck',
-    })
-
     // Pull the current block from each node using the blockchain's chainCheck as the relay
     const relayStart = process.hrtime()
 
@@ -263,6 +252,8 @@ export class ChainChecker {
       false,
       undefined
     )
+
+    const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
 
     if (relayResponse instanceof RelayResponse && checkEnforcementJSON(relayResponse.payload)) {
       const payload = JSON.parse(relayResponse.payload)
@@ -281,7 +272,10 @@ export class ChainChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin: 'chaincheck',
+        origin: this.origin,
+        serviceURL,
+        serviceDomain,
+        sessionKey,
       })
 
       // Success
@@ -295,13 +289,16 @@ export class ChainChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin: 'chaincheck',
+        origin: this.origin,
+        serviceURL,
+        serviceDomain,
+        sessionKey,
       })
 
       let error = relayResponse.message
 
       if (error === MAX_RELAYS_ERROR) {
-        await removeNodeFromSession(this.redis, sessionKey, node)
+        await removeNodeFromSession(this.redis, sessionKey, node.publicKey)
       }
 
       if (typeof relayResponse.message === 'object') {
@@ -321,7 +318,9 @@ export class ChainChecker {
         fallback: false,
         method: 'chaincheck',
         error,
-        origin: 'chaincheck',
+        origin: this.origin,
+        data: undefined,
+        sessionKey,
       })
     } else {
       logger.log('error', 'CHAIN CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
@@ -332,7 +331,10 @@ export class ChainChecker {
         error: '',
         elapsedTime: '',
         blockchainID,
-        origin: 'chaincheck',
+        origin: this.origin,
+        serviceURL,
+        serviceDomain,
+        sessionKey,
       })
 
       await this.metricsRecorder.recordMetric({
@@ -348,7 +350,9 @@ export class ChainChecker {
         fallback: false,
         method: 'chaincheck',
         error: JSON.stringify(relayResponse),
-        origin: 'chaincheck',
+        origin: this.origin,
+        data: undefined,
+        sessionKey,
       })
     }
     // Failed

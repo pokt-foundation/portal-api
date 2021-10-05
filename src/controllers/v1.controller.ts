@@ -59,8 +59,8 @@ export class V1Controller {
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
     })
-    this.syncChecker = new SyncChecker(this.redis, this.metricsRecorder, this.defaultSyncAllowance)
-    this.chainChecker = new ChainChecker(this.redis, this.metricsRecorder)
+    this.syncChecker = new SyncChecker(this.redis, this.metricsRecorder, this.defaultSyncAllowance, this.origin)
+    this.chainChecker = new ChainChecker(this.redis, this.metricsRecorder, this.origin)
     this.pocketRelayer = new PocketRelayer({
       host: this.host,
       origin: this.origin,
@@ -146,13 +146,6 @@ export class V1Controller {
       this.relayPath = id.slice(24).replace(/~/gi, '/')
       id = id.slice(0, 24)
     }
-
-    logger.log('info', 'PROCESSING', {
-      requestID: this.requestID,
-      relayType: 'LB',
-      typeID: id,
-      serviceNode: '',
-    })
 
     try {
       const loadBalancer = await this.fetchLoadBalancer(id, filter)
@@ -250,12 +243,6 @@ export class V1Controller {
       this.relayPath = id.slice(24).replace(/~/gi, '/')
       id = id.slice(0, 24)
     }
-    logger.log('info', 'PROCESSING', {
-      requestID: this.requestID,
-      relayType: 'APP',
-      typeID: id,
-      serviceNode: '',
-    })
 
     try {
       const application = await this.fetchApplication(id, filter)

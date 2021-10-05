@@ -41,6 +41,12 @@ describe('Blockchains controller (acceptance)', () => {
         enforceResult: 'JSON',
         nodeCount: 23,
         hash: '1234',
+        syncCheck: '',
+        syncCheckOptions: {
+          body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+          resultKey: 'result',
+          allowance: 2,
+        },
         logLimitBlocks: 10,
       }
     )
@@ -88,11 +94,16 @@ describe('Blockchains controller (acceptance)', () => {
             description: 'Kovan',
             index: 6,
             blockchain: 'poa-kovan',
-            syncCheck: '',
             active: true,
             enforceResult: 'JSON',
             nodeCount: 23,
             hash: i,
+            syncCheck: '',
+            syncCheckOptions: {
+              body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+              resultKey: 'result',
+              allowance: 2,
+            },
             logLimitBlocks: 10,
           }
         )
