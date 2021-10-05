@@ -726,7 +726,7 @@ export class PocketRelayer {
       let blockchainID = ''
       let blockchainChainID = ''
       let blockchainLogLimitBlocks = 10000 // Should never be 0
-      let blockchainSyncCheck: SyncCheckOptions
+      const blockchainSyncCheck = {} as SyncCheckOptions
 
       const blockchain = blockchainFilter[0].blockchain // ex. 'eth-mainnet'
 
@@ -740,13 +740,14 @@ export class PocketRelayer {
       if (blockchainFilter[0].syncCheck) {
         blockchainSyncCheck.body = blockchainFilter[0].syncCheck.body.replace(/\\"/g, '"')
         blockchainSyncCheck.resultKey = blockchainFilter[0].syncCheck.resultKey
-
-        // Allowance of blocks a data node can be behind
-        blockchainSyncCheck.allowance = parseInt(blockchainFilter[0].syncCheck.allowance)
       }
       // Sync Check path necessary for some chains
       if (blockchainFilter[0].syncCheck.path) {
         blockchainSyncCheck.path = blockchainFilter[0].syncCheck.path
+      }
+      // Allowance of blocks a data node can be behind
+      if (blockchainFilter[0].syncCheck.allowance) {
+        blockchainSyncCheck.allowance = parseInt(blockchainFilter[0].syncCheck.allowance)
       }
       // Chain ID Check to determine correct chain
       if (blockchainFilter[0].chainIDCheck) {
