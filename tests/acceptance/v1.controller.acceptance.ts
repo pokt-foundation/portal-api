@@ -40,9 +40,13 @@ const BLOCKCHAINS = [
     nodeCount: 1,
     chainID: '100',
     chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
-    syncCheck: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
-    syncCheckPath: '/v1/query/height',
-    syncAllowance: 5,
+    syncCheckOptions: {
+      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+      resultKey: 'result',
+      allowance: 5,
+      // Path doesnt exist on this chain, just for testing.
+      path: '/v1/query/height',
+    },
   },
   {
     hash: '0040',
@@ -68,7 +72,11 @@ const BLOCKCHAINS = [
     enforceResult: 'JSON',
     nodeCount: 1,
     chainID: '137',
-    syncAllowance: 5,
+    syncCheckOptions: {
+      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+      resultKey: 'result',
+      allowance: 5,
+    },
   },
 ]
 
