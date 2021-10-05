@@ -487,7 +487,7 @@ export class PocketRelayer {
         const consensusFilterOptions: ConsensusFilterOptions = {
           nodes,
           requestID,
-          syncCheck: blockchainSyncCheck,
+          syncCheckOptions: blockchainSyncCheck,
           blockchainID,
           blockchainSyncBackup,
           applicationID: application.id,
@@ -738,16 +738,14 @@ export class PocketRelayer {
       }
       // Sync Check to determine current blockheight
       if (blockchainFilter[0].syncCheckOptions) {
-        blockchainSyncCheck.body = blockchainFilter[0].syncCheckOptions.body.replace(/\\"/g, '"')
-        blockchainSyncCheck.resultKey = blockchainFilter[0].syncCheckOptions.resultKey
-      }
-      // Sync Check path necessary for some chains
-      if (blockchainFilter[0].syncCheckOptions.path) {
+        blockchainSyncCheck.body = (blockchainFilter[0].syncCheckOptions.body || '').replace(/\\"/g, '"')
+        blockchainSyncCheck.resultKey = blockchainFilter[0].syncCheckOptions.resultKey || ''
+
+        // Sync Check path necessary for some chains
         blockchainSyncCheck.path = blockchainFilter[0].syncCheckOptions.path || ''
-      }
-      // Allowance of blocks a data node can be behind
-      if (blockchainFilter[0].syncCheckOptions.allowance) {
-        blockchainSyncCheck.allowance = parseInt(blockchainFilter[0].syncCheckOptions.allowance)
+
+        // Allowance of blocks a data node can be behind
+        blockchainSyncCheck.allowance = parseInt(blockchainFilter[0].syncCheckOptions.allowance || 0)
       }
       // Chain ID Check to determine correct chain
       if (blockchainFilter[0].chainIDCheck) {
@@ -755,7 +753,7 @@ export class PocketRelayer {
         blockchainChainID = blockchainFilter[0].chainID // ex. '100' (xdai) - can also be undefined
       }
       // Max number of blocks to request logs for, if not available, result to env
-      if (blockchainFilter[0].logLimitBlocks) {
+      if ((blockchainFilter[0].logLimitBlocks as number) > 0) {
         blockchainLogLimitBlocks = parseInt(blockchainFilter[0].logLimitBlocks)
       } else if (this.defaultLogLimitBlocks > 0) {
         blockchainLogLimitBlocks = this.defaultLogLimitBlocks
