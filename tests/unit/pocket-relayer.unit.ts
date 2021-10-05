@@ -11,7 +11,7 @@ import { ChainChecker, ChainIDFilterOptions } from '../../src/services/chain-che
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { PocketRelayer } from '../../src/services/pocket-relayer'
-import { ConsensusFilterOptions, SyncChecker } from '../../src/services/sync-checker'
+import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../../src/services/sync-checker'
 import { Applications } from '../../src/models/applications.model'
 import { metricsRecorderMock } from '../mocks/metricsRecorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
@@ -39,7 +39,11 @@ const BLOCKCHAINS = [
     enforceResult: 'JSON',
     nodeCount: 1,
     chainID: '137',
-    syncAllowance: 5,
+    syncCheckOptions: {
+      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+      resultKey: 'result',
+      allowance: 5,
+    } as SyncCheckOptions,
     logLimitBlocks: 10000,
   },
   {
@@ -53,13 +57,16 @@ const BLOCKCHAINS = [
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
-    logLimitBlocks: 10000,
-    chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
-    syncCheck: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
-    // Does not actually exist on this chain, only for testing purposes
-    syncCheckPath: '/v1/query/height',
-    syncAllowance: 2,
     chainID: 100,
+    chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
+    syncCheckOptions: {
+      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+      resultKey: 'result',
+      allowance: 2,
+      // Does not actually exist on this chain, only for testing purposes
+      path: '/v1/query/height',
+    } as SyncCheckOptions,
+    logLimitBlocks: 10000,
   },
   {
     hash: '0040',
@@ -71,9 +78,12 @@ const BLOCKCHAINS = [
     blockchain: 'eth-mainnet-string',
     active: true,
     nodeCount: 1,
-    logLimitBlocks: 10000,
     chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
-    syncCheck: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+    syncCheckOptions: {
+      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+      resultKey: 'result',
+    } as SyncCheckOptions,
+    logLimitBlocks: 10000,
   },
 ]
 
@@ -390,9 +400,7 @@ describe('Pocket relayer service (unit)', () => {
         ({
           nodes,
           requestID,
-          syncCheck,
-          syncCheckPath,
-          syncAllowance,
+          syncCheckOptions,
           blockchainID,
           blockchainSyncBackup,
           applicationID,
@@ -596,7 +604,7 @@ describe('Pocket relayer service (unit)', () => {
       const maxRelaysError = new RpcError('90', MAX_RELAYS_ERROR)
 
       mock.relayResponse[BLOCKCHAINS[1].chainIDCheck] = Array(5).fill(maxRelaysError)
-      mock.relayResponse[BLOCKCHAINS[1].syncCheck] = Array(5).fill(maxRelaysError)
+      mock.relayResponse[BLOCKCHAINS[1].syncCheckOptions.body] = Array(5).fill(maxRelaysError)
       mock.relayResponse[rawData] = '{"error": "a relay error"}'
 
       const chainCheckerSpy = sinon.spy(chainChecker, 'chainIDFilter')
