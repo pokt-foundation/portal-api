@@ -533,7 +533,7 @@ export class SyncChecker {
     )
   }
 
-  parseBlockFromPayload(payload: any, syncCheckResultKey: string): number {
+  parseBlockFromPayload(payload: object, syncCheckResultKey: string): number {
     const rawHeight = payload[`${syncCheckResultKey}`]
     const blockHeight = isBlockHex(rawHeight) ? blockHexToDecimal(rawHeight) : parseInt(rawHeight)
 
