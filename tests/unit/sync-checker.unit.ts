@@ -316,8 +316,8 @@ describe('Sync checker service (unit)', () => {
 
       expect(syncedNodes).to.have.length(5)
 
-      expect(redisGetSpy.callCount).to.be.equal(2)
-      expect(redisSetSpy.callCount).to.be.equal(7)
+      expect(redisGetSpy.callCount).to.be.equal(12)
+      expect(redisSetSpy.callCount).to.be.equal(12)
 
       // Subsequent calls should retrieve results from redis instead
       syncedNodes = await syncChecker.consensusFilter({
@@ -334,8 +334,8 @@ describe('Sync checker service (unit)', () => {
         sessionKey: '',
       })
 
-      expect(redisGetSpy.callCount).to.be.equal(3)
-      expect(redisSetSpy.callCount).to.be.equal(7)
+      expect(redisGetSpy.callCount).to.be.equal(13)
+      expect(redisSetSpy.callCount).to.be.equal(12)
     })
 
     it('performs a non-EVM (Solana) sync check successfully', async () => {
@@ -362,8 +362,8 @@ describe('Sync checker service (unit)', () => {
 
       expect(syncedNodes).to.have.length(5)
 
-      expect(redisGetSpy.callCount).to.be.equal(2)
-      expect(redisSetSpy.callCount).to.be.equal(7)
+      expect(redisGetSpy.callCount).to.be.equal(12)
+      expect(redisSetSpy.callCount).to.be.equal(12)
 
       // Subsequent calls should retrieve results from redis instead
       syncedNodes = await syncChecker.consensusFilter({
@@ -380,8 +380,8 @@ describe('Sync checker service (unit)', () => {
         sessionKey: '',
       })
 
-      expect(redisGetSpy.callCount).to.be.equal(3)
-      expect(redisSetSpy.callCount).to.be.equal(7)
+      expect(redisGetSpy.callCount).to.be.equal(13)
+      expect(redisSetSpy.callCount).to.be.equal(12)
     })
 
     it('performs a non-EVM (Pocket) sync check successfully', async () => {
