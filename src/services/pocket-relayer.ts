@@ -442,7 +442,10 @@ export class PocketRelayer {
       const sessionCacheKey = `session-${sessionKey}`
 
       let syncCheckPromise: Promise<Node[]>
+      let syncCheckedNodes: Node[]
+
       let chainCheckPromise: Promise<Node[]>
+      let chainCheckedNodes: Node[]
 
       let nodes: Node[] = pocketSession.sessionNodes
       const relayStart = process.hrtime()
@@ -518,7 +521,7 @@ export class PocketRelayer {
           chainCheckResult.value !== undefined &&
           chainCheckResult.value.length > 0
         ) {
-          nodes = chainCheckResult.value
+          chainCheckedNodes = chainCheckResult.value
         } else {
           if (chainCheckResult.status === 'rejected') {
             logger.log('error', `Error while running chain check: ${chainCheckResult.reason}.`, {
@@ -538,7 +541,7 @@ export class PocketRelayer {
           syncCheckResult.value !== undefined &&
           syncCheckResult.value.length > 0
         ) {
-          nodes = syncCheckResult.value
+          syncCheckedNodes = syncCheckResult.value
         } else {
           const error = 'Sync / chain check failure'
           const method = 'checks'
@@ -572,6 +575,15 @@ export class PocketRelayer {
           return new Error('Sync / chain check failure; using fallbacks')
         }
       }
+
+      // EVM-chains always have chain/sync checks.
+      if (blockchainIDCheck && blockchainSyncCheck) {
+        nodes = this.filterCheckedNodes(syncCheckedNodes, chainCheckedNodes)
+      } else if (blockchainSyncCheck) {
+        // For non-EVM chains that only have sync check, like pocket.
+        nodes = syncCheckedNodes
+      }
+
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
     }
 
@@ -846,6 +858,15 @@ export class PocketRelayer {
         )
       }
     }
+  }
+
+  filterCheckedNodes(syncCheckNodes: Node[], chainCheckedNodes: Node[]): Node[] {
+    // Filters out nodes that passed both checks.
+    const nodes = syncCheckNodes.filter((syncCheckNode) =>
+      chainCheckedNodes.some((chainCheckedNode) => syncCheckNode.publicKey === chainCheckedNode.publicKey)
+    )
+
+    return nodes
   }
 
   checkSecretKey(application: Applications): boolean {
