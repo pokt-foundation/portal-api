@@ -159,7 +159,6 @@ export class PocketRelayer {
       })
       return limitation
     }
-
     const method = this.parseMethod(parsedRawData)
     const fallbackAvailable = this.altruists[blockchainID] !== undefined ? true : false
 
