@@ -1,6 +1,6 @@
 # Pocket Gateway
 
-Access the full range of Pocket Network's supported blockchains through a single URL.
+Access the full range of Pocket Network's supported blockchains through a single URL!
 
 [![All Contributors](https://img.shields.io/badge/all_contributors-5-orange.svg?style=flat-square)](#contributors) [![Build Status](https://img.shields.io/github/workflow/status/pokt-foundation/portal-api/Production%20Deployment%20us-west-2?style=flat-square)](https://github.com/pokt-foundation/portal-api/actions)
 

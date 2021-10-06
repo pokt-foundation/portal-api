@@ -44,8 +44,8 @@ jobs:
           envkey_NODE_TLS_REJECT_UNAUTHORIZED: 0
           envkey_AAT_PLAN: 'premium'
           envkey_NODE_ENV: 'production'
-          envkey_REGION: 'ap-se-1'
-          envkey_REGION_NAME: 'ap-se-1'
+          envkey_REGION: 'ap-southeast-1'
+          envkey_REGION_NAME: 'ap-southeast-1'
           envkey_INFLUX_URL: 'https://influx.portal.pokt.network:8086'
           envkey_INFLUX_ORG: 'pocket'
           envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
@@ -70,7 +70,7 @@ jobs:
         id: task-def-ap-southeast-1
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: pocket-gateway/ecs-task-ap-southeast-1.json
+          task-definition: pocket-gateway/tasks/production/ecs-task-ap-southeast-1.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
 

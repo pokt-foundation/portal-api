@@ -1,6 +1,6 @@
 import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
-import { ConsensusFilterOptions, SyncChecker } from '../services/sync-checker'
+import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { ChainChecker, ChainIDFilterOptions } from '../services/chain-checker'
 import { Decryptor } from 'strong-cryptor'
 import { HttpErrors } from '@loopback/rest'
@@ -8,7 +8,7 @@ import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, N
 import { Redis } from 'ioredis'
 import { BlockchainsRepository } from '../repositories'
 import { Applications } from '../models'
-import { RelayError, LimitError } from '../errors/types'
+import { RelayError, LimitError, MAX_RELAYS_ERROR } from '../errors/types'
 import AatPlans from '../config/aat-plans.json'
 import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
 
@@ -17,6 +17,15 @@ import { JSONObject } from '@loopback/context'
 const logger = require('../services/logger')
 
 import axios from 'axios'
+import { removeNodeFromSession } from '../utils/cache'
+
+const WS_ONLY_METHODS = [
+  'eth_subscribe',
+  'eth_newFilter',
+  'newBlockFilter',
+  'eth_getFilterChanges',
+  'eth_getFilterLogs',
+]
 
 export class PocketRelayer {
   host: string
@@ -37,6 +46,7 @@ export class PocketRelayer {
   altruists: JSONObject
   aatPlan: string
   defaultLogLimitBlocks: number
+  sessionKey: string
 
   constructor({
     host,
@@ -117,8 +127,6 @@ export class PocketRelayer {
       blockchain,
       blockchainEnforceResult,
       blockchainSyncCheck,
-      blockchainSyncCheckPath,
-      blockchainSyncAllowance,
       blockchainIDCheck,
       blockchainID,
       blockchainChainID,
@@ -182,8 +190,6 @@ export class PocketRelayer {
         blockchainID,
         blockchainEnforceResult,
         blockchainSyncCheck,
-        blockchainSyncCheckPath,
-        blockchainSyncAllowance,
         blockchainIDCheck,
         blockchainChainID,
         blockchainSyncBackup: String(this.altruists[blockchainID]),
@@ -205,6 +211,8 @@ export class PocketRelayer {
           method: method,
           error: undefined,
           origin: this.origin,
+          data,
+          sessionKey: this.sessionKey,
         })
 
         // Clear error log
@@ -247,6 +255,8 @@ export class PocketRelayer {
           method,
           error,
           origin: this.origin,
+          data,
+          sessionKey: this.sessionKey,
         })
       }
     }
@@ -312,6 +322,8 @@ export class PocketRelayer {
             method: method,
             error: undefined,
             origin: this.origin,
+            data,
+            sessionKey: this.sessionKey,
           })
 
           // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
@@ -360,8 +372,6 @@ export class PocketRelayer {
     blockchain,
     blockchainEnforceResult,
     blockchainSyncCheck,
-    blockchainSyncCheckPath,
-    blockchainSyncAllowance,
     blockchainSyncBackup,
     blockchainIDCheck,
     blockchainID,
@@ -375,22 +385,12 @@ export class PocketRelayer {
     requestTimeOut: number | undefined
     blockchain: string
     blockchainEnforceResult: string
-    blockchainSyncCheck: string
-    blockchainSyncCheckPath: string
-    blockchainSyncAllowance: number
+    blockchainSyncCheck: SyncCheckOptions
     blockchainSyncBackup: string
     blockchainIDCheck: string
     blockchainID: string
     blockchainChainID: string
   }): Promise<RelayResponse | Error> {
-    logger.log('info', 'RELAYING ' + blockchainID + ' req: ' + data, {
-      requestID: requestID,
-      relayType: 'APP',
-      typeID: application.id,
-      serviceNode: '',
-      elapsedTime: '',
-    })
-
     // Secret key check
     if (!this.checkSecretKey(application)) {
       throw new HttpErrors.Forbidden('SecretKey does not match')
@@ -424,7 +424,7 @@ export class PocketRelayer {
     // Checks pass; create AAT
     const pocketAAT = new PocketAAT(...aatParams)
 
-    let node
+    let node: Node
 
     // Pull the session so we can get a list of nodes and cherry pick which one to use
     const pocketSession = await this.pocket.sessionManager.getCurrentSession(
@@ -434,11 +434,41 @@ export class PocketRelayer {
     )
 
     if (pocketSession instanceof Session) {
+      const { sessionKey } = pocketSession
+
+      this.sessionKey = sessionKey
+
+      const sessionCacheKey = `session-${sessionKey}`
+
       let syncCheckPromise: Promise<Node[]>
+      let syncCheckedNodes: Node[]
+
       let chainCheckPromise: Promise<Node[]>
+      let chainCheckedNodes: Node[]
 
       let nodes: Node[] = pocketSession.sessionNodes
       const relayStart = process.hrtime()
+
+      const nodesToRemove = await this.redis.smembers(sessionCacheKey)
+
+      if (nodesToRemove.length > 0) {
+        nodes = nodes.filter((n) => !nodesToRemove.includes(n.publicKey))
+      } else {
+        // Adds and removes dummy value as you cannot set EXPIRE on empty redis set
+        await this.redis.sadd(sessionCacheKey, '0')
+        await this.redis.expire(sessionCacheKey, 60 * 60 * 2) // 2 Hours
+        await this.redis.spop(sessionCacheKey)
+      }
+
+      if (nodes.length === 0) {
+        logger.log('warn', `SESSION: ${sessionKey} has exhausted all node relays`, {
+          requestID: requestID,
+          relayType: 'APP',
+          typeID: application.id,
+          serviceNode: '',
+        })
+        return new Error("session doesn't have any available nodes")
+      }
 
       if (blockchainIDCheck) {
         // Check Chain ID
@@ -453,7 +483,7 @@ export class PocketRelayer {
           chainID: parseInt(blockchainChainID),
           pocket: this.pocket,
           pocketConfiguration: this.pocketConfiguration,
-          origin: this.origin,
+          sessionKey: pocketSession.sessionKey,
         }
 
         chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
@@ -464,9 +494,7 @@ export class PocketRelayer {
         const consensusFilterOptions: ConsensusFilterOptions = {
           nodes,
           requestID,
-          syncCheck: blockchainSyncCheck,
-          syncCheckPath: blockchainSyncCheckPath,
-          syncAllowance: blockchainSyncAllowance,
+          syncCheckOptions: blockchainSyncCheck,
           blockchainID,
           blockchainSyncBackup,
           applicationID: application.id,
@@ -474,7 +502,7 @@ export class PocketRelayer {
           pocket: this.pocket,
           pocketAAT,
           pocketConfiguration: this.pocketConfiguration,
-          origin: this.origin,
+          sessionKey: pocketSession.sessionKey,
         }
 
         syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
@@ -490,8 +518,16 @@ export class PocketRelayer {
           chainCheckResult.value !== undefined &&
           chainCheckResult.value.length > 0
         ) {
-          nodes = chainCheckResult.value
+          chainCheckedNodes = chainCheckResult.value
         } else {
+          if (chainCheckResult.status === 'rejected') {
+            logger.log('error', `Error while running chain check: ${chainCheckResult.reason}.`, {
+              requestID: requestID,
+              relayType: 'APP',
+              typeID: application.id,
+              serviceNode: '',
+            })
+          }
           return new Error('ChainID check failure; using fallbacks')
         }
       }
@@ -502,7 +538,7 @@ export class PocketRelayer {
           syncCheckResult.value !== undefined &&
           syncCheckResult.value.length > 0
         ) {
-          nodes = syncCheckResult.value
+          syncCheckedNodes = syncCheckResult.value
         } else {
           const error = 'Sync / chain check failure'
           const method = 'checks'
@@ -521,10 +557,31 @@ export class PocketRelayer {
             method,
             error,
             origin: this.origin,
+            data,
+            sessionKey,
           })
+
+          if (syncCheckResult.status === 'rejected') {
+            logger.log('error', `Error while running sync check: ${syncCheckResult.reason}.`, {
+              requestID: requestID,
+              relayType: 'APP',
+              typeID: application.id,
+              serviceNode: '',
+            })
+          }
+
           return new Error('Sync / chain check failure; using fallbacks')
         }
       }
+
+      // EVM-chains always have chain/sync checks.
+      if (blockchainIDCheck && blockchainSyncCheck) {
+        nodes = this.filterCheckedNodes(syncCheckedNodes, chainCheckedNodes)
+      } else if (blockchainSyncCheck) {
+        // For non-EVM chains that only have sync check, like pocket.
+        nodes = syncCheckedNodes
+      }
+
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
     }
 
@@ -594,6 +651,11 @@ export class PocketRelayer {
       }
       // Error
     } else if (relayResponse instanceof Error) {
+      // Remove node from session if error is due to max relays allowed reached
+      if (relayResponse.message === MAX_RELAYS_ERROR) {
+        await removeNodeFromSession(this.redis, (pocketSession as Session).sessionKey, node.publicKey)
+      }
+
       return new RelayError(relayResponse.message, 500, node?.publicKey)
       // ConsensusNode
     } else {
@@ -654,7 +716,7 @@ export class PocketRelayer {
 
     if (!cachedBlockchains) {
       blockchains = await this.blockchainsRepository.find()
-      await this.redis.set('blockchains', JSON.stringify(blockchains), 'EX', 1)
+      await this.redis.set('blockchains', JSON.stringify(blockchains), 'EX', 60)
     } else {
       blockchains = JSON.parse(cachedBlockchains)
     }
@@ -668,14 +730,11 @@ export class PocketRelayer {
 
     if (blockchainFilter[0]) {
       let blockchainEnforceResult = ''
-      let blockchainSyncCheck = ''
-      let blockchainSyncCheckPath = ''
-      let blockchainSyncAllowance = 0
       let blockchainIDCheck = ''
       let blockchainID = ''
       let blockchainChainID = ''
-      // Should never be 0
-      let blockchainLogLimitBlocks = 10000
+      let blockchainLogLimitBlocks = 10000 // Should never be 0
+      const blockchainSyncCheck = {} as SyncCheckOptions
 
       const blockchain = blockchainFilter[0].blockchain // ex. 'eth-mainnet'
 
@@ -686,24 +745,23 @@ export class PocketRelayer {
         blockchainEnforceResult = blockchainFilter[0].enforceResult
       }
       // Sync Check to determine current blockheight
-      if (blockchainFilter[0].syncCheck) {
-        blockchainSyncCheck = blockchainFilter[0].syncCheck.replace(/\\"/g, '"')
-      }
-      // Sync Check path necessary for some chains
-      if (blockchainFilter[0].syncCheckPath) {
-        blockchainSyncCheckPath = blockchainFilter[0].syncCheckPath
+      if (blockchainFilter[0].syncCheckOptions) {
+        blockchainSyncCheck.body = (blockchainFilter[0].syncCheckOptions.body || '').replace(/\\"/g, '"')
+        blockchainSyncCheck.resultKey = blockchainFilter[0].syncCheckOptions.resultKey || ''
+
+        // Sync Check path necessary for some chains
+        blockchainSyncCheck.path = blockchainFilter[0].syncCheckOptions.path || ''
+
+        // Allowance of blocks a data node can be behind
+        blockchainSyncCheck.allowance = parseInt(blockchainFilter[0].syncCheckOptions.allowance || 0)
       }
       // Chain ID Check to determine correct chain
       if (blockchainFilter[0].chainIDCheck) {
         blockchainIDCheck = blockchainFilter[0].chainIDCheck.replace(/\\"/g, '"')
         blockchainChainID = blockchainFilter[0].chainID // ex. '100' (xdai) - can also be undefined
       }
-      // Allowance of blocks a data node can be behind
-      if (blockchainFilter[0].syncAllowance) {
-        blockchainSyncAllowance = parseInt(blockchainFilter[0].syncAllowance)
-      }
       // Max number of blocks to request logs for, if not available, result to env
-      if (blockchainFilter[0].logLimitBlocks) {
+      if ((blockchainFilter[0].logLimitBlocks as number) > 0) {
         blockchainLogLimitBlocks = parseInt(blockchainFilter[0].logLimitBlocks)
       } else if (this.defaultLogLimitBlocks > 0) {
         blockchainLogLimitBlocks = this.defaultLogLimitBlocks
@@ -713,15 +771,16 @@ export class PocketRelayer {
         blockchain,
         blockchainEnforceResult,
         blockchainSyncCheck,
-        blockchainSyncCheckPath,
-        blockchainSyncAllowance,
         blockchainIDCheck,
         blockchainID,
         blockchainChainID,
         blockchainLogLimitBlocks,
       })
     } else {
-      throw new HttpErrors.BadRequest('Incorrect blockchain: ' + this.host)
+      logger.log('error', `Incorrect blockchain: ${this.host}`, {
+        origin: this.origin,
+      })
+      throw new HttpErrors.BadRequest(`Incorrect blockchain: ${this.host}`)
     }
   }
 
@@ -731,7 +790,11 @@ export class PocketRelayer {
     blockchainID: string,
     logLimitBlocks: number
   ): Promise<string | Error> {
-    if (parsedRawData.method === 'eth_getLogs') {
+    if (WS_ONLY_METHODS.includes(parsedRawData.method)) {
+      return new HttpErrors.BadRequest(
+        `We cannot serve ${parsedRawData.method} method over HTTPS. At the moment, we do not support WebSockets.`
+      )
+    } else if (parsedRawData.method === 'eth_getLogs') {
       let toBlock: number
       let fromBlock: number
       let isToBlockHex = false
@@ -792,6 +855,15 @@ export class PocketRelayer {
     }
   }
 
+  filterCheckedNodes(syncCheckNodes: Node[], chainCheckedNodes: Node[]): Node[] {
+    // Filters out nodes that passed both checks.
+    const nodes = syncCheckNodes.filter((syncCheckNode) =>
+      chainCheckedNodes.some((chainCheckedNode) => syncCheckNode.publicKey === chainCheckedNode.publicKey)
+    )
+
+    return nodes
+  }
+
   checkSecretKey(application: Applications): boolean {
     // Check secretKey; is it required? does it pass? -- temp allowance for unencrypted keys
     const decryptor = new Decryptor({ key: this.databaseEncryptionKey })
@@ -837,9 +909,7 @@ export class PocketRelayer {
 interface BlockchainDetails {
   blockchain: string
   blockchainEnforceResult: string
-  blockchainSyncCheck: string
-  blockchainSyncCheckPath: string
-  blockchainSyncAllowance: number
+  blockchainSyncCheck: SyncCheckOptions
   blockchainIDCheck: string
   blockchainID: string
   blockchainChainID: string

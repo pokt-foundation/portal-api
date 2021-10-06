@@ -1,5 +1,30 @@
 import { Entity, model, property } from '@loopback/repository'
 
+@model()
+class SyncCheckOptions {
+  @property({
+    type: 'string',
+  })
+  path?: string
+
+  @property({
+    type: 'string',
+    required: true,
+  })
+  body: string
+
+  @property({
+    type: 'string',
+    required: true,
+  })
+  resultKey: string
+
+  @property({
+    type: 'number',
+  })
+  allowance?: number
+}
+
 @model({ settings: { strict: false } })
 export class Blockchains extends Entity {
   @property({
@@ -56,6 +81,11 @@ export class Blockchains extends Entity {
     type: 'string',
   })
   syncCheck?: string
+
+  @property({
+    type: 'object',
+  })
+  syncCheckOptions?: SyncCheckOptions
 
   @property({
     type: 'number',

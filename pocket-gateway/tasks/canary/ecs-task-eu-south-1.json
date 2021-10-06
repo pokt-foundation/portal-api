@@ -9,8 +9,8 @@
 		  "logDriver": "awslogs",
 		  "secretOptions": null,
 		  "options": {
-			"awslogs-group": "/ecs/gateway",
-			"awslogs-region": "us-west-2",
+			"awslogs-group": "/canary/ecs/gateway",
+			"awslogs-region": "eu-south-1",
 			"awslogs-stream-prefix": "ecs"
 		  }
 		},
@@ -42,7 +42,7 @@
 		"memoryReservation": 4096,
 		"volumesFrom": [],
 		"stopTimeout": null,
-		"image": "059424750518.dkr.ecr.us-west-2.amazonaws.com/gateway:latest",
+		"image": "059424750518.dkr.ecr.eu-south-1.amazonaws.com/gateway-canary:latest",
 		"startTimeout": null,
 		"firelensConfiguration": null,
 		"dependsOn": null,
@@ -59,13 +59,13 @@
 		"dockerLabels": null,
 		"systemControls": null,
 		"privileged": null,
-		"name": "gateway"
+		"name": "gateway-canary"
 	  }
 	],
 	"placementConstraints": [],
 	"memory": "4096",
 	"taskRoleArn": null,
-	"family": "gateway",
+	"family": "gateway-canary",
 	"pidMode": null,
 	"requiresCompatibilities": [
 	  "FARGATE"

@@ -8,6 +8,8 @@ import { ApplicationsRepository } from '../../src/repositories/applications.repo
 import { Encryptor } from 'strong-cryptor'
 import { LoadBalancersRepository } from '../../src/repositories/load-balancers.repository'
 import { HttpErrors } from '@loopback/rest'
+import MockAdapter from 'axios-mock-adapter'
+import axios from 'axios'
 
 // Must be the same one from the test environment
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
@@ -40,9 +42,13 @@ const BLOCKCHAINS = [
     nodeCount: 1,
     chainID: '100',
     chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
-    syncCheck: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
-    syncCheckPath: '/v1/query/height',
-    syncAllowance: 5,
+    syncCheckOptions: {
+      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+      resultKey: 'result',
+      allowance: 5,
+      // Path doesnt exist on this chain, just for testing.
+      path: '/v1/query/height',
+    },
   },
   {
     hash: '0040',
@@ -68,7 +74,11 @@ const BLOCKCHAINS = [
     enforceResult: 'JSON',
     nodeCount: 1,
     chainID: '137',
-    syncAllowance: 5,
+    syncCheckOptions: {
+      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+      resultKey: 'result',
+      allowance: 5,
+    },
   },
 ]
 
@@ -134,11 +144,17 @@ describe('V1 controller (acceptance)', () => {
   let loadBalancersRepository: LoadBalancersRepository
   let pocketMock: PocketMock
   let relayResponses: Record<string, MockRelayResponse | MockRelayResponse[]>
+  let axiosMock: MockAdapter
 
   before('setupApplication', async () => {
     blockchainsRepository = new BlockchainsRepository(gatewayTestDB)
     applicationsRepository = new ApplicationsRepository(gatewayTestDB)
     loadBalancersRepository = new LoadBalancersRepository(gatewayTestDB)
+
+    axiosMock = new MockAdapter(axios)
+    axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
+      service_url: 'https://localhost:443',
+    })
   })
 
   after(async () => {
@@ -167,6 +183,10 @@ describe('V1 controller (acceptance)', () => {
     await loadBalancersRepository.deleteAll()
     await blockchainsRepository.deleteAll()
     await applicationsRepository.deleteAll()
+  })
+
+  after(async () => {
+    axiosMock.restore()
   })
 
   it('invokes GET /v1/{appId} and successfully relays a request', async () => {

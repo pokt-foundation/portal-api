@@ -1,6 +1,6 @@
 import RedisMock from 'ioredis-mock'
 import { expect, sinon } from '@loopback/testlab'
-import { Configuration } from '@pokt-network/pocket-js'
+import { Configuration, Session, RpcError } from '@pokt-network/pocket-js'
 
 import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
 import { ChainChecker } from '../../src/services/chain-checker'
@@ -8,10 +8,15 @@ import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { metricsRecorderMock } from '../mocks/metricsRecorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
+import { MAX_RELAYS_ERROR } from '../../src/errors/types'
+import MockAdapter from 'axios-mock-adapter'
+import axios from 'axios'
 
 const logger = require('../../src/services/logger')
 
 const CHAINCHECK_PAYLOAD = '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'
+
+const DEFAULT_CHAINCHECK_RESPONSE = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
 
 describe('Chain checker service (unit)', () => {
   let chainChecker: ChainChecker
@@ -21,20 +26,28 @@ describe('Chain checker service (unit)', () => {
   let pocketConfiguration: Configuration
   let pocketMock: PocketMock
   let logSpy: sinon.SinonSpy
+  let axiosMock: MockAdapter
+
+  const origin = 'unit-test'
 
   before('initialize variables', async () => {
     redis = new RedisMock(0, '')
     cherryPicker = new CherryPicker({ redis, checkDebug: false })
     metricsRecorder = metricsRecorderMock(redis, cherryPicker)
-    chainChecker = new ChainChecker(redis, metricsRecorder)
+    chainChecker = new ChainChecker(redis, metricsRecorder, origin)
     pocketConfiguration = getPocketConfigOrDefault()
+
+    axiosMock = new MockAdapter(axios)
+    axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
+      service_url: 'https://localhost:443',
+    })
   })
 
   beforeEach(async () => {
     logSpy = sinon.spy(logger, 'log')
 
     pocketMock = new PocketMock()
-    pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+    pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = DEFAULT_CHAINCHECK_RESPONSE
 
     await redis.flushall()
   })
@@ -44,6 +57,7 @@ describe('Chain checker service (unit)', () => {
   })
 
   after(() => {
+    axiosMock.restore()
     sinon.restore()
   })
 
@@ -86,6 +100,7 @@ describe('Chain checker service (unit)', () => {
         applicationPublicKey: '',
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
       })
 
       const expectedChainID = 100 // 0x64 to base 10
@@ -110,6 +125,7 @@ describe('Chain checker service (unit)', () => {
         applicationPublicKey: '',
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
       })
 
       const expectedChainID = 0
@@ -135,6 +151,7 @@ describe('Chain checker service (unit)', () => {
         applicationPublicKey: '',
         pocketAAT: undefined,
         pocketConfiguration,
+        sessionKey: '',
       })
 
       const expectedChainID = 0
@@ -165,6 +182,7 @@ describe('Chain checker service (unit)', () => {
       applicationPublicKey: '',
       pocketAAT: undefined,
       pocketConfiguration,
+      sessionKey: '',
     })
 
     const expectedChainID = 100 // 0x64 to base 10
@@ -193,15 +211,15 @@ describe('Chain checker service (unit)', () => {
       applicationPublicKey: '',
       pocketAAT: undefined,
       pocketConfiguration,
+      sessionKey: '',
       chainID,
-      origin: 'unit-test',
     })
 
     expect(checkedNodes).to.be.Array()
     expect(checkedNodes).to.have.length(5)
 
-    expect(redisGetSpy.callCount).to.be.equal(2)
-    expect(redisSetSpy.callCount).to.be.equal(2)
+    expect(redisGetSpy.callCount).to.be.equal(12)
+    expect(redisSetSpy.callCount).to.be.equal(7)
 
     // Subsequent calls should retrieve results from redis instead
     checkedNodes = await chainChecker.chainIDFilter({
@@ -214,12 +232,12 @@ describe('Chain checker service (unit)', () => {
       applicationPublicKey: '',
       pocketAAT: undefined,
       pocketConfiguration,
+      sessionKey: '',
       chainID,
-      origin: 'unit-test',
     })
 
-    expect(redisGetSpy.callCount).to.be.equal(3)
-    expect(redisSetSpy.callCount).to.be.equal(2)
+    expect(redisGetSpy.callCount).to.be.equal(13)
+    expect(redisSetSpy.callCount).to.be.equal(7)
   })
 
   it('fails the chain check', async () => {
@@ -240,11 +258,52 @@ describe('Chain checker service (unit)', () => {
       applicationPublicKey: '',
       pocketAAT: undefined,
       pocketConfiguration,
+      sessionKey: '',
       chainID,
-      origin: 'unit-test',
     })
 
     expect(checkedNodes).to.be.Array()
     expect(checkedNodes).to.have.length(0)
+  })
+
+  it('Fails the chain check due to max relays error on a node', async () => {
+    const nodes = DEFAULT_NODES
+
+    // Fails last node due to max relays
+    pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = [
+      DEFAULT_CHAINCHECK_RESPONSE,
+      DEFAULT_CHAINCHECK_RESPONSE,
+      DEFAULT_CHAINCHECK_RESPONSE,
+      DEFAULT_CHAINCHECK_RESPONSE,
+      new RpcError('90', MAX_RELAYS_ERROR),
+    ]
+
+    const pocketClient = pocketMock.object()
+    const chainID = 100
+
+    const sessionKey = (
+      (await pocketClient.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session
+    ).sessionKey
+
+    const checkedNodes = await chainChecker.chainIDFilter({
+      nodes,
+      requestID: '1234',
+      blockchainID: '0027',
+      chainCheck: CHAINCHECK_PAYLOAD,
+      pocket: pocketClient,
+      applicationID: '',
+      applicationPublicKey: '',
+      pocketAAT: undefined,
+      pocketConfiguration,
+      chainID,
+      sessionKey,
+    })
+
+    expect(checkedNodes).to.be.Array()
+    expect(checkedNodes).to.have.length(4)
+
+    const removedNode = await redis.smembers(`session-${sessionKey}`)
+
+    expect(removedNode).to.have.length(1)
   })
 })
