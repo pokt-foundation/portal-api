@@ -25,7 +25,7 @@
     "environment": [],
 		"command": [],
 		"linuxParameters": null,
-		"cpu": 4092,
+		"cpu": 4096,
 		"resourceRequirements": null,
 		"ulimits": [
 			{
@@ -71,7 +71,7 @@
 	  "FARGATE"
 	],
 	"networkMode": "awsvpc",
-	"cpu": "4092",
+	"cpu": "4096",
 	"inferenceAccelerators": null,
 	"proxyConfiguration": null,
 	"volumes": []
