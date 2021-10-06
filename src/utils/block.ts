@@ -1,5 +1,5 @@
 export function blockHexToDecimal(hex: string): number {
-  return parseInt(hex, 16)
+  return parseInt(hex)
 }
 
 export function isBlockHex(block: string): boolean {

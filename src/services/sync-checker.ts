@@ -1,7 +1,7 @@
 import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
-import { blockHexToDecimal, checkEnforcementJSON, getNodeNetworkData, isBlockHex } from '../utils'
+import { blockHexToDecimal, checkEnforcementJSON, getNodeNetworkData } from '../utils'
 
 const logger = require('../services/logger')
 
@@ -566,7 +566,7 @@ export class SyncChecker {
   parseBlockFromPayload(payload: object, syncCheckResultKey: string): number {
     const rawHeight = payload[`${syncCheckResultKey}`] || '0'
 
-    const blockHeight = isBlockHex(rawHeight) ? blockHexToDecimal(rawHeight) : parseInt(rawHeight)
+    const blockHeight = blockHexToDecimal(rawHeight)
 
     return blockHeight
   }
