@@ -146,17 +146,19 @@ export class PocketRelayer {
 
     const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
     const limitation = await this.enforceLimits(parsedRawData, blockchainID, logLimitBlocks)
+    const data = JSON.stringify(parsedRawData)
 
     if (limitation instanceof Error) {
-      logger.log('error', `${parsedRawData.method} method limitations exceeded.`, {
+      logger.log('error', `Limitation Error req: ${data}`, {
         requestID: requestID,
         relayType: 'APP',
+        error: `${parsedRawData.method} method limitations exceeded.`,
         typeID: application.id,
         serviceNode: '',
+        origin: this.origin,
       })
       return limitation
     }
-    const data = JSON.stringify(parsedRawData)
     const method = this.parseMethod(parsedRawData)
     const fallbackAvailable = this.altruists[blockchainID] !== undefined ? true : false
 
