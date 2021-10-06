@@ -1,6 +1,7 @@
 import { Redis } from 'ioredis'
 import { getAddressFromPublicKey } from 'pocket-tools'
 import axios, { AxiosError } from 'axios'
+import extractDomain from 'extract-domain'
 
 const logger = require('../services/logger')
 
@@ -46,7 +47,7 @@ export async function getNodeNetworkData(redis: Redis, publicKey: string, reques
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const { service_url } = (await axios.post(`${ALTRUIST_URL}/v1/query/node`, { address })).data
 
-    nodeUrl = { serviceURL: service_url, serviceDomain: new URL(service_url).hostname.replace('www.', '') }
+    nodeUrl = { serviceURL: service_url, serviceDomain: extractDomain(service_url) }
 
     await redis.set(`node-${publicKey}`, JSON.stringify(nodeUrl), 'EX', 60 * 60 * 6) // 6 hours
   } catch (e) {
