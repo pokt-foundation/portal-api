@@ -773,7 +773,10 @@ export class PocketRelayer {
         blockchainLogLimitBlocks,
       })
     } else {
-      throw new HttpErrors.BadRequest('Incorrect blockchain: ' + this.host)
+      logger.log('error', `Incorrect blockchain: ${this.host}`, {
+        origin: this.origin,
+      })
+      throw new HttpErrors.BadRequest(`Incorrect blockchain: ${this.host}`)
     }
   }
 
