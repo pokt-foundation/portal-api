@@ -54,7 +54,7 @@
 			"dockerLabels": null,
 			"systemControls": null,
 			"privileged": null,
-			"name": "gateway-canary"
+			"name": "gateway-canary-1"
 		},
 		{
 			"dnsSearchDomains": null,
@@ -109,7 +109,7 @@
 			"dockerLabels": null,
 			"systemControls": null,
 			"privileged": null,
-			"name": "gateway-canary"
+			"name": "gateway-canary-2"
 		},
 		{
 			"dnsSearchDomains": null,
@@ -164,7 +164,7 @@
 			"dockerLabels": null,
 			"systemControls": null,
 			"privileged": null,
-			"name": "gateway-canary"
+			"name": "gateway-canary-3"
 		},
 		{
 			"dnsSearchDomains": null,
@@ -219,7 +219,7 @@
 			"dockerLabels": null,
 			"systemControls": null,
 			"privileged": null,
-			"name": "gateway-canary"
+			"name": "gateway-canary-4"
 		}
 	],
 	"placementConstraints": [],
