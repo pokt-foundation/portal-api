@@ -150,7 +150,7 @@ export class PocketRelayer {
 
     if (limitation instanceof Error) {
       logger.log('error', `LIMITATION ERROR ${blockchainID} req: ${data}`, {
-        blockchainID: blockchainID,
+        blockchainID,
         requestID: requestID,
         relayType: 'APP',
         error: `${parsedRawData.method} method limitations exceeded.`,
@@ -578,9 +578,9 @@ export class PocketRelayer {
       }
 
       // EVM-chains always have chain/sync checks.
-      if (blockchainIDCheck && blockchainSyncCheck) {
+      if (chainCheckedNodes.length > 0 && syncCheckedNodes.length > 0) {
         nodes = this.filterCheckedNodes(syncCheckedNodes, chainCheckedNodes)
-      } else if (blockchainSyncCheck) {
+      } else if (syncCheckedNodes.length > 0) {
         // For non-EVM chains that only have sync check, like pocket.
         nodes = syncCheckedNodes
       }
