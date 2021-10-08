@@ -583,7 +583,7 @@ export class PocketRelayer {
         if (filteredNodes.length > 0) {
           nodes = filteredNodes
         }
-      } else if (blockchainSyncCheck) {
+      } else if (syncCheckedNodes.length > 0) {
         // For non-EVM chains that only have sync check, like pocket.
         nodes = syncCheckedNodes
       }
