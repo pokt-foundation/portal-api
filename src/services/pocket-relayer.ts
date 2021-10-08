@@ -851,7 +851,6 @@ export class PocketRelayer {
     const nodes = syncCheckNodes.filter((syncCheckNode) =>
       chainCheckedNodes.some((chainCheckedNode) => syncCheckNode.publicKey === chainCheckedNode.publicKey)
     )
-    // If no nodes passed both checks, return sync checked nodes.
 
     return nodes
   }
