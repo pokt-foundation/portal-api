@@ -35,7 +35,8 @@ const DUMMY_ENV = {
     "0026": "https://user:pass@backups.example.org:18556",
     "0027": "https://user:pass@backups.example.org:18546",
     "0028": "https://user:pass@backups.example.org:18545",
-    "000A": "https://user:pass@backups.example.org:18553"
+    "000A": "https://user:pass@backups.example.org:18553",
+    "0041": "https://user:pass@backups.example.org:18082"
   }`,
   POCKET_SESSION_BLOCK_FREQUENCY: 4,
   POCKET_BLOCK_TIME: 1038000,
