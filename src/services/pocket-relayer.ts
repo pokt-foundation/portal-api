@@ -150,7 +150,7 @@ export class PocketRelayer {
 
     if (limitation instanceof Error) {
       logger.log('error', `LIMITATION ERROR ${blockchainID} req: ${data}`, {
-        blockchainID: blockchainID,
+        blockchainID,
         requestID: requestID,
         relayType: 'APP',
         error: `${parsedRawData.method} method limitations exceeded.`,
@@ -515,72 +515,50 @@ export class PocketRelayer {
 
       const [chainCheckResult, syncCheckResult] = await checkersPromise
 
-      if (blockchainIDCheck) {
-        if (
-          chainCheckResult.status === 'fulfilled' &&
-          chainCheckResult.value !== undefined &&
-          chainCheckResult.value.length > 0
-        ) {
-          chainCheckedNodes = chainCheckResult.value
-        } else {
-          if (chainCheckResult.status === 'rejected') {
-            logger.log('error', `Error while running chain check: ${chainCheckResult.reason}.`, {
-              requestID: requestID,
-              relayType: 'APP',
-              typeID: application.id,
-              serviceNode: '',
-            })
-          }
-          return new Error('ChainID check failure; using fallbacks')
-        }
+      if (blockchainIDCheck && this.isCheckPromiseResolved(chainCheckResult)) {
+        chainCheckedNodes = (chainCheckResult as PromiseFulfilledResult<Node[]>).value
+      } else {
+        return new Error('ChainID check failure; using fallbacks')
       }
 
-      if (blockchainSyncCheck) {
-        if (
-          syncCheckResult.status === 'fulfilled' &&
-          syncCheckResult.value !== undefined &&
-          syncCheckResult.value.length > 0
-        ) {
-          syncCheckedNodes = syncCheckResult.value
-        } else {
-          const error = 'Sync / chain check failure'
-          const method = 'checks'
+      if (blockchainSyncCheck && this.isCheckPromiseResolved(syncCheckResult)) {
+        syncCheckedNodes = (syncCheckResult as PromiseFulfilledResult<Node[]>).value
+      } else {
+        const error = 'Sync check failure'
+        const method = 'checks'
 
-          await this.metricsRecorder.recordMetric({
-            requestID,
-            applicationID: application.id,
-            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-            blockchainID,
-            serviceNode: 'session-failure',
-            relayStart,
-            result: 500,
-            bytes: Buffer.byteLength(error, 'utf8'),
-            delivered: false,
-            fallback: false,
-            method,
-            error,
-            origin: this.origin,
-            data,
-            sessionKey,
-          })
+        await this.metricsRecorder.recordMetric({
+          requestID,
+          applicationID: application.id,
+          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+          blockchainID,
+          serviceNode: 'session-failure',
+          relayStart,
+          result: 500,
+          bytes: Buffer.byteLength(error, 'utf8'),
+          delivered: false,
+          fallback: false,
+          method,
+          error,
+          origin: this.origin,
+          data,
+          sessionKey,
+        })
 
-          if (syncCheckResult.status === 'rejected') {
-            logger.log('error', `Error while running sync check: ${syncCheckResult.reason}.`, {
-              requestID: requestID,
-              relayType: 'APP',
-              typeID: application.id,
-              serviceNode: '',
-            })
-          }
-
-          return new Error('Sync / chain check failure; using fallbacks')
-        }
+        return new Error('Sync check failure; using fallbacks')
       }
 
       // EVM-chains always have chain/sync checks.
-      if (blockchainIDCheck && blockchainSyncCheck) {
-        nodes = this.filterCheckedNodes(syncCheckedNodes, chainCheckedNodes)
-      } else if (blockchainSyncCheck) {
+      if (chainCheckedNodes.length > 0 && syncCheckedNodes.length > 0) {
+        const filteredNodes = this.filterCheckedNodes(syncCheckedNodes, chainCheckedNodes)
+
+        // There's a chance that no nodes passes both checks.
+        if (filteredNodes.length > 0) {
+          nodes = filteredNodes
+        } else {
+          return new Error('Sync / chain check failure; using fallbacks')
+        }
+      } else if (syncCheckedNodes.length > 0) {
         // For non-EVM chains that only have sync check, like pocket.
         nodes = syncCheckedNodes
       }
@@ -856,6 +834,10 @@ export class PocketRelayer {
         )
       }
     }
+  }
+
+  isCheckPromiseResolved(promise: PromiseSettledResult<Node[]>): boolean {
+    return promise.status === 'fulfilled' && promise.value !== undefined && promise.value.length > 0
   }
 
   filterCheckedNodes(syncCheckNodes: Node[], chainCheckedNodes: Node[]): Node[] {
