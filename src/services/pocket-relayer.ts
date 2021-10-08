@@ -523,14 +523,6 @@ export class PocketRelayer {
       ) {
         chainCheckedNodes = chainCheckResult.value
       } else {
-        if (chainCheckResult.status === 'rejected') {
-          logger.log('error', `Error while running chain check: ${chainCheckResult.reason}.`, {
-            requestID: requestID,
-            relayType: 'APP',
-            typeID: application.id,
-            serviceNode: '',
-          })
-        }
         return new Error('ChainID check failure; using fallbacks')
       }
 
@@ -542,7 +534,7 @@ export class PocketRelayer {
       ) {
         syncCheckedNodes = syncCheckResult.value
       } else {
-        const error = 'Sync / chain check failure'
+        const error = 'Sync check failure'
         const method = 'checks'
 
         await this.metricsRecorder.recordMetric({
@@ -563,16 +555,7 @@ export class PocketRelayer {
           sessionKey,
         })
 
-        if (syncCheckResult.status === 'rejected') {
-          logger.log('error', `Error while running sync check: ${syncCheckResult.reason}.`, {
-            requestID: requestID,
-            relayType: 'APP',
-            typeID: application.id,
-            serviceNode: '',
-          })
-        }
-
-        return new Error('Sync / chain check failure; using fallbacks')
+        return new Error('Sync check failure; using fallbacks')
       }
 
       // EVM-chains always have chain/sync checks.
@@ -582,6 +565,8 @@ export class PocketRelayer {
         // There's a chance that no nodes passes both checks.
         if (filteredNodes.length > 0) {
           nodes = filteredNodes
+        } else {
+          return new Error('Sync / chain check failure; using fallbacks')
         }
       } else if (syncCheckedNodes.length > 0) {
         // For non-EVM chains that only have sync check, like pocket.
