@@ -50,6 +50,7 @@ export class CherryPicker {
         relayType: 'LB',
         typeID: loadBalancerID,
         serviceNode: '',
+        blockchainID: blockchain,
       })
       rankedItems = applications
     }
@@ -62,11 +63,13 @@ export class CherryPicker {
         requestID: requestID,
         relayType: 'LB',
         typeID: loadBalancerID,
+        blockchainID: blockchain,
       })
       logger.log('debug', 'Selected ' + selectedApplication + ' : ' + application, {
         requestID: requestID,
         relayType: 'LB',
         typeID: loadBalancerID,
+        blockchainID: blockchain,
       })
     }
     return application
@@ -108,6 +111,7 @@ export class CherryPicker {
         relayType: 'APP',
         typeID: application.id,
         serviceNode: '',
+        blockchainID: blockchain,
       })
       rankedItems = rawNodeIDs
     }
@@ -121,12 +125,14 @@ export class CherryPicker {
         relayType: 'APP',
         typeID: application.id,
         serviceNode: '',
+        blockchainID: blockchain,
       })
       logger.log('debug', 'Selected ' + selectedNode + ' : ' + node.publicKey, {
         requestID: requestID,
         relayType: 'APP',
         typeID: application.id,
         serviceNode: '',
+        blockchainID: blockchain,
       })
     }
     return node

@@ -192,11 +192,17 @@ describe('V1 controller (acceptance)', () => {
   it('invokes GET /v1/{appId} and successfully relays a request', async () => {
     const pocket = pocketMock.class()
 
+    relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+
+    axiosMock
+      .onPost('https://user:pass@backups.example.org:18082')
+      .reply(200, { id: 1, jsonrpc: '2.0', result: '0x1083d57' })
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_chainId', params: [], id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet-x')
       .expect(200)
