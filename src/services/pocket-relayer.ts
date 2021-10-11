@@ -540,6 +540,7 @@ export class PocketRelayer {
           data,
           sessionKey,
         })
+
         return new Error('ChainID check failure; using fallbacks')
       }
 
