@@ -14,7 +14,7 @@ import { JSONObject } from '@loopback/context'
 
 const logger = require('../services/logger')
 
-import axios from 'axios'
+import axios, { AxiosRequestConfig, Method } from 'axios'
 import { removeNodeFromSession } from '../utils/cache'
 import { checkSecretKey, SecretKeyDetails, updateConfiguration } from '../utils/pocket'
 import { checkEnforcementJSON, checkWhitelist, parseMethod } from '../utils/string'
@@ -269,12 +269,12 @@ export class PocketRelayer {
     // Exhausted network relay attempts; use fallback
     if (fallbackAvailable) {
       const relayStart = process.hrtime()
-      let axiosConfig = {}
+      let axiosConfig: AxiosRequestConfig = {}
 
       // Add relay path to URL
       const altruistURL =
         relayPath === undefined || relayPath === ''
-          ? this.altruists[blockchainID]
+          ? (this.altruists[blockchainID] as string)
           : `${this.altruists[blockchainID]}${relayPath}`
 
       // Remove user/pass from the altruist URL
@@ -289,11 +289,16 @@ export class PocketRelayer {
         }
       } else {
         axiosConfig = {
-          method: httpMethod,
+          method: httpMethod as Method,
           url: altruistURL,
           data: rawData.toString(),
         }
       }
+
+      if (requestTimeOut) {
+        axiosConfig.timeout = requestTimeOut
+      }
+
       try {
         const fallbackResponse = await axios(axiosConfig)
 
