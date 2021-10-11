@@ -67,8 +67,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       COMMIT_HASH,
     } = await this.get('configuration.environment.values')
 
-    console.log('COMMIT HASH', COMMIT_HASH)
-
     const environment: string = NODE_ENV || 'production'
     const dispatchURL: string = DISPATCH_URL || ''
     const altruists: string = ALTRUISTS || ''
