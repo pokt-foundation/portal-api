@@ -64,6 +64,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       DEFAULT_LOG_LIMIT_BLOCKS,
       AAT_PLAN,
       REDIRECTS,
+      COMMIT_HASH,
     } = await this.get('configuration.environment.values')
 
     const environment: string = NODE_ENV || 'production'
@@ -79,6 +80,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const defaultLogLimitBlocks: number = parseInt(DEFAULT_LOG_LIMIT_BLOCKS) || 10000
     const aatPlan = AAT_PLAN || AatPlans.PREMIUM
     const redirects: string | object[] = REDIRECTS || ''
+    const commitHash: string | string = COMMIT_HASH || ''
 
     if (!dispatchURL) {
       throw new HttpErrors.InternalServerError('DISPATCH_URL required in ENV')
@@ -173,7 +175,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     if (!redisPort) {
       throw new HttpErrors.InternalServerError('REDIS_PORT required in ENV')
     }
-    const redis = new Redis(parseInt(redisPort), redisEndpoint)
+    const redis = new Redis(parseInt(redisPort), redisEndpoint, {
+      keyPrefix: `${commitHash}-`,
+    })
 
     this.bind('redisInstance').to(redis)
 

@@ -34,6 +34,7 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'AAT_PLAN',
     'WATCH',
     'REDIRECTS',
+    'COMMIT_HASH',
   ]
 
   /*
