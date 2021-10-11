@@ -152,13 +152,6 @@ export class CherryPicker {
     return rawFailureLog
   }
 
-  // Fetch node client type if Ethereum based
-  async fetchClientTypeLog(blockchain: string, id: string | undefined): Promise<string | null> {
-    const clientTypeLog = await this.redis.get(blockchain + '-' + id + '-clientType')
-
-    return clientTypeLog
-  }
-
   // Record app & node service quality in redis for future selection weight
   // { id: { results: { 200: x, 500: y, ... }, averageSuccessLatency: z }
   async updateServiceQuality(

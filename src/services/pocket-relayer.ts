@@ -1,16 +1,15 @@
-import { CherryPicker } from '../services/cherry-picker'
-import { MetricsRecorder } from '../services/metrics-recorder'
-import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
+import { Applications } from '../models'
+import { BlockchainsRepository } from '../repositories'
+import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
 import { ChainChecker, ChainIDFilterOptions } from '../services/chain-checker'
-import { Decryptor } from 'strong-cryptor'
+import { CherryPicker } from '../services/cherry-picker'
+import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { HttpErrors } from '@loopback/rest'
+import { MetricsRecorder } from '../services/metrics-recorder'
 import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
 import { Redis } from 'ioredis'
-import { BlockchainsRepository } from '../repositories'
-import { Applications } from '../models'
 import { RelayError, LimitError, MAX_RELAYS_ERROR } from '../errors/types'
 import AatPlans from '../config/aat-plans.json'
-import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
 
 import { JSONObject } from '@loopback/context'
 
@@ -18,14 +17,10 @@ const logger = require('../services/logger')
 
 import axios from 'axios'
 import { removeNodeFromSession } from '../utils/cache'
-
-const WS_ONLY_METHODS = [
-  'eth_subscribe',
-  'eth_newFilter',
-  'newBlockFilter',
-  'eth_getFilterChanges',
-  'eth_getFilterLogs',
-]
+import { checkSecretKey, SecretKeyDetails, updateConfiguration } from '../utils/pocket'
+import { checkWhitelist, parseMethod } from '../utils/string'
+import { BlockchainDetails, SendRelayOptions, filterCheckedNodes, isCheckPromiseResolved } from '../utils/relayer'
+import { WS_ONLY_METHODS } from '../utils/constants'
 
 export class PocketRelayer {
   host: string
@@ -160,7 +155,7 @@ export class PocketRelayer {
       })
       return limitation
     }
-    const method = this.parseMethod(parsedRawData)
+    const method = parseMethod(parsedRawData)
     const fallbackAvailable = this.altruists[blockchainID] !== undefined ? true : false
 
     // Retries if applicable
@@ -394,18 +389,23 @@ export class PocketRelayer {
     blockchainID: string
     blockchainChainID: string
   }): Promise<RelayResponse | Error> {
+    const secretKeyDetails: SecretKeyDetails = {
+      secretKey: this.secretKey,
+      databaseEncryptionKey: this.databaseEncryptionKey,
+    }
+
     // Secret key check
-    if (!this.checkSecretKey(application)) {
+    if (!checkSecretKey(application, secretKeyDetails)) {
       throw new HttpErrors.Forbidden('SecretKey does not match')
     }
 
     // Whitelist: origins -- explicit matches
-    if (!this.checkWhitelist(application.gatewaySettings.whitelistOrigins, this.origin, 'explicit')) {
+    if (!checkWhitelist(application.gatewaySettings.whitelistOrigins, this.origin, 'explicit')) {
       throw new HttpErrors.Forbidden('Whitelist Origin check failed: ' + this.origin)
     }
 
     // Whitelist: userAgent -- substring matches
-    if (!this.checkWhitelist(application.gatewaySettings.whitelistUserAgents, this.userAgent, 'substring')) {
+    if (!checkWhitelist(application.gatewaySettings.whitelistUserAgents, this.userAgent, 'substring')) {
       throw new HttpErrors.Forbidden('Whitelist User Agent check failed: ' + this.userAgent)
     }
 
@@ -515,178 +515,159 @@ export class PocketRelayer {
 
       const [chainCheckResult, syncCheckResult] = await checkersPromise
 
-      if (blockchainIDCheck && this.isCheckPromiseResolved(chainCheckResult)) {
-        chainCheckedNodes = (chainCheckResult as PromiseFulfilledResult<Node[]>).value
-      } else {
-        return new Error('ChainID check failure; using fallbacks')
-      }
-
-      if (blockchainSyncCheck && this.isCheckPromiseResolved(syncCheckResult)) {
-        syncCheckedNodes = (syncCheckResult as PromiseFulfilledResult<Node[]>).value
-      } else {
-        const error = 'Sync check failure'
-        const method = 'checks'
-
-        await this.metricsRecorder.recordMetric({
-          requestID,
-          applicationID: application.id,
-          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-          blockchainID,
-          serviceNode: 'session-failure',
-          relayStart,
-          result: 500,
-          bytes: Buffer.byteLength(error, 'utf8'),
-          delivered: false,
-          fallback: false,
-          method,
-          error,
-          origin: this.origin,
-          data,
-          sessionKey,
-        })
-
-        return new Error('Sync check failure; using fallbacks')
-      }
-
-      // EVM-chains always have chain/sync checks.
-      if (chainCheckedNodes.length > 0 && syncCheckedNodes.length > 0) {
-        const filteredNodes = this.filterCheckedNodes(syncCheckedNodes, chainCheckedNodes)
-
-        // There's a chance that no nodes passes both checks.
-        if (filteredNodes.length > 0) {
-          nodes = filteredNodes
+      if (blockchainIDCheck) {
+        if (isCheckPromiseResolved(chainCheckResult)) {
+          chainCheckedNodes = (chainCheckResult as PromiseFulfilledResult<Node[]>).value
         } else {
-          return new Error('Sync / chain check failure; using fallbacks')
+          const error = 'ChainID check failure'
+          const method = 'checks'
+
+          await this.metricsRecorder.recordMetric({
+            requestID,
+            applicationID: application.id,
+            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+            blockchainID,
+            serviceNode: 'session-failure',
+            relayStart,
+            result: 500,
+            bytes: Buffer.byteLength(error, 'utf8'),
+            delivered: false,
+            fallback: false,
+            method,
+            error,
+            origin: this.origin,
+            data,
+            sessionKey,
+          })
+
+          return new Error('ChainID check failure; using fallbacks')
         }
-      } else if (syncCheckedNodes.length > 0) {
-        // For non-EVM chains that only have sync check, like pocket.
-        nodes = syncCheckedNodes
       }
 
-      node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
-    }
+      if (blockchainSyncCheck) {
+        if (isCheckPromiseResolved(syncCheckResult)) {
+          syncCheckedNodes = (syncCheckResult as PromiseFulfilledResult<Node[]>).value
+        } else {
+          const error = 'Sync check failure'
+          const method = 'checks'
 
-    if (this.checkDebug) {
-      logger.log('debug', JSON.stringify(pocketSession), {
-        requestID: requestID,
-        relayType: 'APP',
-        typeID: application.id,
-        serviceNode: node?.publicKey,
-      })
-    }
+          await this.metricsRecorder.recordMetric({
+            requestID,
+            applicationID: application.id,
+            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+            blockchainID,
+            serviceNode: 'session-failure',
+            relayStart,
+            result: 500,
+            bytes: Buffer.byteLength(error, 'utf8'),
+            delivered: false,
+            fallback: false,
+            method,
+            error,
+            origin: this.origin,
+            data,
+            sessionKey,
+          })
 
-    // Adjust Pocket Configuration for a custom requestTimeOut
-    let relayConfiguration = this.pocketConfiguration
+          return new Error('Sync check failure; using fallbacks')
+        }
 
-    if (requestTimeOut) {
-      relayConfiguration = this.updateConfiguration(requestTimeOut)
-    }
+        // EVM-chains always have chain/sync checks.
+        if (blockchainIDCheck && blockchainSyncCheck) {
+          const filteredNodes = filterCheckedNodes(syncCheckedNodes, chainCheckedNodes)
 
-    // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
-    const relayResponse = await this.pocket.sendRelay(
-      data,
-      blockchainID,
-      pocketAAT,
-      relayConfiguration,
-      undefined,
-      httpMethod,
-      relayPath,
-      node,
-      undefined,
-      requestID
-    )
-
-    if (this.checkDebug) {
-      logger.log('debug', JSON.stringify(relayConfiguration), {
-        requestID: requestID,
-        relayType: 'APP',
-        typeID: application.id,
-        serviceNode: node?.publicKey,
-      })
-      logger.log('debug', JSON.stringify(relayResponse), {
-        requestID: requestID,
-        relayType: 'APP',
-        typeID: application.id,
-        serviceNode: node?.publicKey,
-      })
-    }
-
-    // Success
-    if (relayResponse instanceof RelayResponse) {
-      // First, check for the format of the result; Pocket Nodes will return relays that include
-      // erroneous results like "invalid host specified" when the node is configured incorrectly.
-      // Those results are still marked as 200:success.
-      // To filter them out, we will enforce result formats on certain blockchains. If the
-      // relay result is not in the correct format, this was not a successful relay.
-      if (
-        blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
-        blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON // and
-        (!checkEnforcementJSON(relayResponse.payload) || // the relay response is not valid JSON // or
-          relayResponse.payload.startsWith('{"error"')) // the full payload is an error
-      ) {
-        // then this result is invalid
-        return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey)
-      } else {
-        // Success
-        return relayResponse
-      }
-      // Error
-    } else if (relayResponse instanceof Error) {
-      // Remove node from session if error is due to max relays allowed reached
-      if (relayResponse.message === MAX_RELAYS_ERROR) {
-        await removeNodeFromSession(this.redis, (pocketSession as Session).sessionKey, node.publicKey)
-      }
-
-      return new RelayError(relayResponse.message, 500, node?.publicKey)
-      // ConsensusNode
-    } else {
-      // TODO: ConsensusNode is a possible return
-      return new Error('relayResponse is undefined')
-    }
-  }
-
-  // Fetch node client type if Ethereum based
-  async fetchClientTypeLog(blockchainID: string, id: string | undefined): Promise<string | null> {
-    const clientTypeLog = await this.redis.get(blockchainID + '-' + id + '-clientType')
-
-    return clientTypeLog
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  parseMethod(parsedRawData: Record<string, any>): string {
-    // Method recording for metrics
-    let method = ''
-
-    if (parsedRawData instanceof Array) {
-      // Join the methods of calls in an array for chains that can join multiple calls in one
-      for (const key in parsedRawData) {
-        if (parsedRawData[key].method) {
-          if (method) {
-            method += ','
+          // There's a chance that no nodes passes both checks.
+          if (filteredNodes.length > 0) {
+            nodes = filteredNodes
+          } else {
+            return new Error('Sync / chain check failure; using fallbacks')
           }
-          method += parsedRawData[key].method
+        } else if (syncCheckedNodes.length > 0) {
+          // For non-EVM chains that only have sync check, like pocket.
+          nodes = syncCheckedNodes
         }
-      }
-    } else if (parsedRawData.method) {
-      method = parsedRawData.method
-    }
-    return method
-  }
 
-  updateConfiguration(requestTimeOut: number): Configuration {
-    return new Configuration(
-      this.pocketConfiguration.maxDispatchers,
-      this.pocketConfiguration.maxSessions,
-      this.pocketConfiguration.consensusNodeCount,
-      requestTimeOut,
-      this.pocketConfiguration.acceptDisputedResponses,
-      this.pocketConfiguration.sessionBlockFrequency,
-      this.pocketConfiguration.blockTime,
-      this.pocketConfiguration.maxSessionRefreshRetries,
-      this.pocketConfiguration.validateRelayResponses,
-      this.pocketConfiguration.rejectSelfSignedCertificates,
-      this.pocketConfiguration.useLegacyTxCodec
-    )
+        node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
+      }
+
+      if (this.checkDebug) {
+        logger.log('debug', JSON.stringify(pocketSession), {
+          requestID: requestID,
+          relayType: 'APP',
+          typeID: application.id,
+          serviceNode: node?.publicKey,
+        })
+      }
+
+      // Adjust Pocket Configuration for a custom requestTimeOut
+      let relayConfiguration = this.pocketConfiguration
+
+      if (requestTimeOut) {
+        relayConfiguration = updateConfiguration(this.pocketConfiguration, requestTimeOut)
+      }
+
+      // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
+      const relayResponse = await this.pocket.sendRelay(
+        data,
+        blockchainID,
+        pocketAAT,
+        relayConfiguration,
+        undefined,
+        httpMethod,
+        relayPath,
+        node,
+        undefined,
+        requestID
+      )
+
+      if (this.checkDebug) {
+        logger.log('debug', JSON.stringify(relayConfiguration), {
+          requestID: requestID,
+          relayType: 'APP',
+          typeID: application.id,
+          serviceNode: node?.publicKey,
+        })
+        logger.log('debug', JSON.stringify(relayResponse), {
+          requestID: requestID,
+          relayType: 'APP',
+          typeID: application.id,
+          serviceNode: node?.publicKey,
+        })
+      }
+
+      // Success
+      if (relayResponse instanceof RelayResponse) {
+        // First, check for the format of the result; Pocket Nodes will return relays that include
+        // erroneous results like "invalid host specified" when the node is configured incorrectly.
+        // Those results are still marked as 200:success.
+        // To filter them out, we will enforce result formats on certain blockchains. If the
+        // relay result is not in the correct format, this was not a successful relay.
+        if (
+          blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
+          blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON // and
+          (!checkEnforcementJSON(relayResponse.payload) || // the relay response is not valid JSON // or
+            relayResponse.payload.startsWith('{"error"')) // the full payload is an error
+        ) {
+          // then this result is invalid
+          return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey)
+        } else {
+          // Success
+          return relayResponse
+        }
+        // Error
+      } else if (relayResponse instanceof Error) {
+        // Remove node from session if error is due to max relays allowed reached
+        if (relayResponse.message === MAX_RELAYS_ERROR) {
+          await removeNodeFromSession(this.redis, (pocketSession as Session).sessionKey, node.publicKey)
+        }
+
+        return new RelayError(relayResponse.message, 500, node?.publicKey)
+        // ConsensusNode
+      } else {
+        // TODO: ConsensusNode is a possible return
+        return new Error('relayResponse is undefined')
+      }
+    }
   }
 
   // Load requested blockchain by parsing the URL
@@ -835,80 +816,4 @@ export class PocketRelayer {
       }
     }
   }
-
-  isCheckPromiseResolved(promise: PromiseSettledResult<Node[]>): boolean {
-    return promise.status === 'fulfilled' && promise.value !== undefined && promise.value.length > 0
-  }
-
-  filterCheckedNodes(syncCheckNodes: Node[], chainCheckedNodes: Node[]): Node[] {
-    // Filters out nodes that passed both checks.
-    const nodes = syncCheckNodes.filter((syncCheckNode) =>
-      chainCheckedNodes.some((chainCheckedNode) => syncCheckNode.publicKey === chainCheckedNode.publicKey)
-    )
-
-    return nodes
-  }
-
-  checkSecretKey(application: Applications): boolean {
-    // Check secretKey; is it required? does it pass? -- temp allowance for unencrypted keys
-    const decryptor = new Decryptor({ key: this.databaseEncryptionKey })
-
-    if (
-      application.gatewaySettings.secretKeyRequired && // If the secret key is required by app's settings // and
-      application.gatewaySettings.secretKey && // the app's secret key is set // and
-      (!this.secretKey || // the request doesn't contain a secret key // or
-        this.secretKey.length < 32 || // the secret key is invalid // or
-        (this.secretKey.length === 32 && this.secretKey !== application.gatewaySettings.secretKey) || // the secret key does not match plaintext // or
-        (this.secretKey.length > 32 && this.secretKey !== decryptor.decrypt(application.gatewaySettings.secretKey))) // does not match encrypted
-    ) {
-      return false
-    }
-    return true
-  }
-
-  // Check passed in string against an array of whitelisted items
-  // Type can be "explicit" or substring match
-  checkWhitelist(tests: string[], check: string, type: string): boolean {
-    if (!tests || tests.length === 0) {
-      return true
-    }
-    if (!check) {
-      return false
-    }
-
-    for (const test of tests) {
-      if (type === 'explicit') {
-        if (test.toLowerCase() === check.toLowerCase()) {
-          return true
-        }
-      } else {
-        if (check.toLowerCase().includes(test.toLowerCase())) {
-          return true
-        }
-      }
-    }
-    return false
-  }
-}
-
-interface BlockchainDetails {
-  blockchain: string
-  blockchainEnforceResult: string
-  blockchainSyncCheck: SyncCheckOptions
-  blockchainIDCheck: string
-  blockchainID: string
-  blockchainChainID: string
-  blockchainLogLimitBlocks: number
-}
-
-export interface SendRelayOptions {
-  rawData: object | string
-  relayPath: string
-  httpMethod: HTTPMethod
-  application: Applications
-  requestID: string
-  requestTimeOut?: number
-  overallTimeOut?: number
-  relayRetries?: number
-  logLimitBlocks?: number
 }

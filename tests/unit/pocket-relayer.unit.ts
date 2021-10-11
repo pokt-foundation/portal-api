@@ -18,6 +18,8 @@ import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
 import { gatewayTestDB } from '../fixtures/test.datasource'
 import { LimitError, MAX_RELAYS_ERROR } from '../../src/errors/types'
+import { checkWhitelist, parseMethod } from '../../src/utils/string'
+import { checkSecretKey, updateConfiguration } from '../../src/utils/pocket'
 
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
 
@@ -205,20 +207,20 @@ describe('Pocket relayer service (unit)', () => {
       { method: 'eth_getLogs', params: [], jsonrpc: '2.0' },
     ]
 
-    const methods = pocketRelayer.parseMethod(multipleMethodsRequest)
+    const methods = parseMethod(multipleMethodsRequest)
 
     expect(methods).to.be.equal(`${multipleMethodsRequest[0].method},${multipleMethodsRequest[1].method}`)
 
     const singleMethodRequest = { method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' }
 
-    const method = pocketRelayer.parseMethod(singleMethodRequest)
+    const method = parseMethod(singleMethodRequest)
 
     expect(method).to.be.equal(singleMethodRequest.method)
   })
 
   it('updates request timeout config of pocket sdk', () => {
     const timeout = 5
-    const newConfig = pocketRelayer.updateConfiguration(timeout)
+    const newConfig = updateConfiguration(pocketConfiguration, timeout)
 
     expect(newConfig.requestTimeOut).to.be.equal(timeout)
   })
@@ -295,7 +297,10 @@ describe('Pocket relayer service (unit)', () => {
       },
     }
 
-    const isValidApp = poktRelayer.checkSecretKey(application as unknown as Applications)
+    const isValidApp = checkSecretKey(application as unknown as Applications, {
+      secretKey: poktRelayer.secretKey,
+      databaseEncryptionKey: poktRelayer.databaseEncryptionKey,
+    })
 
     expect(isValidApp).to.be.true()
 
@@ -320,33 +325,36 @@ describe('Pocket relayer service (unit)', () => {
       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
     })
 
-    const isInvalidApp = poktRelayer.checkSecretKey(application as unknown as Applications)
+    const isInvalidApp = checkSecretKey(application as unknown as Applications, {
+      secretKey: poktRelayer.secretKey,
+      databaseEncryptionKey: poktRelayer.databaseEncryptionKey,
+    })
 
     expect(isInvalidApp).to.be.false()
   })
 
   it('checks whether items are whitelisted', () => {
-    const empty = pocketRelayer.checkWhitelist([], '', '')
+    const empty = checkWhitelist([], '', '')
 
     expect(empty).to.be.true()
 
-    const noFieldToCheckAgainst = pocketRelayer.checkWhitelist(['value'], '', '')
+    const noFieldToCheckAgainst = checkWhitelist(['value'], '', '')
 
     expect(noFieldToCheckAgainst).to.be.false()
 
-    const invalidField = pocketRelayer.checkWhitelist(['value'], 'invalid', '')
+    const invalidField = checkWhitelist(['value'], 'invalid', '')
 
     expect(invalidField).to.be.false()
 
-    const explicitPass = pocketRelayer.checkWhitelist(['value'], 'value', 'explicit')
+    const explicitPass = checkWhitelist(['value'], 'value', 'explicit')
 
     expect(explicitPass).to.be.true()
 
-    const failExplicitPass = pocketRelayer.checkWhitelist(['value'], 'value around here', 'explicit')
+    const failExplicitPass = checkWhitelist(['value'], 'value around here', 'explicit')
 
     expect(failExplicitPass).to.be.false()
 
-    const implicitPass = pocketRelayer.checkWhitelist(['value'], 'value around here', '')
+    const implicitPass = checkWhitelist(['value'], 'value around here', '')
 
     expect(implicitPass).to.be.true()
   })

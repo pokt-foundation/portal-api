@@ -8,9 +8,10 @@ import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
 import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
-import { PocketRelayer, SendRelayOptions } from '../services/pocket-relayer'
+import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
 import { ChainChecker } from '../services/chain-checker'
+import { SendRelayOptions } from '../utils/relayer'
 
 const logger = require('../services/logger')
 
