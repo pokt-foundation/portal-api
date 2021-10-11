@@ -520,6 +520,26 @@ export class PocketRelayer {
           chainCheckedNodes = (chainCheckResult as PromiseFulfilledResult<Node[]>).value
         }
       } else {
+        const error = 'ChainID check failure'
+        const method = 'checks'
+
+        await this.metricsRecorder.recordMetric({
+          requestID,
+          applicationID: application.id,
+          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+          blockchainID,
+          serviceNode: 'session-failure',
+          relayStart,
+          result: 500,
+          bytes: Buffer.byteLength(error, 'utf8'),
+          delivered: false,
+          fallback: false,
+          method,
+          error,
+          origin: this.origin,
+          data,
+          sessionKey,
+        })
         return new Error('ChainID check failure; using fallbacks')
       }
 
