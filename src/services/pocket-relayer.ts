@@ -574,7 +574,7 @@ export class PocketRelayer {
       }
 
       // EVM-chains always have chain/sync checks.
-      if (chainCheckedNodes.length > 0 && syncCheckedNodes.length > 0) {
+      if (blockchainIDCheck && blockchainSyncCheck) {
         const filteredNodes = this.filterCheckedNodes(syncCheckedNodes, chainCheckedNodes)
 
         // There's a chance that no nodes passes both checks.
@@ -583,7 +583,7 @@ export class PocketRelayer {
         } else {
           return new Error('Sync / chain check failure; using fallbacks')
         }
-      } else if (syncCheckedNodes.length > 0) {
+      } else if (blockchainSyncCheck) {
         // For non-EVM chains that only have sync check, like pocket.
         nodes = syncCheckedNodes
       }
