@@ -19,7 +19,7 @@ import axios from 'axios'
 import { removeNodeFromSession } from '../utils/cache'
 import { checkSecretKey, SecretKeyDetails, updateConfiguration } from '../utils/pocket'
 import { checkWhitelist, parseMethod } from '../utils/string'
-import { BlockchainDetails, SendRelayOptions, filterCheckedNodes, isCheckPromiseResolved } from '../utils/relayer'
+import { SendRelayOptions, filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
 import { WS_ONLY_METHODS } from '../utils/constants'
 
 export class PocketRelayer {
@@ -126,7 +126,14 @@ export class PocketRelayer {
       blockchainID,
       blockchainChainID,
       blockchainLogLimitBlocks,
-    } = await this.loadBlockchain()
+    } = await loadBlockchain(this.host, this.redis, this.blockchainsRepository, this.defaultLogLimitBlocks).catch(
+      () => {
+        logger.log('error', `Incorrect blockchain: ${this.host}`, {
+          origin: this.origin,
+        })
+        throw new HttpErrors.BadRequest(`Incorrect blockchain: ${this.host}`)
+      }
+    )
     const overallStart = process.hrtime()
 
     // Check for lb-specific log limits
@@ -667,82 +674,6 @@ export class PocketRelayer {
         // TODO: ConsensusNode is a possible return
         return new Error('relayResponse is undefined')
       }
-    }
-  }
-
-  // Load requested blockchain by parsing the URL
-  async loadBlockchain(): Promise<BlockchainDetails> {
-    // Load the requested blockchain
-    const cachedBlockchains = await this.redis.get('blockchains')
-    let blockchains
-
-    if (!cachedBlockchains) {
-      blockchains = await this.blockchainsRepository.find()
-      await this.redis.set('blockchains', JSON.stringify(blockchains), 'EX', 60)
-    } else {
-      blockchains = JSON.parse(cachedBlockchains)
-    }
-
-    // Split off the first part of the request's host and check for matches
-    const blockchainRequest = this.host.split('.')[0]
-
-    const blockchainFilter = blockchains.filter(
-      (b: { blockchain: string }) => b.blockchain.toLowerCase() === blockchainRequest.toLowerCase()
-    )
-
-    if (blockchainFilter[0]) {
-      let blockchainEnforceResult = ''
-      let blockchainIDCheck = ''
-      let blockchainID = ''
-      let blockchainChainID = ''
-      let blockchainLogLimitBlocks = 10000 // Should never be 0
-      const blockchainSyncCheck = {} as SyncCheckOptions
-
-      const blockchain = blockchainFilter[0].blockchain // ex. 'eth-mainnet'
-
-      blockchainID = blockchainFilter[0].hash as string // ex. '0021'
-
-      // Record the necessary format for the result; example: JSON
-      if (blockchainFilter[0].enforceResult) {
-        blockchainEnforceResult = blockchainFilter[0].enforceResult
-      }
-      // Sync Check to determine current blockheight
-      if (blockchainFilter[0].syncCheckOptions) {
-        blockchainSyncCheck.body = (blockchainFilter[0].syncCheckOptions.body || '').replace(/\\"/g, '"')
-        blockchainSyncCheck.resultKey = blockchainFilter[0].syncCheckOptions.resultKey || ''
-
-        // Sync Check path necessary for some chains
-        blockchainSyncCheck.path = blockchainFilter[0].syncCheckOptions.path || ''
-
-        // Allowance of blocks a data node can be behind
-        blockchainSyncCheck.allowance = parseInt(blockchainFilter[0].syncCheckOptions.allowance || 0)
-      }
-      // Chain ID Check to determine correct chain
-      if (blockchainFilter[0].chainIDCheck) {
-        blockchainIDCheck = blockchainFilter[0].chainIDCheck.replace(/\\"/g, '"')
-        blockchainChainID = blockchainFilter[0].chainID // ex. '100' (xdai) - can also be undefined
-      }
-      // Max number of blocks to request logs for, if not available, result to env
-      if ((blockchainFilter[0].logLimitBlocks as number) > 0) {
-        blockchainLogLimitBlocks = parseInt(blockchainFilter[0].logLimitBlocks)
-      } else if (this.defaultLogLimitBlocks > 0) {
-        blockchainLogLimitBlocks = this.defaultLogLimitBlocks
-      }
-
-      return Promise.resolve({
-        blockchain,
-        blockchainEnforceResult,
-        blockchainSyncCheck,
-        blockchainIDCheck,
-        blockchainID,
-        blockchainChainID,
-        blockchainLogLimitBlocks,
-      })
-    } else {
-      logger.log('error', `Incorrect blockchain: ${this.host}`, {
-        origin: this.origin,
-      })
-      throw new HttpErrors.BadRequest(`Incorrect blockchain: ${this.host}`)
     }
   }
 
