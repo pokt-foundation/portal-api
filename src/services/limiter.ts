@@ -39,6 +39,7 @@ export async function enforceEVMLimits(
 
     if ((toBlock !== 0 || fromBlock !== 0) && altruistUrl !== 'undefined') {
       // Altruist
+      // TODO: use a generic getHeightFromAltruist function to fetch altruist block height
       const rawData = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] })
 
       let axiosConfig = {}
