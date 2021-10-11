@@ -1,6 +1,6 @@
 import { Applications } from '../models'
 import { BlockchainsRepository } from '../repositories'
-import { blockHexToDecimal, checkEnforcementJSON } from '../utils'
+import { blockHexToDecimal } from '../utils/block'
 import { ChainChecker, ChainIDFilterOptions } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
@@ -18,9 +18,10 @@ const logger = require('../services/logger')
 import axios from 'axios'
 import { removeNodeFromSession } from '../utils/cache'
 import { checkSecretKey, SecretKeyDetails, updateConfiguration } from '../utils/pocket'
-import { checkWhitelist, parseMethod } from '../utils/string'
-import { SendRelayOptions, filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
+import { checkEnforcementJSON, checkWhitelist, parseMethod } from '../utils/string'
+import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
 import { WS_ONLY_METHODS } from '../utils/constants'
+import { SendRelayOptions } from '../utils/types'
 
 export class PocketRelayer {
   host: string

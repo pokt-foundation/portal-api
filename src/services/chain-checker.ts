@@ -1,9 +1,16 @@
 import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { Redis } from 'ioredis'
-import { blockHexToDecimal, checkEnforcementJSON, getNodeNetworkData } from '../utils'
+import {
+  // Block
+  blockHexToDecimal,
+  // Cache
+  removeNodeFromSession,
+  getNodeNetworkData,
+  // String
+  checkEnforcementJSON,
+} from '../utils'
 import { MAX_RELAYS_ERROR } from '../errors/types'
-import { removeNodeFromSession } from '../utils/cache'
 
 const logger = require('../services/logger')
 

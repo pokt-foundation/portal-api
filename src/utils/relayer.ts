@@ -1,8 +1,8 @@
 import { Redis } from 'ioredis'
-import { HTTPMethod, Node } from '@pokt-network/pocket-js'
+import { Node } from '@pokt-network/pocket-js'
 import { SyncCheckOptions } from '../services/sync-checker'
-import { Applications } from '../models'
 import { BlockchainsRepository } from '../repositories'
+import { BlockchainDetails } from './types'
 
 // Fetch node client type if Ethereum based
 export async function fetchClientTypeLog(
@@ -102,26 +102,4 @@ export async function loadBlockchain(
       blockchainLogLimitBlocks,
     } as BlockchainDetails)
   }
-}
-
-export type BlockchainDetails = {
-  blockchain: string
-  blockchainEnforceResult: string
-  blockchainSyncCheck: SyncCheckOptions
-  blockchainIDCheck: string
-  blockchainID: string
-  blockchainChainID: string
-  blockchainLogLimitBlocks: number
-}
-
-export type SendRelayOptions = {
-  rawData: object | string
-  relayPath: string
-  httpMethod: HTTPMethod
-  application: Applications
-  requestID: string
-  requestTimeOut?: number
-  overallTimeOut?: number
-  relayRetries?: number
-  logLimitBlocks?: number
 }
