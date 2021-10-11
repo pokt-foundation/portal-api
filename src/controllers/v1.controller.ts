@@ -159,7 +159,15 @@ export class V1Controller {
           blockchainEnforceResult: _enforceResult,
           // eslint-disable-next-line
           blockchainSyncCheck: _syncCheck,
-        } = await loadBlockchain(this.host, this.redis, this.blockchainsRepository, this.defaultLogLimitBlocks)
+        } = await loadBlockchain(this.host, this.redis, this.blockchainsRepository, this.defaultLogLimitBlocks).catch(
+          () => {
+            logger.log('error', `Incorrect blockchain: ${this.host}`, {
+              origin: this.origin,
+            })
+            throw new HttpErrors.BadRequest(`Incorrect blockchain: ${this.host}`)
+          }
+        )
+
         // Fetch applications contained in this Load Balancer. Verify they exist and choose
         // one randomly for the relay.
         const application = await this.fetchLoadBalancerApplication(

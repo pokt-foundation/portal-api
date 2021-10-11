@@ -101,5 +101,7 @@ export async function loadBlockchain(
       blockchainChainID,
       blockchainLogLimitBlocks,
     } as BlockchainDetails)
+  } else {
+    return Promise.reject(new Error('Blockchain not found'))
   }
 }
