@@ -1,6 +1,5 @@
 import { Applications } from '../models'
 import { BlockchainsRepository } from '../repositories'
-import { blockHexToDecimal } from '../utils/block'
 import { ChainChecker, ChainIDFilterOptions } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
@@ -8,7 +7,7 @@ import { HttpErrors } from '@loopback/rest'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
 import { Redis } from 'ioredis'
-import { RelayError, LimitError, MAX_RELAYS_ERROR } from '../errors/types'
+import { RelayError, MAX_RELAYS_ERROR } from '../errors/types'
 import AatPlans from '../config/aat-plans.json'
 
 import { JSONObject } from '@loopback/context'
@@ -20,8 +19,8 @@ import { removeNodeFromSession } from '../utils/cache'
 import { checkSecretKey, SecretKeyDetails, updateConfiguration } from '../utils/pocket'
 import { checkEnforcementJSON, checkWhitelist, parseMethod } from '../utils/string'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
-import { WS_ONLY_METHODS } from '../utils/constants'
 import { SendRelayOptions } from '../utils/types'
+import { enforceEVMLimits } from './limiter'
 
 export class PocketRelayer {
   host: string
@@ -683,69 +682,13 @@ export class PocketRelayer {
     parsedRawData: Record<string, any>,
     blockchainID: string,
     logLimitBlocks: number
-  ): Promise<string | Error> {
-    if (WS_ONLY_METHODS.includes(parsedRawData.method)) {
-      return new HttpErrors.BadRequest(
-        `We cannot serve ${parsedRawData.method} method over HTTPS. At the moment, we do not support WebSockets.`
-      )
-    } else if (parsedRawData.method === 'eth_getLogs') {
-      let toBlock: number
-      let fromBlock: number
-      let isToBlockHex = false
-      let isFromBlockHex = false
-      const altruistUrl = String(this.altruists[blockchainID])
-      const [{ fromBlock: fromBlockParam, toBlock: toBlockParam }] = parsedRawData.params as [
-        { fromBlock: string; toBlock: string }
-      ]
+  ): Promise<void | Error> {
+    let limiterResponse: Promise<void | Error>
 
-      if (toBlockParam !== undefined && toBlockParam !== 'latest') {
-        toBlock = blockHexToDecimal(toBlockParam)
-        isToBlockHex = true
-      }
-      if (fromBlockParam !== undefined && fromBlockParam !== 'latest') {
-        fromBlock = blockHexToDecimal(fromBlockParam)
-        isFromBlockHex = true
-      }
-
-      if ((toBlock !== 0 || fromBlock !== 0) && altruistUrl !== 'undefined') {
-        // Altruist
-        const rawData = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] })
-
-        let axiosConfig = {}
-
-        try {
-          axiosConfig = {
-            method: 'POST',
-            url: altruistUrl,
-            data: rawData,
-            headers: { 'Content-Type': 'application/json' },
-          }
-          const { data } = await axios(axiosConfig)
-
-          const latestBlock = blockHexToDecimal(data.result)
-
-          if (!isToBlockHex) {
-            toBlock = latestBlock
-          }
-          if (!isFromBlockHex) {
-            fromBlock = latestBlock
-          }
-        } catch (e) {
-          logger.log('error', `Failed trying to reach altruist (${altruistUrl}) to fetch block number.`)
-          return new HttpErrors.InternalServerError('Internal error. Try again with a explicit block number.')
-        }
-      } else {
-        // We cannot move forward if there is no altruist available.
-        if (!isToBlockHex || !isFromBlockHex) {
-          return new LimitError(`Please use an explicit block number instead of 'latest'.`, parsedRawData.method)
-        }
-      }
-      if (toBlock - fromBlock > logLimitBlocks) {
-        return new LimitError(
-          `You cannot query logs for more than ${logLimitBlocks} blocks at once.`,
-          parsedRawData.method
-        )
-      }
+    if (blockchainID === '0021') {
+      limiterResponse = enforceEVMLimits(parsedRawData, blockchainID, logLimitBlocks, this.altruists)
     }
+
+    return limiterResponse
   }
 }
