@@ -11,7 +11,8 @@ import { MetricsRecorder } from '../services/metrics-recorder'
 import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
 import { ChainChecker } from '../services/chain-checker'
-import { SendRelayOptions } from '../utils/relayer'
+import { SendRelayOptions } from '../utils/types'
+import { loadBlockchain } from '../utils/relayer'
 
 const logger = require('../services/logger')
 
@@ -158,7 +159,7 @@ export class V1Controller {
           blockchainEnforceResult: _enforceResult,
           // eslint-disable-next-line
           blockchainSyncCheck: _syncCheck,
-        } = await this.pocketRelayer.loadBlockchain()
+        } = await loadBlockchain(this.host, this.redis, this.blockchainsRepository, this.defaultLogLimitBlocks)
         // Fetch applications contained in this Load Balancer. Verify they exist and choose
         // one randomly for the relay.
         const application = await this.fetchLoadBalancerApplication(

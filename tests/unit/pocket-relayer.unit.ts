@@ -20,6 +20,7 @@ import { gatewayTestDB } from '../fixtures/test.datasource'
 import { LimitError, MAX_RELAYS_ERROR } from '../../src/errors/types'
 import { checkWhitelist, parseMethod } from '../../src/utils/string'
 import { checkSecretKey, updateConfiguration } from '../../src/utils/pocket'
+import { loadBlockchain } from '../../src/utils/relayer'
 
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
 
@@ -234,7 +235,12 @@ describe('Pocket relayer service (unit)', () => {
     const redisGetSpy = sinon.spy(redis, 'get')
     const redisSetSpy = sinon.spy(redis, 'set')
 
-    let blockchainResult = await pocketRelayer.loadBlockchain()
+    let blockchainResult = await loadBlockchain(
+      pocketRelayer.host,
+      pocketRelayer.redis,
+      pocketRelayer.blockchainsRepository,
+      pocketRelayer.defaultLogLimitBlocks
+    )
 
     expect(blockchainResult).to.be.ok()
     expect(blockchainResult.blockchainID).to.be.equal(BLOCKCHAINS[0].hash)
@@ -244,7 +250,12 @@ describe('Pocket relayer service (unit)', () => {
     expect(redisSetSpy.callCount).to.be.equal(1)
 
     // Subsequent calls should retrieve results from redis instead
-    blockchainResult = await pocketRelayer.loadBlockchain()
+    blockchainResult = await loadBlockchain(
+      pocketRelayer.host,
+      pocketRelayer.redis,
+      pocketRelayer.blockchainsRepository,
+      pocketRelayer.defaultLogLimitBlocks
+    )
 
     expect(blockchainResult).to.be.ok()
     expect(blockchainResult.blockchainID).to.be.equal(BLOCKCHAINS[0].hash)
@@ -255,7 +266,14 @@ describe('Pocket relayer service (unit)', () => {
   })
 
   it('throws an error when loading an invalid blockchain', async () => {
-    await expect(pocketRelayer.loadBlockchain()).to.be.rejectedWith(Error)
+    await expect(
+      loadBlockchain(
+        pocketRelayer.host,
+        pocketRelayer.redis,
+        pocketRelayer.blockchainsRepository,
+        pocketRelayer.defaultLogLimitBlocks
+      )
+    ).to.be.rejectedWith(Error)
   })
 
   it('checks secret of application when set', () => {
