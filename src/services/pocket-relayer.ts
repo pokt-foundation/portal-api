@@ -515,14 +515,18 @@ export class PocketRelayer {
 
       const [chainCheckResult, syncCheckResult] = await checkersPromise
 
-      if (blockchainIDCheck && this.isCheckPromiseResolved(chainCheckResult)) {
-        chainCheckedNodes = (chainCheckResult as PromiseFulfilledResult<Node[]>).value
+      if (blockchainIDCheck) {
+        if (this.isCheckPromiseResolved(chainCheckResult)) {
+          chainCheckedNodes = (chainCheckResult as PromiseFulfilledResult<Node[]>).value
+        }
       } else {
         return new Error('ChainID check failure; using fallbacks')
       }
 
-      if (blockchainSyncCheck && this.isCheckPromiseResolved(syncCheckResult)) {
-        syncCheckedNodes = (syncCheckResult as PromiseFulfilledResult<Node[]>).value
+      if (blockchainSyncCheck) {
+        if (this.isCheckPromiseResolved(syncCheckResult)) {
+          syncCheckedNodes = (syncCheckResult as PromiseFulfilledResult<Node[]>).value
+        }
       } else {
         const error = 'Sync check failure'
         const method = 'checks'
