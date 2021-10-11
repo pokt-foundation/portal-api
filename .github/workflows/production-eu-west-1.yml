@@ -53,6 +53,7 @@ jobs:
           envkey_LOG_TO_CLOUDWATCH: true
           envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          envkey_COMMIT_HASH: ${{ github.sha }}
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
