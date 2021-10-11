@@ -18,6 +18,7 @@ jobs:
       MONGO_ENDPOINT: endpoint
       LOGZ_TOKEN: token
       NODE_ENV: development
+      COMMIT_HASH: ${{ github.sha }}
 
     strategy:
       matrix:
