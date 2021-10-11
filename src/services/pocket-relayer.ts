@@ -16,7 +16,7 @@ import { JSONObject } from '@loopback/context'
 
 const logger = require('../services/logger')
 
-import axios from 'axios'
+import axios, { AxiosRequestConfig, Method } from 'axios'
 import { removeNodeFromSession } from '../utils/cache'
 
 const WS_ONLY_METHODS = [
@@ -267,12 +267,12 @@ export class PocketRelayer {
     // Exhausted network relay attempts; use fallback
     if (fallbackAvailable) {
       const relayStart = process.hrtime()
-      let axiosConfig = {}
+      let axiosConfig: AxiosRequestConfig = {}
 
       // Add relay path to URL
       const altruistURL =
         relayPath === undefined || relayPath === ''
-          ? this.altruists[blockchainID]
+          ? (this.altruists[blockchainID] as string)
           : `${this.altruists[blockchainID]}${relayPath}`
 
       // Remove user/pass from the altruist URL
@@ -287,11 +287,16 @@ export class PocketRelayer {
         }
       } else {
         axiosConfig = {
-          method: httpMethod,
+          method: httpMethod as Method,
           url: altruistURL,
           data: rawData.toString(),
         }
       }
+
+      if (requestTimeOut) {
+        axiosConfig.timeout = requestTimeOut
+      }
+
       try {
         const fallbackResponse = await axios(axiosConfig)
 
@@ -515,41 +520,66 @@ export class PocketRelayer {
 
       const [chainCheckResult, syncCheckResult] = await checkersPromise
 
-      if (blockchainIDCheck && this.isCheckPromiseResolved(chainCheckResult)) {
-        chainCheckedNodes = (chainCheckResult as PromiseFulfilledResult<Node[]>).value
-      } else {
-        return new Error('ChainID check failure; using fallbacks')
+      if (blockchainIDCheck) {
+        if (this.isCheckPromiseResolved(chainCheckResult)) {
+          chainCheckedNodes = (chainCheckResult as PromiseFulfilledResult<Node[]>).value
+        } else {
+          const error = 'ChainID check failure'
+          const method = 'checks'
+
+          await this.metricsRecorder.recordMetric({
+            requestID,
+            applicationID: application.id,
+            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+            blockchainID,
+            serviceNode: 'session-failure',
+            relayStart,
+            result: 500,
+            bytes: Buffer.byteLength(error, 'utf8'),
+            delivered: false,
+            fallback: false,
+            method,
+            error,
+            origin: this.origin,
+            data,
+            sessionKey,
+          })
+
+          return new Error('ChainID check failure; using fallbacks')
+        }
       }
 
-      if (blockchainSyncCheck && this.isCheckPromiseResolved(syncCheckResult)) {
-        syncCheckedNodes = (syncCheckResult as PromiseFulfilledResult<Node[]>).value
-      } else {
-        const error = 'Sync check failure'
-        const method = 'checks'
+      if (blockchainSyncCheck) {
+        if (this.isCheckPromiseResolved(syncCheckResult)) {
+          syncCheckedNodes = (syncCheckResult as PromiseFulfilledResult<Node[]>).value
+        } else {
+          const error = 'Sync check failure'
+          const method = 'checks'
 
-        await this.metricsRecorder.recordMetric({
-          requestID,
-          applicationID: application.id,
-          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-          blockchainID,
-          serviceNode: 'session-failure',
-          relayStart,
-          result: 500,
-          bytes: Buffer.byteLength(error, 'utf8'),
-          delivered: false,
-          fallback: false,
-          method,
-          error,
-          origin: this.origin,
-          data,
-          sessionKey,
-        })
+          await this.metricsRecorder.recordMetric({
+            requestID,
+            applicationID: application.id,
+            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+            blockchainID,
+            serviceNode: 'session-failure',
+            relayStart,
+            result: 500,
+            bytes: Buffer.byteLength(error, 'utf8'),
+            delivered: false,
+            fallback: false,
+            method,
+            error,
+            origin: this.origin,
+            data,
+            sessionKey,
+          })
 
-        return new Error('Sync check failure; using fallbacks')
+          return new Error('Sync check failure; using fallbacks')
+        }
       }
 
       // EVM-chains always have chain/sync checks.
-      if (chainCheckedNodes.length > 0 && syncCheckedNodes.length > 0) {
+      if (blockchainIDCheck && blockchainSyncCheck) {
         const filteredNodes = this.filterCheckedNodes(syncCheckedNodes, chainCheckedNodes)
 
         // There's a chance that no nodes passes both checks.
@@ -558,7 +588,7 @@ export class PocketRelayer {
         } else {
           return new Error('Sync / chain check failure; using fallbacks')
         }
-      } else if (syncCheckedNodes.length > 0) {
+      } else if (blockchainSyncCheck) {
         // For non-EVM chains that only have sync check, like pocket.
         nodes = syncCheckedNodes
       }
