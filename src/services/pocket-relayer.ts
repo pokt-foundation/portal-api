@@ -518,59 +518,59 @@ export class PocketRelayer {
       if (blockchainIDCheck) {
         if (this.isCheckPromiseResolved(chainCheckResult)) {
           chainCheckedNodes = (chainCheckResult as PromiseFulfilledResult<Node[]>).value
+        } else {
+          const error = 'ChainID check failure'
+          const method = 'checks'
+
+          await this.metricsRecorder.recordMetric({
+            requestID,
+            applicationID: application.id,
+            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+            blockchainID,
+            serviceNode: 'session-failure',
+            relayStart,
+            result: 500,
+            bytes: Buffer.byteLength(error, 'utf8'),
+            delivered: false,
+            fallback: false,
+            method,
+            error,
+            origin: this.origin,
+            data,
+            sessionKey,
+          })
+
+          return new Error('ChainID check failure; using fallbacks')
         }
-      } else {
-        const error = 'ChainID check failure'
-        const method = 'checks'
-
-        await this.metricsRecorder.recordMetric({
-          requestID,
-          applicationID: application.id,
-          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-          blockchainID,
-          serviceNode: 'session-failure',
-          relayStart,
-          result: 500,
-          bytes: Buffer.byteLength(error, 'utf8'),
-          delivered: false,
-          fallback: false,
-          method,
-          error,
-          origin: this.origin,
-          data,
-          sessionKey,
-        })
-
-        return new Error('ChainID check failure; using fallbacks')
       }
 
       if (blockchainSyncCheck) {
         if (this.isCheckPromiseResolved(syncCheckResult)) {
           syncCheckedNodes = (syncCheckResult as PromiseFulfilledResult<Node[]>).value
+        } else {
+          const error = 'Sync check failure'
+          const method = 'checks'
+
+          await this.metricsRecorder.recordMetric({
+            requestID,
+            applicationID: application.id,
+            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+            blockchainID,
+            serviceNode: 'session-failure',
+            relayStart,
+            result: 500,
+            bytes: Buffer.byteLength(error, 'utf8'),
+            delivered: false,
+            fallback: false,
+            method,
+            error,
+            origin: this.origin,
+            data,
+            sessionKey,
+          })
+
+          return new Error('Sync check failure; using fallbacks')
         }
-      } else {
-        const error = 'Sync check failure'
-        const method = 'checks'
-
-        await this.metricsRecorder.recordMetric({
-          requestID,
-          applicationID: application.id,
-          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-          blockchainID,
-          serviceNode: 'session-failure',
-          relayStart,
-          result: 500,
-          bytes: Buffer.byteLength(error, 'utf8'),
-          delivered: false,
-          fallback: false,
-          method,
-          error,
-          origin: this.origin,
-          data,
-          sessionKey,
-        })
-
-        return new Error('Sync check failure; using fallbacks')
       }
 
       // EVM-chains always have chain/sync checks.
