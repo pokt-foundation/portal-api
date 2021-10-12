@@ -1,7 +1,7 @@
 import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
 import { CherryPicker } from './cherry-picker'
-import { getNodeNetworkData } from '../utils'
+import { getNodeNetworkData } from '../utils/cache'
 
 import pgFormat from 'pg-format'
 import { CustomLogger } from 'ajv'

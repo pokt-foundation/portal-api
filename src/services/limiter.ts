@@ -2,7 +2,8 @@ import { JSONObject } from '@loopback/context'
 import { HttpErrors } from '@loopback/rest'
 import axios from 'axios'
 import { LimitError } from '../errors/types'
-import { blockHexToDecimal } from '../utils'
+import { blockHexToDecimal } from '../utils/block'
+
 import { WS_ONLY_METHODS } from '../utils/constants'
 
 const logger = require('../services/logger')
