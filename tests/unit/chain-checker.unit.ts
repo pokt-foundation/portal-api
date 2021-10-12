@@ -8,7 +8,7 @@ import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { metricsRecorderMock } from '../mocks/metricsRecorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
-import { MAX_RELAYS_ERROR } from '../../src/errors/types'
+import { MAX_RELAYS_ERROR } from '../../src/utils/constants'
 import MockAdapter from 'axios-mock-adapter'
 import axios from 'axios'
 

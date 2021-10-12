@@ -9,7 +9,7 @@ import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
 import { expect, sinon } from '@loopback/testlab'
 import MockAdapter from 'axios-mock-adapter'
 import axios from 'axios'
-import { MAX_RELAYS_ERROR } from '../../src/errors/types'
+import { MAX_RELAYS_ERROR } from '../../src/utils/constants'
 
 const logger = require('../../src/services/logger')
 

@@ -8,7 +8,7 @@ import { blockHexToDecimal } from '../utils/block'
 const logger = require('../services/logger')
 
 import axios from 'axios'
-import { MAX_RELAYS_ERROR } from '../errors/types'
+import { MAX_RELAYS_ERROR } from '../utils/constants'
 
 export class SyncChecker {
   redis: Redis
