@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { AxiosRequestConfig } from 'axios'
 import { JSONObject } from '@loopback/context'
 import { HttpErrors } from '@loopback/rest'
 import { LimitError } from '../errors/types'
@@ -16,7 +16,7 @@ export async function enforceEVMLimits(
 ): Promise<void | Error> {
   if (WS_ONLY_METHODS.includes(parsedRawData.method)) {
     return new HttpErrors.BadRequest(
-      `We cannot serve ${parsedRawData.method} method over HTTPS. At the moment, we do not support WebSockets.`
+      `We cannot serve the ${parsedRawData.method} method over HTTPS. At the moment, we do not support WebSockets.`
     )
   } else if (parsedRawData.method === 'eth_getLogs') {
     let toBlock: number
@@ -42,15 +42,14 @@ export async function enforceEVMLimits(
       // TODO: use a generic getHeightFromAltruist function to fetch altruist block height
       const rawData = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] })
 
-      let axiosConfig = {}
-
       try {
-        axiosConfig = {
+        const axiosConfig = {
           method: 'POST',
           url: altruistUrl,
           data: rawData,
           headers: { 'Content-Type': 'application/json' },
-        }
+        } as AxiosRequestConfig
+
         const { data } = await axios(axiosConfig)
 
         const latestBlock = blockHexToDecimal(data.result)
