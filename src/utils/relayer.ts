@@ -3,6 +3,7 @@ import { Node } from '@pokt-network/pocket-js'
 import { SyncCheckOptions } from '../services/sync-checker'
 import { BlockchainsRepository } from '../repositories'
 import { BlockchainDetails } from './types'
+import { HttpErrors } from '@loopback/rest'
 
 // Fetch node client type if Ethereum based
 export async function fetchClientTypeLog(
@@ -102,6 +103,6 @@ export async function loadBlockchain(
       blockchainLogLimitBlocks,
     } as BlockchainDetails)
   } else {
-    return Promise.reject(new Error('Blockchain not found'))
+    throw new HttpErrors.BadRequest(`Incorrect blockchain: ${host}`)
   }
 }

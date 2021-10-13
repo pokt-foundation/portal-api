@@ -152,67 +152,58 @@ export class V1Controller {
     try {
       const loadBalancer = await this.fetchLoadBalancer(id, filter)
 
-      if (loadBalancer?.id) {
-        const {
-          blockchain,
-          // eslint-disable-next-line
-          blockchainEnforceResult: _enforceResult,
-          // eslint-disable-next-line
-          blockchainSyncCheck: _syncCheck,
-        } = await loadBlockchain(this.host, this.redis, this.blockchainsRepository, this.defaultLogLimitBlocks).catch(
-          () => {
-            logger.log('error', `Incorrect blockchain: ${this.host}`, {
-              origin: this.origin,
-            })
-            throw new HttpErrors.BadRequest(`Incorrect blockchain: ${this.host}`)
-          }
-        )
-
-        // Fetch applications contained in this Load Balancer. Verify they exist and choose
-        // one randomly for the relay.
-        const application = await this.fetchLoadBalancerApplication(
-          loadBalancer.id,
-          loadBalancer.applicationIDs,
-          blockchain,
-          filter
-        )
-
-        if (application?.id) {
-          const options: SendRelayOptions = {
-            rawData,
-            relayPath: this.relayPath,
-            httpMethod: this.httpMethod,
-            application: application,
-            requestID: this.requestID,
-            requestTimeOut: parseInt(loadBalancer.requestTimeOut),
-            overallTimeOut: parseInt(loadBalancer.overallTimeOut),
-            relayRetries: parseInt(loadBalancer.relayRetries),
-          }
-
-          if (loadBalancer.logLimitBlocks) {
-            Object.assign(options, { logLimitBlocks: loadBalancer.logLimitBlocks })
-          }
-
-          return await this.pocketRelayer.sendRelay(options)
-        }
+      if (!loadBalancer?.id) {
+        throw new HttpErrors.InternalServerError('Load balancer configuration error')
       }
+
+      const {
+        blockchain,
+        // eslint-disable-next-line
+        blockchainEnforceResult: _enforceResult,
+        // eslint-disable-next-line
+        blockchainSyncCheck: _syncCheck,
+      } = await loadBlockchain(this.host, this.redis, this.blockchainsRepository, this.defaultLogLimitBlocks)
+
+      // Fetch applications contained in this Load Balancer. Verify they exist and choose
+      // one randomly for the relay.
+      const application = await this.fetchLoadBalancerApplication(
+        loadBalancer.id,
+        loadBalancer.applicationIDs,
+        blockchain,
+        filter
+      )
+
+      if (!application?.id) {
+        throw new HttpErrors.InternalServerError('No application found in the load balancer')
+      }
+
+      const options: SendRelayOptions = {
+        rawData,
+        relayPath: this.relayPath,
+        httpMethod: this.httpMethod,
+        application: application,
+        requestID: this.requestID,
+        requestTimeOut: parseInt(loadBalancer.requestTimeOut),
+        overallTimeOut: parseInt(loadBalancer.overallTimeOut),
+        relayRetries: parseInt(loadBalancer.relayRetries),
+      }
+
+      if (loadBalancer.logLimitBlocks) {
+        Object.assign(options, { logLimitBlocks: loadBalancer.logLimitBlocks })
+      }
+
+      return await this.pocketRelayer.sendRelay(options)
     } catch (e) {
       logger.log('error', e.message, {
         requestID: this.requestID,
         relayType: 'LB',
         typeID: id,
         serviceNode: '',
+        origin: this.origin,
       })
+
       return new HttpErrors.InternalServerError(e.message)
     }
-
-    logger.log('error', 'Load balancer configuration error', {
-      requestID: this.requestID,
-      relayType: 'LB',
-      typeID: id,
-      serviceNode: '',
-    })
-    return new HttpErrors.InternalServerError('Load balancer configuration error')
   }
 
   /**
