@@ -12,7 +12,7 @@ export async function fetchClientTypeLog(
   blockchainID: string,
   id: string | undefined
 ): Promise<string | null> {
-  const clientTypeLog = await redis.get(blockchainID + '-' + id + '-clientType')
+  const clientTypeLog = await redis.get(`${blockchainID}-${id}-clientType`)
 
   return clientTypeLog
 }
