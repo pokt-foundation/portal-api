@@ -49,10 +49,6 @@ module.exports = {
     'import/no-named-as-default': 'off',
     'import/default': 'off',
     'import/namespace': 'off',
-    // node_modules imports (axios, ioredis, etc...)
-    // node_modules imports with a @
-    // relative imports.
-    // require imports because they're ugly.
     'import/order': [
       'error',
       {
