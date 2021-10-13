@@ -1,5 +1,5 @@
-import { Applications } from '../models'
 import { HTTPMethod } from '@pokt-network/pocket-js'
+import { Applications } from '../models'
 import { SyncCheckOptions } from '../services/sync-checker'
 
 export type BlockchainDetails = {

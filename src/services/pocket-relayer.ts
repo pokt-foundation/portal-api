@@ -1,27 +1,24 @@
+import axios, { AxiosRequestConfig, Method } from 'axios'
+import { Redis } from 'ioredis'
+import { JSONObject } from '@loopback/context'
+import { HttpErrors } from '@loopback/rest'
+import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
+import AatPlans from '../config/aat-plans.json'
+import { RelayError } from '../errors/types'
 import { Applications } from '../models'
 import { BlockchainsRepository } from '../repositories'
 import { ChainChecker, ChainIDFilterOptions } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
-import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
-import { HttpErrors } from '@loopback/rest'
 import { MetricsRecorder } from '../services/metrics-recorder'
-import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
-import { Redis } from 'ioredis'
-import { RelayError } from '../errors/types'
-import { MAX_RELAYS_ERROR } from '../utils/constants'
-import AatPlans from '../config/aat-plans.json'
-
-import { JSONObject } from '@loopback/context'
-
-const logger = require('../services/logger')
-
-import axios, { AxiosRequestConfig, Method } from 'axios'
+import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { removeNodeFromSession } from '../utils/cache'
+import { MAX_RELAYS_ERROR } from '../utils/constants'
 import { checkSecretKey, SecretKeyDetails, updateConfiguration } from '../utils/pocket'
-import { checkEnforcementJSON, checkWhitelist, parseMethod } from '../utils/string'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
+import { checkEnforcementJSON, checkWhitelist, parseMethod } from '../utils/string'
 import { SendRelayOptions } from '../utils/types'
 import { enforceEVMLimits } from './limiter'
+const logger = require('../services/logger')
 
 export class PocketRelayer {
   host: string

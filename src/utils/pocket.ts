@@ -1,5 +1,5 @@
-import { Configuration } from '@pokt-network/pocket-js'
 import { Decryptor } from 'strong-cryptor'
+import { Configuration } from '@pokt-network/pocket-js'
 import { Applications } from '../models'
 
 export function updateConfiguration(pocketConfiguration: Configuration, requestTimeOut: number): Configuration {

@@ -1,15 +1,15 @@
-import { SyncChecker } from '../../src/services/sync-checker'
+import axios from 'axios'
+import MockAdapter from 'axios-mock-adapter'
 import RedisMock from 'ioredis-mock'
-import { metricsRecorderMock } from '../mocks/metricsRecorder'
-import { MetricsRecorder } from '../../src/services/metrics-recorder'
-import { CherryPicker } from '../../src/services/cherry-picker'
-import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
+import { expect, sinon } from '@loopback/testlab'
 import { Configuration, Session, RpcError } from '@pokt-network/pocket-js'
 import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
-import { expect, sinon } from '@loopback/testlab'
-import MockAdapter from 'axios-mock-adapter'
-import axios from 'axios'
+import { CherryPicker } from '../../src/services/cherry-picker'
+import { MetricsRecorder } from '../../src/services/metrics-recorder'
+import { SyncChecker } from '../../src/services/sync-checker'
 import { MAX_RELAYS_ERROR } from '../../src/utils/constants'
+import { metricsRecorderMock } from '../mocks/metricsRecorder'
+import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
 const logger = require('../../src/services/logger')
 

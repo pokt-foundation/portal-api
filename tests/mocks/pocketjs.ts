@@ -1,6 +1,5 @@
 /* eslint-disable no-prototype-builtins */
 import { Mock, It } from 'moq.ts'
-import { DEFAULT_POCKET_CONFIG } from '../../src/config/pocket-config'
 import {
   Pocket,
   Configuration,
@@ -23,6 +22,7 @@ import {
   Keybase,
   Account,
 } from '@pokt-network/pocket-js'
+import { DEFAULT_POCKET_CONFIG } from '../../src/config/pocket-config'
 
 export const DEFAULT_NODES = [
   new Node(

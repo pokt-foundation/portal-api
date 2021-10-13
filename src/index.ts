@@ -1,5 +1,6 @@
-import { PocketGatewayApplication } from './application'
 import { ApplicationConfig } from '@loopback/core'
+
+import { PocketGatewayApplication } from './application'
 
 const logger = require('./services/logger')
 

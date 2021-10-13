@@ -1,6 +1,6 @@
+import crypto from 'crypto'
 import { LogEntry } from 'winston'
 import WinstonCloudwatch from 'winston-cloudwatch'
-import crypto from 'crypto'
 import { HttpErrors } from '@loopback/rest'
 
 require('dotenv').config()

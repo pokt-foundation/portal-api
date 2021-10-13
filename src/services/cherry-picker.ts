@@ -1,5 +1,5 @@
-import { Node } from '@pokt-network/pocket-js'
 import { Redis } from 'ioredis'
+import { Node } from '@pokt-network/pocket-js'
 import { Applications } from '../models'
 
 const logger = require('../services/logger')

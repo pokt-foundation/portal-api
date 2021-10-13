@@ -1,9 +1,10 @@
 import { Redis } from 'ioredis'
-import { Node } from '@pokt-network/pocket-js'
-import { SyncCheckOptions } from '../services/sync-checker'
-import { BlockchainsRepository } from '../repositories'
-import { BlockchainDetails } from './types'
 import { HttpErrors } from '@loopback/rest'
+import { Node } from '@pokt-network/pocket-js'
+
+import { BlockchainsRepository } from '../repositories'
+import { SyncCheckOptions } from '../services/sync-checker'
+import { BlockchainDetails } from './types'
 
 // Fetch node client type if Ethereum based
 export async function fetchClientTypeLog(

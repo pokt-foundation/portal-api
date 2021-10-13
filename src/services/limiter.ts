@@ -1,6 +1,6 @@
+import axios from 'axios'
 import { JSONObject } from '@loopback/context'
 import { HttpErrors } from '@loopback/rest'
-import axios from 'axios'
 import { LimitError } from '../errors/types'
 import { blockHexToDecimal } from '../utils/block'
 
