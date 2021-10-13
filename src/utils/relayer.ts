@@ -4,6 +4,7 @@ import { Node } from '@pokt-network/pocket-js'
 
 import { BlockchainsRepository } from '../repositories'
 import { SyncCheckOptions } from '../services/sync-checker'
+import { DEFAULT_BLOCK_LOGS_LIMIT } from '../utils/constants'
 import { BlockchainDetails } from './types'
 
 // Fetch node client type if Ethereum based
@@ -51,45 +52,45 @@ export async function loadBlockchain(
   // Split off the first part of the request's host and check for matches
   const [blockchainRequest] = host.split('.')
 
-  const blockchainFilter = blockchains.filter(
+  const [blockchainFilter] = blockchains.filter(
     (b: { blockchain: string }) => b.blockchain.toLowerCase() === blockchainRequest.toLowerCase()
   )
 
-  if (blockchainFilter[0]) {
+  if (blockchainFilter) {
     let blockchainEnforceResult = ''
     let blockchainIDCheck = ''
     let blockchainID = ''
     let blockchainChainID = ''
-    let blockchainLogLimitBlocks = 10000 // Should never be 0
+    let blockchainLogLimitBlocks = DEFAULT_BLOCK_LOGS_LIMIT
     const blockchainSyncCheck = {} as SyncCheckOptions
 
-    const blockchain = blockchainFilter[0].blockchain // ex. 'eth-mainnet'
+    const blockchain = blockchainFilter.blockchain // ex. 'eth-mainnet'
 
-    blockchainID = blockchainFilter[0].hash as string // ex. '0021'
+    blockchainID = blockchainFilter.hash as string // ex. '0021'
 
     // Record the necessary format for the result; example: JSON
-    if (blockchainFilter[0].enforceResult) {
-      blockchainEnforceResult = blockchainFilter[0].enforceResult
+    if (blockchainFilter.enforceResult) {
+      blockchainEnforceResult = blockchainFilter.enforceResult
     }
     // Sync Check to determine current blockheight
-    if (blockchainFilter[0].syncCheckOptions) {
-      blockchainSyncCheck.body = (blockchainFilter[0].syncCheckOptions.body || '').replace(/\\"/g, '"')
-      blockchainSyncCheck.resultKey = blockchainFilter[0].syncCheckOptions.resultKey || ''
+    if (blockchainFilter.syncCheckOptions) {
+      blockchainSyncCheck.body = (blockchainFilter.syncCheckOptions.body || '').replace(/\\"/g, '"')
+      blockchainSyncCheck.resultKey = blockchainFilter.syncCheckOptions.resultKey || ''
 
       // Sync Check path necessary for some chains
-      blockchainSyncCheck.path = blockchainFilter[0].syncCheckOptions.path || ''
+      blockchainSyncCheck.path = blockchainFilter.syncCheckOptions.path || ''
 
       // Allowance of blocks a data node can be behind
-      blockchainSyncCheck.allowance = parseInt(blockchainFilter[0].syncCheckOptions.allowance || 0)
+      blockchainSyncCheck.allowance = parseInt(blockchainFilter.syncCheckOptions.allowance || 0)
     }
     // Chain ID Check to determine correct chain
-    if (blockchainFilter[0].chainIDCheck) {
-      blockchainIDCheck = blockchainFilter[0].chainIDCheck.replace(/\\"/g, '"')
-      blockchainChainID = blockchainFilter[0].chainID // ex. '100' (xdai) - can also be undefined
+    if (blockchainFilter.chainIDCheck) {
+      blockchainIDCheck = blockchainFilter.chainIDCheck.replace(/\\"/g, '"')
+      blockchainChainID = blockchainFilter.chainID // ex. '100' (xdai) - can also be undefined
     }
     // Max number of blocks to request logs for, if not available, result to env
-    if ((blockchainFilter[0].logLimitBlocks as number) > 0) {
-      blockchainLogLimitBlocks = parseInt(blockchainFilter[0].logLimitBlocks)
+    if ((blockchainFilter.logLimitBlocks as number) > 0) {
+      blockchainLogLimitBlocks = parseInt(blockchainFilter.logLimitBlocks)
     } else if (defaultLogLimitBlocks > 0) {
       blockchainLogLimitBlocks = defaultLogLimitBlocks
     }

@@ -1,3 +1,5 @@
+export const DEFAULT_BLOCK_LOGS_LIMIT = 10000 // Should never be 0
+
 export const MAX_RELAYS_ERROR = 'the evidence is sealed, either max relays reached or claim already submitted'
 
 export const WS_ONLY_METHODS = [
