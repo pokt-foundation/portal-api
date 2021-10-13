@@ -4,22 +4,22 @@ import { SyncCheckOptions } from '../services/sync-checker'
 
 export type BlockchainDetails = {
   blockchain: string
-  blockchainEnforceResult: string
-  blockchainSyncCheck: SyncCheckOptions
-  blockchainIDCheck: string
-  blockchainID: string
   blockchainChainID: string
+  blockchainEnforceResult: string
+  blockchainID: string
+  blockchainIDCheck: string
+  blockchainSyncCheck: SyncCheckOptions
   blockchainLogLimitBlocks: number
 }
 
 export type SendRelayOptions = {
+  application: Applications
+  httpMethod: HTTPMethod
+  overallTimeOut?: number
   rawData: object | string
   relayPath: string
-  httpMethod: HTTPMethod
-  application: Applications
   requestID: string
   requestTimeOut?: number
-  overallTimeOut?: number
   relayRetries?: number
   logLimitBlocks?: number
 }
