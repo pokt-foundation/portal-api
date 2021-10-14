@@ -154,7 +154,7 @@ export class V1Controller {
       const loadBalancer = await this.fetchLoadBalancer(id, filter)
 
       if (!loadBalancer?.id) {
-        throw new HttpErrors.InternalServerError('Load balancer configuration error')
+        throw new HttpErrors.InternalServerError('Load balancer not found')
       }
 
       const {
