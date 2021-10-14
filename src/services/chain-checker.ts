@@ -4,7 +4,7 @@ import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
 import { MAX_RELAYS_ERROR } from '../utils/constants'
-import { checkEnforcementJSON } from '../utils/string'
+import { checkEnforcementJSON } from '../utils/enforcements'
 
 const logger = require('../services/logger')
 
