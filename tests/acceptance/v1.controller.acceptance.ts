@@ -465,7 +465,7 @@ describe('V1 controller (acceptance)', () => {
       .expect(200)
 
     expect(response.body).to.have.property('message')
-    expect(response.body.message).to.be.equal('Load balancer configuration error')
+    expect(response.body.message).to.be.equal('Load balancer not found')
   })
 
   it('returns error on load balancer relay failure', async () => {
