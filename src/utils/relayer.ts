@@ -24,11 +24,9 @@ export function isCheckPromiseResolved(promise: PromiseSettledResult<Node[]>): b
 
 export function filterCheckedNodes(syncCheckNodes: Node[], chainCheckedNodes: Node[]): Node[] {
   // Filters out nodes that passed both checks.
-  const nodes = syncCheckNodes.filter((syncCheckNode) =>
+  return syncCheckNodes.filter((syncCheckNode) =>
     chainCheckedNodes.some((chainCheckedNode) => syncCheckNode.publicKey === chainCheckedNode.publicKey)
   )
-
-  return nodes
 }
 
 // Load requested blockchain by parsing the URL
