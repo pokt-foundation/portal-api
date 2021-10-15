@@ -4,7 +4,6 @@ import { Node } from '@pokt-network/pocket-js'
 
 import { BlockchainsRepository } from '../repositories'
 import { SyncCheckOptions } from '../services/sync-checker'
-import { DEFAULT_BLOCK_LOGS_LIMIT } from '../utils/constants'
 import { BlockchainDetails } from './types'
 
 // Fetch node client type if Ethereum based
@@ -62,7 +61,7 @@ export async function loadBlockchain(
   let blockchainIDCheck = ''
   let blockchainID = ''
   let blockchainChainID = ''
-  let blockchainLogLimitBlocks = DEFAULT_BLOCK_LOGS_LIMIT
+  let blockchainLogLimitBlocks = defaultLogLimitBlocks
   const blockchainSyncCheck = {} as SyncCheckOptions
 
   const blockchain = blockchainFilter.blockchain // ex. 'eth-mainnet'
