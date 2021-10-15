@@ -1,15 +1,15 @@
+import { CustomLogger } from 'ajv'
 import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
-import { CherryPicker } from './cherry-picker'
-import { getNodeNetworkData } from '../utils'
 
 import pgFormat from 'pg-format'
-import { CustomLogger } from 'ajv'
 import { HttpErrors } from '@loopback/rest'
-const logger = require('../services/logger')
-const os = require('os')
 
 import { InfluxDB, Point } from '@influxdata/influxdb-client'
+import { getNodeNetworkData } from '../utils/cache'
+import { CherryPicker } from './cherry-picker'
+const os = require('os')
+const logger = require('../services/logger')
 
 const region = process.env.REGION || '' // Can be empty
 const influxURL = process.env.INFLUX_URL || ''

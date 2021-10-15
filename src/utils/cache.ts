@@ -1,7 +1,7 @@
-import { Redis } from 'ioredis'
-import { getAddressFromPublicKey } from 'pocket-tools'
 import axios, { AxiosError } from 'axios'
 import extractDomain from 'extract-domain'
+import { Redis } from 'ioredis'
+import { getAddressFromPublicKey } from 'pocket-tools'
 
 const logger = require('../services/logger')
 

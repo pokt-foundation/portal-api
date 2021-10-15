@@ -1,10 +1,10 @@
-import { sinon } from '@loopback/testlab'
+import { Redis } from 'ioredis'
 import { Pool } from 'pg'
 import rewiremock from 'rewiremock'
+import { sinon } from '@loopback/testlab'
 import { InfluxDB, WriteApi } from '@influxdata/influxdb-client'
-import { MetricsRecorder } from '../../src/services/metrics-recorder'
-import { Redis } from 'ioredis'
 import { CherryPicker } from '../../src/services/cherry-picker'
+import { MetricsRecorder } from '../../src/services/metrics-recorder'
 
 // Returns a MetricsRecorder class with its external dependencies (pg and influxdb) mocked
 export const metricsRecorderMock = (redis: Redis, cherryPicker: CherryPicker): MetricsRecorder => {

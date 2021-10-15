@@ -1,8 +1,8 @@
-import { CherryPicker } from '../../src/services/cherry-picker'
 import RedisMock from 'ioredis-mock'
 import { expect } from '@loopback/testlab'
 import { Node } from '@pokt-network/pocket-js'
 import { Applications } from '../../src/models'
+import { CherryPicker } from '../../src/services/cherry-picker'
 
 describe('Cherry picker service (unit)', () => {
   let cherryPicker: CherryPicker

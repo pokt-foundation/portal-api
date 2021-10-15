@@ -1,12 +1,12 @@
-import { createRestAppClient, givenHttpServerConfig, Client, sinon } from '@loopback/testlab'
 import RedisMock from 'ioredis-mock'
+import pg from 'pg'
 import rewiremock from 'rewiremock'
-import { PocketGatewayApplication } from '../../src/application'
-import { gatewayTestDB } from '../fixtures/test.datasource'
+import { createRestAppClient, givenHttpServerConfig, Client, sinon } from '@loopback/testlab'
 import { Pocket, Configuration, HttpRpcProvider } from '@pokt-network/pocket-js'
 
-import pg from 'pg'
 import { InfluxDB, WriteApi } from '@influxdata/influxdb-client'
+import { PocketGatewayApplication } from '../../src/application'
+import { gatewayTestDB } from '../fixtures/test.datasource'
 
 const DUMMY_ENV = {
   NODE_ENV: 'development',

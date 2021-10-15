@@ -1,24 +1,21 @@
+import crypto from 'crypto'
+import os from 'os'
+import path from 'path'
+import process from 'process'
+import Redis from 'ioredis'
+import pg from 'pg'
 import { BootMixin } from '@loopback/boot'
 import { ApplicationConfig } from '@loopback/core'
 import { RepositoryMixin } from '@loopback/repository'
 import { RestApplication, HttpErrors } from '@loopback/rest'
-import { DEFAULT_POCKET_CONFIG } from './config/pocket-config'
 import { ServiceMixin } from '@loopback/service-proxy'
-import { GatewaySequence } from './sequence'
+import { Pocket, Configuration, HttpRpcProvider } from '@pokt-network/pocket-js'
 import { Account } from '@pokt-network/pocket-js/dist/keybase/models/account'
 
-import path from 'path'
 import AatPlans from './config/aat-plans.json'
-
+import { DEFAULT_POCKET_CONFIG } from './config/pocket-config'
+import { GatewaySequence } from './sequence'
 const logger = require('./services/logger')
-
-import { Pocket, Configuration, HttpRpcProvider } from '@pokt-network/pocket-js'
-
-import Redis from 'ioredis'
-import crypto from 'crypto'
-import os from 'os'
-import process from 'process'
-import pg from 'pg'
 
 require('log-timestamp')
 require('dotenv').config()

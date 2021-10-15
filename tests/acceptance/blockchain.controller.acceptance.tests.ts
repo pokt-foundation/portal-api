@@ -1,8 +1,8 @@
 import { Client, expect, sinon } from '@loopback/testlab'
 import { PocketGatewayApplication } from '../..'
-import { gatewayTestDB } from '../fixtures/test.datasource'
 import { Blockchains } from '../../src/models/blockchains.model'
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
+import { gatewayTestDB } from '../fixtures/test.datasource'
 import { setupApplication } from './test-helper'
 
 describe('Blockchains controller (acceptance)', () => {
