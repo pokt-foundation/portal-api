@@ -11,7 +11,7 @@ describe('Cherry picker service (unit)', () => {
   before('initialize instance', async () => {
     redis = new RedisMock(0, '')
 
-    cherryPicker = new CherryPicker({ redis, checkDebug: true })
+    cherryPicker = new CherryPicker({ redis, checkDebug: true, archivalChains: ['1234', '4567'] })
   })
 
   const cleanCache = async () => {
@@ -282,7 +282,7 @@ describe('Cherry picker service (unit)', () => {
 
     it('updates node timeout quality on archival', async () => {
       const nodePublicKey = 'e8ec4vog1ilaozhbank9l0pbaomqi6xhe0qcb6qwb2mi8qxjf8yim3ddehcif0fg'
-      const blockchain = '0028'
+      const blockchain = '1234'
       const elapsedTime = 2.5
       const requestTimeout = 10
       const sessionKey = '1234'

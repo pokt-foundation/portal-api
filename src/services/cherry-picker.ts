@@ -2,7 +2,6 @@ import { Redis } from 'ioredis'
 import { Node } from '@pokt-network/pocket-js'
 import { Applications } from '../models'
 import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
-import { ARCHIVAL_CHAINS } from '../utils/constants'
 
 const logger = require('../services/logger')
 
@@ -12,15 +11,17 @@ const TIMEOUT_LIMIT = 20
 
 // Allowed difference on timeout, expressed in seconds, as the timeout usually
 // wont be exact
-const TIMEOUT_THRESHOLD = 2
+const TIMEOUT_VARIANCE = 2
 
 export class CherryPicker {
   checkDebug: boolean
   redis: Redis
+  archivalChains: string[]
 
-  constructor({ redis, checkDebug }: { redis: Redis; checkDebug: boolean }) {
+  constructor({ redis, checkDebug, archivalChains }: { redis: Redis; checkDebug: boolean; archivalChains?: string[] }) {
     this.redis = redis
     this.checkDebug = checkDebug
+    this.archivalChains = archivalChains
   }
 
   // Record the latency and success rate of each application, 15 minute TTL
@@ -237,27 +238,27 @@ export class CherryPicker {
 
   /**
    * Nodes may fail ocasionally due to misconfigured timeouts, this can specially
-   * hurt on archival chains where big operations require more time (and grater
+   * hurt on archival chains where big operations require more time (and greater
    * timeouts) to operate. When a node continously fail due to the misconfiguration,
    * is removed from the session
-   * @param blockchain
-   * @param serviceNode
-   * @param elapsedTime
-   * @param timeout
-   * @param sessionKey
+   * @param blockchain blockchain to relay from
+   * @param serviceNode node's public key
+   * @param elapsedTime time elapsed in seconds
+   * @param requestTimeout request timeout allowed, in seconds
+   * @param sessionKey session's key
    * @returns
    */
   async updateBadNodeTimeoutQuality(
     blockchain: string,
     serviceNode: string,
     elapsedTime: number,
-    timeout: number | undefined,
+    requestTimeout: number | undefined,
     sessionKey: string
   ): Promise<void> {
     // FIXME: This is not a completely reliable way on asserting whether is a service node,
     // an issue was created on pocket-tools for a 'isPublicKey' function. Once is
     // implemented, replace with the function.
-    if (ARCHIVAL_CHAINS.indexOf(blockchain) < 0 || serviceNode.length !== 64) {
+    if (this.archivalChains.indexOf(blockchain) < 0 || serviceNode.length !== 64) {
       return
     }
 
@@ -269,7 +270,7 @@ export class CherryPicker {
       timeoutCounter = parseInt(timeoutCounterCached)
     }
 
-    if (timeout && timeout - elapsedTime > TIMEOUT_THRESHOLD) {
+    if (requestTimeout && requestTimeout - elapsedTime > TIMEOUT_VARIANCE) {
       await this.redis.set(key, ++timeoutCounter, 'EX', 60 * 60 * 2) // 2 Hours
 
       if (timeoutCounter >= TIMEOUT_LIMIT) {

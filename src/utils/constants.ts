@@ -7,12 +7,3 @@ export const WS_ONLY_METHODS = [
   'eth_subscribe',
   'newBlockFilter',
 ]
-
-export const ARCHIVAL_CHAINS = [
-  '0022', // Ethereum
-  '0028', // Ethereum trace
-  '0010', // Binance Smart Chain
-  '000A', // Fuse
-  '000B', // Polygon Matic
-  '000C', // POA xDai
-]

@@ -46,6 +46,7 @@ const DUMMY_ENV = {
   AAT_PLAN: 'freemium',
   REDIRECTS: [{ domain: 'ethereum.example.com', blockchain: 'ethereum-mainnet', loadBalancerID: '1234567890' }],
   COMMIT_HASH: '1234',
+  ARCHIVAL_CHAINS: '1234,4567',
 }
 
 export async function setupApplication(pocket?: typeof Pocket, envs?: object): Promise<AppWithClient> {
