@@ -79,7 +79,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const aatPlan = AAT_PLAN || AatPlans.PREMIUM
     const redirects: string | object[] = REDIRECTS || ''
     const commitHash: string = COMMIT_HASH || ''
-    const archivalChains: string[] = (ARCHIVAL_CHAINS || []).split(',')
+    const archivalChains: string[] = (ARCHIVAL_CHAINS || '').replace(' ', '').split(',')
 
     if (!dispatchURL) {
       throw new HttpErrors.InternalServerError('DISPATCH_URL required in ENV')
