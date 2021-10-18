@@ -1,7 +1,7 @@
 import { Redis } from 'ioredis'
 import { Node } from '@pokt-network/pocket-js'
 import { Applications } from '../models'
-import { removeNodeFromSession } from '../utils/cache'
+import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
 import { ARCHIVAL_CHAINS } from '../utils/constants'
 
 const logger = require('../services/logger')
@@ -269,11 +269,18 @@ export class CherryPicker {
       timeoutCounter = parseInt(timeoutCounterCached)
     }
 
-    //
     if (timeout && timeout - elapsedTime > TIMEOUT_THRESHOLD) {
       await this.redis.set(key, ++timeoutCounter, 'EX', 60 * 60 * 2) // 2 Hours
 
       if (timeoutCounter >= TIMEOUT_LIMIT) {
+        const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, serviceNode)
+
+        logger.log('warn', `removed archival node from session due to timeouts: ${serviceNode}`, {
+          serviceNode,
+          sessionKey,
+          serviceURL,
+          serviceDomain,
+        })
         await removeNodeFromSession(this.redis, sessionKey, serviceNode)
       }
     }

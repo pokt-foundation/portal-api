@@ -279,6 +279,35 @@ describe('Cherry picker service (unit)', () => {
 
       expect(JSON.parse(logs)).to.be.deepEqual(JSON.parse(expectedLogs))
     })
+
+    it('updates node timeout quality on archival', async () => {
+      const nodePublicKey = 'e8ec4vog1ilaozhbank9l0pbaomqi6xhe0qcb6qwb2mi8qxjf8yim3ddehcif0fg'
+      const blockchain = '0028'
+      const elapsedTime = 2.5
+      const requestTimeout = 10
+      const sessionKey = '1234'
+
+      await cherryPicker.updateBadNodeTimeoutQuality(blockchain, nodePublicKey, elapsedTime, requestTimeout, sessionKey)
+
+      let removedNodes = await redis.smembers(`session-${sessionKey}`)
+
+      expect(removedNodes).to.have.length(0)
+
+      // Force a node removal
+      for (let i = 0; i <= 20; i++) {
+        await cherryPicker.updateBadNodeTimeoutQuality(
+          blockchain,
+          nodePublicKey,
+          elapsedTime,
+          requestTimeout,
+          sessionKey
+        )
+      }
+
+      removedNodes = await redis.smembers(`session-${sessionKey}`)
+
+      expect(removedNodes).to.have.length(1)
+    })
   })
 
   it('should be defined', () => {
