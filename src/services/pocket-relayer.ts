@@ -261,6 +261,7 @@ export class PocketRelayer {
           origin: this.origin,
           data,
           sessionKey: this.sessionKey,
+          timeout: requestTimeOut,
         })
       }
     }
