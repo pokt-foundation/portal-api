@@ -45,6 +45,7 @@ export class V1Controller {
     @inject('aatPlan') private aatPlan: string,
     @inject('redirects') private redirects: string,
     @inject('defaultLogLimitBlocks') private defaultLogLimitBlocks: number,
+    @inject('archivalChains') private archivalChains: string[],
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -55,6 +56,7 @@ export class V1Controller {
     this.cherryPicker = new CherryPicker({
       redis: this.redis,
       checkDebug: this.checkDebug(),
+      archivalChains: this.archivalChains,
     })
     this.metricsRecorder = new MetricsRecorder({
       redis: this.redis,

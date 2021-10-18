@@ -62,6 +62,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       AAT_PLAN,
       REDIRECTS,
       COMMIT_HASH,
+      ARCHIVAL_CHAINS,
     } = await this.get('configuration.environment.values')
 
     const environment: string = NODE_ENV || 'production'
@@ -77,7 +78,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const defaultLogLimitBlocks: number = parseInt(DEFAULT_LOG_LIMIT_BLOCKS) || 10000
     const aatPlan = AAT_PLAN || AatPlans.PREMIUM
     const redirects: string | object[] = REDIRECTS || ''
-    const commitHash: string | string = COMMIT_HASH || ''
+    const commitHash: string = COMMIT_HASH || ''
+    const archivalChains: string[] = (ARCHIVAL_CHAINS || '').replace(' ', '').split(',')
 
     if (!dispatchURL) {
       throw new HttpErrors.InternalServerError('DISPATCH_URL required in ENV')
@@ -200,5 +202,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const hash = crypto.createHash('md5').update(parts.join(''))
 
     this.bind('processUID').to(hash.digest('hex'))
+    this.bind('archivalChains').to(archivalChains)
   }
 }

@@ -33,6 +33,7 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'AAT_PLAN',
     'WATCH',
     'REDIRECTS',
+    'ARCHIVAL_CHAINS',
   ]
 
   private static optionalEnvVars: string[] = ['COMMIT_HASH']

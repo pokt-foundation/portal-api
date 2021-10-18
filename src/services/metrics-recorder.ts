@@ -70,6 +70,7 @@ export class MetricsRecorder {
     origin,
     data,
     sessionKey,
+    timeout,
   }: {
     requestID: string
     applicationID: string
@@ -86,6 +87,7 @@ export class MetricsRecorder {
     origin: string | undefined
     data: string | undefined
     sessionKey: string | undefined
+    timeout?: number
   }): Promise<void> {
     try {
       let elapsedTime = 0
@@ -155,7 +157,15 @@ export class MetricsRecorder {
 
       // Update service node quality with cherry picker
       if (serviceNode) {
-        await this.cherryPicker.updateServiceQuality(blockchainID, applicationID, serviceNode, elapsedTime, result)
+        await this.cherryPicker.updateServiceQuality(
+          blockchainID,
+          applicationID,
+          serviceNode,
+          elapsedTime,
+          result,
+          timeout,
+          sessionKey
+        )
       }
 
       // Bulk insert relay / error metrics
