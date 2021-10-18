@@ -44,6 +44,7 @@ jobs:
           envkey_NODE_ENV: 'production'
           envkey_REGION: 'testnet'
           envkey_COMMIT_HASH: ${{ github.sha }}
+          envkey_ARCHIVAL_CHAINS: '0022,0028,0010,000A,000B,000C'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
