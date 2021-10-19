@@ -8,12 +8,18 @@ export type Check = 'session-check' | 'chain-check' | 'archival-check'
 export type NodeCheckResponse<T> = {
   check: Check
   passed: boolean
-  response: RelayResponse | Error
+  response: string | Error
   result?: T
 }
 
 export type ChainCheck = {
   chainID: number
+}
+
+type BasicRPCResponse = {
+  jsonrpc: string
+  id: number
+  result: string
 }
 
 export class NodeChecker {
@@ -23,6 +29,7 @@ export class NodeChecker {
   constructor(pocket: Pocket, configuration?: Configuration) {
     this.pocket = pocket
     this.configuration = configuration || pocket.configuration
+    console.log('la config', this.configuration)
   }
 
   static parseBlockFromPayload(payload: object, syncCheckResultKey: string): number {
@@ -31,16 +38,38 @@ export class NodeChecker {
     return blockHexToDecimal(rawHeight)
   }
 
-  // async chain(path: string, chainID: number, blockchainID: string, aat: PocketAAT): Promise<void> {
-  // }
+  async chain(
+    node: Node,
+    data: string,
+    blockchainID: string,
+    chainID: number,
+    aat: PocketAAT
+  ): Promise<NodeCheckResponse<ChainCheck>> {
+    const relayResponse = await this._sendRelay(data, blockchainID, aat, node)
+
+    if (relayResponse instanceof Error) {
+      return { check: 'chain-check', passed: false, response: relayResponse, result: { chainID: 0 } }
+    }
+
+    const payload: BasicRPCResponse = JSON.parse(relayResponse.payload)
+    const nodeChainID = blockHexToDecimal(payload.result)
+    const isCorrectChain = nodeChainID === chainID
+
+    return {
+      check: 'chain-check',
+      passed: isCorrectChain,
+      response: relayResponse.payload,
+      result: { chainID: blockHexToDecimal(payload.result) },
+    }
+  }
 
   async sendConsensusRelay(data: string, blockchainID: string, aat: PocketAAT): Promise<RelayResponse | Error> {
     return this._sendRelay(
       data,
       blockchainID,
       aat,
-      this.updateConfigurationConsensus(this.configuration),
       undefined,
+      this.updateConfigurationConsensus(this.configuration),
       undefined,
       true
     )
@@ -50,16 +79,16 @@ export class NodeChecker {
     data: string,
     blockchainID: string,
     aat: PocketAAT,
+    node?: Node,
     configuration?: Configuration,
     path?: string,
-    node?: Node,
     consensusEnabled?: boolean
   ): Promise<RelayResponse | Error> {
     const relayResponse = await this.pocket.sendRelay(
       data,
       blockchainID,
       aat,
-      this.updateConfigurationTimeout(configuration),
+      this.updateConfigurationTimeout(configuration || this.configuration),
       undefined,
       HTTPMethod.POST,
       path,
