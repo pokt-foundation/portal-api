@@ -29,7 +29,6 @@ export class NodeChecker {
   constructor(pocket: Pocket, configuration?: Configuration) {
     this.pocket = pocket
     this.configuration = configuration || pocket.configuration
-    console.log('la config', this.configuration)
   }
 
   static parseBlockFromPayload(payload: object, syncCheckResultKey: string): number {
@@ -45,7 +44,7 @@ export class NodeChecker {
     chainID: number,
     aat: PocketAAT
   ): Promise<NodeCheckResponse<ChainCheck>> {
-    const relayResponse = await this._sendRelay(data, blockchainID, aat, node)
+    const relayResponse = await this.sendRelay(data, blockchainID, aat, node)
 
     if (relayResponse instanceof Error) {
       return { check: 'chain-check', passed: false, response: relayResponse, result: { chainID: 0 } }
@@ -64,7 +63,7 @@ export class NodeChecker {
   }
 
   async sendConsensusRelay(data: string, blockchainID: string, aat: PocketAAT): Promise<RelayResponse | Error> {
-    return this._sendRelay(
+    return this.sendRelay(
       data,
       blockchainID,
       aat,
@@ -75,7 +74,7 @@ export class NodeChecker {
     )
   }
 
-  private async _sendRelay(
+  private async sendRelay(
     data: string,
     blockchainID: string,
     aat: PocketAAT,
@@ -100,13 +99,13 @@ export class NodeChecker {
       return relayResponse
     } else if (relayResponse instanceof RelayResponse && !checkEnforcementJSON(relayResponse.payload)) {
       // Unhandled error
-      return new RpcError('0', `Unhandled Error: ${relayResponse}`, undefined, node?.publicKey)
+      return new RpcError('0', `Unhandled Error: ${relayResponse.payload}`, undefined, node?.publicKey)
     }
 
     return relayResponse as RelayResponse
   }
 
-  updateConfigurationConsensus(pocketConfiguration: Configuration): Configuration {
+  private updateConfigurationConsensus(pocketConfiguration: Configuration): Configuration {
     return new Configuration(
       pocketConfiguration.maxDispatchers,
       pocketConfiguration.maxSessions,
@@ -121,7 +120,7 @@ export class NodeChecker {
     )
   }
 
-  updateConfigurationTimeout(pocketConfiguration: Configuration): Configuration {
+  private updateConfigurationTimeout(pocketConfiguration: Configuration): Configuration {
     return new Configuration(
       pocketConfiguration.maxDispatchers,
       pocketConfiguration.maxSessions,
