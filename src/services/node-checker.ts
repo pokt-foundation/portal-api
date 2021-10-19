@@ -16,6 +16,10 @@ export type ChainCheck = {
   chainID: number
 }
 
+export type SyncCheck = {
+  blockHeight: number
+}
+
 type BasicRPCResponse = {
   jsonrpc: string
   id: number
@@ -62,14 +66,43 @@ export class NodeChecker {
     }
   }
 
+  async sync(
+    node: Node,
+    data: string,
+    resultKey: string,
+    blockchainID: string,
+    aat: PocketAAT,
+    path?: string,
+    source?: number,
+    allowance?: number
+  ): Promise<NodeCheckResponse<SyncCheck>> {
+    const relayResponse = await this.sendRelay(data, blockchainID, aat, node, path)
+
+    if (relayResponse instanceof Error) {
+      return { check: 'chain-check', passed: false, response: relayResponse, result: { blockHeight: 0 } }
+    }
+
+    const payload = JSON.parse(relayResponse.payload)
+    const blockHeight = NodeChecker.parseBlockFromPayload(payload, resultKey)
+
+    const isSynced = source > 0 && allowance > 0 ? source - blockHeight <= allowance : blockHeight > 0
+
+    return {
+      check: 'session-check',
+      passed: isSynced,
+      response: relayResponse.payload,
+      result: { blockHeight },
+    }
+  }
+
   async sendConsensusRelay(data: string, blockchainID: string, aat: PocketAAT): Promise<RelayResponse | Error> {
     return this.sendRelay(
       data,
       blockchainID,
       aat,
       undefined,
-      this.updateConfigurationConsensus(this.configuration),
       undefined,
+      this.updateConfigurationConsensus(this.configuration),
       true
     )
   }
@@ -79,8 +112,8 @@ export class NodeChecker {
     blockchainID: string,
     aat: PocketAAT,
     node?: Node,
-    configuration?: Configuration,
     path?: string,
+    configuration?: Configuration,
     consensusEnabled?: boolean
   ): Promise<RelayResponse | Error> {
     const relayResponse = await this.pocket.sendRelay(
@@ -135,10 +168,3 @@ export class NodeChecker {
     )
   }
 }
-
-// Usage (2)
-
-// const nodeChecks = new NodeChecker(pocket, configuration)
-
-// nodeChecks.syncCheck(node1, )
-// nodeChecks.chainCheck(node2, )
