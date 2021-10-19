@@ -85,7 +85,7 @@ export class NodeChecker {
     const payload = JSON.parse(relayResponse.payload)
     const blockHeight = NodeChecker.parseBlockFromPayload(payload, resultKey)
 
-    const isSynced = source > 0 && allowance > 0 ? source - blockHeight <= allowance : blockHeight > 0
+    const isSynced = source > 0 && allowance >= 0 ? source - blockHeight <= allowance : blockHeight > 0
 
     return {
       check: 'session-check',
