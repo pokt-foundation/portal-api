@@ -7,7 +7,7 @@ export type Check = 'sync-check' | 'chain-check' | 'archival-check'
 
 export type NodeCheckResponse<T> = {
   check: Check
-  passed: boolean
+  success: boolean
   response: string | Error
   result?: T
 }
@@ -21,7 +21,7 @@ export type SyncCheck = {
 }
 
 type ProcessCheck = {
-  passed: boolean
+  success: boolean
   relayResponse: RelayResponse | Error
   output: string | number
 }
@@ -63,7 +63,7 @@ export class NodeChecker {
   ): Promise<NodeCheckResponse<ChainCheck>> {
     const isCorrectChain = (nodeChainID: number, chainIDArg) => nodeChainID === chainIDArg
 
-    const { relayResponse, output, passed } = await this.processCheck(
+    const { relayResponse, output, success } = await this.processCheck(
       node,
       data,
       blockchainID,
@@ -75,10 +75,10 @@ export class NodeChecker {
     )
 
     if (relayResponse instanceof Error) {
-      return { check: 'chain-check', passed: false, response: relayResponse, result: { chainID: 0 } }
+      return { check: 'chain-check', success: false, response: relayResponse, result: { chainID: 0 } }
     }
 
-    return { check: 'chain-check', passed, response: relayResponse.payload, result: { chainID: output as number } }
+    return { check: 'chain-check', success, response: relayResponse.payload, result: { chainID: output as number } }
   }
 
   /**
@@ -113,7 +113,7 @@ export class NodeChecker {
       return blockheight > 0
     }
 
-    const { relayResponse, output, passed } = await this.processCheck(
+    const { relayResponse, output, success } = await this.processCheck(
       node,
       data,
       blockchainID,
@@ -125,12 +125,12 @@ export class NodeChecker {
     )
 
     if (relayResponse instanceof Error) {
-      return { check: 'sync-check', passed: false, response: relayResponse, result: { blockHeight: 0 } }
+      return { check: 'sync-check', success: false, response: relayResponse, result: { blockHeight: 0 } }
     }
 
     return {
       check: 'sync-check',
-      passed,
+      success,
       response: relayResponse.payload,
       result: { blockHeight: output as number },
     }
@@ -159,7 +159,7 @@ export class NodeChecker {
   ): Promise<NodeCheckResponse<void>> {
     const isArchival = (result: string | number, comparatorVal: string) => result.toString() !== comparatorVal
 
-    const { passed, relayResponse } = await this.processCheck(
+    const { success, relayResponse } = await this.processCheck(
       node,
       data,
       blockchainID,
@@ -171,10 +171,10 @@ export class NodeChecker {
     )
 
     if (relayResponse instanceof Error) {
-      return { check: 'archival-check', passed: false, response: relayResponse }
+      return { check: 'archival-check', success: false, response: relayResponse }
     }
 
-    return { check: 'archival-check', passed, response: relayResponse.payload }
+    return { check: 'archival-check', success, response: relayResponse.payload }
   }
 
   /**
@@ -229,7 +229,7 @@ export class NodeChecker {
     const relayResponse = await this.sendRelay(data, blockchainID, aat, node, path)
 
     if (relayResponse instanceof Error) {
-      return { passed: false, relayResponse, output: 0 }
+      return { success: false, relayResponse, output: 0 }
     }
 
     const payload = JSON.parse(relayResponse.payload)
@@ -237,7 +237,7 @@ export class NodeChecker {
 
     const successCheck = comparatorFn(result, comparator)
 
-    return { relayResponse, passed: successCheck, output: result }
+    return { relayResponse, success: successCheck, output: result }
   }
 
   /**
