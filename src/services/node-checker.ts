@@ -20,11 +20,7 @@ export type SyncCheck = {
   blockHeight: number
 }
 
-type BasicRPCResponse = {
-  jsonrpc: string
-  id: number
-  result: string
-}
+const NULL_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 export class NodeChecker {
   pocket: Pocket
@@ -54,7 +50,7 @@ export class NodeChecker {
       return { check: 'chain-check', passed: false, response: relayResponse, result: { chainID: 0 } }
     }
 
-    const payload: BasicRPCResponse = JSON.parse(relayResponse.payload)
+    const payload = JSON.parse(relayResponse.payload)
     const nodeChainID = blockHexToDecimal(payload.result)
     const isCorrectChain = nodeChainID === chainID
 
@@ -93,6 +89,28 @@ export class NodeChecker {
       response: relayResponse.payload,
       result: { blockHeight },
     }
+  }
+
+  async archival(
+    node: Node,
+    data: string,
+    blockchainID: string,
+    aat: PocketAAT,
+    resultKey: string,
+    comparatorValue: string,
+    path?: string
+  ): Promise<NodeCheckResponse<void>> {
+    const relayResponse = await this.sendRelay(data, blockchainID, aat, node, path)
+
+    if (relayResponse instanceof Error) {
+      return { check: 'chain-check', passed: false, response: relayResponse }
+    }
+
+    const payload = JSON.parse(relayResponse.payload)
+    const result = NodeChecker.parseBlockFromPayload(payload, resultKey)
+    const isArchival = result.toString() === comparatorValue
+
+    return { check: 'archival-check', passed: isArchival, response: relayResponse.payload }
   }
 
   async sendConsensusRelay(data: string, blockchainID: string, aat: PocketAAT): Promise<RelayResponse | Error> {
