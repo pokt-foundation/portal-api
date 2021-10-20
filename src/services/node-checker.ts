@@ -20,7 +20,11 @@ export type SyncCheck = {
   blockHeight: number
 }
 
-const NULL_ADDRESS = '0x0000000000000000000000000000000000000000'
+type ProcessCheck = {
+  passed: boolean
+  relayResponse: RelayResponse | Error
+  output: string | number
+}
 
 export class NodeChecker {
   pocket: Pocket
@@ -44,22 +48,24 @@ export class NodeChecker {
     chainID: number,
     aat: PocketAAT
   ): Promise<NodeCheckResponse<ChainCheck>> {
-    const relayResponse = await this.sendRelay(data, blockchainID, aat, node)
+    const isCorrectChain = (nodeChainID: number, chainIDArg) => nodeChainID === chainIDArg
+
+    const { relayResponse, output, passed } = await this.processCheck(
+      node,
+      data,
+      undefined,
+      blockchainID,
+      aat,
+      'result',
+      chainID,
+      isCorrectChain
+    )
 
     if (relayResponse instanceof Error) {
       return { check: 'chain-check', passed: false, response: relayResponse, result: { chainID: 0 } }
     }
 
-    const payload = JSON.parse(relayResponse.payload)
-    const nodeChainID = blockHexToDecimal(payload.result)
-    const isCorrectChain = nodeChainID === chainID
-
-    return {
-      check: 'chain-check',
-      passed: isCorrectChain,
-      response: relayResponse.payload,
-      result: { chainID: blockHexToDecimal(payload.result) },
-    }
+    return { check: 'chain-check', passed, response: relayResponse.payload, result: { chainID: output as number } }
   }
 
   async sync(
@@ -72,22 +78,33 @@ export class NodeChecker {
     source?: number,
     allowance?: number
   ): Promise<NodeCheckResponse<SyncCheck>> {
-    const relayResponse = await this.sendRelay(data, blockchainID, aat, node, path)
-
-    if (relayResponse instanceof Error) {
-      return { check: 'chain-check', passed: false, response: relayResponse, result: { blockHeight: 0 } }
+    const isSynced = (sourceArg: number, comparatorVal) => {
+      if (source > 0 && allowance >= 0) {
+        return sourceArg >= comparatorVal
+      }
+      return sourceArg > 0
     }
 
-    const payload = JSON.parse(relayResponse.payload)
-    const blockHeight = NodeChecker.parseBlockFromPayload(payload, resultKey)
+    const { relayResponse, output, passed } = await this.processCheck(
+      node,
+      data,
+      path,
+      blockchainID,
+      aat,
+      resultKey,
+      source - allowance,
+      isSynced
+    )
 
-    const isSynced = source > 0 && allowance >= 0 ? source - blockHeight <= allowance : blockHeight > 0
+    if (relayResponse instanceof Error) {
+      return { check: 'session-check', passed: false, response: relayResponse, result: { blockHeight: 0 } }
+    }
 
     return {
       check: 'session-check',
-      passed: isSynced,
+      passed,
       response: relayResponse.payload,
-      result: { blockHeight },
+      result: { blockHeight: output as number },
     }
   }
 
@@ -97,20 +114,27 @@ export class NodeChecker {
     blockchainID: string,
     aat: PocketAAT,
     resultKey: string,
-    comparatorValue: string,
+    comparator: string,
     path?: string
   ): Promise<NodeCheckResponse<void>> {
-    const relayResponse = await this.sendRelay(data, blockchainID, aat, node, path)
+    const isArchival = (result: string | number, comparatorVal: string) => result.toString() === comparatorVal
+
+    const { passed, relayResponse } = await this.processCheck(
+      node,
+      data,
+      path,
+      blockchainID,
+      aat,
+      resultKey,
+      comparator,
+      isArchival
+    )
 
     if (relayResponse instanceof Error) {
-      return { check: 'chain-check', passed: false, response: relayResponse }
+      return { check: 'archival-check', passed: false, response: relayResponse }
     }
 
-    const payload = JSON.parse(relayResponse.payload)
-    const result = NodeChecker.parseBlockFromPayload(payload, resultKey)
-    const isArchival = result.toString() === comparatorValue
-
-    return { check: 'archival-check', passed: isArchival, response: relayResponse.payload }
+    return { check: 'archival-check', passed, response: relayResponse.payload }
   }
 
   async sendConsensusRelay(data: string, blockchainID: string, aat: PocketAAT): Promise<RelayResponse | Error> {
@@ -123,6 +147,31 @@ export class NodeChecker {
       this.updateConfigurationConsensus(this.configuration),
       true
     )
+  }
+
+  private async processCheck(
+    node: Node,
+    data: string,
+    path: string | undefined,
+    blockchainID: string,
+    aat: PocketAAT,
+    resultKey: string,
+    comparator: string | number,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    comparatorFn: (...args: any) => boolean
+  ): Promise<ProcessCheck> {
+    const relayResponse = await this.sendRelay(data, blockchainID, aat, node, path)
+
+    if (relayResponse instanceof Error) {
+      return { passed: false, relayResponse, output: 0 }
+    }
+
+    const payload = JSON.parse(relayResponse.payload)
+    const result = NodeChecker.parseBlockFromPayload(payload, resultKey)
+
+    const successCheck = comparatorFn(result, comparator)
+
+    return { relayResponse, passed: successCheck, output: result }
   }
 
   private async sendRelay(
