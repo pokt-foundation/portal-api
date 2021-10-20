@@ -3,7 +3,7 @@ import { Pocket, Configuration, Node, RelayResponse, PocketAAT, HTTPMethod, RpcE
 import { blockHexToDecimal } from '../utils/block'
 import { checkEnforcementJSON } from '../utils/enforcements'
 
-export type Check = 'session-check' | 'chain-check' | 'archival-check'
+export type Check = 'sync-check' | 'chain-check' | 'archival-check'
 
 export type NodeCheckResponse<T> = {
   check: Check
@@ -41,21 +41,34 @@ export class NodeChecker {
     return blockHexToDecimal(rawHeight)
   }
 
+  /**
+   * Perfoms chain check of a node, making sure the chain a node reports to support is the one that is being requested
+   * within the session.
+   * @param {Node} node Node to check.
+   * @param {string} data Payload to send to the blockchain, expected to return the blockchain's chainID.
+   * @param {string} blockchainID Blockchain to request data from.
+   * @param {PocketAAT} aat Pocket Authentication token object.
+   * @param {string} chainID  ID to evaluate against.
+   * @param {string} path  Optional. Blockchain's path to send the request to.
+   * @returns {NodeCheckResponse<ChainCheck>} Response object containing the relay response, request output and boolean
+   * assuring whether the node supports the correct chain or not
+   */
   async chain(
     node: Node,
     data: string,
     blockchainID: string,
+    aat: PocketAAT,
     chainID: number,
-    aat: PocketAAT
+    path?: string
   ): Promise<NodeCheckResponse<ChainCheck>> {
     const isCorrectChain = (nodeChainID: number, chainIDArg) => nodeChainID === chainIDArg
 
     const { relayResponse, output, passed } = await this.processCheck(
       node,
       data,
-      undefined,
       blockchainID,
       aat,
+      path,
       'result',
       chainID,
       isCorrectChain
@@ -68,46 +81,73 @@ export class NodeChecker {
     return { check: 'chain-check', passed, response: relayResponse.payload, result: { chainID: output as number } }
   }
 
+  /**
+   * Performs sync check on a node, making sure the node's blockheight is enough to perfom optimal transactions.
+   * A source blockheight is required to compare against, if no valid source is provided, will return true on any height
+   * higher than 0.
+   * @param {Node} node Node to check.
+   * @param {string} data Payload to send to the blockchain, expected to return the blockchain's block height.
+   * @param {string} blockchainID Blockchain to request data from.
+   * @param {PocketAAT} aat Pocket Authentication token object.
+   * @param {string} resultKey key field from the relay response that's expected to have the chain's blockheight.
+   * @param {string} path  Optional. Blockchain's path to send the request to.
+   * @param source Optional but encouraged to be provided. Source to compare the node's blockheight against.
+   * @param allowance Optional. Allowed Threshold of number of blocks behind from the node.
+   * @returns {NodeCheckResponse<SyncCheck>} Response object containing the relay response, request output and boolean
+   * assuring whether the node is on sync with the source, or has a block height over 0 in case no source was provided.
+   */
   async sync(
     node: Node,
     data: string,
-    resultKey: string,
     blockchainID: string,
     aat: PocketAAT,
+    resultKey: string,
     path?: string,
     source?: number,
-    allowance?: number
+    allowance = 0
   ): Promise<NodeCheckResponse<SyncCheck>> {
-    const isSynced = (sourceArg: number, comparatorVal) => {
+    const isSynced = (blockheight: number, minimumAllowedHeight) => {
       if (source > 0 && allowance >= 0) {
-        return sourceArg >= comparatorVal
+        return blockheight >= minimumAllowedHeight
       }
-      return sourceArg > 0
+      return blockheight > 0
     }
 
     const { relayResponse, output, passed } = await this.processCheck(
       node,
       data,
-      path,
       blockchainID,
       aat,
+      path,
       resultKey,
       source - allowance,
       isSynced
     )
 
     if (relayResponse instanceof Error) {
-      return { check: 'session-check', passed: false, response: relayResponse, result: { blockHeight: 0 } }
+      return { check: 'sync-check', passed: false, response: relayResponse, result: { blockHeight: 0 } }
     }
 
     return {
-      check: 'session-check',
+      check: 'sync-check',
       passed,
       response: relayResponse.payload,
       result: { blockHeight: output as number },
     }
   }
 
+  /**
+   * Perfoms archival check on a node. Making sure the node is capable of performing archival-specific relays in the chain.
+   * @param {Node} node Node to check.
+   * @param {string} data Payload to send to the blockchain, expected to return a response that will fail on non-archive nodes.
+   * @param {string} blockchainID Blockchain to request data from.
+   * @param {PocketAAT} aat Pocket Authentication token object.
+   * @param {string} resultKey key field from the relay response that's expected to have a value on failing non-archive nodes
+   * @param {string} comparator value to compare the resultKey against.
+   * @param {string} path Optional. Blockchain's path to send the request to.
+   * @returns {NodeCheckResponse<void>} Response object containing the relay response and boolean.
+   * assuring whether the node supports supports archival or not.
+   */
   async archival(
     node: Node,
     data: string,
@@ -117,14 +157,14 @@ export class NodeChecker {
     comparator: string,
     path?: string
   ): Promise<NodeCheckResponse<void>> {
-    const isArchival = (result: string | number, comparatorVal: string) => result.toString() === comparatorVal
+    const isArchival = (result: string | number, comparatorVal: string) => result.toString() !== comparatorVal
 
     const { passed, relayResponse } = await this.processCheck(
       node,
       data,
-      path,
       blockchainID,
       aat,
+      path,
       resultKey,
       comparator,
       isArchival
@@ -137,24 +177,50 @@ export class NodeChecker {
     return { check: 'archival-check', passed, response: relayResponse.payload }
   }
 
-  async sendConsensusRelay(data: string, blockchainID: string, aat: PocketAAT): Promise<RelayResponse | Error> {
+  /**
+   * Performs a consensus relay on all nodes. Meant to be used to slash nodes that fail any of the checks
+   * @param {data} data payload to send to the blockchain.
+   * @param {string} blockchainID Blockchain to request data from.
+   * @param {PocketAAT} aat Pocket Authentication token object.
+   * @param {string} path  Optional. Blockchain's path to send the request to.
+   * @returns {RelayResponse|Error} relay response from the blockchain.
+   */
+  async sendConsensusRelay(
+    data: string,
+    blockchainID: string,
+    aat: PocketAAT,
+    path?: string
+  ): Promise<RelayResponse | Error> {
     return this.sendRelay(
       data,
       blockchainID,
       aat,
       undefined,
-      undefined,
+      path,
       this.updateConfigurationConsensus(this.configuration),
       true
     )
   }
 
+  /**
+   * Helper function for request the blockchains data, asserting is valid and return the result from a comparator function
+   * over the obtained relay response.
+   * @param {Node} node Node to perfom the request.
+   * @param {data} data payload to send to the blockchain.
+   * @param {string} blockchainID Blockchain to request data from.
+   * @param {PocketAAT} aat Pocket Authentication token object.
+   * @param {string} resultKey key to extract data from the JSON response, for nested keys can be added using dot notation
+   * (i.e. 'example.nested').
+   * @param {string|number} comparator value to compare the extracted output from resultKey.
+   * @param {function} comparatorFn Function to compare the extracted values, expected a boolean response.
+   * @returns {ProcessCheck} relayResponse, boolean for comparator response and resultKey output
+   */
   private async processCheck(
     node: Node,
     data: string,
-    path: string | undefined,
     blockchainID: string,
     aat: PocketAAT,
+    path: string | undefined,
     resultKey: string,
     comparator: string | number,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -174,6 +240,17 @@ export class NodeChecker {
     return { relayResponse, passed: successCheck, output: result }
   }
 
+  /**
+   * Helper function to send a relay.
+   * @param {data} data payload to send to the blockchain.
+   * @param {string} blockchainID Blockchain to request data from.
+   * @param {PocketAAT} aat Pocket Authentication token object.
+   * @param {Node} node Optional. Node to check.
+   * @param {string} path Optional. Blockchain's path to send the request to.
+   * @param {Configuration} configuration Optional. Pocket's configuration object
+   * @param {boolean} consensusEnabled Optional. Enable consensus
+   * @returns {RelayResponse|Error} relay response.
+   */
   private async sendRelay(
     data: string,
     blockchainID: string,
@@ -205,6 +282,11 @@ export class NodeChecker {
     return relayResponse as RelayResponse
   }
 
+  /**
+   * Update the configuration's objects consensus value.
+   * @param {Configuration} pocketConfiguration Pocket's Configuration object.
+   * @returns {Configuration} updated configuration object.
+   */
   private updateConfigurationConsensus(pocketConfiguration: Configuration): Configuration {
     return new Configuration(
       pocketConfiguration.maxDispatchers,
@@ -220,6 +302,11 @@ export class NodeChecker {
     )
   }
 
+  /**
+   * Update the configuration's objects timeout value.
+   * @param {Configuration} pocketConfiguration Pocket's Configuration object.
+   * @returns {Configuration} updated configuration object.
+   */
   private updateConfigurationTimeout(pocketConfiguration: Configuration): Configuration {
     return new Configuration(
       pocketConfiguration.maxDispatchers,
