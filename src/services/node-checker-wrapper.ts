@@ -42,34 +42,17 @@ export class NodeCheckerWrapper {
     applicationPublicKey: string,
     pocketConfiguration?: Configuration
   ): Promise<Node[]> {
-    const checkedNodes: Node[] = []
-    let checkedNodesList: string[] = []
-
     const checkedNodesKey = `chain-check-${this.sessionKey}`
-    const CheckedNodesCached = await this.redis.get(checkedNodesKey)
 
-    if (CheckedNodesCached) {
-      checkedNodesList = JSON.parse(CheckedNodesCached)
-      for (const node of nodes) {
-        if (checkedNodesList.includes(node.publicKey)) {
-          checkedNodes.push(node)
-        }
-      }
+    const checkedNodes: Node[] = await this.cacheNodes(nodes, checkedNodesKey)
+    const checkedNodesList: string[] = []
+
+    if (checkedNodes.length > 0) {
       return checkedNodes
     }
 
-    // Cache is stale, start a new cache fill
-    // First check cache lock key; if lock key exists, return full node set
-    const chainLock = await this.redis.get('lock-' + checkedNodesKey)
-
-    if (chainLock) {
-      return nodes
-    } else {
-      // Set lock as this thread checks the Chain with 60 second ttl.
-      // If any major errors happen below, it will retry the Chain check every 60 seconds.
-      await this.redis.set('lock-' + checkedNodesKey, 'true', 'EX', 60)
-    }
     const nodeChecker = new NodeChecker(this.pocket, pocketConfiguration || this.pocket.configuration)
+
     const relayStart = process.hrtime()
     const nodeChainChecks = await Promise.allSettled(
       nodes.map((node) => nodeChecker.chain(node, data, blockchainID, pocketAAT, chainID))
@@ -113,6 +96,37 @@ export class NodeCheckerWrapper {
         'CHAIN CHECK CHALLENGE:',
         requestID
       )
+    }
+
+    return checkedNodes
+  }
+
+  private async cacheNodes(nodes: Node[], cacheKey: string): Promise<Node[]> {
+    const checkedNodes: Node[] = []
+    let checkedNodesList: string[] = []
+
+    const CheckedNodesCached = await this.redis.get(cacheKey)
+
+    if (CheckedNodesCached) {
+      checkedNodesList = JSON.parse(CheckedNodesCached)
+      for (const node of nodes) {
+        if (checkedNodesList.includes(node.publicKey)) {
+          checkedNodes.push(node)
+        }
+      }
+      return checkedNodes
+    }
+
+    // Cache is stale, start a new cache fill
+    // First check cache lock key; if lock key exists, return full node set
+    const chainLock = await this.redis.get('lock-' + cacheKey)
+
+    if (chainLock) {
+      return nodes
+    } else {
+      // Set lock as this thread checks the Chain with 60 second ttl.
+      // If any major errors happen below, it will retry the Chain check every 60 seconds.
+      await this.redis.set('lock-' + cacheKey, 'true', 'EX', 60)
     }
 
     return checkedNodes
