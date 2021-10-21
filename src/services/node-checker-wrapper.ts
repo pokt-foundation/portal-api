@@ -76,7 +76,7 @@ export class NodeCheckerWrapper {
     )
 
     checkedNodes.push(
-      ...(await this._filterNodes(
+      ...(await this.filterNodes(
         'chain-check',
         nodes,
         nodeChainChecks,
@@ -118,10 +118,10 @@ export class NodeCheckerWrapper {
     return checkedNodes
   }
 
-  private async _filterNodes<T>(
+  private async filterNodes(
     checkType: Check,
     nodes: Node[],
-    nodesPromise: PromiseSettledResult<NodeCheckResponse<T>>[],
+    nodesPromise: PromiseSettledResult<NodeCheckResponse<unknown>>[],
     requestID: string,
     blockchainID: string,
     relayStart: [number, number],
@@ -212,7 +212,7 @@ export class NodeCheckerWrapper {
       switch (checkType) {
         case 'chain-check':
           {
-            const { chainID } = result as unknown as ChainCheck
+            const { chainID } = result as ChainCheck
 
             resultMsg = `CHAIN CHECK RESULT: ${JSON.stringify({ node, chainID })}`
             successMsg = `CHAIN CHECK ${success ? 'SUCCESS' : 'FAILURE'}: ${node.publicKey} chainID: ${chainID}`
@@ -220,7 +220,7 @@ export class NodeCheckerWrapper {
           break
         case 'sync-check':
           {
-            const { blockHeight } = result as unknown as SyncCheck
+            const { blockHeight } = result as SyncCheck
 
             resultMsg = `'SYNC CHECK RESULT: ${JSON.stringify({ node, blockchainID, blockHeight })}`
             successMsg = `SYNC CHECK ${success ? 'IN-SYNC' : 'BEHIND'}: ${node.publicKey} height: ${blockHeight}`
