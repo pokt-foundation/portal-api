@@ -3,7 +3,7 @@ import { Pocket, Session, Node, PocketAAT, Configuration, RelayResponse } from '
 import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
 import { MAX_RELAYS_ERROR } from '../utils/constants'
 import { MetricsRecorder } from './metrics-recorder'
-import { ChainCheck, NodeChecker, NodeCheckResponse } from './node-checker'
+import { ChainCheck, Check, NodeChecker, NodeCheckResponse, SyncCheck } from './node-checker'
 
 const logger = require('../services/logger')
 
@@ -76,7 +76,8 @@ export class NodeCheckerWrapper {
     )
 
     checkedNodes.push(
-      ...(await this._chainCheck(
+      ...(await this._filterNodes(
+        'chain-check',
         nodes,
         nodeChainChecks,
         requestID,
@@ -90,11 +91,6 @@ export class NodeCheckerWrapper {
 
     logger.log('info', 'CHAIN CHECK COMPLETE: ' + checkedNodes.length + ' nodes on chain', {
       requestID: requestID,
-      relayType: '',
-      typeID: '',
-      serviceNode: '',
-      error: '',
-      elapsedTime: '',
       blockchainID,
       origin: this.origin,
       sessionKey: this.sessionKey,
@@ -118,11 +114,14 @@ export class NodeCheckerWrapper {
         requestID
       )
     }
+
+    return checkedNodes
   }
 
-  private async _chainCheck(
+  private async _filterNodes<T>(
+    checkType: Check,
     nodes: Node[],
-    nodesChainsPromise: PromiseSettledResult<NodeCheckResponse<ChainCheck>>[],
+    nodesPromise: PromiseSettledResult<NodeCheckResponse<T>>[],
     requestID: string,
     blockchainID: string,
     relayStart: [number, number],
@@ -131,12 +130,15 @@ export class NodeCheckerWrapper {
   ): Promise<Node[]> {
     const onChainNodes: Node[] = []
 
-    for (const [idx, chainCheckPromise] of nodesChainsPromise.entries()) {
+    for (const [idx, nodeCheckPromise] of nodesPromise.entries()) {
       const node = nodes[idx]
       const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
 
-      const rejected = chainCheckPromise.status === 'rejected'
-      const failed = rejected || chainCheckPromise.value.response instanceof Error
+      // helps debugging
+      const formattedType = checkType.replace('-', ' ').toUpperCase()
+
+      const rejected = nodeCheckPromise.status === 'rejected'
+      const failed = rejected || nodeCheckPromise.value.response instanceof Error
 
       // Error
       if (failed) {
@@ -144,19 +146,15 @@ export class NodeCheckerWrapper {
         let errorMsg: string
 
         if (rejected) {
-          error = errorMsg = chainCheckPromise.reason
+          error = errorMsg = nodeCheckPromise.reason
         } else {
-          error = chainCheckPromise.value.response as Error
+          error = nodeCheckPromise.value.response as Error
           errorMsg = error.message
         }
 
-        logger.log('error', 'CHAIN CHECK ERROR: ' + JSON.stringify(error), {
+        logger.log('error', `${formattedType} ERROR: ${JSON.stringify(error)}`, {
           requestID: requestID,
-          relayType: '',
-          typeID: '',
           serviceNode: node.publicKey,
-          error: '',
-          elapsedTime: '',
           blockchainID,
           origin: this.origin,
           serviceURL,
@@ -172,7 +170,7 @@ export class NodeCheckerWrapper {
           errorMsg = JSON.stringify(error)
         }
 
-        await this.metricsRecorder.recordMetric({
+        const metricLog = {
           requestID: requestID,
           applicationID: applicationID,
           applicationPublicKey: applicationPublicKey,
@@ -180,34 +178,59 @@ export class NodeCheckerWrapper {
           serviceNode: node.publicKey,
           relayStart,
           result: 500,
-          bytes: Buffer.byteLength('WRONG CHAIN', 'utf8'),
           delivered: false,
           fallback: false,
-          method: 'chaincheck',
+          method: checkType,
           error: errorMsg,
           origin: this.origin,
           data: undefined,
           sessionKey: this.sessionKey,
-        })
+          bytes: 0,
+        }
 
+        switch (checkType) {
+          case 'chain-check':
+            metricLog.bytes = Buffer.byteLength('WRONG CHAIN', 'utf8')
+            break
+          case 'sync-check':
+            metricLog.bytes = Buffer.byteLength(errorMsg || 'SYNC-CHECK', 'utf8')
+            break
+        }
+
+        await this.metricsRecorder.recordMetric(metricLog)
         continue
       }
 
       // Success
       const {
-        value: {
-          result: { chainID: nodeChainID },
-          success,
-        },
-      } = chainCheckPromise
+        value: { result, success },
+      } = nodeCheckPromise
 
-      logger.log('info', 'CHAIN CHECK RESULT: ' + JSON.stringify({ node, chainID: nodeChainID }), {
+      let resultMsg = ''
+      let successMsg = ''
+
+      switch (checkType) {
+        case 'chain-check':
+          {
+            const { chainID } = result as unknown as ChainCheck
+
+            resultMsg = `CHAIN CHECK RESULT: ${JSON.stringify({ node, chainID })}`
+            successMsg = `CHAIN CHECK ${success ? 'SUCCESS' : 'FAILURE'}: ${node.publicKey} chainID: ${chainID}`
+          }
+          break
+        case 'sync-check':
+          {
+            const { blockHeight } = result as unknown as SyncCheck
+
+            resultMsg = `'SYNC CHECK RESULT: ${JSON.stringify({ node, blockchainID, blockHeight })}`
+            successMsg = `SYNC CHECK ${success ? 'IN-SYNC' : 'BEHIND'}: ${node.publicKey} height: ${blockHeight}`
+          }
+          break
+      }
+
+      logger.log('info', resultMsg, {
         requestID: requestID,
-        relayType: '',
-        typeID: '',
         serviceNode: node.publicKey,
-        error: '',
-        elapsedTime: '',
         blockchainID,
         origin: this.origin,
         serviceURL,
@@ -215,15 +238,9 @@ export class NodeCheckerWrapper {
         sessionKey: this.sessionKey,
       })
 
-      const resultMessage = `CHAIN CHECK ${success ? 'SUCCESS' : 'FAILURE'}: ${node.publicKey} chainID: ${nodeChainID}`
-
-      logger.log('info', resultMessage, {
+      logger.log('info', successMsg, {
         requestID: requestID,
-        relayType: '',
-        typeID: '',
         serviceNode: node.publicKey,
-        error: '',
-        elapsedTime: '',
         blockchainID,
         origin: this.origin,
         serviceURL,

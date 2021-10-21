@@ -40,9 +40,9 @@ const consoleFormat = printf(
   ({
     level,
     message,
-    requestID,
-    relayType,
-    typeID,
+    requestID = '',
+    relayType = '',
+    typeID = '',
     error = '',
     elapsedTime,
     blockchainID = '',

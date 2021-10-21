@@ -523,9 +523,7 @@ export class PocketRelayer {
         syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
       }
 
-      const checkersPromise = Promise.allSettled([chainCheckPromise, syncCheckPromise])
-
-      const [chainCheckResult, syncCheckResult] = await checkersPromise
+      const [chainCheckResult, syncCheckResult] = await Promise.allSettled([chainCheckPromise, syncCheckPromise])
 
       if (blockchainIDCheck) {
         if (isCheckPromiseResolved(chainCheckResult)) {
@@ -533,6 +531,8 @@ export class PocketRelayer {
         } else {
           const error = 'ChainID check failure'
           const method = 'checks'
+
+          console.log('\n\nPORQUE FALLE', chainCheckPromise, chainCheckResult)
 
           await this.metricsRecorder.recordMetric({
             requestID,
