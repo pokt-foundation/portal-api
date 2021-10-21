@@ -3,7 +3,7 @@ import { Pocket, Session, Node, PocketAAT, Configuration, RelayResponse } from '
 import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
 import { MAX_RELAYS_ERROR } from '../utils/constants'
 import { MetricsRecorder } from './metrics-recorder'
-import { NodeChecker } from './node-checker'
+import { ChainCheck, NodeChecker, NodeCheckResponse } from './node-checker'
 
 const logger = require('../services/logger')
 
@@ -75,18 +75,82 @@ export class NodeCheckerWrapper {
       nodes.map((node) => nodeChecker.chain(node, data, blockchainID, pocketAAT, chainID))
     )
 
-    for (const [idx, chainCheckPromise] of nodeChainChecks.entries()) {
+    checkedNodes.push(
+      ...(await this._chainCheck(
+        nodes,
+        nodeChainChecks,
+        requestID,
+        blockchainID,
+        relayStart,
+        applicationID,
+        applicationPublicKey
+      ))
+    )
+    checkedNodesList.push(...checkedNodes.map((node) => node.publicKey))
+
+    logger.log('info', 'CHAIN CHECK COMPLETE: ' + checkedNodes.length + ' nodes on chain', {
+      requestID: requestID,
+      relayType: '',
+      typeID: '',
+      serviceNode: '',
+      error: '',
+      elapsedTime: '',
+      blockchainID,
+      origin: this.origin,
+      sessionKey: this.sessionKey,
+    })
+    await this.redis.set(
+      checkedNodesKey,
+      JSON.stringify(checkedNodesList),
+      'EX',
+      checkedNodes.length > 0 ? 600 : 30 // will retry Chain check every 30 seconds if no nodes are in Chain
+    )
+
+    // If one or more nodes of this sessionKey are not in Chain, fire a consensus relay with the same check.
+    // This will penalize the out-of-Chain nodes and cause them to get slashed for reporting incorrect data.
+    if (checkedNodes.length < nodes.length) {
+      await this.performChallenge(
+        data,
+        blockchainID,
+        pocketAAT,
+        pocketConfiguration,
+        'CHAIN CHECK CHALLENGE:',
+        requestID
+      )
+    }
+  }
+
+  private async _chainCheck(
+    nodes: Node[],
+    nodesChainsPromise: PromiseSettledResult<NodeCheckResponse<ChainCheck>>[],
+    requestID: string,
+    blockchainID: string,
+    relayStart: [number, number],
+    applicationID: string,
+    applicationPublicKey: string
+  ): Promise<Node[]> {
+    const onChainNodes: Node[] = []
+
+    for (const [idx, chainCheckPromise] of nodesChainsPromise.entries()) {
       const node = nodes[idx]
       const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
 
-      if (
-        chainCheckPromise.status === 'rejected' ||
-        (chainCheckPromise.status === 'fulfilled' && chainCheckPromise.value.response instanceof Error)
-      ) {
-        const logMessage =
-          chainCheckPromise.status === 'rejected' ? chainCheckPromise.reason.message : chainCheckPromise.value.response
+      const rejected = chainCheckPromise.status === 'rejected'
+      const failed = rejected || chainCheckPromise.value.response instanceof Error
 
-        logger.log('error', 'CHAIN CHECK ERROR: ' + JSON.stringify(logMessage), {
+      // Error
+      if (failed) {
+        let error: string | Error
+        let errorMsg: string
+
+        if (rejected) {
+          error = errorMsg = chainCheckPromise.reason
+        } else {
+          error = chainCheckPromise.value.response as Error
+          errorMsg = error.message
+        }
+
+        logger.log('error', 'CHAIN CHECK ERROR: ' + JSON.stringify(error), {
           requestID: requestID,
           relayType: '',
           typeID: '',
@@ -100,17 +164,12 @@ export class NodeCheckerWrapper {
           sessionKey: this.sessionKey,
         })
 
-        let error =
-          chainCheckPromise.status === 'rejected'
-            ? chainCheckPromise.reason.message
-            : (chainCheckPromise.value.response as Error).message
-
-        if (error === MAX_RELAYS_ERROR) {
+        if (errorMsg === MAX_RELAYS_ERROR) {
           await removeNodeFromSession(this.redis, this.sessionKey, node.publicKey)
         }
 
         if (typeof error === 'object') {
-          error = JSON.stringify(error)
+          errorMsg = JSON.stringify(error)
         }
 
         await this.metricsRecorder.recordMetric({
@@ -125,7 +184,7 @@ export class NodeCheckerWrapper {
           delivered: false,
           fallback: false,
           method: 'chaincheck',
-          error,
+          error: errorMsg,
           origin: this.origin,
           data: undefined,
           sessionKey: this.sessionKey,
@@ -177,40 +236,10 @@ export class NodeCheckerWrapper {
       }
 
       // Correct chain: add to nodes list
-      checkedNodes.push(node)
-      checkedNodesList.push(node.publicKey)
+      onChainNodes.push(node)
     }
 
-    logger.log('info', 'CHAIN CHECK COMPLETE: ' + checkedNodes.length + ' nodes on chain', {
-      requestID: requestID,
-      relayType: '',
-      typeID: '',
-      serviceNode: '',
-      error: '',
-      elapsedTime: '',
-      blockchainID,
-      origin: this.origin,
-      sessionKey: this.sessionKey,
-    })
-    await this.redis.set(
-      checkedNodesKey,
-      JSON.stringify(checkedNodesList),
-      'EX',
-      checkedNodes.length > 0 ? 600 : 30 // will retry Chain check every 30 seconds if no nodes are in Chain
-    )
-
-    // If one or more nodes of this sessionKey are not in Chain, fire a consensus relay with the same check.
-    // This will penalize the out-of-Chain nodes and cause them to get slashed for reporting incorrect data.
-    if (checkedNodes.length < nodes.length) {
-      await this.performChallenge(
-        data,
-        blockchainID,
-        pocketAAT,
-        pocketConfiguration,
-        'CHAIN CHECK CHALLENGE:',
-        requestID
-      )
-    }
+    return onChainNodes
   }
 
   private async performChallenge(
