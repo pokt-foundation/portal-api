@@ -1,5 +1,5 @@
 import { Redis } from 'ioredis'
-import { Pocket, Session, Node, PocketAAT, Configuration, RelayResponse } from '@pokt-network/pocket-js'
+import { Pocket, Node, PocketAAT, Configuration } from '@pokt-network/pocket-js'
 import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
 import { MAX_RELAYS_ERROR } from '../utils/constants'
 import { MetricsRecorder } from './metrics-recorder'
@@ -128,7 +128,7 @@ export class NodeCheckerWrapper {
     applicationID: string,
     applicationPublicKey: string
   ): Promise<Node[]> {
-    const onChainNodes: Node[] = []
+    const filteredNodes: Node[] = []
 
     for (const [idx, nodeCheckPromise] of nodesPromise.entries()) {
       const node = nodes[idx]
@@ -252,11 +252,11 @@ export class NodeCheckerWrapper {
         continue
       }
 
-      // Correct chain: add to nodes list
-      onChainNodes.push(node)
+      // Successful node: add to nodes list
+      filteredNodes.push(node)
     }
 
-    return onChainNodes
+    return filteredNodes
   }
 
   private async performChallenge(
