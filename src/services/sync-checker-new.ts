@@ -99,6 +99,8 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     syncedNodes.push(...syncedRelayNodes.map(({ node }) => node))
     syncedNodesList.push(...syncedNodes.map((node) => node.publicKey))
 
+    let errorState = false
+
     if (
       syncedRelayNodes.length >= 2 &&
       syncedRelayNodes[0].result.blockHeight > syncedRelayNodes[1].result.blockHeight + allowance
@@ -109,6 +111,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
         origin: this.origin,
         sessionKey: this.sessionKey,
       })
+      errorState = true
     }
 
     const topBlockheight = syncedRelayNodes.length > 0 ? syncedRelayNodes[0].result.blockHeight : 0
@@ -131,6 +134,30 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
           sessionKey: this.sessionKey,
         }
       )
+      errorState = true
+    }
+
+    if (altruistBlockHeight === 0 || isNaN(altruistBlockHeight)) {
+      // Failure to find sync from consensus and altruist
+      logger.log('info', 'SYNC CHECK ALTRUIST FAILURE: ' + altruistBlockHeight, {
+        requestID: requestID,
+        blockchainID,
+        serviceNode: 'ALTRUIST',
+        origin: this.origin,
+        sessionKey: this.sessionKey,
+      })
+
+      if (errorState) {
+        return nodes
+      }
+    } else {
+      logger.log('info', 'SYNC CHECK ALTRUIST CHECK: ' + altruistBlockHeight, {
+        requestID: requestID,
+        blockchainID,
+        serviceNode: 'ALTRUIST',
+        origin: this.origin,
+        sessionKey: this.sessionKey,
+      })
     }
 
     // Besides comparing against the altruist, also compare against the highest node of the session.
@@ -258,12 +285,8 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
       return 0
     } catch (e) {
       logger.log('error', e.message, {
-        requestID: '',
         relayType: 'FALLBACK',
-        typeID: '',
         serviceNode: 'fallback:' + redactedAltruistURL,
-        error: '',
-        elapsedTime: '',
         origin: this.origin,
       })
     }
