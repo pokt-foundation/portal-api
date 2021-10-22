@@ -2,8 +2,8 @@ import axios from 'axios'
 import { Redis } from 'ioredis'
 import { Configuration, Node, Pocket, PocketAAT } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from './metrics-recorder'
-import { NodeChecker, SyncCheck } from './node-checker'
-import { FilteredNode, NodeCheckerWrapper } from './node-checker-wrapper'
+import { NodeChecker, NodeCheckResponse, SyncCheck } from './node-checker'
+import { NodeCheckerWrapper } from './node-checker-wrapper'
 import { SyncCheckOptions } from './sync-checker'
 
 const logger = require('../services/logger')
@@ -38,7 +38,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
 
     const syncedNodesKey = `sync-check-${this.sessionKey}`
 
-    const syncedRelayNodes: FilteredNode<SyncCheck>[] = []
+    const syncedRelayNodes: NodeCheckResponse<SyncCheck>[] = []
     let syncedNodes: Node[] = await this.cacheNodes(nodes, syncedNodesKey)
     let syncedNodesList: string[] = []
 
@@ -78,14 +78,14 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
           applicationID,
           applicationPublicKey
         )
-      ).sort((a, b) => a.data.result.blockHeight - b.data.result.blockHeight)
+      ).sort((a, b) => a.result.blockHeight - b.result.blockHeight)
     )
     syncedNodes.push(...syncedRelayNodes.map(({ node }) => node))
     syncedNodesList.push(...syncedNodes.map((node) => node.publicKey))
 
     if (
       syncedRelayNodes.length >= 2 &&
-      syncedRelayNodes[0].data.result.blockHeight > syncedRelayNodes[1].data.result.blockHeight + allowance
+      syncedRelayNodes[0].result.blockHeight > syncedRelayNodes[1].result.blockHeight + allowance
     ) {
       logger.log('error', 'SYNC CHECK ERROR: two highest nodes could not agree on sync', {
         requestID: requestID,
@@ -95,7 +95,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
       })
     }
 
-    const topBlockheight = syncedRelayNodes.length > 0 ? syncedRelayNodes[0].data.result.blockHeight : 0
+    const topBlockheight = syncedRelayNodes.length > 0 ? syncedRelayNodes[0].result.blockHeight : 0
 
     if (topBlockheight === 0) {
       logger.log(
@@ -105,33 +105,28 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
             syncedRelayNodes.map((node) => ({
               node: node.node,
               blockchainID,
-              blockHeight: node.data.result.blockHeight,
+              blockHeight: node.result.blockHeight,
             }))
           ),
         {
           requestID: requestID,
-          relayType: '',
           blockchainID,
-          typeID: '',
-          serviceNode: '',
-          error: '',
-          elapsedTime: '',
           origin: this.origin,
           sessionKey: this.sessionKey,
         }
       )
     }
 
-    // In case of altruist failure, compare nodes against the highest one recorded
+    // In case of altruist failure, compare nodes against the highest blockheight recorded
     if (altruistBlockHeight === 0) {
-      syncedRelayNodes.filter((node) => node.data.result.blockHeight < topBlockheight)
+      syncedRelayNodes.filter((node) => node.result.blockHeight < topBlockheight)
       syncedNodes = syncedRelayNodes.map(({ node }) => node)
       syncedNodesList = syncedNodes.map(({ publicKey }) => publicKey)
     }
 
     // Records all nodes out of sync, otherwise, remove failure mark
     await Promise.allSettled(
-      nodeSyncChecks.map((nodeCheck, idx) => {
+      syncedRelayNodes.map((nodeCheck, idx) => {
         const node = nodes[idx]
 
         if (syncedRelayNodes.some(({ node: { publicKey } }) => publicKey === node.publicKey)) {
@@ -149,9 +144,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
           delivered: false,
           fallback: false,
           method: 'synccheck',
-          error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${topBlockheight} altruist block height: ${altruistBlockHeight} nodes height: ${
-            nodeCheck.status === 'fulfilled' ? nodeCheck.value.result.blockHeight : 0
-          } sync allowance: ${allowance}`,
+          error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${topBlockheight} altruist block height: ${altruistBlockHeight} node height: ${nodeCheck.result.blockHeight} sync allowance: ${allowance}`,
           origin: this.origin,
           data: undefined,
           sessionKey: this.sessionKey,

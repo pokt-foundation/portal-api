@@ -7,10 +7,6 @@ import { ChainCheck, Check, NodeChecker, NodeCheckResponse, SyncCheck } from './
 
 const logger = require('../services/logger')
 
-export type FilteredNode<T> = {
-  node: Node
-  data: NodeCheckResponse<T>
-}
 export class NodeCheckerWrapper {
   pocket: Pocket
   redis: Redis
@@ -60,17 +56,18 @@ export class NodeCheckerWrapper {
   protected async filterNodes<T>(
     checkType: Check,
     nodes: Node[],
-    nodesPromise: PromiseSettledResult<NodeCheckResponse<unknown>>[],
+    nodesPromise: PromiseSettledResult<NodeCheckResponse<T>>[],
     requestID: string,
     blockchainID: string,
     relayStart: [number, number],
     applicationID: string,
     applicationPublicKey: string
-  ): Promise<FilteredNode<T>[]> {
-    const filteredNodes: FilteredNode<T>[] = []
+  ): Promise<NodeCheckResponse<T>[]> {
+    const filteredNodes: NodeCheckResponse<T>[] = []
 
     for (const [idx, nodeCheckPromise] of nodesPromise.entries()) {
       const node = nodes[idx]
+
       const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
 
       // helps debugging
@@ -151,7 +148,7 @@ export class NodeCheckerWrapper {
       switch (checkType) {
         case 'chain-check':
           {
-            const { chainID } = result as ChainCheck
+            const { chainID } = result as unknown as ChainCheck
 
             resultMsg = `CHAIN CHECK RESULT: ${JSON.stringify({ node, chainID })}`
             successMsg = `CHAIN CHECK ${success ? 'SUCCESS' : 'FAILURE'}: ${node.publicKey} chainID: ${chainID}`
@@ -159,7 +156,7 @@ export class NodeCheckerWrapper {
           break
         case 'sync-check':
           {
-            const { blockHeight } = result as SyncCheck
+            const { blockHeight } = result as unknown as SyncCheck
 
             resultMsg = `'SYNC CHECK RESULT: ${JSON.stringify({ node, blockchainID, blockHeight })}`
             successMsg = `SYNC CHECK ${success ? 'IN-SYNC' : 'BEHIND'}: ${node.publicKey} height: ${blockHeight}`
@@ -192,7 +189,7 @@ export class NodeCheckerWrapper {
       }
 
       // Successful node: add to nodes list
-      filteredNodes.push({ node, data: nodeCheckPromise.value as NodeCheckResponse<T> })
+      filteredNodes.push(nodeCheckPromise.value)
     }
 
     return filteredNodes

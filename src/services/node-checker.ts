@@ -6,6 +6,7 @@ import { checkEnforcementJSON } from '../utils/enforcements'
 export type Check = 'sync-check' | 'chain-check' | 'archival-check'
 
 export type NodeCheckResponse<T> = {
+  node: Node
   check: Check
   success: boolean
   response: string | Error
@@ -75,10 +76,16 @@ export class NodeChecker {
     )
 
     if (relayResponse instanceof Error) {
-      return { check: 'chain-check', success: false, response: relayResponse, result: { chainID: 0 } }
+      return { node, check: 'chain-check', success: false, response: relayResponse, result: { chainID: 0 } }
     }
 
-    return { check: 'chain-check', success, response: relayResponse.payload, result: { chainID: output as number } }
+    return {
+      node,
+      check: 'chain-check',
+      success,
+      response: relayResponse.payload,
+      result: { chainID: output as number },
+    }
   }
 
   /**
@@ -125,10 +132,11 @@ export class NodeChecker {
     )
 
     if (relayResponse instanceof Error) {
-      return { check: 'sync-check', success: false, response: relayResponse, result: { blockHeight: 0 } }
+      return { node, check: 'sync-check', success: false, response: relayResponse, result: { blockHeight: 0 } }
     }
 
     return {
+      node,
       check: 'sync-check',
       success,
       response: relayResponse.payload,
@@ -171,10 +179,10 @@ export class NodeChecker {
     )
 
     if (relayResponse instanceof Error) {
-      return { check: 'archival-check', success: false, response: relayResponse }
+      return { node, check: 'archival-check', success: false, response: relayResponse }
     }
 
-    return { check: 'archival-check', success, response: relayResponse.payload }
+    return { node, check: 'archival-check', success, response: relayResponse.payload }
   }
 
   /**
