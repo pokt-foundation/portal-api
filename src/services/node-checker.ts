@@ -35,8 +35,8 @@ export class NodeChecker {
     this.configuration = configuration || pocket.configuration
   }
 
-  static parseBlockFromPayload(payload: object, syncCheckResultKey: string): number {
-    const rawHeight = get(payload, syncCheckResultKey) || '0'
+  static parseBlockFromPayload(payload: object, key: string): number {
+    const rawHeight = get(payload, key) || '0'
 
     return blockHexToDecimal(rawHeight)
   }
