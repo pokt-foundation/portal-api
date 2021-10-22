@@ -202,11 +202,11 @@ export class NodeChecker {
 
   /**
    * Performs a consensus relay on all nodes. Meant to be used to slash nodes that fail any of the checks
-   * @param {data} data payload to send to the blockchain.
-   * @param {string} blockchainID Blockchain to request data from.
-   * @param {PocketAAT} aat Pocket Authentication token object.
-   * @param {string} path  optional. Blockchain's path to send the request to.
-   * @returns {RelayResponse|Error} relay response from the blockchain.
+   * @param data payload to send to the blockchain.
+   * @param blockchainID Blockchain to request data from.
+   * @param aat Pocket Authentication token object.
+   * @param path  optional. Blockchain's path to send the request to.
+   * @returns relay response from the blockchain.
    */
   async sendConsensusRelay(
     data: string,
