@@ -532,8 +532,6 @@ export class PocketRelayer {
           const error = 'ChainID check failure'
           const method = 'checks'
 
-          console.log('\n\nPORQUE FALLE', chainCheckPromise, chainCheckResult)
-
           await this.metricsRecorder.recordMetric({
             requestID,
             applicationID: application.id,
