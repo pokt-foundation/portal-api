@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { Redis } from 'ioredis'
 import { Configuration, Node, Pocket, PocketAAT } from '@pokt-network/pocket-js'
+import { getNodeNetworkData } from '../utils/cache'
 import { MetricsRecorder } from './metrics-recorder'
 import { NodeChecker, NodeCheckResponse, SyncCheck } from './node-checker'
 import { NodeCheckerWrapper } from './node-checker-wrapper'
@@ -132,21 +133,44 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
       )
     }
 
-    // In case of altruist failure, compare nodes against the highest blockheight recorded
-    if (altruistBlockHeight === 0) {
-      syncedRelayNodes.filter((node) => node.result.blockHeight < topBlockheight)
-      syncedNodes = syncedRelayNodes.map(({ node }) => node)
-      syncedNodesList = syncedNodes.map(({ publicKey }) => publicKey)
-    }
+    // Besides comparing against the altruist, also compare against the highest node of the session.
+    // This is specially useful in case of altruist failure, where nodes will return success as long as
+    // they have a blockheight over 0.
+    syncedRelayNodes.filter((node) => node.result.blockHeight + allowance < topBlockheight)
+    syncedNodes = syncedRelayNodes.map(({ node }) => node)
+    syncedNodesList = syncedNodes.map(({ publicKey }) => publicKey)
 
-    // Records all nodes out of sync, otherwise, remove failure mark
+    // Records and log all nodes out of sync, otherwise, remove failure mark
     await Promise.allSettled(
-      syncedRelayNodes.map((nodeCheck, idx) => {
-        const node = nodes[idx]
+      nodes.map(async (node, idx) => {
+        const nodeCheck = nodeSyncChecks[idx]
+        const syncedNode = syncedRelayNodes.find(({ node: { publicKey } }) => publicKey === node.publicKey)
+        const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
 
-        if (syncedRelayNodes.some(({ node: { publicKey } }) => publicKey === node.publicKey)) {
+        if (syncedNode) {
+          logger.log('info', `SYNC-CHECK IN-SYNC: ${node.publicKey} height: ${syncedNode.result.blockHeight}`, {
+            requestID: requestID,
+            serviceNode: node.publicKey,
+            blockchainID,
+            origin: this.origin,
+            serviceURL,
+            serviceDomain,
+            sessionKey: this.sessionKey,
+          })
+
           return this.redis.set(blockchainID + '-' + node.publicKey + '-failure', 'false', 'EX', 60 * 60 * 24 * 30)
         }
+
+        logger.log('info', `SYNC-CHECK BEHIND: ${node.publicKey} height: ${syncedNode.result.blockHeight}`, {
+          requestID: requestID,
+          serviceNode: node.publicKey,
+          blockchainID,
+          origin: this.origin,
+          serviceURL,
+          serviceDomain,
+          sessionKey: this.sessionKey,
+        })
+
         return this.metricsRecorder.recordMetric({
           requestID: requestID,
           applicationID: applicationID,
@@ -159,7 +183,9 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
           delivered: false,
           fallback: false,
           method: 'synccheck',
-          error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${topBlockheight} altruist block height: ${altruistBlockHeight} node height: ${nodeCheck.result.blockHeight} sync allowance: ${allowance}`,
+          error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${topBlockheight} altruist block height: ${altruistBlockHeight} node height: ${
+            nodeCheck.status === 'fulfilled' ? nodeCheck.value.result.blockHeight : 0
+          } sync allowance: ${allowance}`,
           origin: this.origin,
           data: undefined,
           sessionKey: this.sessionKey,

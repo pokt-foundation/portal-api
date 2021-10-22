@@ -169,16 +169,15 @@ export class NodeCheckerWrapper {
           {
             const { chainID } = result as unknown as ChainCheck
 
-            resultMsg = `CHAIN CHECK RESULT: ${JSON.stringify({ node, chainID })}`
-            successMsg = `CHAIN CHECK ${success ? 'SUCCESS' : 'FAILURE'}: ${node.publicKey} chainID: ${chainID}`
+            resultMsg = `CHAIN-CHECK RESULT: ${JSON.stringify({ node, chainID })}`
+            successMsg = `CHAIN-CHECK ${success ? 'SUCCESS' : 'FAILURE'}: ${node.publicKey} chainID: ${chainID}`
           }
           break
         case 'sync-check':
           {
             const { blockHeight } = result as unknown as SyncCheck
 
-            resultMsg = `'SYNC CHECK RESULT: ${JSON.stringify({ node, blockchainID, blockHeight })}`
-            successMsg = `SYNC CHECK ${success ? 'IN-SYNC' : 'BEHIND'}: ${node.publicKey} height: ${blockHeight}`
+            resultMsg = `'SYNC-CHECK RESULT: ${JSON.stringify({ node, blockchainID, blockHeight })}`
           }
           break
       }
@@ -193,15 +192,18 @@ export class NodeCheckerWrapper {
         sessionKey: this.sessionKey,
       })
 
-      logger.log('info', successMsg, {
-        requestID: requestID,
-        serviceNode: node.publicKey,
-        blockchainID,
-        origin: this.origin,
-        serviceURL,
-        serviceDomain,
-        sessionKey: this.sessionKey,
-      })
+      // Sync check requires additional assertions outside the scope of this method.
+      if (checkType !== 'sync-check') {
+        logger.log('info', successMsg, {
+          requestID: requestID,
+          serviceNode: node.publicKey,
+          blockchainID,
+          origin: this.origin,
+          serviceURL,
+          serviceDomain,
+          sessionKey: this.sessionKey,
+        })
+      }
 
       if (!success) {
         continue
