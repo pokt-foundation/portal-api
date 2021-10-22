@@ -3,7 +3,7 @@ import { Pocket, Node, PocketAAT, Configuration } from '@pokt-network/pocket-js'
 import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
 import { MAX_RELAYS_ERROR } from '../utils/constants'
 import { MetricsRecorder } from './metrics-recorder'
-import { ChainCheck, Check, NodeChecker, NodeCheckResponse, SyncCheck } from './node-checker'
+import { ArchivalCheck, ChainCheck, Check, NodeChecker, NodeCheckResponse, SyncCheck } from './node-checker'
 
 const logger = require('../services/logger')
 
@@ -147,6 +147,9 @@ export class NodeCheckerWrapper {
           case 'chain-check':
             metricLog.bytes = Buffer.byteLength('WRONG CHAIN', 'utf8')
             break
+          case 'archival-check':
+            metricLog.bytes = Buffer.byteLength('NOT ARCHIVAL', 'utf8')
+            break
           case 'sync-check':
             metricLog.bytes = Buffer.byteLength(errorMsg || 'SYNC-CHECK', 'utf8')
             break
@@ -158,7 +161,7 @@ export class NodeCheckerWrapper {
 
       // Valid response
       const {
-        value: { result, success },
+        value: { output, success },
       } = nodeCheckPromise
 
       let resultMsg = ''
@@ -167,15 +170,22 @@ export class NodeCheckerWrapper {
       switch (checkType) {
         case 'chain-check':
           {
-            const { chainID } = result as unknown as ChainCheck
+            const { chainID } = output as unknown as ChainCheck
 
             resultMsg = `CHAIN-CHECK RESULT: ${JSON.stringify({ node, chainID })}`
             successMsg = `CHAIN-CHECK ${success ? 'SUCCESS' : 'FAILURE'}: ${node.publicKey} chainID: ${chainID}`
           }
           break
+        case 'archival-check': {
+          const { message } = output as unknown as ArchivalCheck
+
+          resultMsg = `ARCHIVAL-CHECK RESULT: ${JSON.stringify({ node, message })}`
+          successMsg = `ARCHIVAL-CHECK ${success ? 'SUCCESS' : 'FAILURE'}: ${node.publicKey} result: ${message}`
+          break
+        }
         case 'sync-check':
           {
-            const { blockHeight } = result as unknown as SyncCheck
+            const { blockHeight } = output as unknown as SyncCheck
 
             resultMsg = `'SYNC-CHECK RESULT: ${JSON.stringify({ node, blockchainID, blockHeight })}`
           }

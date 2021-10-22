@@ -59,7 +59,6 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
       this.origin
     )
 
-    console.log('------------------------------------')
     await archivalChecker.check(
       nodes,
       {
@@ -74,7 +73,6 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
       applicationPublicKey,
       requestID
     )
-    console.log('------------------------------------')
 
     const allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
 
