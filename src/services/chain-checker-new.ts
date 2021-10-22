@@ -11,16 +11,29 @@ export class PocketChainChecker extends NodeCheckerWrapper {
     super(pocket, redis, metricsRecorder, sessionKey, origin)
   }
 
+  /**
+   * Perfoms a chain check on all the nodes provided, slashing nodes that fail the check and caching the response.
+   * @param nodes nodes to perfom the check on.
+   * @param data payload to be send to the blockchain.
+   * @param chainID  blockchain chain's ID to evaluate against.
+   * @param blockchainID Blockchain to request data from.
+   * @param pocketAAT Pocket Authentication Token object.
+   * @param pocketConfiguration pocket's configuration object.
+   * @param applicationID application database's ID.
+   * @param applicationPublicKey application's public key.
+   * @param requestID request id.
+   * @returns
+   */
   async chainCheck(
     nodes: Node[],
-    requestID: string,
     data: string,
-    pocketAAT: PocketAAT,
     chainID: number,
     blockchainID: string,
+    pocketAAT: PocketAAT,
+    pocketConfiguration: Configuration | undefined,
     applicationID: string,
     applicationPublicKey: string,
-    pocketConfiguration?: Configuration
+    requestID: string
   ): Promise<Node[]> {
     const checkedNodesKey = `chain-check-${this.sessionKey}`
 
@@ -44,8 +57,8 @@ export class PocketChainChecker extends NodeCheckerWrapper {
           'chain-check',
           nodes,
           nodeChainChecks,
-          requestID,
           blockchainID,
+          requestID,
           relayStart,
           applicationID,
           applicationPublicKey

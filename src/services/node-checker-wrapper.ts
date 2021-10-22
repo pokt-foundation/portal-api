@@ -22,6 +22,13 @@ export class NodeCheckerWrapper {
     this.origin = origin
   }
 
+  /**
+   * Helper method to check for cached checks, is a check is already cached or in progress,
+   * returns valid nodes from the cached result or session. Otherwise set a cache lock.
+   * @param {Node[]} nodes session nodes.
+   * @param cacheKey key to get/set results.
+   * @returns nodes cached or provided on case of cache/lock.
+   */
   protected async cacheNodes(nodes: Node[], cacheKey: string): Promise<Node[]> {
     const checkedNodes: Node[] = []
     let checkedNodesList: string[] = []
@@ -53,12 +60,24 @@ export class NodeCheckerWrapper {
     return checkedNodes
   }
 
+  /**
+   * Logs responses from the node checks and filters failing nodes.
+   * @param checkType type of check made.
+   * @param nodes nodes to be filtered.
+   * @param nodesPromise results of a check on node's.
+   * @param blockchainID blockchain used for the checks.
+   * @param requestID request id.
+   * @param relayStart time when the checks started.
+   * @param applicationID application database's ID.
+   * @param applicationPublicKey application's public key.
+   * @returns nodes having succesful and valid check results.
+   */
   protected async filterNodes<T>(
     checkType: Check,
     nodes: Node[],
     nodesPromise: PromiseSettledResult<NodeCheckResponse<T>>[],
-    requestID: string,
     blockchainID: string,
+    requestID: string,
     relayStart: [number, number],
     applicationID: string,
     applicationPublicKey: string
@@ -137,7 +156,7 @@ export class NodeCheckerWrapper {
         continue
       }
 
-      // Success
+      // Valid response
       const {
         value: { result, success },
       } = nodeCheckPromise
@@ -195,6 +214,17 @@ export class NodeCheckerWrapper {
     return filteredNodes
   }
 
+  /**
+   * Perfoms a challenge for nodes failing checks, doing a consensus relay so nodes
+   * that fail such check gets punished by the network.
+   * @param data payload to send to the blockchain.
+   * @param blockchainID Blockchain to request data from.
+   * @param aat Pocket Authentication token object.
+   * @param configuration Pocket configuration object.
+   * @param log  prefix message to be appended to the consensus result.
+   * @param requestID request id.
+   * @param path  optional. Blockchain's path to send the request to.
+   */
   protected async performChallenge(
     data: string,
     blockchainID: string,
@@ -209,11 +239,6 @@ export class NodeCheckerWrapper {
 
     logger.log('info', `${log} ${JSON.stringify(consensusResponse)}`, {
       requestID: requestID,
-      relayType: '',
-      typeID: '',
-      serviceNode: '',
-      error: '',
-      elapsedTime: '',
       blockchainID,
       origin: this.origin,
       sessionKey: this.sessionKey,

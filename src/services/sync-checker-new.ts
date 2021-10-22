@@ -23,16 +23,31 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     this.defaultSyncAllowance = defaultSyncAllowance
   }
 
+  /**
+   * Performs a sync check on all the nodes provided, slashing nodes that fail the check and caching the response. The
+   * sync works by comparing the height among the highest node from the ones provided and also comparing against the
+   * altruist height.
+   * @param nodes nodes to perfom the check on.
+   * @param syncCheckOptions options containing the blockchain's height configuration.
+   * @param blockchainID Blockchain to request data from.
+   * @param pocketAAT Pocket Authentication Token object.
+   * @param pocketConfiguration pocket's configuration object.
+   * @param altruistURL altruist's URL.
+   * @param applicationID application database's ID.
+   * @param applicationPublicKey application's public key.
+   * @param requestID request id.
+   * @returns
+   */
   async syncCheck(
     nodes: Node[],
-    requestID: string,
     syncCheckOptions: SyncCheckOptions,
     blockchainID: string,
-    blockchainSyncBackup: string,
+    pocketAAT: PocketAAT,
+    pocketConfiguration: Configuration | undefined,
+    altruistURL: string,
     applicationID: string,
     applicationPublicKey: string,
-    pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration
+    requestID: string
   ): Promise<Node[]> {
     const allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
 
@@ -46,7 +61,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
       return syncedNodes
     }
 
-    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
+    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, altruistURL)
 
     const nodeChecker = new NodeChecker(this.pocket, pocketConfiguration || this.pocket.configuration)
 
@@ -72,8 +87,8 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
           'sync-check',
           nodes,
           nodeSyncChecks,
-          requestID,
           blockchainID,
+          requestID,
           relayStart,
           applicationID,
           applicationPublicKey
@@ -182,15 +197,21 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     return syncedNodes
   }
 
-  private async getSyncFromAltruist(syncCheckOptions: SyncCheckOptions, blockchainSyncBackup: string): Promise<number> {
+  /**
+   * Obtains the blockheight from ann altruist node.
+   * @param syncCheckOptions options containing the blockchain's height configuration.
+   * @param altruistURL altruist's URL.
+   * @returns altruist block height
+   */
+  private async getSyncFromAltruist(syncCheckOptions: SyncCheckOptions, altruistURL: string): Promise<number> {
     // Remove user/pass from the altruist URL
-    const redactedAltruistURL = blockchainSyncBackup.replace(/[\w]*:\/\/[^\/]*@/g, '')
+    const redactedAltruistURL = altruistURL.replace(/[\w]*:\/\/[^\/]*@/g, '')
     const syncCheckPath = syncCheckOptions.path ? syncCheckOptions.path : ''
 
     try {
       const syncResponse = await axios({
         method: 'POST',
-        url: `${blockchainSyncBackup}${syncCheckPath}`,
+        url: `${altruistURL}${syncCheckPath}`,
         data: syncCheckOptions.body,
         headers: { 'Content-Type': 'application/json' },
       })
