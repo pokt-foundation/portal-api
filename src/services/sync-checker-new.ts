@@ -36,7 +36,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
    * @param applicationID application database's ID.
    * @param applicationPublicKey application's public key.
    * @param requestID request id.
-   * @returns
+   * @returns nodes that passed the sync check.
    */
   async syncCheck(
     nodes: Node[],

@@ -22,7 +22,7 @@ export class PocketChainChecker extends NodeCheckerWrapper {
    * @param applicationID application database's ID.
    * @param applicationPublicKey application's public key.
    * @param requestID request id.
-   * @returns
+   * @returns nodes that passed the chain check.
    */
   async chainCheck(
     nodes: Node[],
@@ -80,7 +80,7 @@ export class PocketChainChecker extends NodeCheckerWrapper {
       checkedNodes.length > 0 ? 600 : 30 // will retry Chain check every 30 seconds if no nodes are in Chain
     )
 
-    // If one or more nodes of this sessionKey are not in Chain, fire a consensus relay with the same check.
+    // If one or more nodes of this session are not in Chain, fire a consensus relay with the same check.
     // This will penalize the out-of-Chain nodes and cause them to get slashed for reporting incorrect data.
     if (checkedNodes.length < nodes.length) {
       await this.performChallenge(

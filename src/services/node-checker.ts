@@ -81,7 +81,6 @@ export class NodeChecker {
       blockchainID,
       aat,
       path,
-      'result',
       chainID,
       isCorrectChain
     )
@@ -141,7 +140,6 @@ export class NodeChecker {
       blockchainID,
       aat,
       path,
-      resultKey,
       source - allowance,
       isSynced
     )
@@ -188,7 +186,6 @@ export class NodeChecker {
       blockchainID,
       aat,
       path,
-      resultKey,
       comparator,
       isArchival
     )
@@ -244,7 +241,6 @@ export class NodeChecker {
     blockchainID: string,
     aat: PocketAAT,
     path: string | undefined,
-    resultKey: string,
     comparator: string | number,
     comparatorFn: (value: any, comparator) => boolean
   ): Promise<ProcessCheck> {
@@ -255,7 +251,6 @@ export class NodeChecker {
     }
 
     const payload = JSON.parse(relayResponse.payload)
-    // const result = NodeChecker.parseBlockFromPayload(payload, resultKey)
 
     const successCheck = comparatorFn(payload, comparator)
 
