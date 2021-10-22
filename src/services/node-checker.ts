@@ -68,9 +68,14 @@ export class NodeChecker {
     chainID: number,
     path?: string
   ): Promise<NodeCheckResponse<ChainCheck>> {
-    const isCorrectChain = (nodeChainID: number, chainIDArg) => nodeChainID === chainIDArg
+    let nodeChainID: number
 
-    const { relayResponse, output, success } = await this.processCheck(
+    const isCorrectChain = (payload: any, chainIDArg) => {
+      nodeChainID = NodeChecker.parseBlockFromPayload(payload, 'result')
+      return nodeChainID === chainIDArg
+    }
+
+    const { relayResponse, success } = await this.processCheck(
       node,
       data,
       blockchainID,
@@ -90,7 +95,7 @@ export class NodeChecker {
       check: 'chain-check',
       success,
       response: relayResponse.payload,
-      result: { chainID: output as number },
+      result: { chainID: typeof nodeChainID === 'number' ? nodeChainID : 0 },
     }
   }
 
@@ -119,14 +124,18 @@ export class NodeChecker {
     source?: number,
     allowance = 0
   ): Promise<NodeCheckResponse<SyncCheck>> {
-    const isSynced = (blockheight: number, minimumAllowedHeight) => {
+    let blockheight: number
+
+    const isSynced = (payload: any, minimumAllowedHeight) => {
+      blockheight = NodeChecker.parseBlockFromPayload(payload, resultKey)
+
       if (source > 0 && allowance >= 0) {
         return blockheight >= minimumAllowedHeight
       }
       return blockheight > 0
     }
 
-    const { relayResponse, output, success } = await this.processCheck(
+    const { relayResponse, success } = await this.processCheck(
       node,
       data,
       blockchainID,
@@ -146,7 +155,7 @@ export class NodeChecker {
       check: 'sync-check',
       success,
       response: relayResponse.payload,
-      result: { blockHeight: output as number },
+      result: { blockHeight: typeof blockheight === 'number' ? blockheight : 0 },
     }
   }
 
@@ -246,11 +255,11 @@ export class NodeChecker {
     }
 
     const payload = JSON.parse(relayResponse.payload)
-    const result = NodeChecker.parseBlockFromPayload(payload, resultKey)
+    // const result = NodeChecker.parseBlockFromPayload(payload, resultKey)
 
-    const successCheck = comparatorFn(result, comparator)
+    const successCheck = comparatorFn(payload, comparator)
 
-    return { relayResponse, success: successCheck, output: result }
+    return { relayResponse, success: successCheck, output: payload }
   }
 
   /**
