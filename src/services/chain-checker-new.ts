@@ -24,7 +24,7 @@ export class PocketChainChecker extends NodeCheckerWrapper {
    * @param requestID request id.
    * @returns nodes that passed the chain check.
    */
-  async chainCheck(
+  async check(
     nodes: Node[],
     data: string,
     chainID: number,

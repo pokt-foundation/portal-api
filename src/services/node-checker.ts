@@ -10,7 +10,7 @@ export type NodeCheckResponse<T> = {
   check: Check
   success: boolean
   response: string | Error
-  result?: T
+  output?: T
 }
 
 export type ChainCheck = {
@@ -19,6 +19,10 @@ export type ChainCheck = {
 
 export type SyncCheck = {
   blockHeight: number
+}
+
+export type ArchivalCheck = {
+  message: string
 }
 
 type ProcessCheck = {
@@ -86,7 +90,7 @@ export class NodeChecker {
     )
 
     if (relayResponse instanceof Error) {
-      return { node, check: 'chain-check', success: false, response: relayResponse, result: { chainID: 0 } }
+      return { node, check: 'chain-check', success: false, response: relayResponse, output: { chainID: 0 } }
     }
 
     return {
@@ -94,7 +98,7 @@ export class NodeChecker {
       check: 'chain-check',
       success,
       response: relayResponse.payload,
-      result: { chainID: typeof nodeChainID === 'number' ? nodeChainID : 0 },
+      output: { chainID: typeof nodeChainID === 'number' ? nodeChainID : 0 },
     }
   }
 
@@ -145,7 +149,7 @@ export class NodeChecker {
     )
 
     if (relayResponse instanceof Error) {
-      return { node, check: 'sync-check', success: false, response: relayResponse, result: { blockHeight: 0 } }
+      return { node, check: 'sync-check', success: false, response: relayResponse, output: { blockHeight: 0 } }
     }
 
     return {
@@ -153,7 +157,7 @@ export class NodeChecker {
       check: 'sync-check',
       success,
       response: relayResponse.payload,
-      result: { blockHeight: typeof blockheight === 'number' ? blockheight : 0 },
+      output: { blockHeight: typeof blockheight === 'number' ? blockheight : 0 },
     }
   }
 
@@ -177,8 +181,15 @@ export class NodeChecker {
     resultKey: string,
     comparator: string,
     path?: string
-  ): Promise<NodeCheckResponse<void>> {
-    const isArchival = (result: string | number, comparatorVal: string) => result.toString() !== comparatorVal
+  ): Promise<NodeCheckResponse<ArchivalCheck>> {
+    let payloadResponse: object
+
+    const isArchival = (payload: object, comparatorVal: string) => {
+      payloadResponse = payload
+      const result = NodeChecker.parseBlockFromPayload(payload, resultKey).toString()
+
+      return result !== comparatorVal
+    }
 
     const { success, relayResponse } = await this.processCheck(
       node,
@@ -191,10 +202,26 @@ export class NodeChecker {
     )
 
     if (relayResponse instanceof Error) {
-      return { node, check: 'archival-check', success: false, response: relayResponse }
+      return {
+        node,
+        check: 'archival-check',
+        success: false,
+        response: relayResponse,
+        output: {
+          message: '',
+        },
+      }
     }
 
-    return { node, check: 'archival-check', success, response: relayResponse.payload }
+    return {
+      node,
+      check: 'archival-check',
+      success,
+      response: relayResponse.payload,
+      output: {
+        message: JSON.stringify(payloadResponse),
+      },
+    }
   }
 
   /**
