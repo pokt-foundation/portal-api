@@ -1,5 +1,6 @@
 import { Decryptor } from 'strong-cryptor'
 import { Applications } from '../models'
+import { EVM_ERRORS } from './constants'
 
 export function checkEnforcementJSON(test: string): boolean {
   if (!test || test.length === 0) {
@@ -38,6 +39,17 @@ export function checkWhitelist(tests: string[], check: string, type: string): bo
     }
   }
   return false
+}
+
+export function checkRelayError(payload: string): boolean {
+  return payload.includes('{"error"')
+}
+
+export function checkNodeError(payload: string): boolean {
+  const evmException: boolean = EVM_ERRORS.some((error) => payload.includes(error))
+  // TODO: Non-evm errors
+
+  return evmException
 }
 
 export function checkSecretKey(application: Applications, secretKeyDetails: SecretKeyDetails): boolean {
