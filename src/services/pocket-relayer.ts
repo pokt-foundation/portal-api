@@ -461,11 +461,6 @@ export class PocketRelayer {
 
       if (nodesToRemove.length > 0) {
         nodes = nodes.filter((n) => !nodesToRemove.includes(n.publicKey))
-      } else {
-        // Adds and removes dummy value as you cannot set EXPIRE on empty redis set
-        await this.redis.sadd(sessionCacheKey, '0')
-        await this.redis.expire(sessionCacheKey, 60 * 60 * 2) // 2 Hours
-        await this.redis.spop(sessionCacheKey)
       }
 
       if (nodes.length === 0) {

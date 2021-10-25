@@ -2,6 +2,7 @@ import { Redis } from 'ioredis'
 import { getAddressFromPublicKey } from 'pocket-tools'
 import axios, { AxiosError } from 'axios'
 import extractDomain from 'extract-domain'
+import { getSecondsForNextHour } from './date'
 
 const logger = require('../services/logger')
 
@@ -18,6 +19,13 @@ const ALTRUIST_URL = JSON.parse(process.env.ALTRUISTS)?.['0001']
 export async function removeNodeFromSession(redis: Redis, sessionKey: string, nodePubKey: string): Promise<void> {
   await redis.sadd(`session-${sessionKey}`, nodePubKey)
   await redis.del(`sync-check-${sessionKey}`, `chain-check-${sessionKey}`)
+
+  const nodesToRemoveTTL = await redis.ttl(sessionKey)
+
+  if (nodesToRemoveTTL < 0) {
+    // Add a 2 minutes delay in case the session stays slightly more than an hour.
+    await redis.expire(sessionKey, getSecondsForNextHour() + 60 * 2)
+  }
 }
 
 /**
