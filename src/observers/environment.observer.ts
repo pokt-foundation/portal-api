@@ -11,8 +11,7 @@ import {
  */
 @lifeCycleObserver('configuration')
 export class EnvironmentObserver implements LifeCycleObserver {
-  // TODO: split the arrays on optional and require
-  private static environment: string[] = [
+  private static requiredEnvVars: string[] = [
     'NODE_ENV',
     'GATEWAY_CLIENT_PRIVATE_KEY',
     'GATEWAY_CLIENT_PASSPHRASE',
@@ -34,8 +33,12 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'AAT_PLAN',
     'WATCH',
     'REDIRECTS',
-    'COMMIT_HASH',
+    'INFLUX_URL',
+    'INFLUX_TOKEN',
+    'INFLUX_ORG',
   ]
+
+  private static optionalEnvVars: string[] = ['COMMIT_HASH']
 
   /*
   constructor(
@@ -56,10 +59,12 @@ export class EnvironmentObserver implements LifeCycleObserver {
       return
     }
 
-    EnvironmentObserver.environment.forEach((name: string) => {
+    const environmentVariables = EnvironmentObserver.requiredEnvVars.concat(EnvironmentObserver.optionalEnvVars)
+
+    environmentVariables.forEach((name: string) => {
       const variable = process.env[name]
 
-      if (!variable) {
+      if (!variable && !(EnvironmentObserver.optionalEnvVars.indexOf(name) >= 0)) {
         throw new Error(`Required variable ${name} not found`)
       }
 

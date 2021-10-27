@@ -38,4 +38,10 @@ describe('PingController', () => {
 
     expect(res.body).to.have.property('headers')
   })
+
+  it('invokes GET /version', async () => {
+    const res = await client.get('/version').expect(200)
+
+    expect(res.body).to.have.property('commit')
+  })
 })

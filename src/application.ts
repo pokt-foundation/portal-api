@@ -6,6 +6,7 @@ import { DEFAULT_POCKET_CONFIG } from './config/pocket-config'
 import { ServiceMixin } from '@loopback/service-proxy'
 import { GatewaySequence } from './sequence'
 import { Account } from '@pokt-network/pocket-js/dist/keybase/models/account'
+import { InfluxDB } from '@influxdata/influxdb-client'
 
 import path from 'path'
 import AatPlans from './config/aat-plans.json'
@@ -65,6 +66,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       AAT_PLAN,
       REDIRECTS,
       COMMIT_HASH,
+      INFLUX_URL,
+      INFLUX_TOKEN,
+      INFLUX_ORG,
     } = await this.get('configuration.environment.values')
 
     const environment: string = NODE_ENV || 'production'
@@ -81,6 +85,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const aatPlan = AAT_PLAN || AatPlans.PREMIUM
     const redirects: string | object[] = REDIRECTS || ''
     const commitHash: string | string = COMMIT_HASH || ''
+    const influxURL: string = INFLUX_URL || ''
+    const influxToken: string = INFLUX_TOKEN || ''
+    const influxOrg: string = INFLUX_ORG || ''
 
     if (!dispatchURL) {
       throw new HttpErrors.InternalServerError('DISPATCH_URL required in ENV')
@@ -114,6 +121,15 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     }
     if (!redirects) {
       throw new HttpErrors.InternalServerError('REDIRECTS required in ENV')
+    }
+    if (!influxURL) {
+      throw new HttpErrors.InternalServerError('INFLUX_URL required in ENV')
+    }
+    if (!influxToken) {
+      throw new HttpErrors.InternalServerError('INFLUX_TOKEN required in ENV')
+    }
+    if (!influxOrg) {
+      throw new HttpErrors.InternalServerError('INFLUX_ORG required in ENV')
     }
 
     const dispatchers = []
@@ -197,6 +213,13 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     this.bind('databaseEncryptionKey').to(databaseEncryptionKey)
     this.bind('aatPlan').to(aatPlan)
+
+    // Influx DB
+    const influxBucket = environment === 'production' ? 'mainnetRelay' : 'mainnetRelayStaging'
+    const influxClient = new InfluxDB({ url: influxURL, token: influxToken })
+    const writeApi = influxClient.getWriteApi(influxOrg, influxBucket)
+
+    this.bind('influxWriteAPI').to(writeApi)
 
     // Create a UID for this process
     const parts = [os.hostname(), process.pid, +new Date()]
