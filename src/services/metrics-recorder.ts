@@ -5,49 +5,33 @@ import { getNodeNetworkData } from '../utils'
 
 import pgFormat from 'pg-format'
 import { CustomLogger } from 'ajv'
-import { HttpErrors } from '@loopback/rest'
 const logger = require('../services/logger')
 const os = require('os')
 
-import { InfluxDB, Point } from '@influxdata/influxdb-client'
-
-const region = process.env.REGION || '' // Can be empty
-const influxURL = process.env.INFLUX_URL || ''
-const influxToken = process.env.INFLUX_TOKEN || ''
-const influxOrg = process.env.INFLUX_ORG || ''
-
-if (!influxURL) {
-  throw new HttpErrors.InternalServerError('INFLUX_URL required in ENV')
-}
-if (!influxToken) {
-  throw new HttpErrors.InternalServerError('INFLUX_TOKEN required in ENV')
-}
-if (!influxOrg) {
-  throw new HttpErrors.InternalServerError('INFLUX_ORG required in ENV')
-}
-
-const influxBucket = process.env.NODE_ENV === 'production' ? 'mainnetRelay' : 'mainnetRelayStaging'
-const influxClient = new InfluxDB({ url: influxURL, token: influxToken })
-const writeApi = influxClient.getWriteApi(influxOrg, influxBucket)
+import { Point, WriteApi } from '@influxdata/influxdb-client'
 
 export class MetricsRecorder {
   redis: Redis
+  influxWriteAPI: WriteApi
   pgPool: PGPool
   cherryPicker: CherryPicker
   processUID: string
 
   constructor({
     redis,
+    influxWriteAPI,
     pgPool,
     cherryPicker,
     processUID,
   }: {
     redis: Redis
+    influxWriteAPI: WriteApi
     pgPool: PGPool
     cherryPicker: CherryPicker
     processUID: string
   }) {
     this.redis = redis
+    this.influxWriteAPI = influxWriteAPI
     this.pgPool = pgPool
     this.cherryPicker = cherryPicker
     this.processUID = processUID
@@ -179,20 +163,19 @@ export class MetricsRecorder {
         .tag('result', result.toString())
         .tag('blockchain', blockchainID) // 0021
         .tag('host', os.hostname())
-        .tag('region', region)
+        .tag('region', process.env.REGION || '')
         .floatField('bytes', bytes)
         .floatField('elapsedTime', elapsedTime.toFixed(4))
         .timestamp(postgresTimestamp)
 
-      writeApi.writePoint(pointRelay)
+      this.influxWriteAPI.writePoint(pointRelay)
 
       const pointOrigin = new Point('origin')
         .tag('applicationPublicKey', applicationPublicKey)
         .stringField('origin', origin)
         .timestamp(postgresTimestamp)
 
-      writeApi.writePoint(pointOrigin)
-      await writeApi.flush()
+      this.influxWriteAPI.writePoint(pointOrigin)
 
       // Store errors in redis and every 10 seconds, push to postgres
       const redisErrorKey = 'errors-' + this.processUID
