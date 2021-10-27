@@ -33,6 +33,9 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'AAT_PLAN',
     'WATCH',
     'REDIRECTS',
+    'INFLUX_URL',
+    'INFLUX_TOKEN',
+    'INFLUX_ORG',
   ]
 
   private static optionalEnvVars: string[] = ['COMMIT_HASH']

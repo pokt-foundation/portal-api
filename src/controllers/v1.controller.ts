@@ -12,6 +12,8 @@ import { PocketRelayer, SendRelayOptions } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
 import { ChainChecker } from '../services/chain-checker'
 
+import { WriteApi } from '@influxdata/influxdb-client'
+
 const logger = require('../services/logger')
 
 export class V1Controller {
@@ -42,6 +44,7 @@ export class V1Controller {
     @inject('aatPlan') private aatPlan: string,
     @inject('redirects') private redirects: string,
     @inject('defaultLogLimitBlocks') private defaultLogLimitBlocks: number,
+    @inject('influxWriteAPI') private influxWriteAPI: WriteApi,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -55,6 +58,7 @@ export class V1Controller {
     })
     this.metricsRecorder = new MetricsRecorder({
       redis: this.redis,
+      influxWriteAPI: this.influxWriteAPI,
       pgPool: this.pgPool,
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
