@@ -469,6 +469,54 @@ describe('Pocket relayer service (unit)', () => {
       expect(relayResponse).to.be.deepEqual(expected)
     })
 
+    it('sends successful relay with a node error as response', async () => {
+      const mock = new PocketMock()
+
+      mock.relayResponse[rawData] =
+        '{"error":{"code":-32602,"message":"invalid argument 0: hex number with leading zero digits"},"id":1,"jsonrpc":"2.0"}'
+
+      // mock.relayResponse[rawData] = '{"error": "a relay error"}'
+
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+
+      const pocket = mock.object()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: true,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+      })
+
+      const relayResponse = await poktRelayer.sendRelay({
+        rawData,
+        relayPath: '',
+        httpMethod: HTTPMethod.POST,
+        application: APPLICATION as unknown as Applications,
+        requestID: '1234',
+        requestTimeOut: undefined,
+        overallTimeOut: undefined,
+        relayRetries: 0,
+      })
+      const expected = JSON.parse(mock.relayResponse[rawData] as string)
+
+      expect(relayResponse).to.be.deepEqual(expected)
+    })
+
     it('sends successful relay response as string', async () => {
       const mock = new PocketMock()
 

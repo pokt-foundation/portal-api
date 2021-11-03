@@ -1,3 +1,5 @@
+import { isEVMError } from './evm'
+
 export function checkEnforcementJSON(test: string): boolean {
   if (!test || test.length === 0) {
     return false
@@ -11,4 +13,15 @@ export function checkEnforcementJSON(test: string): boolean {
   test = test.replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']')
   test = test.replace(/(?:^|:|,)(?:\s*\[)+/g, '')
   return /^[\],:{}\s]*$/.test(test)
+}
+
+export function isRelayError(payload: string): boolean {
+  return payload.includes('{"error"')
+}
+
+export function isUserError(payload: string): boolean {
+  const evmException: boolean = isEVMError(payload)
+  // TODO: Non-evm errors
+
+  return evmException
 }
