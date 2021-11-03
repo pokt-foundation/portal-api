@@ -18,6 +18,9 @@ const DUMMY_ENV = {
   PG_CONNECTION: 'postgres://pguser:pgpassword@metricsdb:5432/gateway',
   PG_CERTIFICATE: 'PG_PRODUCTION_CERTIFICATE',
   PSQL_CONNECTION: 'postgres://pguser:pgpassword@metricsdb:5432/gateway',
+  INFLUX_URL: 'http://influxdb:8086',
+  INFLUX_TOKEN: 'abcde',
+  INFLUX_ORG: 'myorg',
   DISPATCH_URL:
     'https://node1.mainnet.pokt.network,https://node2.mainnet.pokt.network,https://node3.mainnet.pokt.network,https://node4.mainnet.pokt.network,https://node5.mainnet.pokt.network,https://node6.mainnet.pokt.network,https://node7.mainnet.pokt.network,https://node8.mainnet.pokt.network,https://node9.mainnet.pokt.network,https://node10.mainnet.pokt.network,https://node11.mainnet.pokt.network,https://node12.mainnet.pokt.network,https://node13.mainnet.pokt.network,https://node14.mainnet.pokt.network,https://node15.mainnet.pokt.network,https://node16.mainnet.pokt.network,https://node17.mainnet.pokt.network,https://node18.mainnet.pokt.network,https://node19.mainnet.pokt.network,https://node20.mainnet.pokt.network',
   ALTRUISTS: `{
