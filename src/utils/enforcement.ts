@@ -15,11 +15,11 @@ export function checkEnforcementJSON(test: string): boolean {
   return /^[\],:{}\s]*$/.test(test)
 }
 
-export function checkRelayError(payload: string): boolean {
+export function isRelayError(payload: string): boolean {
   return payload.includes('{"error"')
 }
 
-export function checkNodeError(payload: string): boolean {
+export function isUserError(payload: string): boolean {
   const evmException: boolean = isEVMError(payload)
   // TODO: Non-evm errors
 

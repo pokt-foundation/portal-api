@@ -10,7 +10,7 @@ import { BlockchainsRepository } from '../repositories'
 import { Applications } from '../models'
 import { RelayError, LimitError, MAX_RELAYS_ERROR } from '../errors/types'
 import AatPlans from '../config/aat-plans.json'
-import { blockHexToDecimal, checkEnforcementJSON, checkNodeError, checkRelayError } from '../utils'
+import { blockHexToDecimal, checkEnforcementJSON, isRelayError, isUserError } from '../utils'
 
 import { JSONObject } from '@loopback/context'
 
@@ -652,7 +652,7 @@ export class PocketRelayer {
         blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
         blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON // and
         (!checkEnforcementJSON(relayResponse.payload) || // the relay response is not valid JSON // or
-          (checkRelayError(relayResponse.payload) && !checkNodeError(relayResponse.payload))) // check if the payload indicates relay error, not a node error
+          (isRelayError(relayResponse.payload) && !isUserError(relayResponse.payload))) // check if the payload indicates relay error, not a user error
       ) {
         // then this result is invalid
         return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey)
