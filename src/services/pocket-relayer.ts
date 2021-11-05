@@ -502,7 +502,7 @@ export class PocketRelayer {
           chainID: parseInt(blockchainChainID),
           pocket: this.pocket,
           pocketConfiguration: this.pocketConfiguration,
-          sessionKey: sessionCacheKey,
+          sessionKey,
         }
 
         chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
@@ -521,7 +521,7 @@ export class PocketRelayer {
           pocket: this.pocket,
           pocketAAT,
           pocketConfiguration: this.pocketConfiguration,
-          sessionKey: sessionCacheKey,
+          sessionKey,
         }
 
         syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
