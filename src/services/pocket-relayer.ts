@@ -15,6 +15,7 @@ import { blockHexToDecimal, checkEnforcementJSON, isRelayError, isUserError } fr
 import { JSONObject } from '@loopback/context'
 
 const logger = require('../services/logger')
+const crypto = require('crypto')
 
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { removeNodeFromSession } from '../utils/cache'
@@ -442,20 +443,24 @@ export class PocketRelayer {
     )
 
     if (pocketSession instanceof Session) {
-      const { sessionKey } = pocketSession
-
-      this.sessionKey = sessionKey
-
-      const sessionCacheKey = `session-${sessionKey}`
-
-      let syncCheckPromise: Promise<Node[]>
-      let syncCheckedNodes: Node[]
-
-      let chainCheckPromise: Promise<Node[]>
-      let chainCheckedNodes: Node[]
+      // Start the relay timer
+      const relayStart = process.hrtime()
 
       let nodes: Node[] = pocketSession.sessionNodes
-      const relayStart = process.hrtime()
+
+      // sessionKey = "blockchain and a hash of the all the nodes in this session, sorted by public key"
+      const sessionKey = `${blockchain}-${crypto
+        .createHash('sha256')
+        .update(
+          JSON.stringify(
+            nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0)),
+            (k, v) => (k !== 'publicKey' ? v : undefined)
+          )
+        )
+        .digest('hex')}`
+
+      this.sessionKey = sessionKey
+      const sessionCacheKey = `session-${sessionKey}`
 
       const nodesToRemove = await this.redis.smembers(sessionCacheKey)
 
@@ -478,6 +483,12 @@ export class PocketRelayer {
         return new Error("session doesn't have any available nodes")
       }
 
+      let syncCheckPromise: Promise<Node[]>
+      let syncCheckedNodes: Node[]
+
+      let chainCheckPromise: Promise<Node[]>
+      let chainCheckedNodes: Node[]
+
       if (blockchainIDCheck) {
         // Check Chain ID
         const chainIDOptions: ChainIDFilterOptions = {
@@ -491,7 +502,7 @@ export class PocketRelayer {
           chainID: parseInt(blockchainChainID),
           pocket: this.pocket,
           pocketConfiguration: this.pocketConfiguration,
-          sessionKey: pocketSession.sessionKey,
+          sessionKey,
         }
 
         chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
@@ -510,7 +521,7 @@ export class PocketRelayer {
           pocket: this.pocket,
           pocketAAT,
           pocketConfiguration: this.pocketConfiguration,
-          sessionKey: pocketSession.sessionKey,
+          sessionKey,
         }
 
         syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
