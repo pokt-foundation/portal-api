@@ -24,6 +24,7 @@ import pg from 'pg'
 require('log-timestamp')
 require('dotenv').config()
 
+// Portal API
 export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryMixin(RestApplication))) {
   constructor(options: ApplicationConfig = {}) {
     super(options)
