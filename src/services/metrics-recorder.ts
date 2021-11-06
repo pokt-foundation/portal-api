@@ -203,12 +203,15 @@ export class MetricsRecorder {
 
       const records = [timeStreamMeasure]
 
+      const timestreamDatabaseName = `mainnet-${process.env['NODE_ENV']}`
+
       const timestreamWrite = {
-        DatabaseName: `mainnet-${process.env['NODE_ENV']}`,
+        DatabaseName: timestreamDatabaseName,
         TableName: 'relay',
         Records: records,
       }
 
+      logger.log('info', timestreamWrite)
       const request = this.timestreamClient.writeRecords(timestreamWrite)
 
       await request.promise()
