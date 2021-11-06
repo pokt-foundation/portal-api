@@ -232,12 +232,14 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       maxSockets: 5000,
     })
 
+    // Always US-East-2
     const timestreamClient = new AWS.TimestreamWrite({
       maxRetries: 10,
       httpOptions: {
         timeout: 20000,
         agent: timestreamAgent,
       },
+      region: 'us-east-2',
     })
 
     this.bind('timestreamClient').to(timestreamClient)
