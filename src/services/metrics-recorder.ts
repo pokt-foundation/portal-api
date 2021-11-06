@@ -10,6 +10,7 @@ const os = require('os')
 
 import { Point, WriteApi } from '@influxdata/influxdb-client'
 import AWS from 'aws-sdk'
+import process from 'process'
 
 export class MetricsRecorder {
   redis: Redis
