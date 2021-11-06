@@ -201,23 +201,32 @@ export class PocketRelayer {
 
       if (!(relayResponse instanceof Error)) {
         // Record success metric
-        await this.metricsRecorder.recordMetric({
-          requestID: requestID,
-          applicationID: application.id,
-          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-          blockchainID,
-          serviceNode: relayResponse.proof.servicerPubKey,
-          relayStart,
-          result: 200,
-          bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
-          delivered: false,
-          fallback: false,
-          method: method,
-          error: undefined,
-          origin: this.origin,
-          data,
-          sessionKey: this.sessionKey,
-        })
+        this.metricsRecorder
+          .recordMetric({
+            requestID: requestID,
+            applicationID: application.id,
+            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+            blockchainID,
+            serviceNode: relayResponse.proof.servicerPubKey,
+            relayStart,
+            result: 200,
+            bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
+            delivered: false,
+            fallback: false,
+            method: method,
+            error: undefined,
+            origin: this.origin,
+            data,
+            sessionKey: this.sessionKey,
+          })
+          .catch(function log(e) {
+            logger.log('error', 'Error recording metrics: ' + e, {
+              requestID: requestID,
+              relayType: 'APP',
+              typeID: application.id,
+              serviceNode: relayResponse.proof.servicerPubKey,
+            })
+          })
 
         // Clear error log
         await this.redis.del(blockchainID + '-' + relayResponse.proof.servicerPubKey + '-errors')
@@ -245,23 +254,32 @@ export class PocketRelayer {
           error = JSON.stringify(relayResponse.message)
         }
 
-        await this.metricsRecorder.recordMetric({
-          requestID,
-          applicationID: application.id,
-          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-          blockchainID,
-          serviceNode: relayResponse.servicer_node,
-          relayStart,
-          result: 500,
-          bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
-          delivered: errorDelivered,
-          fallback: false,
-          method,
-          error,
-          origin: this.origin,
-          data,
-          sessionKey: this.sessionKey,
-        })
+        this.metricsRecorder
+          .recordMetric({
+            requestID,
+            applicationID: application.id,
+            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+            blockchainID,
+            serviceNode: relayResponse.servicer_node,
+            relayStart,
+            result: 500,
+            bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
+            delivered: errorDelivered,
+            fallback: false,
+            method,
+            error,
+            origin: this.origin,
+            data,
+            sessionKey: this.sessionKey,
+          })
+          .catch(function log(e) {
+            logger.log('error', 'Error recording metrics: ' + e, {
+              requestID: requestID,
+              relayType: 'APP',
+              typeID: application.id,
+              serviceNode: relayResponse.servicer_node,
+            })
+          })
       }
     }
 
@@ -317,23 +335,32 @@ export class PocketRelayer {
         if (!(fallbackResponse instanceof Error)) {
           const responseParsed = JSON.stringify(fallbackResponse.data)
 
-          await this.metricsRecorder.recordMetric({
-            requestID: requestID,
-            applicationID: application.id,
-            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-            blockchainID,
-            serviceNode: 'fallback:' + redactedAltruistURL,
-            relayStart,
-            result: 200,
-            bytes: Buffer.byteLength(responseParsed, 'utf8'),
-            delivered: false,
-            fallback: true,
-            method: method,
-            error: undefined,
-            origin: this.origin,
-            data,
-            sessionKey: this.sessionKey,
-          })
+          this.metricsRecorder
+            .recordMetric({
+              requestID: requestID,
+              applicationID: application.id,
+              applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+              blockchainID,
+              serviceNode: 'fallback:' + redactedAltruistURL,
+              relayStart,
+              result: 200,
+              bytes: Buffer.byteLength(responseParsed, 'utf8'),
+              delivered: false,
+              fallback: true,
+              method: method,
+              error: undefined,
+              origin: this.origin,
+              data,
+              sessionKey: this.sessionKey,
+            })
+            .catch(function log(e) {
+              logger.log('error', 'Error recording metrics: ' + e, {
+                requestID: requestID,
+                relayType: 'APP',
+                typeID: application.id,
+                serviceNode: 'fallback:' + redactedAltruistURL,
+              })
+            })
 
           // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
           if (
@@ -538,23 +565,32 @@ export class PocketRelayer {
           const error = 'ChainID check failure'
           const method = 'checks'
 
-          await this.metricsRecorder.recordMetric({
-            requestID,
-            applicationID: application.id,
-            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-            blockchainID,
-            serviceNode: 'session-failure',
-            relayStart,
-            result: 500,
-            bytes: Buffer.byteLength(error, 'utf8'),
-            delivered: false,
-            fallback: false,
-            method,
-            error,
-            origin: this.origin,
-            data,
-            sessionKey,
-          })
+          this.metricsRecorder
+            .recordMetric({
+              requestID,
+              applicationID: application.id,
+              applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+              blockchainID,
+              serviceNode: 'session-failure',
+              relayStart,
+              result: 500,
+              bytes: Buffer.byteLength(error, 'utf8'),
+              delivered: false,
+              fallback: false,
+              method,
+              error,
+              origin: this.origin,
+              data,
+              sessionKey,
+            })
+            .catch(function log(e) {
+              logger.log('error', 'Error recording metrics: ' + e, {
+                requestID: requestID,
+                relayType: 'APP',
+                typeID: application.id,
+                serviceNode: 'session-failure',
+              })
+            })
 
           return new Error('ChainID check failure; using fallbacks')
         }
@@ -567,23 +603,32 @@ export class PocketRelayer {
           const error = 'Sync check failure'
           const method = 'checks'
 
-          await this.metricsRecorder.recordMetric({
-            requestID,
-            applicationID: application.id,
-            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-            blockchainID,
-            serviceNode: 'session-failure',
-            relayStart,
-            result: 500,
-            bytes: Buffer.byteLength(error, 'utf8'),
-            delivered: false,
-            fallback: false,
-            method,
-            error,
-            origin: this.origin,
-            data,
-            sessionKey,
-          })
+          this.metricsRecorder
+            .recordMetric({
+              requestID,
+              applicationID: application.id,
+              applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+              blockchainID,
+              serviceNode: 'session-failure',
+              relayStart,
+              result: 500,
+              bytes: Buffer.byteLength(error, 'utf8'),
+              delivered: false,
+              fallback: false,
+              method,
+              error,
+              origin: this.origin,
+              data,
+              sessionKey,
+            })
+            .catch(function log(e) {
+              logger.log('error', 'Error recording metrics: ' + e, {
+                requestID: requestID,
+                relayType: 'APP',
+                typeID: application.id,
+                serviceNode: 'session-failure',
+              })
+            })
 
           return new Error('Sync check failure; using fallbacks')
         }

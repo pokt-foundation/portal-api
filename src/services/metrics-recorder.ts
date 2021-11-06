@@ -9,11 +9,13 @@ const logger = require('../services/logger')
 const os = require('os')
 
 import { Point, WriteApi } from '@influxdata/influxdb-client'
+import AWS from 'aws-sdk'
 
 export class MetricsRecorder {
   redis: Redis
   influxWriteAPI: WriteApi
   pgPool: PGPool
+  timestreamClient: AWS.TimestreamWrite
   cherryPicker: CherryPicker
   processUID: string
 
@@ -21,18 +23,21 @@ export class MetricsRecorder {
     redis,
     influxWriteAPI,
     pgPool,
+    timestreamClient,
     cherryPicker,
     processUID,
   }: {
     redis: Redis
     influxWriteAPI: WriteApi
     pgPool: PGPool
+    timestreamClient: AWS.TimestreamWrite
     cherryPicker: CherryPicker
     processUID: string
   }) {
     this.redis = redis
     this.influxWriteAPI = influxWriteAPI
     this.pgPool = pgPool
+    this.timestreamClient = timestreamClient
     this.cherryPicker = cherryPicker
     this.processUID = processUID
   }
@@ -142,20 +147,14 @@ export class MetricsRecorder {
         await this.cherryPicker.updateServiceQuality(blockchainID, applicationID, serviceNode, elapsedTime, result)
       }
 
-      // Bulk insert relay / error metrics
-      const postgresTimestamp = new Date()
-      const errorValues = [
-        postgresTimestamp,
-        applicationPublicKey,
-        blockchainID,
-        serviceNode,
-        elapsedTime,
-        bytes,
-        method,
-        error,
-      ]
+      // Text timestamp
+      const relayTimestamp = new Date()
 
-      // Influx
+      // Redis timestamp for bulk logs
+      const redisTimestamp = Math.floor(new Date().getTime() / 1000)
+
+      // MARKED FOR REMOVAL --------------------------------------
+      // InfluxDB
       const pointRelay = new Point('relay')
         .tag('applicationPublicKey', applicationPublicKey)
         .tag('nodePublicKey', serviceNode)
@@ -166,35 +165,81 @@ export class MetricsRecorder {
         .tag('region', process.env.REGION || '')
         .floatField('bytes', bytes)
         .floatField('elapsedTime', elapsedTime.toFixed(4))
-        .timestamp(postgresTimestamp)
+        .timestamp(relayTimestamp)
 
       this.influxWriteAPI.writePoint(pointRelay)
 
       const pointOrigin = new Point('origin')
         .tag('applicationPublicKey', applicationPublicKey)
         .stringField('origin', origin)
-        .timestamp(postgresTimestamp)
+        .timestamp(relayTimestamp)
 
       this.influxWriteAPI.writePoint(pointOrigin)
+      // MARKED FOR REMOVAL --------------------------------------
+
+      // AWS Timestream Metrics
+      const nodeType = serviceNode.includes('fallback') ? 'fallback' : 'network'
+
+      const timeStreamDimensions = [
+        { Name: 'region', Value: `${process.env.REGION || ''}` },
+        { Name: 'applicationPublicKey', Value: `${applicationPublicKey}` },
+        { Name: 'nodeType', Value: `${nodeType}` },
+        { Name: 'blockchainID', Value: `${blockchainID}` },
+        { Name: 'method', Value: `${method || 'none'}` },
+        { Name: 'origin', Value: `${origin || 'none'}` },
+        { Name: 'result', Value: `${result}` },
+      ]
+
+      // console.log(timeStreamDimensions)
+
+      const timeStreamMeasure = {
+        Dimensions: timeStreamDimensions,
+        MeasureName: 'elapsedTime',
+        MeasureValue: `${parseFloat(elapsedTime.toFixed(4))}`,
+        MeasureValueType: 'DOUBLE',
+        Time: Date.now().toString(),
+      }
+
+      const records = [timeStreamMeasure]
+
+      const timestreamWrite = {
+        DatabaseName: `mainnet-${process.env['NODE_ENV']}`,
+        TableName: 'relay',
+        Records: records,
+      }
+
+      const request = this.timestreamClient.writeRecords(timestreamWrite)
+
+      await request.promise()
 
       // Store errors in redis and every 10 seconds, push to postgres
       const redisErrorKey = 'errors-' + this.processUID
-      const currentTimestamp = Math.floor(new Date().getTime() / 1000)
+
+      // Bulk insert relay / error metrics
+      const errorValues = [
+        relayTimestamp,
+        applicationPublicKey,
+        blockchainID,
+        serviceNode,
+        elapsedTime,
+        bytes,
+        method,
+        error,
+      ]
 
       if (result !== 200) {
-        await this.processBulkLogs([errorValues], currentTimestamp, redisErrorKey, 'error', logger)
+        await this.processBulkErrors([errorValues], redisTimestamp, redisErrorKey, logger)
       }
     } catch (err) {
       logger.log('error', err.stack)
     }
   }
 
-  async processBulkLogs(
+  async processBulkErrors(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     bulkData: any[],
     currentTimestamp: number,
     redisKey: string,
-    relation: string,
     processlogger: CustomLogger
   ): Promise<void> {
     const redisListAge = await this.redis.get('age-' + redisKey)
@@ -203,7 +248,7 @@ export class MetricsRecorder {
     // List has been started in redis and needs to be pushed as timestamp is > 10 seconds old
     if (redisListAge && redisListSize > 0 && currentTimestamp > parseInt(redisListAge) + 10) {
       await this.redis.set('age-' + redisKey, currentTimestamp)
-      await this.pushBulkData(bulkData, redisListSize, redisKey, relation, processlogger)
+      await this.pushBulkErrors(bulkData, redisListSize, redisKey, processlogger)
     } else {
       await this.redis.rpush(redisKey, JSON.stringify(bulkData))
     }
@@ -213,12 +258,11 @@ export class MetricsRecorder {
     }
   }
 
-  async pushBulkData(
+  async pushBulkErrors(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     bulkData: any[],
     redisListSize: number,
     redisKey: string,
-    relation: string,
     processlogger: CustomLogger
   ): Promise<void> {
     for (let count = 0; count < redisListSize; count++) {
@@ -229,21 +273,19 @@ export class MetricsRecorder {
       }
     }
     if (bulkData.length > 0) {
-      const metricsQuery = pgFormat('INSERT INTO %I VALUES %L', relation, bulkData)
+      const metricsQuery = pgFormat('INSERT INTO %I VALUES %L', 'error', bulkData)
 
-      if (relation === 'error') {
-        this.pgPool.connect((err, client, release) => {
-          if (err) {
-            processlogger.log('error', 'Error acquiring client ' + err.stack)
+      this.pgPool.connect((err, client, release) => {
+        if (err) {
+          processlogger.log('error', 'Error acquiring client ' + err.stack)
+        }
+        client.query(metricsQuery, (metricsErr, result) => {
+          release()
+          if (metricsErr) {
+            processlogger.log('error', 'Error executing query on pgpool ' + metricsQuery + ' ' + err.stack)
           }
-          client.query(metricsQuery, (metricsErr, result) => {
-            release()
-            if (metricsErr) {
-              processlogger.log('error', 'Error executing query on pgpool ' + metricsQuery + ' ' + err.stack)
-            }
-          })
         })
-      }
+      })
     }
   }
 }
