@@ -211,7 +211,7 @@ export class MetricsRecorder {
         Records: records,
       }
 
-      logger.log('info', timestreamWrite)
+      logger.log('info', timestreamDatabaseName)
       const request = this.timestreamClient.writeRecords(timestreamWrite)
 
       await request.promise()
