@@ -12,6 +12,7 @@ import path from 'path'
 import AatPlans from './config/aat-plans.json'
 
 const logger = require('./services/logger')
+const https = require('https')
 
 import { Pocket, Configuration, HttpRpcProvider } from '@pokt-network/pocket-js'
 
@@ -20,6 +21,7 @@ import crypto from 'crypto'
 import os from 'os'
 import process from 'process'
 import pg from 'pg'
+import AWS from 'aws-sdk'
 
 require('log-timestamp')
 require('dotenv').config()
@@ -70,6 +72,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       INFLUX_URL,
       INFLUX_TOKEN,
       INFLUX_ORG,
+      AWS_ACCESS_KEY_ID,
+      AWS_SECRET_ACCESS_KEY,
+      AWS_REGION,
     } = await this.get('configuration.environment.values')
 
     const environment: string = NODE_ENV || 'production'
@@ -131,6 +136,17 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     }
     if (!influxOrg) {
       throw new HttpErrors.InternalServerError('INFLUX_ORG required in ENV')
+    }
+
+    // Not required in code, but must be present in .env
+    if (!AWS_ACCESS_KEY_ID) {
+      throw new HttpErrors.InternalServerError('AWS_ACCESS_KEY_ID required in ENV')
+    }
+    if (!AWS_SECRET_ACCESS_KEY) {
+      throw new HttpErrors.InternalServerError('AWS_SECRET_ACCESS_KEY required in ENV')
+    }
+    if (!AWS_REGION) {
+      throw new HttpErrors.InternalServerError('AWS_REGION required in ENV')
     }
 
     const dispatchers = []
@@ -203,16 +219,30 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     if (!psqlConnection) {
       throw new HttpErrors.InternalServerError('PSQL_CONNECTION required in ENV')
     }
-    const psqlConfig = {
+
+    const pgPool = new pg.Pool({
       connectionString: psqlConnection,
       ssl: environment === 'production' || environment === 'staging' ? true : false,
-    }
-    const pgPool = new pg.Pool(psqlConfig)
+    })
 
     this.bind('pgPool').to(pgPool)
 
-    this.bind('databaseEncryptionKey').to(databaseEncryptionKey)
-    this.bind('aatPlan').to(aatPlan)
+    // Timestream
+    const timestreamAgent = new https.Agent({
+      maxSockets: 5000,
+    })
+
+    // Always US-East-2
+    const timestreamClient = new AWS.TimestreamWrite({
+      maxRetries: 10,
+      httpOptions: {
+        timeout: 20000,
+        agent: timestreamAgent,
+      },
+      region: 'us-east-2',
+    })
+
+    this.bind('timestreamClient').to(timestreamClient)
 
     // Influx DB
     const influxBucket = environment === 'production' ? 'mainnetRelay' : 'mainnetRelayStaging'
@@ -226,5 +256,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const hash = crypto.createHash('md5').update(parts.join(''))
 
     this.bind('processUID').to(hash.digest('hex'))
+    this.bind('databaseEncryptionKey').to(databaseEncryptionKey)
+    this.bind('aatPlan').to(aatPlan)
   }
 }

@@ -36,6 +36,9 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'INFLUX_URL',
     'INFLUX_TOKEN',
     'INFLUX_ORG',
+    'AWS_ACCESS_KEY_ID',
+    'AWS_SECRET_ACCESS_KEY',
+    'AWS_REGION',
   ]
 
   private static optionalEnvVars: string[] = ['COMMIT_HASH']
