@@ -58,18 +58,6 @@ const DUMMY_ENV = {
 export async function setupApplication(pocket?: typeof Pocket, envs?: object): Promise<AppWithClient> {
   const restConfig = givenHttpServerConfig()
 
-  sinon.replace(InfluxDB.prototype, 'getWriteApi', function (org: string, bucket: string): WriteApi {
-    return {
-      useDefaultTags: sinon.stub(),
-      writePoint: sinon.stub(),
-      flush: sinon.stub(),
-    } as unknown as WriteApi
-  })
-
-  sinon.stub(pg.Pool.prototype, 'connect').callsFake(() => {
-    return {}
-  })
-
   const appWithMock = rewiremock.proxy(() => require('../../src/application'), {
     ioredis: RedisMock,
     ...(pocket && { '@pokt-network/pocket-js': { Pocket: pocket, Configuration, HttpRpcProvider } }),

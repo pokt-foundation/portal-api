@@ -5,8 +5,6 @@ import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
 
 import pgFormat from 'pg-format'
-
-import { HttpErrors } from '@loopback/rest'
 import { Point, WriteApi } from '@influxdata/influxdb-client'
 
 import { getNodeNetworkData } from '../utils/cache'
@@ -14,19 +12,7 @@ import { CherryPicker } from './cherry-picker'
 const os = require('os')
 const logger = require('../services/logger')
 
-const influxURL = process.env.INFLUX_URL || ''
-const influxToken = process.env.INFLUX_TOKEN || ''
-const influxOrg = process.env.INFLUX_ORG || ''
-
-if (!influxURL) {
-  throw new HttpErrors.InternalServerError('INFLUX_URL required in ENV')
-}
-if (!influxToken) {
-  throw new HttpErrors.InternalServerError('INFLUX_TOKEN required in ENV')
-}
-if (!influxOrg) {
-  throw new HttpErrors.InternalServerError('INFLUX_ORG required in ENV')
-}
+const DISABLE_TIMESTREAM = process.env['DISABLE_TIMESTREAM'] || ''
 
 export class MetricsRecorder {
   redis: Redis
@@ -237,9 +223,11 @@ export class MetricsRecorder {
         Records: records,
       }
 
-      const request = this.timestreamClient.writeRecords(timestreamWrite)
+      if (DISABLE_TIMESTREAM.toLowerCase() !== 'true') {
+        const request = this.timestreamClient.writeRecords(timestreamWrite)
 
-      await request.promise()
+        await request.promise()
+      }
 
       // Store errors in redis and every 10 seconds, push to postgres
       const redisErrorKey = 'errors-' + this.processUID
