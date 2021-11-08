@@ -21,7 +21,7 @@ import { parseMethod } from '../../src/utils/parsing'
 import { updateConfiguration } from '../../src/utils/pocket'
 import { loadBlockchain } from '../../src/utils/relayer'
 import { gatewayTestDB } from '../fixtures/test.datasource'
-import { metricsRecorderMock } from '../mocks/metricsRecorder'
+import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
@@ -149,7 +149,7 @@ describe('Pocket relayer service (unit)', () => {
 
   before('initialize variables', async () => {
     redis = new RedisMock(0, '')
-    cherryPicker = new CherryPicker({ redis, checkDebug: false })
+    cherryPicker = new CherryPicker({ redis, checkDebug: false, archivalChains: ['1234', '4567'] })
     metricsRecorder = metricsRecorderMock(redis, cherryPicker)
     chainChecker = new ChainChecker(redis, metricsRecorder, origin)
     syncChecker = new SyncChecker(redis, metricsRecorder, 5, origin)
