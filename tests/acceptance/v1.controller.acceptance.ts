@@ -136,8 +136,7 @@ const LOAD_BALANCERS = [
   },
 ]
 
-// eslint-disable-next-line mocha/no-exclusive-tests
-describe.only('V1 controller (acceptance)', () => {
+describe('V1 controller (acceptance)', () => {
   let app: PocketGatewayApplication
   let client: Client
   let blockchainsRepository: BlockchainsRepository
