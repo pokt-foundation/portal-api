@@ -5,6 +5,8 @@ import {
   LifeCycleObserver, // The interface
 } from '@loopback/core'
 
+const ENV = process.env['NODE_ENV']
+
 /**
  * This class will be bound to the application as a `LifeCycleObserver` during
  * `boot`
@@ -36,10 +38,13 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'INFLUX_URL',
     'INFLUX_TOKEN',
     'INFLUX_ORG',
+    // Not required in code, but must be present in .env
     'AWS_ACCESS_KEY_ID',
     'AWS_SECRET_ACCESS_KEY',
     'AWS_REGION',
   ]
+
+  private static requiredEnvVarsOnlyInProd = []
 
   private static optionalEnvVars: string[] = ['COMMIT_HASH']
 
@@ -62,13 +67,20 @@ export class EnvironmentObserver implements LifeCycleObserver {
       return
     }
 
-    const environmentVariables = EnvironmentObserver.requiredEnvVars.concat(EnvironmentObserver.optionalEnvVars)
+    const environmentVariables = EnvironmentObserver.requiredEnvVars.concat(
+      EnvironmentObserver.optionalEnvVars,
+      EnvironmentObserver.requiredEnvVarsOnlyInProd
+    )
 
     environmentVariables.forEach((name: string) => {
       const variable = process.env[name]
 
-      if (!variable && !(EnvironmentObserver.optionalEnvVars.indexOf(name) >= 0)) {
-        throw new Error(`Required variable ${name} not found`)
+      if (!variable && EnvironmentObserver.optionalEnvVars.indexOf(name) < 0) {
+        if (ENV === 'production' && EnvironmentObserver.requiredEnvVarsOnlyInProd.indexOf(name) >= 0) {
+          // Do nothing as is valid that is empty on production
+        } else {
+          throw new Error(`${name} required in ENV`)
+        }
       }
 
       configValues[name] = variable
