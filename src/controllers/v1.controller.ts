@@ -1,9 +1,11 @@
+import AWS from 'aws-sdk'
 import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
 import { FilterExcludingWhere, repository } from '@loopback/repository'
 import { HttpErrors, param, post, requestBody } from '@loopback/rest'
 import { Configuration, HTTPMethod, Pocket } from '@pokt-network/pocket-js'
+import { WriteApi } from '@influxdata/influxdb-client'
 
 import { Applications, LoadBalancers } from '../models'
 import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from '../repositories'
@@ -37,6 +39,7 @@ export class V1Controller {
     @inject('pocketConfiguration') private pocketConfiguration: Configuration,
     @inject('redisInstance') private redis: Redis,
     @inject('pgPool') private pgPool: PGPool,
+    @inject('timestreamClient') private timestreamClient: AWS.TimestreamWrite,
     @inject('databaseEncryptionKey') private databaseEncryptionKey: string,
     @inject('processUID') private processUID: string,
     @inject('altruists') private altruists: string,
@@ -45,6 +48,7 @@ export class V1Controller {
     @inject('aatPlan') private aatPlan: string,
     @inject('redirects') private redirects: string,
     @inject('defaultLogLimitBlocks') private defaultLogLimitBlocks: number,
+    @inject('influxWriteAPI') private influxWriteAPI: WriteApi,
     @inject('archivalChains') private archivalChains: string[],
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
@@ -60,7 +64,9 @@ export class V1Controller {
     })
     this.metricsRecorder = new MetricsRecorder({
       redis: this.redis,
+      influxWriteAPI: this.influxWriteAPI,
       pgPool: this.pgPool,
+      timestreamClient: this.timestreamClient,
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
     })

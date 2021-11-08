@@ -21,7 +21,7 @@ export class CherryPicker {
   constructor({ redis, checkDebug, archivalChains }: { redis: Redis; checkDebug: boolean; archivalChains?: string[] }) {
     this.redis = redis
     this.checkDebug = checkDebug
-    this.archivalChains = archivalChains
+    this.archivalChains = archivalChains || []
   }
 
   // Record the latency and success rate of each application, 15 minute TTL

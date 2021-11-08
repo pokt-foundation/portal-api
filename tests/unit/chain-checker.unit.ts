@@ -9,7 +9,7 @@ import { ChainChecker } from '../../src/services/chain-checker'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { MAX_RELAYS_ERROR } from '../../src/utils/constants'
-import { metricsRecorderMock } from '../mocks/metricsRecorder'
+import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
 const logger = require('../../src/services/logger')

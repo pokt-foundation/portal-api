@@ -13,12 +13,20 @@ import { MetricsRecorder } from '../services/metrics-recorder'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { removeNodeFromSession } from '../utils/cache'
 import { MAX_RELAYS_ERROR } from '../utils/constants'
-import { checkEnforcementJSON, checkWhitelist, checkSecretKey, SecretKeyDetails } from '../utils/enforcements'
+import {
+  checkEnforcementJSON,
+  isRelayError,
+  isUserError,
+  checkWhitelist,
+  checkSecretKey,
+  SecretKeyDetails,
+} from '../utils/enforcements'
 import { parseMethod } from '../utils/parsing'
 import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
 import { enforceEVMLimits } from './limiter'
+const crypto = require('crypto')
 const logger = require('../services/logger')
 
 export class PocketRelayer {
@@ -201,23 +209,32 @@ export class PocketRelayer {
 
       if (!(relayResponse instanceof Error)) {
         // Record success metric
-        await this.metricsRecorder.recordMetric({
-          requestID: requestID,
-          applicationID: application.id,
-          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-          blockchainID,
-          serviceNode: relayResponse.proof.servicerPubKey,
-          relayStart,
-          result: 200,
-          bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
-          delivered: false,
-          fallback: false,
-          method: method,
-          error: undefined,
-          origin: this.origin,
-          data,
-          sessionKey: this.sessionKey,
-        })
+        this.metricsRecorder
+          .recordMetric({
+            requestID: requestID,
+            applicationID: application.id,
+            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+            blockchainID,
+            serviceNode: relayResponse.proof.servicerPubKey,
+            relayStart,
+            result: 200,
+            bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
+            delivered: false,
+            fallback: false,
+            method: method,
+            error: undefined,
+            origin: this.origin,
+            data,
+            sessionKey: this.sessionKey,
+          })
+          .catch(function log(e) {
+            logger.log('error', 'Error recording metrics: ' + e, {
+              requestID: requestID,
+              relayType: 'APP',
+              typeID: application.id,
+              serviceNode: relayResponse.proof.servicerPubKey,
+            })
+          })
 
         // Clear error log
         await this.redis.del(blockchainID + '-' + relayResponse.proof.servicerPubKey + '-errors')
@@ -245,24 +262,32 @@ export class PocketRelayer {
           error = JSON.stringify(relayResponse.message)
         }
 
-        await this.metricsRecorder.recordMetric({
-          requestID,
-          applicationID: application.id,
-          applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-          blockchainID,
-          serviceNode: relayResponse.servicer_node,
-          relayStart,
-          result: 500,
-          bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
-          delivered: errorDelivered,
-          fallback: false,
-          method,
-          error,
-          origin: this.origin,
-          data,
-          sessionKey: this.sessionKey,
-          timeout: requestTimeOut,
-        })
+        this.metricsRecorder
+          .recordMetric({
+            requestID,
+            applicationID: application.id,
+            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+            blockchainID,
+            serviceNode: relayResponse.servicer_node,
+            relayStart,
+            result: 500,
+            bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
+            delivered: errorDelivered,
+            fallback: false,
+            method,
+            error,
+            origin: this.origin,
+            data,
+            sessionKey: this.sessionKey,
+          })
+          .catch(function log(e) {
+            logger.log('error', 'Error recording metrics: ' + e, {
+              requestID: requestID,
+              relayType: 'APP',
+              typeID: application.id,
+              serviceNode: relayResponse.servicer_node,
+            })
+          })
       }
     }
 
@@ -318,23 +343,32 @@ export class PocketRelayer {
         if (!(fallbackResponse instanceof Error)) {
           const responseParsed = JSON.stringify(fallbackResponse.data)
 
-          await this.metricsRecorder.recordMetric({
-            requestID: requestID,
-            applicationID: application.id,
-            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-            blockchainID,
-            serviceNode: 'fallback:' + redactedAltruistURL,
-            relayStart,
-            result: 200,
-            bytes: Buffer.byteLength(responseParsed, 'utf8'),
-            delivered: false,
-            fallback: true,
-            method: method,
-            error: undefined,
-            origin: this.origin,
-            data,
-            sessionKey: this.sessionKey,
-          })
+          this.metricsRecorder
+            .recordMetric({
+              requestID: requestID,
+              applicationID: application.id,
+              applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+              blockchainID,
+              serviceNode: 'fallback:' + redactedAltruistURL,
+              relayStart,
+              result: 200,
+              bytes: Buffer.byteLength(responseParsed, 'utf8'),
+              delivered: false,
+              fallback: true,
+              method: method,
+              error: undefined,
+              origin: this.origin,
+              data,
+              sessionKey: this.sessionKey,
+            })
+            .catch(function log(e) {
+              logger.log('error', 'Error recording metrics: ' + e, {
+                requestID: requestID,
+                relayType: 'APP',
+                typeID: application.id,
+                serviceNode: 'fallback:' + redactedAltruistURL,
+              })
+            })
 
           // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
           if (
@@ -449,20 +483,24 @@ export class PocketRelayer {
     )
 
     if (pocketSession instanceof Session) {
-      const { sessionKey } = pocketSession
-
-      this.sessionKey = sessionKey
-
-      const sessionCacheKey = `session-${sessionKey}`
-
-      let syncCheckPromise: Promise<Node[]>
-      let syncCheckedNodes: Node[]
-
-      let chainCheckPromise: Promise<Node[]>
-      let chainCheckedNodes: Node[]
+      // Start the relay timer
+      const relayStart = process.hrtime()
 
       let nodes: Node[] = pocketSession.sessionNodes
-      const relayStart = process.hrtime()
+
+      // sessionKey = "blockchain and a hash of the all the nodes in this session, sorted by public key"
+      const sessionKey = `${blockchain}-${crypto
+        .createHash('sha256')
+        .update(
+          JSON.stringify(
+            nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0)),
+            (k, v) => (k !== 'publicKey' ? v : undefined)
+          )
+        )
+        .digest('hex')}`
+
+      this.sessionKey = sessionKey
+      const sessionCacheKey = `session-${sessionKey}`
 
       const nodesToRemove = await this.redis.smembers(sessionCacheKey)
 
@@ -485,6 +523,12 @@ export class PocketRelayer {
         return new Error("session doesn't have any available nodes")
       }
 
+      let syncCheckPromise: Promise<Node[]>
+      let syncCheckedNodes: Node[]
+
+      let chainCheckPromise: Promise<Node[]>
+      let chainCheckedNodes: Node[]
+
       if (blockchainIDCheck) {
         // Check Chain ID
         const chainIDOptions: ChainIDFilterOptions = {
@@ -498,7 +542,7 @@ export class PocketRelayer {
           chainID: parseInt(blockchainChainID),
           pocket: this.pocket,
           pocketConfiguration: this.pocketConfiguration,
-          sessionKey: pocketSession.sessionKey,
+          sessionKey,
         }
 
         chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
@@ -517,7 +561,7 @@ export class PocketRelayer {
           pocket: this.pocket,
           pocketAAT,
           pocketConfiguration: this.pocketConfiguration,
-          sessionKey: pocketSession.sessionKey,
+          sessionKey,
         }
 
         syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
@@ -534,23 +578,32 @@ export class PocketRelayer {
           const error = 'ChainID check failure'
           const method = 'checks'
 
-          await this.metricsRecorder.recordMetric({
-            requestID,
-            applicationID: application.id,
-            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-            blockchainID,
-            serviceNode: 'session-failure',
-            relayStart,
-            result: 500,
-            bytes: Buffer.byteLength(error, 'utf8'),
-            delivered: false,
-            fallback: false,
-            method,
-            error,
-            origin: this.origin,
-            data,
-            sessionKey,
-          })
+          this.metricsRecorder
+            .recordMetric({
+              requestID,
+              applicationID: application.id,
+              applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+              blockchainID,
+              serviceNode: 'session-failure',
+              relayStart,
+              result: 500,
+              bytes: Buffer.byteLength(error, 'utf8'),
+              delivered: false,
+              fallback: false,
+              method,
+              error,
+              origin: this.origin,
+              data,
+              sessionKey,
+            })
+            .catch(function log(e) {
+              logger.log('error', 'Error recording metrics: ' + e, {
+                requestID: requestID,
+                relayType: 'APP',
+                typeID: application.id,
+                serviceNode: 'session-failure',
+              })
+            })
 
           return new Error('ChainID check failure; using fallbacks')
         }
@@ -563,23 +616,32 @@ export class PocketRelayer {
           const error = 'Sync check failure'
           const method = 'checks'
 
-          await this.metricsRecorder.recordMetric({
-            requestID,
-            applicationID: application.id,
-            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-            blockchainID,
-            serviceNode: 'session-failure',
-            relayStart,
-            result: 500,
-            bytes: Buffer.byteLength(error, 'utf8'),
-            delivered: false,
-            fallback: false,
-            method,
-            error,
-            origin: this.origin,
-            data,
-            sessionKey,
-          })
+          this.metricsRecorder
+            .recordMetric({
+              requestID,
+              applicationID: application.id,
+              applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+              blockchainID,
+              serviceNode: 'session-failure',
+              relayStart,
+              result: 500,
+              bytes: Buffer.byteLength(error, 'utf8'),
+              delivered: false,
+              fallback: false,
+              method,
+              error,
+              origin: this.origin,
+              data,
+              sessionKey,
+            })
+            .catch(function log(e) {
+              logger.log('error', 'Error recording metrics: ' + e, {
+                requestID: requestID,
+                relayType: 'APP',
+                typeID: application.id,
+                serviceNode: 'session-failure',
+              })
+            })
 
           return new Error('Sync check failure; using fallbacks')
         }
@@ -658,7 +720,7 @@ export class PocketRelayer {
           blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
           blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON // and
           (!checkEnforcementJSON(relayResponse.payload) || // the relay response is not valid JSON // or
-            relayResponse.payload.startsWith('{"error"')) // the full payload is an error
+            (isRelayError(relayResponse.payload) && !isUserError(relayResponse.payload))) // check if the payload indicates relay error, not a user error
         ) {
           // then this result is invalid
           return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey)

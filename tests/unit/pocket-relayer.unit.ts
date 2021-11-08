@@ -21,8 +21,10 @@ import { parseMethod } from '../../src/utils/parsing'
 import { updateConfiguration } from '../../src/utils/pocket'
 import { loadBlockchain } from '../../src/utils/relayer'
 import { gatewayTestDB } from '../fixtures/test.datasource'
-import { metricsRecorderMock } from '../mocks/metricsRecorder'
+import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
+
+const crypto = require('crypto')
 
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
 
@@ -497,6 +499,54 @@ describe('Pocket relayer service (unit)', () => {
       expect(relayResponse).to.be.deepEqual(expected)
     })
 
+    it('sends successful relay with a node error as response', async () => {
+      const mock = new PocketMock()
+
+      mock.relayResponse[rawData] =
+        '{"error":{"code":-32602,"message":"invalid argument 0: hex number with leading zero digits"},"id":1,"jsonrpc":"2.0"}'
+
+      // mock.relayResponse[rawData] = '{"error": "a relay error"}'
+
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+
+      const pocket = mock.object()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: true,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+      })
+
+      const relayResponse = await poktRelayer.sendRelay({
+        rawData,
+        relayPath: '',
+        httpMethod: HTTPMethod.POST,
+        application: APPLICATION as unknown as Applications,
+        requestID: '1234',
+        requestTimeOut: undefined,
+        overallTimeOut: undefined,
+        relayRetries: 0,
+      })
+      const expected = JSON.parse(mock.relayResponse[rawData] as string)
+
+      expect(relayResponse).to.be.deepEqual(expected)
+    })
+
     it('sends successful relay response as string', async () => {
       const mock = new PocketMock()
 
@@ -675,8 +725,15 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
 
-      const sessionKey = ((await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session)
-        .sessionKey
+      const sessionKey = `${'eth-mainnet'}-${crypto
+        .createHash('sha256')
+        .update(
+          JSON.stringify(
+            DEFAULT_NODES.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0)),
+            (k, v) => (k !== 'publicKey' ? v : undefined)
+          )
+        )
+        .digest('hex')}`
 
       let removedNodes = await redis.smembers(`session-${sessionKey}`)
 
