@@ -24,6 +24,8 @@ import { gatewayTestDB } from '../fixtures/test.datasource'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
+const crypto = require('crypto')
+
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
 
 const DEFAULT_LOG_LIMIT = 10000
@@ -149,7 +151,7 @@ describe('Pocket relayer service (unit)', () => {
 
   before('initialize variables', async () => {
     redis = new RedisMock(0, '')
-    cherryPicker = new CherryPicker({ redis, checkDebug: false, archivalChains: ['1234', '4567'] })
+    cherryPicker = new CherryPicker({ redis, checkDebug: false })
     metricsRecorder = metricsRecorderMock(redis, cherryPicker)
     chainChecker = new ChainChecker(redis, metricsRecorder, origin)
     syncChecker = new SyncChecker(redis, metricsRecorder, 5, origin)
@@ -723,8 +725,15 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
 
-      const sessionKey = ((await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session)
-        .sessionKey
+      const sessionKey = `${'eth-mainnet'}-${crypto
+        .createHash('sha256')
+        .update(
+          JSON.stringify(
+            DEFAULT_NODES.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0)),
+            (k, v) => (k !== 'publicKey' ? v : undefined)
+          )
+        )
+        .digest('hex')}`
 
       let removedNodes = await redis.smembers(`session-${sessionKey}`)
 
