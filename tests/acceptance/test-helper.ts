@@ -1,10 +1,8 @@
 import RedisMock from 'ioredis-mock'
-import pg from 'pg'
 import rewiremock from 'rewiremock'
-import { createRestAppClient, givenHttpServerConfig, Client, sinon } from '@loopback/testlab'
+import { createRestAppClient, givenHttpServerConfig, Client } from '@loopback/testlab'
 import { Pocket, Configuration, HttpRpcProvider } from '@pokt-network/pocket-js'
 
-import { InfluxDB, WriteApi } from '@influxdata/influxdb-client'
 import { PocketGatewayApplication } from '../../src/application'
 import { gatewayTestDB } from '../fixtures/test.datasource'
 
