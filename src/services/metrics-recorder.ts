@@ -12,6 +12,8 @@ import { Point, WriteApi } from '@influxdata/influxdb-client'
 import AWS from 'aws-sdk'
 import process from 'process'
 
+const ENV = process.env['NODE_ENV']
+
 export class MetricsRecorder {
   redis: Redis
   influxWriteAPI: WriteApi
@@ -211,9 +213,12 @@ export class MetricsRecorder {
         Records: records,
       }
 
-      const request = this.timestreamClient.writeRecords(timestreamWrite)
+      // TimestreamClient not supported in local development atm.
+      if (ENV !== 'development') {
+        const request = this.timestreamClient.writeRecords(timestreamWrite)
 
-      await request.promise()
+        await request.promise()
+      }
 
       // Store errors in redis and every 10 seconds, push to postgres
       const redisErrorKey = 'errors-' + this.processUID
