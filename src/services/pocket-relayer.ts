@@ -13,7 +13,14 @@ import { MetricsRecorder } from '../services/metrics-recorder'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { removeNodeFromSession } from '../utils/cache'
 import { MAX_RELAYS_ERROR } from '../utils/constants'
-import { checkEnforcementJSON, checkWhitelist, checkSecretKey, SecretKeyDetails } from '../utils/enforcements'
+import {
+  checkEnforcementJSON,
+  isRelayError,
+  isUserError,
+  checkWhitelist,
+  checkSecretKey,
+  SecretKeyDetails,
+} from '../utils/enforcements'
 import { parseMethod } from '../utils/parsing'
 import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
@@ -713,7 +720,7 @@ export class PocketRelayer {
           blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
           blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON // and
           (!checkEnforcementJSON(relayResponse.payload) || // the relay response is not valid JSON // or
-            relayResponse.payload.startsWith('{"error"')) // the full payload is an error
+            (isRelayError(relayResponse.payload) && !isUserError(relayResponse.payload))) // check if the payload indicates relay error, not a user error
         ) {
           // then this result is invalid
           return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey)

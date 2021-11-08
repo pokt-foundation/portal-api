@@ -50,6 +50,9 @@ const DUMMY_ENV = {
   REDIRECTS: [{ domain: 'ethereum.example.com', blockchain: 'ethereum-mainnet', loadBalancerID: '1234567890' }],
   COMMIT_HASH: '1234',
   ARCHIVAL_CHAINS: '1234,4567',
+  AWS_ACCESS_KEY_ID: 'test',
+  AWS_SECRET_ACCESS_KEY: 'test',
+  AWS_REGION: 'test',
 }
 
 export async function setupApplication(pocket?: typeof Pocket, envs?: object): Promise<AppWithClient> {
