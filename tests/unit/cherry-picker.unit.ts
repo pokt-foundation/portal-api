@@ -1,8 +1,8 @@
-import { CherryPicker } from '../../src/services/cherry-picker'
 import RedisMock from 'ioredis-mock'
 import { expect } from '@loopback/testlab'
 import { Node } from '@pokt-network/pocket-js'
 import { Applications } from '../../src/models'
+import { CherryPicker } from '../../src/services/cherry-picker'
 
 describe('Cherry picker service (unit)', () => {
   let cherryPicker: CherryPicker
@@ -11,7 +11,7 @@ describe('Cherry picker service (unit)', () => {
   before('initialize instance', async () => {
     redis = new RedisMock(0, '')
 
-    cherryPicker = new CherryPicker({ redis, checkDebug: true })
+    cherryPicker = new CherryPicker({ redis, checkDebug: true, archivalChains: ['1234', '4567'] })
   })
 
   const cleanCache = async () => {
@@ -278,6 +278,35 @@ describe('Cherry picker service (unit)', () => {
       const logs = await redis.get(blockchain + '-' + id + '-service')
 
       expect(JSON.parse(logs)).to.be.deepEqual(JSON.parse(expectedLogs))
+    })
+
+    it('updates node timeout quality on archival', async () => {
+      const nodePublicKey = 'e8ec4vog1ilaozhbank9l0pbaomqi6xhe0qcb6qwb2mi8qxjf8yim3ddehcif0fg'
+      const blockchain = '1234'
+      const elapsedTime = 2.5
+      const requestTimeout = 10
+      const sessionKey = '1234'
+
+      await cherryPicker.updateBadNodeTimeoutQuality(blockchain, nodePublicKey, elapsedTime, requestTimeout, sessionKey)
+
+      let removedNodes = await redis.smembers(`session-${sessionKey}`)
+
+      expect(removedNodes).to.have.length(0)
+
+      // Force a node removal
+      for (let i = 0; i <= 20; i++) {
+        await cherryPicker.updateBadNodeTimeoutQuality(
+          blockchain,
+          nodePublicKey,
+          elapsedTime,
+          requestTimeout,
+          sessionKey
+        )
+      }
+
+      removedNodes = await redis.smembers(`session-${sessionKey}`)
+
+      expect(removedNodes).to.have.length(1)
     })
   })
 

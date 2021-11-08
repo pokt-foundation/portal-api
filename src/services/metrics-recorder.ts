@@ -1,16 +1,32 @@
+import process from 'process'
+import { CustomLogger } from 'ajv'
+import AWS from 'aws-sdk'
 import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
-import { CherryPicker } from './cherry-picker'
-import { getNodeNetworkData } from '../utils'
 
 import pgFormat from 'pg-format'
-import { CustomLogger } from 'ajv'
-const logger = require('../services/logger')
-const os = require('os')
 
+import { HttpErrors } from '@loopback/rest'
 import { Point, WriteApi } from '@influxdata/influxdb-client'
-import AWS from 'aws-sdk'
-import process from 'process'
+
+import { getNodeNetworkData } from '../utils/cache'
+import { CherryPicker } from './cherry-picker'
+const os = require('os')
+const logger = require('../services/logger')
+
+const influxURL = process.env.INFLUX_URL || ''
+const influxToken = process.env.INFLUX_TOKEN || ''
+const influxOrg = process.env.INFLUX_ORG || ''
+
+if (!influxURL) {
+  throw new HttpErrors.InternalServerError('INFLUX_URL required in ENV')
+}
+if (!influxToken) {
+  throw new HttpErrors.InternalServerError('INFLUX_TOKEN required in ENV')
+}
+if (!influxOrg) {
+  throw new HttpErrors.InternalServerError('INFLUX_ORG required in ENV')
+}
 
 export class MetricsRecorder {
   redis: Redis
@@ -60,6 +76,7 @@ export class MetricsRecorder {
     origin,
     data,
     sessionKey,
+    timeout,
   }: {
     requestID: string
     applicationID: string
@@ -76,6 +93,7 @@ export class MetricsRecorder {
     origin: string | undefined
     data: string | undefined
     sessionKey: string | undefined
+    timeout?: number
   }): Promise<void> {
     try {
       let elapsedTime = 0
@@ -145,7 +163,15 @@ export class MetricsRecorder {
 
       // Update service node quality with cherry picker
       if (serviceNode) {
-        await this.cherryPicker.updateServiceQuality(blockchainID, applicationID, serviceNode, elapsedTime, result)
+        await this.cherryPicker.updateServiceQuality(
+          blockchainID,
+          applicationID,
+          serviceNode,
+          elapsedTime,
+          result,
+          timeout,
+          sessionKey
+        )
       }
 
       // Text timestamp

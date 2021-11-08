@@ -1,9 +1,10 @@
+import { Redis } from 'ioredis'
 import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
-import { Redis } from 'ioredis'
-import { blockHexToDecimal, checkEnforcementJSON, getNodeNetworkData } from '../utils'
-import { MAX_RELAYS_ERROR } from '../errors/types'
-import { removeNodeFromSession } from '../utils/cache'
+import { blockHexToDecimal } from '../utils/block'
+import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
+import { MAX_RELAYS_ERROR } from '../utils/constants'
+import { checkEnforcementJSON } from '../utils/enforcements'
 
 const logger = require('../services/logger')
 

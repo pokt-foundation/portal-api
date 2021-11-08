@@ -1,7 +1,7 @@
-import { DefaultCrudRepository } from '@loopback/repository'
-import { Blockchains, BlockchainsRelations } from '../models'
-import { GatewayDataSource } from '../datasources'
 import { inject } from '@loopback/core'
+import { DefaultCrudRepository } from '@loopback/repository'
+import { GatewayDataSource } from '../datasources'
+import { Blockchains, BlockchainsRelations } from '../models'
 
 export class BlockchainsRepository extends DefaultCrudRepository<
   Blockchains,

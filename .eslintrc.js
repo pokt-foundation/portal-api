@@ -27,6 +27,10 @@ module.exports = {
       node: {
         extensions: ['.js', '.jsx', '.ts', '.tsx'],
       },
+      alphabetize: {
+        order: 'desc',
+        caseInsensitive: true,
+      },
     },
   },
   rules: {
@@ -45,6 +49,34 @@ module.exports = {
     'import/no-named-as-default': 'off',
     'import/default': 'off',
     'import/namespace': 'off',
+    'import/order': [
+      'error',
+      {
+        groups: ['builtin', 'external', 'internal'],
+        pathGroups: [
+          {
+            pattern: '@loopback/**',
+            group: 'external',
+            position: 'after',
+          },
+          {
+            pattern: '@pokt-network/**',
+            group: 'external',
+            position: 'after',
+          },
+          {
+            pattern: '@influxdata/**',
+            group: 'external',
+            position: 'after',
+          },
+        ],
+        pathGroupsExcludedImportTypes: ['@loopback/**', '@pokt-network/**', '@influxdata/**'],
+        alphabetize: {
+          order: 'asc',
+          caseInsensitive: true,
+        },
+      },
+    ],
     '@typescript-eslint/no-var-requires': 'off',
     '@typescript-eslint/no-non-null-assertion': 'off',
     '@typescript-eslint/no-extra-semi': ['off'],
