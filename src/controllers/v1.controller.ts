@@ -166,7 +166,6 @@ export class V1Controller {
       }
 
       const {
-        blockchain,
         // eslint-disable-next-line
         blockchainEnforceResult: _enforceResult,
         // eslint-disable-next-line
@@ -175,12 +174,7 @@ export class V1Controller {
 
       // Fetch applications contained in this Load Balancer. Verify they exist and choose
       // one randomly for the relay.
-      const application = await this.fetchLoadBalancerApplication(
-        loadBalancer.id,
-        loadBalancer.applicationIDs,
-        blockchain,
-        filter
-      )
+      const application = await this.fetchLoadBalancerApplication(loadBalancer.id, loadBalancer.applicationIDs, filter)
 
       if (!application?.id) {
         throw new HttpErrors.InternalServerError('No application found in the load balancer')
@@ -324,7 +318,6 @@ export class V1Controller {
   async fetchLoadBalancerApplication(
     id: string,
     applicationIDs: string[],
-    blockchain: string,
     filter: FilterExcludingWhere | undefined
   ): Promise<Applications | undefined> {
     let verifiedIDs: string[] = []
