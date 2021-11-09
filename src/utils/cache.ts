@@ -14,18 +14,18 @@ const ALTRUIST_URL = JSON.parse(process.env.ALTRUISTS)?.['0001']
  * Removes node from cached session, following calls within the same session,
  * also cleans the chain/sync check cache to prevent using invalid nodes
  * @param redis cache service to use
- * @param blockchain blockchain where session resides
+ * @param blockchainID blockchain where session resides
  * @param sessionNodes session nodes
  * @param nodePubKey node to remove's public key
  * @returns
  */
 export async function removeNodeFromSession(
   redis: Redis,
-  blockchain: string,
+  blockchainID: string,
   sessionNodes: Node[],
   nodePubKey: string
 ): Promise<void> {
-  const hash = hashBlockchainNodes(blockchain, sessionNodes)
+  const hash = hashBlockchainNodes(blockchainID, sessionNodes)
   const sessionKey = `session-${hash}`
 
   await redis.sadd(sessionKey, nodePubKey)

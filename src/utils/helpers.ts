@@ -2,8 +2,8 @@ import { Node } from '@pokt-network/pocket-js'
 const crypto = require('crypto')
 
 // hashes a blockchain and all of the nodes given, sorted by public key
-export function hashBlockchainNodes(blockchain: string, nodes: Node[]): string {
-  return `${blockchain}-${crypto
+export function hashBlockchainNodes(blockchainID: string, nodes: Node[]): string {
+  return `${blockchainID}-${crypto
     .createHash('sha256')
     .update(
       JSON.stringify(
