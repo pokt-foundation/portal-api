@@ -25,5 +25,3 @@ export class LimitError extends Error {
     this.method = method
   }
 }
-
-export const MAX_RELAYS_ERROR = 'the evidence is sealed, either max relays reached or claim already submitted'

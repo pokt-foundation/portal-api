@@ -1,12 +1,10 @@
-import { createRestAppClient, givenHttpServerConfig, Client, sinon } from '@loopback/testlab'
 import RedisMock from 'ioredis-mock'
 import rewiremock from 'rewiremock'
-import { PocketGatewayApplication } from '../../src/application'
-import { gatewayTestDB } from '../fixtures/test.datasource'
+import { createRestAppClient, givenHttpServerConfig, Client } from '@loopback/testlab'
 import { Pocket, Configuration, HttpRpcProvider } from '@pokt-network/pocket-js'
 
-import pg from 'pg'
-import { InfluxDB, WriteApi } from '@influxdata/influxdb-client'
+import { PocketGatewayApplication } from '../../src/application'
+import { gatewayTestDB } from '../fixtures/test.datasource'
 
 const DUMMY_ENV = {
   NODE_ENV: 'development',
@@ -49,22 +47,14 @@ const DUMMY_ENV = {
   AAT_PLAN: 'freemium',
   REDIRECTS: [{ domain: 'ethereum.example.com', blockchain: 'ethereum-mainnet', loadBalancerID: '1234567890' }],
   COMMIT_HASH: '1234',
+  ARCHIVAL_CHAINS: '1234,4567',
+  AWS_ACCESS_KEY_ID: 'test',
+  AWS_SECRET_ACCESS_KEY: 'test',
+  AWS_REGION: 'test',
 }
 
 export async function setupApplication(pocket?: typeof Pocket, envs?: object): Promise<AppWithClient> {
   const restConfig = givenHttpServerConfig()
-
-  sinon.replace(InfluxDB.prototype, 'getWriteApi', function (org: string, bucket: string): WriteApi {
-    return {
-      useDefaultTags: sinon.stub(),
-      writePoint: sinon.stub(),
-      flush: sinon.stub(),
-    } as unknown as WriteApi
-  })
-
-  sinon.stub(pg.Pool.prototype, 'connect').callsFake(() => {
-    return {}
-  })
 
   const appWithMock = rewiremock.proxy(() => require('../../src/application'), {
     ioredis: RedisMock,

@@ -1,16 +1,20 @@
+import process from 'process'
+import { CustomLogger } from 'ajv'
+import AWS from 'aws-sdk'
 import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
-import { CherryPicker } from './cherry-picker'
-import { getNodeNetworkData } from '../utils'
 
 import pgFormat from 'pg-format'
-import { CustomLogger } from 'ajv'
-const logger = require('../services/logger')
-const os = require('os')
-
+import { Session } from '@pokt-network/pocket-js'
 import { Point, WriteApi } from '@influxdata/influxdb-client'
-import AWS from 'aws-sdk'
-import process from 'process'
+
+import { getNodeNetworkData } from '../utils/cache'
+import { hashBlockchainNodes } from '../utils/helpers'
+import { CherryPicker } from './cherry-picker'
+const os = require('os')
+const logger = require('../services/logger')
+
+const DISABLE_TIMESTREAM = process.env['DISABLE_TIMESTREAM'] || ''
 
 export class MetricsRecorder {
   redis: Redis
@@ -59,7 +63,8 @@ export class MetricsRecorder {
     error,
     origin,
     data,
-    sessionKey,
+    pocketSession,
+    timeout,
   }: {
     requestID: string
     applicationID: string
@@ -75,9 +80,13 @@ export class MetricsRecorder {
     error: string | undefined
     origin: string | undefined
     data: string | undefined
-    sessionKey: string | undefined
+    pocketSession: Session | undefined
+    timeout?: number
   }): Promise<void> {
     try {
+      const { sessionNodes } = pocketSession || {}
+      const sessionHash = hashBlockchainNodes(blockchainID, sessionNodes)
+
       let elapsedTime = 0
       const relayEnd = process.hrtime(relayStart)
 
@@ -111,7 +120,7 @@ export class MetricsRecorder {
           error: '',
           origin,
           blockchainID,
-          sessionKey,
+          sessionHash,
         })
       } else if (result === 500) {
         logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -125,7 +134,7 @@ export class MetricsRecorder {
           error,
           origin,
           blockchainID,
-          sessionKey,
+          sessionHash,
         })
       } else if (result === 503) {
         logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -139,13 +148,21 @@ export class MetricsRecorder {
           error,
           origin,
           blockchainID,
-          sessionKey,
+          sessionHash,
         })
       }
 
       // Update service node quality with cherry picker
       if (serviceNode) {
-        await this.cherryPicker.updateServiceQuality(blockchainID, applicationID, serviceNode, elapsedTime, result)
+        await this.cherryPicker.updateServiceQuality(
+          blockchainID,
+          applicationID,
+          serviceNode,
+          elapsedTime,
+          result,
+          timeout,
+          pocketSession
+        )
       }
 
       // Text timestamp
@@ -211,9 +228,11 @@ export class MetricsRecorder {
         Records: records,
       }
 
-      const request = this.timestreamClient.writeRecords(timestreamWrite)
+      if (DISABLE_TIMESTREAM.toLowerCase() !== 'true') {
+        const request = this.timestreamClient.writeRecords(timestreamWrite)
 
-      await request.promise()
+        await request.promise()
+      }
 
       // Store errors in redis and every 10 seconds, push to postgres
       const redisErrorKey = 'errors-' + this.processUID
