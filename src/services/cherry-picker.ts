@@ -1,5 +1,5 @@
 import { Redis } from 'ioredis'
-import { Node } from '@pokt-network/pocket-js'
+import { Node, Session } from '@pokt-network/pocket-js'
 import { Applications } from '../models'
 import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
 
@@ -172,10 +172,10 @@ export class CherryPicker {
     elapsedTime: number,
     result: number,
     timeout?: number,
-    sessionKey?: string
+    pocketSession?: Session
   ): Promise<void> {
-    await this._updateServiceQuality(blockchain, applicationID, elapsedTime, result, 900, timeout, sessionKey)
-    await this._updateServiceQuality(blockchain, serviceNode, elapsedTime, result, 7200, timeout, sessionKey)
+    await this._updateServiceQuality(blockchain, applicationID, elapsedTime, result, 900, timeout, pocketSession)
+    await this._updateServiceQuality(blockchain, serviceNode, elapsedTime, result, 7200, timeout, pocketSession)
   }
 
   async _updateServiceQuality(
@@ -185,7 +185,7 @@ export class CherryPicker {
     result: number,
     ttl: number,
     timeout?: number,
-    sessionKey?: string
+    pocketSession?: Session
   ): Promise<void> {
     const serviceLog = await this.fetchRawServiceLog(blockchain, id)
 
@@ -217,7 +217,7 @@ export class CherryPicker {
         ) // divided by total results
           .toFixed(5) // to 5 decimal points
       } else {
-        await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, sessionKey)
+        await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, pocketSession)
       }
     } else {
       // No current logs found for this hour
@@ -225,7 +225,7 @@ export class CherryPicker {
 
       if (result !== 200) {
         elapsedTime = 0
-        await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, sessionKey)
+        await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, pocketSession)
       }
       serviceQuality = {
         results: results,
@@ -253,8 +253,10 @@ export class CherryPicker {
     serviceNode: string,
     elapsedTime: number,
     requestTimeout: number | undefined,
-    sessionKey: string
+    pocketSession?: Session
   ): Promise<void> {
+    const { sessionKey, sessionNodes } = pocketSession || {}
+
     // FIXME: This is not a completely reliable way on asserting whether is a service node,
     // an issue was created on pocket-tools for a 'isPublicKey' function. Once is
     // implemented, replace with the function.
@@ -282,7 +284,7 @@ export class CherryPicker {
           serviceURL,
           serviceDomain,
         })
-        await removeNodeFromSession(this.redis, sessionKey, serviceNode)
+        await removeNodeFromSession(this.redis, blockchain, sessionNodes, serviceNode)
       }
     }
   }

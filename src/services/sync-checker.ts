@@ -1,11 +1,12 @@
 import axios from 'axios'
 import { Redis } from 'ioredis'
-import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
+import { Configuration, HTTPMethod, Session, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { removeNodeFromSession, getNodeNetworkData } from '../utils/cache'
 import { MAX_RELAYS_ERROR } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
+import { hashBlockchainNodes } from '../utils/helpers'
 
 const logger = require('../services/logger')
 
@@ -33,16 +34,17 @@ export class SyncChecker {
     pocket,
     pocketAAT,
     pocketConfiguration,
-    sessionKey,
+    pocketSession,
   }: ConsensusFilterOptions): Promise<Node[]> {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
     syncCheckOptions.allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
 
+    const { sessionKey, sessionNodes } = pocketSession
     const syncedNodes: Node[] = []
     let syncedNodesList: string[] = []
 
     // Value is an array of node public keys that have passed sync checks for this session in the past 5 minutes
-    const syncedNodesKey = `sync-check-${sessionKey}`
+    const syncedNodesKey = `sync-check-${hashBlockchainNodes(blockchainID, sessionNodes)}`
     const syncedNodesCached = await this.redis.get(syncedNodesKey)
 
     if (syncedNodesCached) {
@@ -79,7 +81,7 @@ export class SyncChecker {
       pocket,
       pocketAAT,
       pocketConfiguration,
-      sessionKey
+      pocketSession
     )
 
     let errorState = false
@@ -251,7 +253,7 @@ export class SyncChecker {
             error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${currentBlockHeight} altruist block height: ${altruistBlockHeight} nodes height: ${nodeSyncLog.blockHeight} sync allowance: ${syncCheckOptions.allowance}`,
             origin: this.origin,
             data: undefined,
-            sessionKey,
+            pocketSession,
           })
           .catch(function log(e) {
             logger.log('error', 'Error recording metrics: ' + e, {
@@ -357,7 +359,7 @@ export class SyncChecker {
     pocket: Pocket,
     pocketAAT: PocketAAT,
     pocketConfiguration: Configuration,
-    sessionKey: string
+    pocketSession: Session
   ): Promise<NodeSyncLog[]> {
     const nodeSyncLogs: NodeSyncLog[] = []
     const promiseStack: Promise<NodeSyncLog>[] = []
@@ -383,7 +385,7 @@ export class SyncChecker {
           pocket,
           pocketAAT,
           pocketConfiguration,
-          sessionKey
+          pocketSession
         )
       )
     }
@@ -409,8 +411,9 @@ export class SyncChecker {
     pocket: Pocket,
     pocketAAT: PocketAAT,
     pocketConfiguration: Configuration,
-    sessionKey: string
+    pocketSession?: Session
   ): Promise<NodeSyncLog> {
+    const { sessionKey, sessionNodes } = pocketSession || {}
     // Pull the current block from each node using the blockchain's syncCheck as the relay
     const relayStart = process.hrtime()
 
@@ -474,7 +477,7 @@ export class SyncChecker {
       let error = relayResponse.message
 
       if (error === MAX_RELAYS_ERROR) {
-        await removeNodeFromSession(this.redis, sessionKey, node.publicKey)
+        await removeNodeFromSession(this.redis, blockchainID, sessionNodes, node.publicKey)
       }
 
       if (typeof relayResponse.message === 'object') {
@@ -497,7 +500,7 @@ export class SyncChecker {
           error,
           origin: this.origin,
           data: undefined,
-          sessionKey,
+          pocketSession,
         })
         .catch(function log(e) {
           logger.log('error', 'Error recording metrics: ' + e, {
@@ -538,7 +541,7 @@ export class SyncChecker {
           error: JSON.stringify(relayResponse),
           origin: this.origin,
           data: undefined,
-          sessionKey,
+          pocketSession,
         })
         .catch(function log(e) {
           logger.log('error', 'Error recording metrics: ' + e, {
@@ -623,5 +626,5 @@ export type ConsensusFilterOptions = {
   pocket: Pocket
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
-  sessionKey: string
+  pocketSession: Session
 }

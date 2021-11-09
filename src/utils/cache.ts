@@ -2,7 +2,9 @@ import axios, { AxiosError } from 'axios'
 import extractDomain from 'extract-domain'
 import { Redis } from 'ioredis'
 import { getAddressFromPublicKey } from 'pocket-tools'
+import { Node } from '@pokt-network/pocket-js'
 import { getSecondsForNextHour } from './date'
+import { hashBlockchainNodes } from './helpers'
 
 const logger = require('../services/logger')
 
@@ -12,13 +14,22 @@ const ALTRUIST_URL = JSON.parse(process.env.ALTRUISTS)?.['0001']
  * Removes node from cached session, following calls within the same session,
  * also cleans the chain/sync check cache to prevent using invalid nodes
  * @param redis cache service to use
- * @param sessionKey session key
+ * @param blockchain blockchain where session resides
+ * @param sessionNodes session nodes
  * @param nodePubKey node to remove's public key
  * @returns
  */
-export async function removeNodeFromSession(redis: Redis, sessionKey: string, nodePubKey: string): Promise<void> {
-  await redis.sadd(`session-${sessionKey}`, nodePubKey)
-  await redis.del(`sync-check-${sessionKey}`, `chain-check-${sessionKey}`)
+export async function removeNodeFromSession(
+  redis: Redis,
+  blockchain: string,
+  sessionNodes: Node[],
+  nodePubKey: string
+): Promise<void> {
+  const hash = hashBlockchainNodes(blockchain, sessionNodes)
+  const sessionKey = `session-${hash}`
+
+  await redis.sadd(sessionKey, nodePubKey)
+  await redis.del(`sync-check-${hash}`, `chain-check-${hash}`)
 
   const nodesToRemoveTTL = await redis.ttl(sessionKey)
 
@@ -27,7 +38,6 @@ export async function removeNodeFromSession(redis: Redis, sessionKey: string, no
     await redis.expire(sessionKey, getSecondsForNextHour() + 60 * 2)
   }
 }
-
 /**
  * Retrieves node network information
  * @param redis cache service to use

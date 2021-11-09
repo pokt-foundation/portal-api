@@ -1,10 +1,11 @@
 import { Redis } from 'ioredis'
-import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
+import { Configuration, HTTPMethod, Session, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
 import { MAX_RELAYS_ERROR } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
+import { hashBlockchainNodes } from '../utils/helpers'
 
 const logger = require('../services/logger')
 
@@ -30,13 +31,15 @@ export class ChainChecker {
     applicationPublicKey,
     pocketAAT,
     pocketConfiguration,
-    sessionKey,
+    pocketSession,
   }: ChainIDFilterOptions): Promise<Node[]> {
+    const { sessionKey, sessionNodes } = pocketSession
+
     const CheckedNodes: Node[] = []
     let CheckedNodesList: string[] = []
 
     // Value is an array of node public keys that have passed Chain checks for this session in the past 5 minutes
-    const checkedNodesKey = `chain-check-${sessionKey}`
+    const checkedNodesKey = `chain-check-${hashBlockchainNodes(blockchainID, sessionNodes)}`
     const CheckedNodesCached = await this.redis.get(checkedNodesKey)
 
     if (CheckedNodesCached) {
@@ -73,7 +76,7 @@ export class ChainChecker {
       pocket,
       pocketAAT,
       pocketConfiguration,
-      sessionKey,
+      pocketSession,
     }
     const nodeChainLogs = await this.getNodeChainLogs(options)
 
@@ -184,7 +187,7 @@ export class ChainChecker {
     pocket,
     pocketAAT,
     pocketConfiguration,
-    sessionKey,
+    pocketSession,
   }: GetNodesChainLogsOptions): Promise<NodeChainLog[]> {
     const nodeChainLogs: NodeChainLog[] = []
     const promiseStack: Promise<NodeChainLog>[] = []
@@ -209,7 +212,7 @@ export class ChainChecker {
         pocket,
         pocketAAT,
         pocketConfiguration,
-        sessionKey,
+        pocketSession,
       }
 
       promiseStack.push(this.getNodeChainLog(options))
@@ -236,8 +239,9 @@ export class ChainChecker {
     applicationPublicKey,
     pocketAAT,
     pocketConfiguration,
-    sessionKey,
+    pocketSession,
   }: GetNodeChainLogOptions): Promise<NodeChainLog> {
+    const { sessionKey, sessionNodes } = pocketSession || {}
     // Pull the current block from each node using the blockchain's chainCheck as the relay
     const relayStart = process.hrtime()
 
@@ -299,7 +303,7 @@ export class ChainChecker {
       let error = relayResponse.message
 
       if (error === MAX_RELAYS_ERROR) {
-        await removeNodeFromSession(this.redis, sessionKey, node.publicKey)
+        await removeNodeFromSession(this.redis, blockchainID, sessionNodes, node.publicKey)
       }
 
       if (typeof relayResponse.message === 'object') {
@@ -322,7 +326,7 @@ export class ChainChecker {
           error,
           origin: this.origin,
           data: undefined,
-          sessionKey,
+          pocketSession,
         })
         .catch(function log(e) {
           logger.log('error', 'Error recording metrics: ' + e, {
@@ -363,7 +367,7 @@ export class ChainChecker {
           error: JSON.stringify(relayResponse),
           origin: this.origin,
           data: undefined,
-          sessionKey,
+          pocketSession,
         })
         .catch(function log(e) {
           logger.log('error', 'Error recording metrics: ' + e, {
@@ -425,7 +429,7 @@ interface BaseChainLogOptions {
   pocket: Pocket
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
-  sessionKey: string
+  pocketSession: Session
 }
 
 interface GetNodesChainLogsOptions extends BaseChainLogOptions {
@@ -447,5 +451,5 @@ export type ChainIDFilterOptions = {
   applicationPublicKey: string
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
-  sessionKey: string
+  pocketSession: Session
 }
