@@ -112,7 +112,9 @@ export class V1Controller {
   ): Promise<string | Error> {
     for (const redirect of JSON.parse(this.redirects)) {
       if (this.pocketRelayer.host.toLowerCase().includes(redirect.domain, 0)) {
+        // Modify the host using the stored blockchain name from .env
         this.pocketRelayer.host = redirect.blockchain
+        this.host = redirect.blockchain
         return this.loadBalancerRelay(redirect.loadBalancerID, rawData)
       }
     }
