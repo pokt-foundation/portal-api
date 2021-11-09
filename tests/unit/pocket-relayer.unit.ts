@@ -17,14 +17,13 @@ import { PocketRelayer } from '../../src/services/pocket-relayer'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../../src/services/sync-checker'
 import { MAX_RELAYS_ERROR } from '../../src/utils/constants'
 import { checkWhitelist, checkSecretKey } from '../../src/utils/enforcements'
+import { hashBlockchainNodes } from '../../src/utils/helpers'
 import { parseMethod } from '../../src/utils/parsing'
 import { updateConfiguration } from '../../src/utils/pocket'
 import { loadBlockchain } from '../../src/utils/relayer'
 import { gatewayTestDB } from '../fixtures/test.datasource'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
-
-const crypto = require('crypto')
 
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
 
@@ -677,6 +676,7 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     it('Fails relay due to all nodes in session running out of relays, subsequent relays should not attempt to perform checks', async () => {
+      const blockchainID = '0021'
       const mock = new PocketMock()
 
       const maxRelaysError = new RpcError('90', MAX_RELAYS_ERROR)
@@ -686,10 +686,15 @@ describe('Pocket relayer service (unit)', () => {
       mock.relayResponse[rawData] = '{"error": "a relay error"}'
 
       const chainCheckerSpy = sinon.spy(chainChecker, 'chainIDFilter')
-
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
 
       const pocket = mock.object()
+      const { sessionNodes } = (await pocket.sessionManager.getCurrentSession(
+        undefined,
+        undefined,
+        undefined
+      )) as Session
+      const sessionKey = `session-${hashBlockchainNodes(blockchainID, sessionNodes)}`
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -725,17 +730,7 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
 
-      const sessionKey = `${'eth-mainnet'}-${crypto
-        .createHash('sha256')
-        .update(
-          JSON.stringify(
-            DEFAULT_NODES.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0)),
-            (k, v) => (k !== 'publicKey' ? v : undefined)
-          )
-        )
-        .digest('hex')}`
-
-      let removedNodes = await redis.smembers(`session-${sessionKey}`)
+      let removedNodes = await redis.smembers(sessionKey)
 
       expect(removedNodes).to.have.length(5)
 
@@ -756,7 +751,7 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(secondRelayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
 
-      removedNodes = await redis.smembers(`session-${sessionKey}`)
+      removedNodes = await redis.smembers(sessionKey)
 
       expect(removedNodes).to.have.length(5)
 
@@ -765,6 +760,7 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     it('Fails relay due to one node in session running out of relays, subsequent relays should attempt to perform checks', async () => {
+      const blockchainID = '0021'
       const mock = new PocketMock()
 
       mock.relayResponse[rawData] = new RpcError('90', MAX_RELAYS_ERROR)
@@ -773,6 +769,12 @@ describe('Pocket relayer service (unit)', () => {
       const chainCheckerSpy = sinon.spy(chainChecker, 'chainIDFilter')
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
       const pocket = mock.object()
+      const { sessionNodes } = (await pocket.sessionManager.getCurrentSession(
+        undefined,
+        undefined,
+        undefined
+      )) as Session
+      const sessionKey = `session-${hashBlockchainNodes(blockchainID, sessionNodes)}`
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -808,10 +810,7 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
 
-      const sessionKey = ((await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session)
-        .sessionKey
-
-      let removedNodes = await redis.smembers(`session-${sessionKey}`)
+      let removedNodes = await redis.smembers(sessionKey)
 
       expect(removedNodes).to.have.length(1)
 
@@ -832,7 +831,7 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(secondRelayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
 
-      removedNodes = await redis.smembers(`session-${sessionKey}`)
+      removedNodes = await redis.smembers(sessionKey)
 
       expect(removedNodes.length).to.have.lessThanOrEqual(2)
 
