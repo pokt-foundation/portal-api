@@ -257,7 +257,7 @@ export class CherryPicker {
     pocketSession?: Session
   ): Promise<void> {
     const { sessionKey, sessionNodes } = pocketSession || {}
-    const blockchainHash = hashBlockchainNodes(blockchainID, sessionNodes)
+    const sessionHash = hashBlockchainNodes(blockchainID, sessionNodes)
 
     // FIXME: This is not a reliable way on asserting whether is a service node,
     // an issue was created on pocket-tools for a 'isPublicKey' function. Once is
@@ -267,7 +267,7 @@ export class CherryPicker {
     }
 
     let timeoutCounter = 0
-    const key = `node-${serviceNode}-${blockchainHash}-timeout`
+    const key = `node-${serviceNode}-${sessionHash}-timeout`
     const timeoutCounterCached = await this.redis.get(key)
 
     if (timeoutCounterCached) {
@@ -285,7 +285,7 @@ export class CherryPicker {
           sessionKey,
           serviceURL,
           serviceDomain,
-          blockchainHash,
+          sessionHash,
         })
         await removeNodeFromSession(this.redis, blockchainID, sessionNodes, serviceNode)
       }

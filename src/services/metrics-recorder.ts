@@ -85,7 +85,7 @@ export class MetricsRecorder {
   }): Promise<void> {
     try {
       const { sessionNodes } = pocketSession || {}
-      const blockchainHash = hashBlockchainNodes(blockchainID, sessionNodes)
+      const sessionHash = hashBlockchainNodes(blockchainID, sessionNodes)
 
       let elapsedTime = 0
       const relayEnd = process.hrtime(relayStart)
@@ -120,7 +120,7 @@ export class MetricsRecorder {
           error: '',
           origin,
           blockchainID,
-          blockchainHash,
+          sessionHash,
         })
       } else if (result === 500) {
         logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -134,7 +134,7 @@ export class MetricsRecorder {
           error,
           origin,
           blockchainID,
-          blockchainHash,
+          sessionHash,
         })
       } else if (result === 503) {
         logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -148,7 +148,7 @@ export class MetricsRecorder {
           error,
           origin,
           blockchainID,
-          blockchainHash,
+          sessionHash,
         })
       }
 

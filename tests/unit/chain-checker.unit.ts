@@ -102,7 +102,7 @@ describe('Chain checker service (unit)', () => {
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: undefined,
-        blockchainHash: '',
+        sessionHash: '',
       })
 
       const expectedChainID = 100 // 0x64 to base 10
@@ -128,7 +128,7 @@ describe('Chain checker service (unit)', () => {
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: undefined,
-        blockchainHash: '',
+        sessionHash: '',
       })
 
       const expectedChainID = 0
@@ -155,7 +155,7 @@ describe('Chain checker service (unit)', () => {
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: undefined,
-        blockchainHash: '',
+        sessionHash: '',
       })
 
       const expectedChainID = 0
@@ -187,7 +187,7 @@ describe('Chain checker service (unit)', () => {
       pocketAAT: undefined,
       pocketConfiguration,
       pocketSession: undefined,
-      blockchainHash: '',
+      sessionHash: '',
     })
 
     const expectedChainID = 100 // 0x64 to base 10
