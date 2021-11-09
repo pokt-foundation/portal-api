@@ -33,13 +33,15 @@ export class ChainChecker {
     pocketConfiguration,
     pocketSession,
   }: ChainIDFilterOptions): Promise<Node[]> {
-    const { sessionKey, sessionNodes } = pocketSession
+    const { sessionKey } = pocketSession
+
+    const blockchainHash = hashBlockchainNodes(blockchainID, pocketSession.sessionNodes)
 
     const CheckedNodes: Node[] = []
     let CheckedNodesList: string[] = []
 
     // Value is an array of node public keys that have passed Chain checks for this session in the past 5 minutes
-    const checkedNodesKey = `chain-check-${hashBlockchainNodes(blockchainID, sessionNodes)}`
+    const checkedNodesKey = `chain-check-${blockchainHash}`
     const CheckedNodesCached = await this.redis.get(checkedNodesKey)
 
     if (CheckedNodesCached) {
@@ -75,6 +77,7 @@ export class ChainChecker {
       applicationPublicKey,
       pocket,
       pocketAAT,
+      blockchainHash,
       pocketConfiguration,
       pocketSession,
     }
@@ -101,7 +104,7 @@ export class ChainChecker {
             origin: this.origin,
             serviceURL,
             serviceDomain,
-            sessionKey,
+            blockchainHash,
           }
         )
 
@@ -123,7 +126,7 @@ export class ChainChecker {
             origin: this.origin,
             serviceURL,
             serviceDomain,
-            sessionKey,
+            blockchainHash,
           }
         )
       }
@@ -138,7 +141,7 @@ export class ChainChecker {
       elapsedTime: '',
       blockchainID,
       origin: this.origin,
-      sessionKey,
+      blockchainHash,
     })
     await this.redis.set(
       checkedNodesKey,
@@ -171,7 +174,7 @@ export class ChainChecker {
         elapsedTime: '',
         blockchainID,
         origin: this.origin,
-        sessionKey,
+        blockchainHash,
       })
     }
     return CheckedNodes
@@ -186,6 +189,7 @@ export class ChainChecker {
     applicationPublicKey,
     pocket,
     pocketAAT,
+    blockchainHash,
     pocketConfiguration,
     pocketSession,
   }: GetNodesChainLogsOptions): Promise<NodeChainLog[]> {
@@ -211,6 +215,7 @@ export class ChainChecker {
         applicationPublicKey,
         pocket,
         pocketAAT,
+        blockchainHash,
         pocketConfiguration,
         pocketSession,
       }
@@ -429,6 +434,7 @@ interface BaseChainLogOptions {
   pocket: Pocket
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
+  blockchainHash: string
   pocketSession: Session
 }
 

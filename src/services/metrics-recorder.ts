@@ -9,6 +9,7 @@ import { Session } from '@pokt-network/pocket-js'
 import { Point, WriteApi } from '@influxdata/influxdb-client'
 
 import { getNodeNetworkData } from '../utils/cache'
+import { hashBlockchainNodes } from '../utils/helpers'
 import { CherryPicker } from './cherry-picker'
 const os = require('os')
 const logger = require('../services/logger')
@@ -83,7 +84,8 @@ export class MetricsRecorder {
     timeout?: number
   }): Promise<void> {
     try {
-      const { sessionKey } = pocketSession || {}
+      const { sessionNodes } = pocketSession || {}
+      const blockchainHash = hashBlockchainNodes(blockchainID, sessionNodes)
 
       let elapsedTime = 0
       const relayEnd = process.hrtime(relayStart)
@@ -118,7 +120,7 @@ export class MetricsRecorder {
           error: '',
           origin,
           blockchainID,
-          sessionKey,
+          blockchainHash,
         })
       } else if (result === 500) {
         logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -132,7 +134,7 @@ export class MetricsRecorder {
           error,
           origin,
           blockchainID,
-          sessionKey,
+          blockchainHash,
         })
       } else if (result === 503) {
         logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -146,7 +148,7 @@ export class MetricsRecorder {
           error,
           origin,
           blockchainID,
-          sessionKey,
+          blockchainHash,
         })
       }
 

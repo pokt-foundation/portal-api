@@ -2,6 +2,7 @@ import { Redis } from 'ioredis'
 import { Node, Session } from '@pokt-network/pocket-js'
 import { Applications } from '../models'
 import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
+import { hashBlockchainNodes } from '../utils/helpers'
 
 const logger = require('../services/logger')
 
@@ -256,8 +257,9 @@ export class CherryPicker {
     pocketSession?: Session
   ): Promise<void> {
     const { sessionKey, sessionNodes } = pocketSession || {}
+    const blockchainHash = hashBlockchainNodes(blockchainID, sessionNodes)
 
-    // FIXME: This is not a completely reliable way on asserting whether is a service node,
+    // FIXME: This is not a reliable way on asserting whether is a service node,
     // an issue was created on pocket-tools for a 'isPublicKey' function. Once is
     // implemented, replace with the function.
     if (this.archivalChains.indexOf(blockchainID) < 0 || serviceNode.length !== 64) {
@@ -265,7 +267,7 @@ export class CherryPicker {
     }
 
     let timeoutCounter = 0
-    const key = `node-${serviceNode}-${sessionKey}-timeout`
+    const key = `node-${serviceNode}-${blockchainHash}-timeout`
     const timeoutCounterCached = await this.redis.get(key)
 
     if (timeoutCounterCached) {
@@ -283,6 +285,7 @@ export class CherryPicker {
           sessionKey,
           serviceURL,
           serviceDomain,
+          blockchainHash,
         })
         await removeNodeFromSession(this.redis, blockchainID, sessionNodes, serviceNode)
       }

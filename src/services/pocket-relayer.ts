@@ -501,7 +501,7 @@ export class PocketRelayer {
       }
 
       if (nodes.length === 0) {
-        logger.log('warn', `SESSION: ${sessionKey} has exhausted all node relays`, {
+        logger.log('warn', `SESSION: blockchainHash: ${sessionKey} has exhausted all node relays`, {
           requestID: requestID,
           relayType: 'APP',
           typeID: application.id,

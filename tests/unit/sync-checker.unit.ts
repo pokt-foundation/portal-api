@@ -281,6 +281,7 @@ describe('Sync checker service (unit)', () => {
       pocketClient,
       undefined,
       pocketConfiguration,
+      '',
       undefined
     )
 
