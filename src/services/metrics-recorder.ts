@@ -5,9 +5,11 @@ import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
 
 import pgFormat from 'pg-format'
+import { Session } from '@pokt-network/pocket-js'
 import { Point, WriteApi } from '@influxdata/influxdb-client'
 
 import { getNodeNetworkData } from '../utils/cache'
+import { hashBlockchainNodes } from '../utils/helpers'
 import { CherryPicker } from './cherry-picker'
 const os = require('os')
 const logger = require('../services/logger')
@@ -61,7 +63,7 @@ export class MetricsRecorder {
     error,
     origin,
     data,
-    sessionKey,
+    pocketSession,
     timeout,
   }: {
     requestID: string
@@ -78,10 +80,13 @@ export class MetricsRecorder {
     error: string | undefined
     origin: string | undefined
     data: string | undefined
-    sessionKey: string | undefined
+    pocketSession: Session | undefined
     timeout?: number
   }): Promise<void> {
     try {
+      const { sessionNodes } = pocketSession || {}
+      const sessionHash = hashBlockchainNodes(blockchainID, sessionNodes)
+
       let elapsedTime = 0
       const relayEnd = process.hrtime(relayStart)
 
@@ -115,7 +120,7 @@ export class MetricsRecorder {
           error: '',
           origin,
           blockchainID,
-          sessionKey,
+          sessionHash,
         })
       } else if (result === 500) {
         logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -129,7 +134,7 @@ export class MetricsRecorder {
           error,
           origin,
           blockchainID,
-          sessionKey,
+          sessionHash,
         })
       } else if (result === 503) {
         logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -143,7 +148,7 @@ export class MetricsRecorder {
           error,
           origin,
           blockchainID,
-          sessionKey,
+          sessionHash,
         })
       }
 
@@ -156,7 +161,7 @@ export class MetricsRecorder {
           elapsedTime,
           result,
           timeout,
-          sessionKey
+          pocketSession
         )
       }
 

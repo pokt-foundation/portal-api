@@ -22,6 +22,7 @@ interface Log {
   serviceURL: string
   serviceDomain: string
   sessionKey: string
+  sessionHash: string
 }
 
 const environment = process.env.NODE_ENV || 'production'
@@ -51,8 +52,9 @@ const consoleFormat = printf(
     serviceURL = '',
     serviceDomain = '',
     sessionKey = '',
+    sessionHash = '',
   }: Log) => {
-    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${serviceURL}] [${serviceDomain}] [${sessionKey}] [${error}] [${elapsedTime}] [${blockchainID}] [${origin}] ${message}`
+    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${serviceURL}] [${serviceDomain}] [${sessionKey}] [${sessionHash}] [${error}] [${elapsedTime}] [${blockchainID}] [${origin}] ${message}`
   }
 )
 

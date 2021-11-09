@@ -1,8 +1,10 @@
 import RedisMock from 'ioredis-mock'
 import { expect } from '@loopback/testlab'
-import { Node } from '@pokt-network/pocket-js'
+import { Node, Session } from '@pokt-network/pocket-js'
 import { Applications } from '../../src/models'
 import { CherryPicker } from '../../src/services/cherry-picker'
+import { hashBlockchainNodes } from '../../src/utils/helpers'
+import { PocketMock } from '../mocks/pocketjs'
 
 describe('Cherry picker service (unit)', () => {
   let cherryPicker: CherryPicker
@@ -285,11 +287,22 @@ describe('Cherry picker service (unit)', () => {
       const blockchain = '1234'
       const elapsedTime = 2.5
       const requestTimeout = 10
-      const sessionKey = '1234'
 
-      await cherryPicker.updateBadNodeTimeoutQuality(blockchain, nodePublicKey, elapsedTime, requestTimeout, sessionKey)
+      const pocketSession = (await new PocketMock()
+        .object()
+        .sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session
 
-      let removedNodes = await redis.smembers(`session-${sessionKey}`)
+      const { sessionNodes } = pocketSession
+
+      await cherryPicker.updateBadNodeTimeoutQuality(
+        blockchain,
+        nodePublicKey,
+        elapsedTime,
+        requestTimeout,
+        pocketSession
+      )
+
+      let removedNodes = await redis.smembers(`session-${hashBlockchainNodes(blockchain, sessionNodes)}`)
 
       expect(removedNodes).to.have.length(0)
 
@@ -300,11 +313,11 @@ describe('Cherry picker service (unit)', () => {
           nodePublicKey,
           elapsedTime,
           requestTimeout,
-          sessionKey
+          pocketSession
         )
       }
 
-      removedNodes = await redis.smembers(`session-${sessionKey}`)
+      removedNodes = await redis.smembers(`session-${hashBlockchainNodes(blockchain, sessionNodes)}`)
 
       expect(removedNodes).to.have.length(1)
     })

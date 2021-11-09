@@ -21,12 +21,12 @@ import {
   checkSecretKey,
   SecretKeyDetails,
 } from '../utils/enforcements'
+import { hashBlockchainNodes } from '../utils/helpers'
 import { parseMethod } from '../utils/parsing'
 import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
 import { enforceEVMLimits } from './limiter'
-const crypto = require('crypto')
 const logger = require('../services/logger')
 
 export class PocketRelayer {
@@ -48,7 +48,7 @@ export class PocketRelayer {
   altruists: JSONObject
   aatPlan: string
   defaultLogLimitBlocks: number
-  sessionKey: string
+  pocketSession: Session
 
   constructor({
     host,
@@ -225,7 +225,7 @@ export class PocketRelayer {
             error: undefined,
             origin: this.origin,
             data,
-            sessionKey: this.sessionKey,
+            pocketSession: this.pocketSession,
           })
           .catch(function log(e) {
             logger.log('error', 'Error recording metrics: ' + e, {
@@ -278,7 +278,7 @@ export class PocketRelayer {
             error,
             origin: this.origin,
             data,
-            sessionKey: this.sessionKey,
+            pocketSession: this.pocketSession,
           })
           .catch(function log(e) {
             logger.log('error', 'Error recording metrics: ' + e, {
@@ -359,7 +359,7 @@ export class PocketRelayer {
               error: undefined,
               origin: this.origin,
               data,
-              sessionKey: this.sessionKey,
+              pocketSession: this.pocketSession,
             })
             .catch(function log(e) {
               logger.log('error', 'Error recording metrics: ' + e, {
@@ -489,32 +489,19 @@ export class PocketRelayer {
       let nodes: Node[] = pocketSession.sessionNodes
 
       // sessionKey = "blockchain and a hash of the all the nodes in this session, sorted by public key"
-      const sessionKey = `${blockchain}-${crypto
-        .createHash('sha256')
-        .update(
-          JSON.stringify(
-            nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0)),
-            (k, v) => (k !== 'publicKey' ? v : undefined)
-          )
-        )
-        .digest('hex')}`
+      const sessionKey = hashBlockchainNodes(blockchainID, nodes)
 
-      this.sessionKey = sessionKey
+      this.pocketSession = pocketSession
       const sessionCacheKey = `session-${sessionKey}`
 
       const nodesToRemove = await this.redis.smembers(sessionCacheKey)
 
       if (nodesToRemove.length > 0) {
         nodes = nodes.filter((n) => !nodesToRemove.includes(n.publicKey))
-      } else {
-        // Adds and removes dummy value as you cannot set EXPIRE on empty redis set
-        await this.redis.sadd(sessionCacheKey, '0')
-        await this.redis.expire(sessionCacheKey, 60 * 60 * 2) // 2 Hours
-        await this.redis.spop(sessionCacheKey)
       }
 
       if (nodes.length === 0) {
-        logger.log('warn', `SESSION: ${sessionKey} has exhausted all node relays`, {
+        logger.log('warn', `SESSION: blockchainHash: ${sessionKey} has exhausted all node relays`, {
           requestID: requestID,
           relayType: 'APP',
           typeID: application.id,
@@ -542,7 +529,7 @@ export class PocketRelayer {
           chainID: parseInt(blockchainChainID),
           pocket: this.pocket,
           pocketConfiguration: this.pocketConfiguration,
-          sessionKey,
+          pocketSession,
         }
 
         chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
@@ -561,7 +548,7 @@ export class PocketRelayer {
           pocket: this.pocket,
           pocketAAT,
           pocketConfiguration: this.pocketConfiguration,
-          sessionKey,
+          pocketSession,
         }
 
         syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
@@ -594,7 +581,7 @@ export class PocketRelayer {
               error,
               origin: this.origin,
               data,
-              sessionKey,
+              pocketSession,
             })
             .catch(function log(e) {
               logger.log('error', 'Error recording metrics: ' + e, {
@@ -632,7 +619,7 @@ export class PocketRelayer {
               error,
               origin: this.origin,
               data,
-              sessionKey,
+              pocketSession,
             })
             .catch(function log(e) {
               logger.log('error', 'Error recording metrics: ' + e, {
@@ -732,7 +719,7 @@ export class PocketRelayer {
       } else if (relayResponse instanceof Error) {
         // Remove node from session if error is due to max relays allowed reached
         if (relayResponse.message === MAX_RELAYS_ERROR) {
-          await removeNodeFromSession(this.redis, (pocketSession as Session).sessionKey, node.publicKey)
+          await removeNodeFromSession(this.redis, blockchainID, (pocketSession as Session).sessionNodes, node.publicKey)
         }
 
         return new RelayError(relayResponse.message, 500, node?.publicKey)
