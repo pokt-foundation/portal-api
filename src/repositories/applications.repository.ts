@@ -1,7 +1,7 @@
-import { DefaultCrudRepository } from '@loopback/repository'
-import { Applications, ApplicationsRelations } from '../models'
-import { GatewayDataSource } from '../datasources'
 import { inject } from '@loopback/core'
+import { DefaultCrudRepository } from '@loopback/repository'
+import { GatewayDataSource } from '../datasources'
+import { Applications, ApplicationsRelations } from '../models'
 
 export class ApplicationsRepository extends DefaultCrudRepository<
   Applications,

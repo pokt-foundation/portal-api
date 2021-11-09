@@ -1,16 +1,21 @@
-import { inject } from '@loopback/context'
-import { FilterExcludingWhere, repository } from '@loopback/repository'
-import { post, param, requestBody, HttpErrors } from '@loopback/rest'
-import { Applications, LoadBalancers } from '../models'
-import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from '../repositories'
-import { Pocket, Configuration, HTTPMethod } from '@pokt-network/pocket-js'
+import AWS from 'aws-sdk'
 import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
+import { inject } from '@loopback/context'
+import { FilterExcludingWhere, repository } from '@loopback/repository'
+import { HttpErrors, param, post, requestBody } from '@loopback/rest'
+import { Configuration, HTTPMethod, Pocket } from '@pokt-network/pocket-js'
+import { WriteApi } from '@influxdata/influxdb-client'
+
+import { Applications, LoadBalancers } from '../models'
+import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from '../repositories'
+import { ChainChecker } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
-import { PocketRelayer, SendRelayOptions } from '../services/pocket-relayer'
+import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
-import { ChainChecker } from '../services/chain-checker'
+import { loadBlockchain } from '../utils/relayer'
+import { SendRelayOptions } from '../utils/types'
 
 const logger = require('../services/logger')
 
@@ -34,6 +39,7 @@ export class V1Controller {
     @inject('pocketConfiguration') private pocketConfiguration: Configuration,
     @inject('redisInstance') private redis: Redis,
     @inject('pgPool') private pgPool: PGPool,
+    @inject('timestreamClient') private timestreamClient: AWS.TimestreamWrite,
     @inject('databaseEncryptionKey') private databaseEncryptionKey: string,
     @inject('processUID') private processUID: string,
     @inject('altruists') private altruists: string,
@@ -42,6 +48,8 @@ export class V1Controller {
     @inject('aatPlan') private aatPlan: string,
     @inject('redirects') private redirects: string,
     @inject('defaultLogLimitBlocks') private defaultLogLimitBlocks: number,
+    @inject('influxWriteAPI') private influxWriteAPI: WriteApi,
+    @inject('archivalChains') private archivalChains: string[],
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -52,10 +60,13 @@ export class V1Controller {
     this.cherryPicker = new CherryPicker({
       redis: this.redis,
       checkDebug: this.checkDebug(),
+      archivalChains: this.archivalChains,
     })
     this.metricsRecorder = new MetricsRecorder({
       redis: this.redis,
+      influxWriteAPI: this.influxWriteAPI,
       pgPool: this.pgPool,
+      timestreamClient: this.timestreamClient,
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
     })
@@ -150,59 +161,58 @@ export class V1Controller {
     try {
       const loadBalancer = await this.fetchLoadBalancer(id, filter)
 
-      if (loadBalancer?.id) {
-        const {
-          blockchain,
-          // eslint-disable-next-line
-          blockchainEnforceResult: _enforceResult,
-          // eslint-disable-next-line
-          blockchainSyncCheck: _syncCheck,
-        } = await this.pocketRelayer.loadBlockchain()
-        // Fetch applications contained in this Load Balancer. Verify they exist and choose
-        // one randomly for the relay.
-        const application = await this.fetchLoadBalancerApplication(
-          loadBalancer.id,
-          loadBalancer.applicationIDs,
-          blockchain,
-          filter
-        )
-
-        if (application?.id) {
-          const options: SendRelayOptions = {
-            rawData,
-            relayPath: this.relayPath,
-            httpMethod: this.httpMethod,
-            application: application,
-            requestID: this.requestID,
-            requestTimeOut: parseInt(loadBalancer.requestTimeOut),
-            overallTimeOut: parseInt(loadBalancer.overallTimeOut),
-            relayRetries: parseInt(loadBalancer.relayRetries),
-          }
-
-          if (loadBalancer.logLimitBlocks) {
-            Object.assign(options, { logLimitBlocks: loadBalancer.logLimitBlocks })
-          }
-
-          return await this.pocketRelayer.sendRelay(options)
-        }
+      if (!loadBalancer?.id) {
+        throw new HttpErrors.InternalServerError('Load balancer not found')
       }
+
+      const {
+        blockchain,
+        // eslint-disable-next-line
+        blockchainEnforceResult: _enforceResult,
+        // eslint-disable-next-line
+        blockchainSyncCheck: _syncCheck,
+      } = await loadBlockchain(this.host, this.redis, this.blockchainsRepository, this.defaultLogLimitBlocks)
+
+      // Fetch applications contained in this Load Balancer. Verify they exist and choose
+      // one randomly for the relay.
+      const application = await this.fetchLoadBalancerApplication(
+        loadBalancer.id,
+        loadBalancer.applicationIDs,
+        blockchain,
+        filter
+      )
+
+      if (!application?.id) {
+        throw new HttpErrors.InternalServerError('No application found in the load balancer')
+      }
+
+      const options: SendRelayOptions = {
+        rawData,
+        relayPath: this.relayPath,
+        httpMethod: this.httpMethod,
+        application: application,
+        requestID: this.requestID,
+        requestTimeOut: parseInt(loadBalancer.requestTimeOut),
+        overallTimeOut: parseInt(loadBalancer.overallTimeOut),
+        relayRetries: parseInt(loadBalancer.relayRetries),
+      }
+
+      if (loadBalancer.logLimitBlocks) {
+        Object.assign(options, { logLimitBlocks: loadBalancer.logLimitBlocks })
+      }
+
+      return await this.pocketRelayer.sendRelay(options)
     } catch (e) {
       logger.log('error', e.message, {
         requestID: this.requestID,
         relayType: 'LB',
         typeID: id,
         serviceNode: '',
+        origin: this.origin,
       })
+
       return new HttpErrors.InternalServerError(e.message)
     }
-
-    logger.log('error', 'Load balancer configuration error', {
-      requestID: this.requestID,
-      relayType: 'LB',
-      typeID: id,
-      serviceNode: '',
-    })
-    return new HttpErrors.InternalServerError('Load balancer configuration error')
   }
 
   /**

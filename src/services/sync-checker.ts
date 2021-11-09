@@ -1,13 +1,13 @@
+import axios from 'axios'
+import { Redis } from 'ioredis'
 import { Configuration, HTTPMethod, Node, Pocket, PocketAAT, RelayResponse } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
-import { Redis } from 'ioredis'
-import { blockHexToDecimal, checkEnforcementJSON, getNodeNetworkData } from '../utils'
+import { blockHexToDecimal } from '../utils/block'
+import { removeNodeFromSession, getNodeNetworkData } from '../utils/cache'
+import { MAX_RELAYS_ERROR } from '../utils/constants'
+import { checkEnforcementJSON } from '../utils/enforcements'
 
 const logger = require('../services/logger')
-
-import axios from 'axios'
-import { MAX_RELAYS_ERROR } from '../errors/types'
-import { removeNodeFromSession } from '../utils/cache'
 
 export class SyncChecker {
   redis: Redis
@@ -235,23 +235,32 @@ export class SyncChecker {
           sessionKey,
         })
 
-        await this.metricsRecorder.recordMetric({
-          requestID: requestID,
-          applicationID: applicationID,
-          applicationPublicKey: applicationPublicKey,
-          blockchainID,
-          serviceNode: nodeSyncLog.node.publicKey,
-          relayStart,
-          result: 500,
-          bytes: Buffer.byteLength('OUT OF SYNC', 'utf8'),
-          delivered: false,
-          fallback: false,
-          method: 'synccheck',
-          error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${currentBlockHeight} altruist block height: ${altruistBlockHeight} nodes height: ${nodeSyncLog.blockHeight} sync allowance: ${syncCheckOptions.allowance}`,
-          origin: this.origin,
-          data: undefined,
-          sessionKey,
-        })
+        this.metricsRecorder
+          .recordMetric({
+            requestID: requestID,
+            applicationID: applicationID,
+            applicationPublicKey: applicationPublicKey,
+            blockchainID,
+            serviceNode: nodeSyncLog.node.publicKey,
+            relayStart,
+            result: 500,
+            bytes: Buffer.byteLength('OUT OF SYNC', 'utf8'),
+            delivered: false,
+            fallback: false,
+            method: 'synccheck',
+            error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${currentBlockHeight} altruist block height: ${altruistBlockHeight} nodes height: ${nodeSyncLog.blockHeight} sync allowance: ${syncCheckOptions.allowance}`,
+            origin: this.origin,
+            data: undefined,
+            sessionKey,
+          })
+          .catch(function log(e) {
+            logger.log('error', 'Error recording metrics: ' + e, {
+              requestID: requestID,
+              relayType: 'APP',
+              typeID: applicationID,
+              serviceNode: nodeSyncLog.node.publicKey,
+            })
+          })
       }
     }
 
@@ -472,23 +481,32 @@ export class SyncChecker {
         error = JSON.stringify(relayResponse.message)
       }
 
-      await this.metricsRecorder.recordMetric({
-        requestID: requestID,
-        applicationID: applicationID,
-        applicationPublicKey: applicationPublicKey,
-        blockchainID,
-        serviceNode: node.publicKey,
-        relayStart,
-        result: 500,
-        bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
-        delivered: false,
-        fallback: false,
-        method: 'synccheck',
-        error,
-        origin: this.origin,
-        data: undefined,
-        sessionKey,
-      })
+      this.metricsRecorder
+        .recordMetric({
+          requestID: requestID,
+          applicationID: applicationID,
+          applicationPublicKey: applicationPublicKey,
+          blockchainID,
+          serviceNode: node.publicKey,
+          relayStart,
+          result: 500,
+          bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
+          delivered: false,
+          fallback: false,
+          method: 'synccheck',
+          error,
+          origin: this.origin,
+          data: undefined,
+          sessionKey,
+        })
+        .catch(function log(e) {
+          logger.log('error', 'Error recording metrics: ' + e, {
+            requestID: requestID,
+            relayType: 'APP',
+            typeID: applicationID,
+            serviceNode: node.publicKey,
+          })
+        })
     } else {
       logger.log('error', 'SYNC CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
         requestID: requestID,
@@ -504,23 +522,32 @@ export class SyncChecker {
         sessionKey,
       })
 
-      await this.metricsRecorder.recordMetric({
-        requestID: requestID,
-        applicationID: applicationID,
-        applicationPublicKey: applicationPublicKey,
-        blockchainID,
-        serviceNode: node.publicKey,
-        relayStart,
-        result: 500,
-        bytes: Buffer.byteLength('SYNC CHECK', 'utf8'),
-        delivered: false,
-        fallback: false,
-        method: 'synccheck',
-        error: JSON.stringify(relayResponse),
-        origin: this.origin,
-        data: undefined,
-        sessionKey,
-      })
+      this.metricsRecorder
+        .recordMetric({
+          requestID: requestID,
+          applicationID: applicationID,
+          applicationPublicKey: applicationPublicKey,
+          blockchainID,
+          serviceNode: node.publicKey,
+          relayStart,
+          result: 500,
+          bytes: Buffer.byteLength('SYNC CHECK', 'utf8'),
+          delivered: false,
+          fallback: false,
+          method: 'synccheck',
+          error: JSON.stringify(relayResponse),
+          origin: this.origin,
+          data: undefined,
+          sessionKey,
+        })
+        .catch(function log(e) {
+          logger.log('error', 'Error recording metrics: ' + e, {
+            requestID: requestID,
+            relayType: 'APP',
+            typeID: applicationID,
+            serviceNode: node.publicKey,
+          })
+        })
     }
     // Failed
     const nodeSyncLog = {
