@@ -1,2 +1,2 @@
-export * from './metricsRecorder'
+export * from './metrics-recorder'
 export * from './pocketjs'

@@ -1,15 +1,15 @@
+import axios from 'axios'
+import MockAdapter from 'axios-mock-adapter'
+import { Encryptor } from 'strong-cryptor'
+import { HttpErrors } from '@loopback/rest'
 import { Client, sinon, expect } from '@loopback/testlab'
 import { PocketGatewayApplication } from '../..'
-import { setupApplication } from './test-helper'
+import { ApplicationsRepository } from '../../src/repositories/applications.repository'
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
+import { LoadBalancersRepository } from '../../src/repositories/load-balancers.repository'
 import { gatewayTestDB } from '../fixtures/test.datasource'
 import { MockRelayResponse, PocketMock } from '../mocks/pocketjs'
-import { ApplicationsRepository } from '../../src/repositories/applications.repository'
-import { Encryptor } from 'strong-cryptor'
-import { LoadBalancersRepository } from '../../src/repositories/load-balancers.repository'
-import { HttpErrors } from '@loopback/rest'
-import MockAdapter from 'axios-mock-adapter'
-import axios from 'axios'
+import { setupApplication } from './test-helper'
 
 // Must be the same one from the test environment
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
@@ -163,8 +163,7 @@ describe('V1 controller (acceptance)', () => {
 
   beforeEach(async () => {
     relayResponses = {
-      '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}':
-        '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}',
+      '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}': '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}',
       '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","toBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}':
         '{"jsonrpc":"2.0","id":1,"result":[{"address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff","blockHash":"0x2ad90e24266edd835bb03071c0c0b58ee8356c2feb4576d15b3c2c2b2ef319c5","blockNumber":"0xc5bdc9","data":"0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000767fe9edc9e0df98e07454847909b5e959d7ca0e0000000000000000000000000000000000000000000000019274b259f653fc110000000000000000000000000000000000000000000000104bf2ffa4dcbf8de5","logIndex":"0x4c","removed":false,"topics":["0x0f6672f78a59ba8e5e5b5d38df3ebc67f3c792e2c9259b8d97d7f00dd78ba1b3","0x000000000000000000000000e5feeac09d36b18b3fa757e5cf3f8da6b8e27f4c"],"transactionHash":"0x14430f1e344b5f95ea68a5f4c0538fc732cc97efdc68f6ee0ba20e2c633542f6","transactionIndex":"0x1a"}]}',
     }
@@ -202,7 +201,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_chainId', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet-x')
       .expect(200)
@@ -221,7 +220,7 @@ describe('V1 controller (acceptance)', () => {
 
     const res = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .expect(200)
@@ -239,7 +238,7 @@ describe('V1 controller (acceptance)', () => {
 
     const res = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .expect(200)
@@ -259,7 +258,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .expect(200)
@@ -293,7 +292,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .set('authorization', 'invalid key')
@@ -324,7 +323,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .set('origin', 'localhost')
@@ -359,7 +358,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet-x')
       .set('origin', 'unlocalhost')
@@ -380,7 +379,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .expect(200)
@@ -399,7 +398,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_chainId', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_chainId', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .expect(200)
@@ -415,7 +414,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc04')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet-x')
       .expect(200)
@@ -459,13 +458,13 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/lb/invalid')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .expect(200)
 
     expect(response.body).to.have.property('message')
-    expect(response.body.message).to.be.equal('Load balancer configuration error')
+    expect(response.body.message).to.be.equal('Load balancer not found')
   })
 
   it('returns error on load balancer relay failure', async () => {
@@ -476,7 +475,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc04')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .expect(200)
@@ -495,7 +494,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet-x')
       .expect(200)
@@ -525,7 +524,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'invalid host')
       .expect(200)

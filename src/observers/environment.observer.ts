@@ -42,6 +42,7 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'AWS_ACCESS_KEY_ID',
     'AWS_SECRET_ACCESS_KEY',
     'AWS_REGION',
+    'ARCHIVAL_CHAINS',
   ]
 
   private static requiredEnvVarsOnlyInProd = []
