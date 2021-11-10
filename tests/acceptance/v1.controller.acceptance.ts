@@ -511,7 +511,7 @@ describe('V1 controller (acceptance)', () => {
       setupApplication(pocket, {
         REDIRECTS: '',
       })
-    ).to.rejectedWith(HttpErrors.InternalServerError)
+    ).to.rejectedWith(Error)
   })
 
   it('fails on invalid redirect load balancer', async () => {
