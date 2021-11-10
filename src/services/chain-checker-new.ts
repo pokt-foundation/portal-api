@@ -1,5 +1,6 @@
 import { Redis } from 'ioredis'
-import { Configuration, Node, Pocket, PocketAAT } from '@pokt-network/pocket-js'
+import { Configuration, Node, Pocket, PocketAAT, Session } from '@pokt-network/pocket-js'
+import { hashBlockchainNodes } from '../utils/helpers'
 import { MetricsRecorder } from './metrics-recorder'
 import { ChainCheck, NodeChecker } from './node-checker'
 import { NodeCheckerWrapper } from './node-checker-wrapper'
@@ -7,8 +8,8 @@ import { NodeCheckerWrapper } from './node-checker-wrapper'
 const logger = require('../services/logger')
 
 export class PocketChainChecker extends NodeCheckerWrapper {
-  constructor(pocket: Pocket, redis: Redis, metricsRecorder: MetricsRecorder, sessionKey: string, origin: string) {
-    super(pocket, redis, metricsRecorder, sessionKey, origin)
+  constructor(pocket: Pocket, redis: Redis, metricsRecorder: MetricsRecorder, pocketSession: Session, origin: string) {
+    super(pocket, redis, metricsRecorder, pocketSession, origin)
   }
 
   /**
@@ -35,7 +36,8 @@ export class PocketChainChecker extends NodeCheckerWrapper {
     applicationPublicKey: string,
     requestID: string
   ): Promise<Node[]> {
-    const checkedNodesKey = `chain-check-${this.sessionKey}`
+    const sessionHash = hashBlockchainNodes(blockchainID, this.pocketSession.sessionNodes)
+    const checkedNodesKey = `chain-check-${sessionHash}`
 
     const checkedNodes: Node[] = await this.cacheNodes(nodes, checkedNodesKey)
     const checkedNodesList: string[] = []
@@ -71,7 +73,7 @@ export class PocketChainChecker extends NodeCheckerWrapper {
       requestID: requestID,
       blockchainID,
       origin: this.origin,
-      sessionKey: this.sessionKey,
+      sessionHash,
     })
     await this.redis.set(
       checkedNodesKey,

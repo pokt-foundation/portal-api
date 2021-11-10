@@ -33,8 +33,6 @@ export class ChainChecker {
     pocketConfiguration,
     pocketSession,
   }: ChainIDFilterOptions): Promise<Node[]> {
-    const { sessionKey } = pocketSession
-
     const sessionHash = hashBlockchainNodes(blockchainID, pocketSession.sessionNodes)
 
     const CheckedNodes: Node[] = []

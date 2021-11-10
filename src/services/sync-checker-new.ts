@@ -1,7 +1,8 @@
 import axios from 'axios'
 import { Redis } from 'ioredis'
-import { Configuration, Node, Pocket, PocketAAT } from '@pokt-network/pocket-js'
+import { Configuration, Node, Pocket, PocketAAT, Session } from '@pokt-network/pocket-js'
 import { getNodeNetworkData } from '../utils/cache'
+import { hashBlockchainNodes } from '../utils/helpers'
 import { ArchivalChecker } from './archival-check'
 import { MetricsRecorder } from './metrics-recorder'
 import { NodeChecker, NodeCheckResponse, SyncCheck } from './node-checker'
@@ -17,11 +18,11 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     pocket: Pocket,
     redis: Redis,
     metricsRecorder: MetricsRecorder,
-    sessionKey: string,
+    pocketSession: Session,
     origin: string,
     defaultSyncAllowance = 0
   ) {
-    super(pocket, redis, metricsRecorder, sessionKey, origin)
+    super(pocket, redis, metricsRecorder, pocketSession, origin)
     this.defaultSyncAllowance = defaultSyncAllowance
   }
 
@@ -51,11 +52,13 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     applicationPublicKey: string,
     requestID: string
   ): Promise<Node[]> {
+    const sessionHash = hashBlockchainNodes(blockchainID, this.pocketSession.sessionNodes)
+
     const archivalChecker = new ArchivalChecker(
       this.pocket,
       this.redis,
       this.metricsRecorder,
-      this.sessionKey,
+      this.pocketSession,
       this.origin
     )
 
@@ -76,7 +79,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
 
     const allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
 
-    const syncedNodesKey = `sync-check-${this.sessionKey}`
+    const syncedNodesKey = `sync-check-${sessionHash}`
 
     const syncedRelayNodes: NodeCheckResponse<SyncCheck>[] = []
     let syncedNodes: Node[] = await this.cacheNodes(nodes, syncedNodesKey)
@@ -133,7 +136,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
         requestID: requestID,
         blockchainID,
         origin: this.origin,
-        sessionKey: this.sessionKey,
+        sessionHash,
       })
       errorState = true
     }
@@ -155,7 +158,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
           requestID: requestID,
           blockchainID,
           origin: this.origin,
-          sessionKey: this.sessionKey,
+          sessionHash: sessionHash,
         }
       )
       errorState = true
@@ -168,7 +171,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
         blockchainID,
         serviceNode: 'ALTRUIST',
         origin: this.origin,
-        sessionKey: this.sessionKey,
+        sessionHash,
       })
 
       if (errorState) {
@@ -180,7 +183,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
         blockchainID,
         serviceNode: 'ALTRUIST',
         origin: this.origin,
-        sessionKey: this.sessionKey,
+        sessionHash,
       })
     }
 
@@ -209,7 +212,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
               origin: this.origin,
               serviceURL,
               serviceDomain,
-              sessionKey: this.sessionKey,
+              sessionHash,
             }
           )
 
@@ -228,7 +231,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
           origin: this.origin,
           serviceURL,
           serviceDomain,
-          sessionKey: this.sessionKey,
+          sessionHash,
         })
 
         return this.metricsRecorder.recordMetric({
@@ -246,7 +249,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
           error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${topBlockheight} altruist block height: ${altruistBlockHeight} node height: ${node.output.blockHeight} sync allowance: ${allowance}`,
           origin: this.origin,
           data: undefined,
-          sessionKey: this.sessionKey,
+          pocketSession: this.pocketSession,
         })
       })
     )
@@ -255,7 +258,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
       requestID: requestID,
       blockchainID,
       origin: this.origin,
-      sessionKey: this.sessionKey,
+      sessionHash,
     })
 
     await this.redis.set(

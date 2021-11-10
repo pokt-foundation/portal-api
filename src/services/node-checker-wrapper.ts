@@ -1,7 +1,8 @@
 import { Redis } from 'ioredis'
-import { Pocket, Node, PocketAAT, Configuration } from '@pokt-network/pocket-js'
+import { Pocket, Node, PocketAAT, Configuration, Session } from '@pokt-network/pocket-js'
 import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
 import { MAX_RELAYS_ERROR } from '../utils/constants'
+import { hashBlockchainNodes } from '../utils/helpers'
 import { MetricsRecorder } from './metrics-recorder'
 import { ArchivalCheck, ChainCheck, Check, NodeChecker, NodeCheckResponse, SyncCheck } from './node-checker'
 
@@ -11,14 +12,14 @@ export class NodeCheckerWrapper {
   pocket: Pocket
   redis: Redis
   metricsRecorder: MetricsRecorder
-  sessionKey: string
+  pocketSession: Session
   origin: string
 
-  constructor(pocket: Pocket, redis: Redis, metricsRecorder: MetricsRecorder, sessionKey: string, origin: string) {
+  constructor(pocket: Pocket, redis: Redis, metricsRecorder: MetricsRecorder, pocketSession: Session, origin: string) {
     this.pocket = pocket
     this.redis = redis
     this.metricsRecorder = metricsRecorder
-    this.sessionKey = sessionKey
+    this.pocketSession = pocketSession
     this.origin = origin
   }
 
@@ -83,6 +84,8 @@ export class NodeCheckerWrapper {
     applicationPublicKey: string
   ): Promise<NodeCheckResponse<T>[]> {
     const filteredNodes: NodeCheckResponse<T>[] = []
+    const { sessionNodes } = this.pocketSession
+    const sessionHash = hashBlockchainNodes(blockchainID, sessionNodes)
 
     for (const [idx, nodeCheckPromise] of nodesPromise.entries()) {
       const node = nodes[idx]
@@ -114,11 +117,11 @@ export class NodeCheckerWrapper {
           origin: this.origin,
           serviceURL,
           serviceDomain,
-          sessionKey: this.sessionKey,
+          sessionHash,
         })
 
         if (errorMsg === MAX_RELAYS_ERROR) {
-          await removeNodeFromSession(this.redis, this.sessionKey, node.publicKey)
+          await removeNodeFromSession(this.redis, blockchainID, sessionNodes, node.publicKey)
         }
 
         if (typeof error === 'object') {
@@ -139,8 +142,9 @@ export class NodeCheckerWrapper {
           error: errorMsg,
           origin: this.origin,
           data: undefined,
-          sessionKey: this.sessionKey,
+          sessionHash,
           bytes: 0,
+          pocketSession: this.pocketSession,
         }
 
         switch (checkType) {
@@ -199,7 +203,7 @@ export class NodeCheckerWrapper {
         origin: this.origin,
         serviceURL,
         serviceDomain,
-        sessionKey: this.sessionKey,
+        sessionHash,
       })
 
       // Sync check requires additional assertions outside the scope of this method.
@@ -211,7 +215,7 @@ export class NodeCheckerWrapper {
           origin: this.origin,
           serviceURL,
           serviceDomain,
-          sessionKey: this.sessionKey,
+          sessionHash,
         })
       }
 
@@ -253,7 +257,7 @@ export class NodeCheckerWrapper {
       requestID: requestID,
       blockchainID,
       origin: this.origin,
-      sessionKey: this.sessionKey,
+      sessionHash: hashBlockchainNodes(blockchainID, this.pocketSession.sessionNodes),
     })
   }
 }
