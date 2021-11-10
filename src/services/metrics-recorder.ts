@@ -16,8 +16,6 @@ const logger = require('../services/logger')
 
 const DISABLE_TIMESTREAM = process.env['DISABLE_TIMESTREAM'] || ''
 
-const ENV = process.env['NODE_ENV']
-
 export class MetricsRecorder {
   redis: Redis
   influxWriteAPI: WriteApi
