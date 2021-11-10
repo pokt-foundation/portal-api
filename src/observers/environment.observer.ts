@@ -38,16 +38,16 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'INFLUX_URL',
     'INFLUX_TOKEN',
     'INFLUX_ORG',
+    'ARCHIVAL_CHAINS',
     // Not required in code, but must be present in .env
     'AWS_ACCESS_KEY_ID',
     'AWS_SECRET_ACCESS_KEY',
     'AWS_REGION',
-    'ARCHIVAL_CHAINS',
   ]
 
-  private static requiredEnvVarsOnlyInProd = []
+  private static requiredEnvVarsOnlyInProd = ['COMMIT_HASH']
 
-  private static optionalEnvVars: string[] = ['COMMIT_HASH']
+  private static optionalEnvVars: string[] = ['DISABLE_TIMESTREAM']
 
   /*
   constructor(

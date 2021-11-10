@@ -69,9 +69,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       INFLUX_URL,
       INFLUX_TOKEN,
       INFLUX_ORG,
-      AWS_ACCESS_KEY_ID,
-      AWS_SECRET_ACCESS_KEY,
-      AWS_REGION,
       ARCHIVAL_CHAINS,
     } = await this.get('configuration.environment.values')
 
