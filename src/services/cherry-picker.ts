@@ -1,7 +1,8 @@
 import { Redis } from 'ioredis'
-import { Node } from '@pokt-network/pocket-js'
+import { Node, Session } from '@pokt-network/pocket-js'
 import { Applications } from '../models'
 import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
+import { hashBlockchainNodes } from '../utils/helpers'
 
 const logger = require('../services/logger')
 
@@ -21,7 +22,7 @@ export class CherryPicker {
   constructor({ redis, checkDebug, archivalChains }: { redis: Redis; checkDebug: boolean; archivalChains?: string[] }) {
     this.redis = redis
     this.checkDebug = checkDebug
-    this.archivalChains = archivalChains
+    this.archivalChains = archivalChains || []
   }
 
   // Record the latency and success rate of each application, 15 minute TTL
@@ -166,28 +167,28 @@ export class CherryPicker {
   // Record app & node service quality in redis for future selection weight
   // { id: { results: { 200: x, 500: y, ... }, averageSuccessLatency: z }
   async updateServiceQuality(
-    blockchain: string,
+    blockchainID: string,
     applicationID: string,
     serviceNode: string,
     elapsedTime: number,
     result: number,
     timeout?: number,
-    sessionKey?: string
+    pocketSession?: Session
   ): Promise<void> {
-    await this._updateServiceQuality(blockchain, applicationID, elapsedTime, result, 900, timeout, sessionKey)
-    await this._updateServiceQuality(blockchain, serviceNode, elapsedTime, result, 7200, timeout, sessionKey)
+    await this._updateServiceQuality(blockchainID, applicationID, elapsedTime, result, 900, timeout, pocketSession)
+    await this._updateServiceQuality(blockchainID, serviceNode, elapsedTime, result, 7200, timeout, pocketSession)
   }
 
   async _updateServiceQuality(
-    blockchain: string,
+    blockchainID: string,
     id: string,
     elapsedTime: number,
     result: number,
     ttl: number,
     timeout?: number,
-    sessionKey?: string
+    pocketSession?: Session
   ): Promise<void> {
-    const serviceLog = await this.fetchRawServiceLog(blockchain, id)
+    const serviceLog = await this.fetchRawServiceLog(blockchainID, id)
 
     let serviceQuality
 
@@ -217,7 +218,7 @@ export class CherryPicker {
         ) // divided by total results
           .toFixed(5) // to 5 decimal points
       } else {
-        await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, sessionKey)
+        await this.updateBadNodeTimeoutQuality(blockchainID, id, elapsedTime, timeout, pocketSession)
       }
     } else {
       // No current logs found for this hour
@@ -225,7 +226,7 @@ export class CherryPicker {
 
       if (result !== 200) {
         elapsedTime = 0
-        await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, sessionKey)
+        await this.updateBadNodeTimeoutQuality(blockchainID, id, elapsedTime, timeout, pocketSession)
       }
       serviceQuality = {
         results: results,
@@ -233,7 +234,7 @@ export class CherryPicker {
       }
     }
 
-    await this.redis.set(blockchain + '-' + id + '-service', JSON.stringify(serviceQuality), 'EX', ttl)
+    await this.redis.set(blockchainID + '-' + id + '-service', JSON.stringify(serviceQuality), 'EX', ttl)
   }
 
   /**
@@ -249,21 +250,24 @@ export class CherryPicker {
    * @returns
    */
   async updateBadNodeTimeoutQuality(
-    blockchain: string,
+    blockchainID: string,
     serviceNode: string,
     elapsedTime: number,
     requestTimeout: number | undefined,
-    sessionKey: string
+    pocketSession?: Session
   ): Promise<void> {
-    // FIXME: This is not a completely reliable way on asserting whether is a service node,
+    const { sessionKey, sessionNodes } = pocketSession || {}
+    const sessionHash = hashBlockchainNodes(blockchainID, sessionNodes)
+
+    // FIXME: This is not a reliable way on asserting whether is a service node,
     // an issue was created on pocket-tools for a 'isPublicKey' function. Once is
     // implemented, replace with the function.
-    if (this.archivalChains.indexOf(blockchain) < 0 || serviceNode.length !== 64) {
+    if (this.archivalChains.indexOf(blockchainID) < 0 || serviceNode.length !== 64) {
       return
     }
 
     let timeoutCounter = 0
-    const key = `node-${serviceNode}-${sessionKey}-timeout`
+    const key = `node-${serviceNode}-${sessionHash}-timeout`
     const timeoutCounterCached = await this.redis.get(key)
 
     if (timeoutCounterCached) {
@@ -281,8 +285,9 @@ export class CherryPicker {
           sessionKey,
           serviceURL,
           serviceDomain,
+          sessionHash,
         })
-        await removeNodeFromSession(this.redis, sessionKey, serviceNode)
+        await removeNodeFromSession(this.redis, blockchainID, sessionNodes, serviceNode)
       }
     }
   }
