@@ -298,6 +298,11 @@ export class PocketRelayer {
         }
       }
     } catch (e) {
+      // Explicit Http errors should be propagated so they can be sent as a response
+      if (HttpErrors.isHttpError(e)) {
+        throw e
+      }
+
       logger.log('error', 'ERROR relaying through node: ' + e, {
         requestID,
         relayType: 'APP',
