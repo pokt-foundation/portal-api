@@ -94,7 +94,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const influxToken: string = INFLUX_TOKEN || ''
     const influxOrg: string = INFLUX_ORG || ''
     const archivalChains: string[] = (ARCHIVAL_CHAINS || '').replace(' ', '').split(',')
-    const alwaysRedirectToAltruists: string = ALWAYS_REDIRECT_TO_ALTRUISTS || 'false'
+    const alwaysRedirectToAltruists: boolean = ALWAYS_REDIRECT_TO_ALTRUISTS === 'true'
 
     if (!dispatchURL) {
       throw new HttpErrors.InternalServerError('DISPATCH_URL required in ENV')
@@ -149,9 +149,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     if (!AWS_REGION) {
       throw new HttpErrors.InternalServerError('AWS_REGION required in ENV')
     }
-    if (!alwaysRedirectToAltruists) {
-      throw new HttpErrors.InternalServerError('ALWAYS_REDIRECT_TO_ALTRUISTS required in ENV')
-    }
 
     const dispatchers = []
 
@@ -188,7 +185,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('defaultSyncAllowance').to(defaultSyncAllowance)
     this.bind('defaultLogLimitBlocks').to(defaultLogLimitBlocks)
     this.bind('redirects').to(redirects)
-    this.bind('alwaysRedirectToAltruists').to(alwaysRedirectToAltruists === 'true')
+    this.bind('alwaysRedirectToAltruists').to(alwaysRedirectToAltruists)
 
     // Unlock primary client account for relay signing
     try {
