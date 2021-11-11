@@ -216,7 +216,12 @@ describe('Chain checker service (unit)', () => {
       applicationPublicKey: '',
       pocketAAT: undefined,
       pocketConfiguration,
-      pocketSession: (await pocketClient.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session,
+      pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+        undefined,
+        undefined,
+        undefined,
+        undefined
+      )) as Session,
       chainID,
     })
 
@@ -237,7 +242,12 @@ describe('Chain checker service (unit)', () => {
       applicationPublicKey: '',
       pocketAAT: undefined,
       pocketConfiguration,
-      pocketSession: (await pocketClient.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session,
+      pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+        undefined,
+        undefined,
+        undefined,
+        undefined
+      )) as Session,
       chainID,
     })
 
@@ -263,7 +273,12 @@ describe('Chain checker service (unit)', () => {
       applicationPublicKey: '',
       pocketAAT: undefined,
       pocketConfiguration,
-      pocketSession: (await pocketClient.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session,
+      pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+        undefined,
+        undefined,
+        undefined,
+        undefined
+      )) as Session,
       chainID,
     })
 
@@ -288,6 +303,7 @@ describe('Chain checker service (unit)', () => {
     const chainID = 100
 
     const pocketSession = (await pocketClient.sessionManager.getCurrentSession(
+      undefined,
       undefined,
       undefined,
       undefined
