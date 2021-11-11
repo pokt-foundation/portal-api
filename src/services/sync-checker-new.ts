@@ -54,29 +54,6 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
   ): Promise<Node[]> {
     const sessionHash = hashBlockchainNodes(blockchainID, this.pocketSession.sessionNodes)
 
-    const archivalChecker = new ArchivalChecker(
-      this.pocket,
-      this.redis,
-      this.metricsRecorder,
-      this.pocketSession,
-      this.origin
-    )
-
-    await archivalChecker.check(
-      nodes,
-      {
-        body: '{"method":"eth_getBalance","params":["0x0000000000000000000000000000000000000000", "0x1"],"id":1,"jsonrpc":"2.0"}',
-        comparator: '-32000',
-        resultKey: 'error.code',
-      },
-      blockchainID,
-      pocketAAT,
-      pocketConfiguration,
-      applicationID,
-      applicationPublicKey,
-      requestID
-    )
-
     const allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
 
     const syncedNodesKey = `sync-check-${sessionHash}`
