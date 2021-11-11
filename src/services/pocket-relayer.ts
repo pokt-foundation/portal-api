@@ -49,6 +49,7 @@ export class PocketRelayer {
   aatPlan: string
   defaultLogLimitBlocks: number
   pocketSession: Session
+  alwaysRedirectToAltruists: boolean
 
   constructor({
     host,
@@ -69,6 +70,7 @@ export class PocketRelayer {
     altruists,
     aatPlan,
     defaultLogLimitBlocks,
+    alwaysRedirectToAltruists = false,
   }: {
     host: string
     origin: string
@@ -88,6 +90,7 @@ export class PocketRelayer {
     altruists: string
     aatPlan: string
     defaultLogLimitBlocks: number
+    alwaysRedirectToAltruists?: boolean
   }) {
     this.host = host
     this.origin = origin
@@ -106,6 +109,7 @@ export class PocketRelayer {
     this.checkDebug = checkDebug
     this.aatPlan = aatPlan
     this.defaultLogLimitBlocks = defaultLogLimitBlocks
+    this.alwaysRedirectToAltruists = alwaysRedirectToAltruists
 
     // Create the array of altruist relayers as last resort
     this.altruists = JSON.parse(altruists)
@@ -172,122 +176,124 @@ export class PocketRelayer {
     const method = parseMethod(parsedRawData)
     const fallbackAvailable = this.altruists[blockchainID] !== undefined ? true : false
 
-    // Retries if applicable
-    for (let x = 0; x <= this.relayRetries; x++) {
-      const relayStart = process.hrtime()
+    if (!this.alwaysRedirectToAltruists) {
+      // Retries if applicable
+      for (let x = 0; x <= this.relayRetries; x++) {
+        const relayStart = process.hrtime()
 
-      // Compute the overall time taken on this LB request
-      const overallCurrent = process.hrtime(overallStart)
-      const overallCurrentElasped = Math.round((overallCurrent[0] * 1e9 + overallCurrent[1]) / 1e6)
+        // Compute the overall time taken on this LB request
+        const overallCurrent = process.hrtime(overallStart)
+        const overallCurrentElasped = Math.round((overallCurrent[0] * 1e9 + overallCurrent[1]) / 1e6)
 
-      if (overallTimeOut && overallCurrentElasped > overallTimeOut) {
-        logger.log('error', 'Overall Timeout exceeded: ' + overallTimeOut, {
-          requestID: requestID,
-          relayType: 'APP',
-          typeID: application.id,
-          serviceNode: '',
-        })
-        return new HttpErrors.GatewayTimeout('Overall Timeout exceeded: ' + overallTimeOut)
-      }
-
-      // Send this relay attempt
-      const relayResponse = await this._sendRelay({
-        data,
-        relayPath,
-        httpMethod,
-        requestID,
-        application,
-        requestTimeOut,
-        blockchain,
-        blockchainID,
-        blockchainEnforceResult,
-        blockchainSyncCheck,
-        blockchainIDCheck,
-        blockchainChainID,
-        blockchainSyncBackup: String(this.altruists[blockchainID]),
-      })
-
-      if (!(relayResponse instanceof Error)) {
-        // Record success metric
-        this.metricsRecorder
-          .recordMetric({
+        if (overallTimeOut && overallCurrentElasped > overallTimeOut) {
+          logger.log('error', 'Overall Timeout exceeded: ' + overallTimeOut, {
             requestID: requestID,
-            applicationID: application.id,
-            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-            blockchainID,
-            serviceNode: relayResponse.proof.servicerPubKey,
-            relayStart,
-            result: 200,
-            bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
-            delivered: false,
-            fallback: false,
-            method: method,
-            error: undefined,
-            origin: this.origin,
-            data,
-            pocketSession: this.pocketSession,
+            relayType: 'APP',
+            typeID: application.id,
+            serviceNode: '',
           })
-          .catch(function log(e) {
-            logger.log('error', 'Error recording metrics: ' + e, {
+          return new HttpErrors.GatewayTimeout('Overall Timeout exceeded: ' + overallTimeOut)
+        }
+
+        // Send this relay attempt
+        const relayResponse = await this._sendRelay({
+          data,
+          relayPath,
+          httpMethod,
+          requestID,
+          application,
+          requestTimeOut,
+          blockchain,
+          blockchainID,
+          blockchainEnforceResult,
+          blockchainSyncCheck,
+          blockchainIDCheck,
+          blockchainChainID,
+          blockchainSyncBackup: String(this.altruists[blockchainID]),
+        })
+
+        if (!(relayResponse instanceof Error)) {
+          // Record success metric
+          this.metricsRecorder
+            .recordMetric({
               requestID: requestID,
-              relayType: 'APP',
-              typeID: application.id,
+              applicationID: application.id,
+              applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+              blockchainID,
               serviceNode: relayResponse.proof.servicerPubKey,
+              relayStart,
+              result: 200,
+              bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
+              delivered: false,
+              fallback: false,
+              method: method,
+              error: undefined,
+              origin: this.origin,
+              data,
+              pocketSession: this.pocketSession,
             })
-          })
+            .catch(function log(e) {
+              logger.log('error', 'Error recording metrics: ' + e, {
+                requestID: requestID,
+                relayType: 'APP',
+                typeID: application.id,
+                serviceNode: relayResponse.proof.servicerPubKey,
+              })
+            })
 
-        // Clear error log
-        await this.redis.del(blockchainID + '-' + relayResponse.proof.servicerPubKey + '-errors')
+          // Clear error log
+          await this.redis.del(blockchainID + '-' + relayResponse.proof.servicerPubKey + '-errors')
 
-        // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
-        if (
-          blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
-          blockchainEnforceResult.toLowerCase() === 'json' // the check is for JSON
-        ) {
-          return JSON.parse(relayResponse.payload)
-        }
-        return relayResponse.payload
-      } else if (relayResponse instanceof RelayError) {
-        // Record failure metric, retry if possible or fallback
-        // If this is the last retry and fallback is available, mark the error not delivered
-        const errorDelivered = x === this.relayRetries && fallbackAvailable ? false : true
+          // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
+          if (
+            blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
+            blockchainEnforceResult.toLowerCase() === 'json' // the check is for JSON
+          ) {
+            return JSON.parse(relayResponse.payload)
+          }
+          return relayResponse.payload
+        } else if (relayResponse instanceof RelayError) {
+          // Record failure metric, retry if possible or fallback
+          // If this is the last retry and fallback is available, mark the error not delivered
+          const errorDelivered = x === this.relayRetries && fallbackAvailable ? false : true
 
-        // Increment error log
-        await this.redis.incr(blockchainID + '-' + relayResponse.servicer_node + '-errors')
-        await this.redis.expire(blockchainID + '-' + relayResponse.servicer_node + '-errors', 3600)
+          // Increment error log
+          await this.redis.incr(blockchainID + '-' + relayResponse.servicer_node + '-errors')
+          await this.redis.expire(blockchainID + '-' + relayResponse.servicer_node + '-errors', 3600)
 
-        let error = relayResponse.message
+          let error = relayResponse.message
 
-        if (typeof relayResponse.message === 'object') {
-          error = JSON.stringify(relayResponse.message)
-        }
+          if (typeof relayResponse.message === 'object') {
+            error = JSON.stringify(relayResponse.message)
+          }
 
-        this.metricsRecorder
-          .recordMetric({
-            requestID,
-            applicationID: application.id,
-            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-            blockchainID,
-            serviceNode: relayResponse.servicer_node,
-            relayStart,
-            result: 500,
-            bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
-            delivered: errorDelivered,
-            fallback: false,
-            method,
-            error,
-            origin: this.origin,
-            data,
-            pocketSession: this.pocketSession,
-          })
-          .catch(function log(e) {
-            logger.log('error', 'Error recording metrics: ' + e, {
-              requestID: requestID,
-              relayType: 'APP',
-              typeID: application.id,
+          this.metricsRecorder
+            .recordMetric({
+              requestID,
+              applicationID: application.id,
+              applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+              blockchainID,
               serviceNode: relayResponse.servicer_node,
+              relayStart,
+              result: 500,
+              bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
+              delivered: errorDelivered,
+              fallback: false,
+              method,
+              error,
+              origin: this.origin,
+              data,
+              pocketSession: this.pocketSession,
             })
-          })
+            .catch(function log(e) {
+              logger.log('error', 'Error recording metrics: ' + e, {
+                requestID: requestID,
+                relayType: 'APP',
+                typeID: application.id,
+                serviceNode: relayResponse.servicer_node,
+              })
+            })
+        }
       }
     }
 
