@@ -42,7 +42,7 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'ARCHIVAL_CHAINS',
   ]
 
-  private static optionalEnvVars: string[] = ['COMMIT_HASH']
+  private static optionalEnvVars: string[] = ['COMMIT_HASH', 'ALWAYS_REDIRECT_TO_ALTRUISTS']
 
   /*
   constructor(
