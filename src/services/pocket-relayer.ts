@@ -647,9 +647,9 @@ export class PocketRelayer {
           // For non-EVM chains that only have sync check, like pocket.
           nodes = syncCheckedNodes
         }
-
-        node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
       }
+
+      node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
 
       if (this.checkDebug) {
         logger.log('debug', JSON.stringify(pocketSession), {
