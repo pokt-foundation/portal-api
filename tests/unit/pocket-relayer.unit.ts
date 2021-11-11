@@ -7,17 +7,23 @@ import { expect, sinon } from '@loopback/testlab'
 import { HTTPMethod, Configuration, Node, RpcError, Session } from '@pokt-network/pocket-js'
 import AatPlans from '../../src/config/aat-plans.json'
 import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
+import { LimitError } from '../../src/errors/types'
+import { Applications } from '../../src/models/applications.model'
+import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
 import { ChainChecker, ChainIDFilterOptions } from '../../src/services/chain-checker'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { PocketRelayer } from '../../src/services/pocket-relayer'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../../src/services/sync-checker'
-import { Applications } from '../../src/models/applications.model'
-import { metricsRecorderMock } from '../mocks/metricsRecorder'
-import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
-import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
+import { MAX_RELAYS_ERROR } from '../../src/utils/constants'
+import { checkWhitelist, checkSecretKey } from '../../src/utils/enforcements'
+import { hashBlockchainNodes } from '../../src/utils/helpers'
+import { parseMethod } from '../../src/utils/parsing'
+import { updateConfiguration } from '../../src/utils/pocket'
+import { loadBlockchain } from '../../src/utils/relayer'
 import { gatewayTestDB } from '../fixtures/test.datasource'
-import { LimitError, MAX_RELAYS_ERROR } from '../../src/errors/types'
+import { metricsRecorderMock } from '../mocks/metrics-recorder'
+import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
 
@@ -205,20 +211,20 @@ describe('Pocket relayer service (unit)', () => {
       { method: 'eth_getLogs', params: [], jsonrpc: '2.0' },
     ]
 
-    const methods = pocketRelayer.parseMethod(multipleMethodsRequest)
+    const methods = parseMethod(multipleMethodsRequest)
 
     expect(methods).to.be.equal(`${multipleMethodsRequest[0].method},${multipleMethodsRequest[1].method}`)
 
     const singleMethodRequest = { method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' }
 
-    const method = pocketRelayer.parseMethod(singleMethodRequest)
+    const method = parseMethod(singleMethodRequest)
 
     expect(method).to.be.equal(singleMethodRequest.method)
   })
 
   it('updates request timeout config of pocket sdk', () => {
     const timeout = 5
-    const newConfig = pocketRelayer.updateConfiguration(timeout)
+    const newConfig = updateConfiguration(pocketConfiguration, timeout)
 
     expect(newConfig.requestTimeOut).to.be.equal(timeout)
   })
@@ -232,7 +238,12 @@ describe('Pocket relayer service (unit)', () => {
     const redisGetSpy = sinon.spy(redis, 'get')
     const redisSetSpy = sinon.spy(redis, 'set')
 
-    let blockchainResult = await pocketRelayer.loadBlockchain()
+    let blockchainResult = await loadBlockchain(
+      pocketRelayer.host,
+      pocketRelayer.redis,
+      pocketRelayer.blockchainsRepository,
+      pocketRelayer.defaultLogLimitBlocks
+    )
 
     expect(blockchainResult).to.be.ok()
     expect(blockchainResult.blockchainID).to.be.equal(BLOCKCHAINS[0].hash)
@@ -242,7 +253,12 @@ describe('Pocket relayer service (unit)', () => {
     expect(redisSetSpy.callCount).to.be.equal(1)
 
     // Subsequent calls should retrieve results from redis instead
-    blockchainResult = await pocketRelayer.loadBlockchain()
+    blockchainResult = await loadBlockchain(
+      pocketRelayer.host,
+      pocketRelayer.redis,
+      pocketRelayer.blockchainsRepository,
+      pocketRelayer.defaultLogLimitBlocks
+    )
 
     expect(blockchainResult).to.be.ok()
     expect(blockchainResult.blockchainID).to.be.equal(BLOCKCHAINS[0].hash)
@@ -253,7 +269,14 @@ describe('Pocket relayer service (unit)', () => {
   })
 
   it('throws an error when loading an invalid blockchain', async () => {
-    await expect(pocketRelayer.loadBlockchain()).to.be.rejectedWith(Error)
+    await expect(
+      loadBlockchain(
+        pocketRelayer.host,
+        pocketRelayer.redis,
+        pocketRelayer.blockchainsRepository,
+        pocketRelayer.defaultLogLimitBlocks
+      )
+    ).to.be.rejectedWith(Error)
   })
 
   it('checks secret of application when set', () => {
@@ -295,7 +318,10 @@ describe('Pocket relayer service (unit)', () => {
       },
     }
 
-    const isValidApp = poktRelayer.checkSecretKey(application as unknown as Applications)
+    const isValidApp = checkSecretKey(application as unknown as Applications, {
+      secretKey: poktRelayer.secretKey,
+      databaseEncryptionKey: poktRelayer.databaseEncryptionKey,
+    })
 
     expect(isValidApp).to.be.true()
 
@@ -320,33 +346,36 @@ describe('Pocket relayer service (unit)', () => {
       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
     })
 
-    const isInvalidApp = poktRelayer.checkSecretKey(application as unknown as Applications)
+    const isInvalidApp = checkSecretKey(application as unknown as Applications, {
+      secretKey: poktRelayer.secretKey,
+      databaseEncryptionKey: poktRelayer.databaseEncryptionKey,
+    })
 
     expect(isInvalidApp).to.be.false()
   })
 
   it('checks whether items are whitelisted', () => {
-    const empty = pocketRelayer.checkWhitelist([], '', '')
+    const empty = checkWhitelist([], '', '')
 
     expect(empty).to.be.true()
 
-    const noFieldToCheckAgainst = pocketRelayer.checkWhitelist(['value'], '', '')
+    const noFieldToCheckAgainst = checkWhitelist(['value'], '', '')
 
     expect(noFieldToCheckAgainst).to.be.false()
 
-    const invalidField = pocketRelayer.checkWhitelist(['value'], 'invalid', '')
+    const invalidField = checkWhitelist(['value'], 'invalid', '')
 
     expect(invalidField).to.be.false()
 
-    const explicitPass = pocketRelayer.checkWhitelist(['value'], 'value', 'explicit')
+    const explicitPass = checkWhitelist(['value'], 'value', 'explicit')
 
     expect(explicitPass).to.be.true()
 
-    const failExplicitPass = pocketRelayer.checkWhitelist(['value'], 'value around here', 'explicit')
+    const failExplicitPass = checkWhitelist(['value'], 'value around here', 'explicit')
 
     expect(failExplicitPass).to.be.false()
 
-    const implicitPass = pocketRelayer.checkWhitelist(['value'], 'value around here', '')
+    const implicitPass = checkWhitelist(['value'], 'value around here', '')
 
     expect(implicitPass).to.be.true()
   })
@@ -647,6 +676,7 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     it('Fails relay due to all nodes in session running out of relays, subsequent relays should not attempt to perform checks', async () => {
+      const blockchainID = '0021'
       const mock = new PocketMock()
 
       const maxRelaysError = new RpcError('90', MAX_RELAYS_ERROR)
@@ -656,10 +686,15 @@ describe('Pocket relayer service (unit)', () => {
       mock.relayResponse[rawData] = '{"error": "a relay error"}'
 
       const chainCheckerSpy = sinon.spy(chainChecker, 'chainIDFilter')
-
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
 
       const pocket = mock.object()
+      const { sessionNodes } = (await pocket.sessionManager.getCurrentSession(
+        undefined,
+        undefined,
+        undefined
+      )) as Session
+      const sessionKey = `session-${hashBlockchainNodes(blockchainID, sessionNodes)}`
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -695,10 +730,7 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
 
-      const sessionKey = ((await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session)
-        .sessionKey
-
-      let removedNodes = await redis.smembers(`session-${sessionKey}`)
+      let removedNodes = await redis.smembers(sessionKey)
 
       expect(removedNodes).to.have.length(5)
 
@@ -719,7 +751,7 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(secondRelayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
 
-      removedNodes = await redis.smembers(`session-${sessionKey}`)
+      removedNodes = await redis.smembers(sessionKey)
 
       expect(removedNodes).to.have.length(5)
 
@@ -728,6 +760,7 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     it('Fails relay due to one node in session running out of relays, subsequent relays should attempt to perform checks', async () => {
+      const blockchainID = '0021'
       const mock = new PocketMock()
 
       mock.relayResponse[rawData] = new RpcError('90', MAX_RELAYS_ERROR)
@@ -736,6 +769,12 @@ describe('Pocket relayer service (unit)', () => {
       const chainCheckerSpy = sinon.spy(chainChecker, 'chainIDFilter')
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
       const pocket = mock.object()
+      const { sessionNodes } = (await pocket.sessionManager.getCurrentSession(
+        undefined,
+        undefined,
+        undefined
+      )) as Session
+      const sessionKey = `session-${hashBlockchainNodes(blockchainID, sessionNodes)}`
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -771,10 +810,7 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
 
-      const sessionKey = ((await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session)
-        .sessionKey
-
-      let removedNodes = await redis.smembers(`session-${sessionKey}`)
+      let removedNodes = await redis.smembers(sessionKey)
 
       expect(removedNodes).to.have.length(1)
 
@@ -795,7 +831,7 @@ describe('Pocket relayer service (unit)', () => {
 
       expect(secondRelayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
 
-      removedNodes = await redis.smembers(`session-${sessionKey}`)
+      removedNodes = await redis.smembers(sessionKey)
 
       expect(removedNodes.length).to.have.lessThanOrEqual(2)
 

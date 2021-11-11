@@ -1,7 +1,7 @@
-import { DefaultCrudRepository } from '@loopback/repository'
-import { LoadBalancers, LoadBalancersRelations } from '../models'
-import { GatewayDataSource } from '../datasources'
 import { inject } from '@loopback/core'
+import { DefaultCrudRepository } from '@loopback/repository'
+import { GatewayDataSource } from '../datasources'
+import { LoadBalancers, LoadBalancersRelations } from '../models'
 
 export class LoadBalancersRepository extends DefaultCrudRepository<
   LoadBalancers,

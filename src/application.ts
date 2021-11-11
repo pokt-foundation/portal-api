@@ -1,27 +1,24 @@
+import crypto from 'crypto'
+import os from 'os'
+import path from 'path'
+import process from 'process'
+import AWS from 'aws-sdk'
+import Redis from 'ioredis'
+import pg from 'pg'
 import { BootMixin } from '@loopback/boot'
 import { ApplicationConfig } from '@loopback/core'
 import { RepositoryMixin } from '@loopback/repository'
 import { RestApplication, HttpErrors } from '@loopback/rest'
-import { DEFAULT_POCKET_CONFIG } from './config/pocket-config'
 import { ServiceMixin } from '@loopback/service-proxy'
-import { GatewaySequence } from './sequence'
+import { Pocket, Configuration, HttpRpcProvider } from '@pokt-network/pocket-js'
 import { Account } from '@pokt-network/pocket-js/dist/keybase/models/account'
 import { InfluxDB } from '@influxdata/influxdb-client'
 
-import path from 'path'
 import AatPlans from './config/aat-plans.json'
-
-const logger = require('./services/logger')
+import { DEFAULT_POCKET_CONFIG } from './config/pocket-config'
+import { GatewaySequence } from './sequence'
 const https = require('https')
-
-import { Pocket, Configuration, HttpRpcProvider } from '@pokt-network/pocket-js'
-
-import Redis from 'ioredis'
-import crypto from 'crypto'
-import os from 'os'
-import process from 'process'
-import pg from 'pg'
-import AWS from 'aws-sdk'
+const logger = require('./services/logger')
 
 require('log-timestamp')
 require('dotenv').config()
@@ -75,6 +72,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       AWS_ACCESS_KEY_ID,
       AWS_SECRET_ACCESS_KEY,
       AWS_REGION,
+      ARCHIVAL_CHAINS,
     } = await this.get('configuration.environment.values')
 
     const environment: string = NODE_ENV || 'production'
@@ -94,6 +92,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const influxURL: string = INFLUX_URL || ''
     const influxToken: string = INFLUX_TOKEN || ''
     const influxOrg: string = INFLUX_ORG || ''
+    const archivalChains: string[] = (ARCHIVAL_CHAINS || '').replace(' ', '').split(',')
 
     if (!dispatchURL) {
       throw new HttpErrors.InternalServerError('DISPATCH_URL required in ENV')
@@ -258,5 +257,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('processUID').to(hash.digest('hex'))
     this.bind('databaseEncryptionKey').to(databaseEncryptionKey)
     this.bind('aatPlan').to(aatPlan)
+    this.bind('archivalChains').to(archivalChains)
   }
 }

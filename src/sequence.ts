@@ -1,3 +1,4 @@
+import shortID from 'shortid'
 import { inject } from '@loopback/context'
 import {
   FindRoute,
@@ -10,7 +11,6 @@ import {
   SequenceHandler,
 } from '@loopback/rest'
 
-import shortID from 'shortid'
 const SequenceActions = RestBindings.SequenceActions
 
 export class GatewaySequence implements SequenceHandler {
