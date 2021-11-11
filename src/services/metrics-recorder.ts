@@ -196,7 +196,7 @@ export class MetricsRecorder {
       // MARKED FOR REMOVAL --------------------------------------
 
       // AWS Timestream Metrics
-      const nodeType = serviceNode.includes('fallback') ? 'fallback' : 'network'
+      const nodeType = typeof serviceNode === 'string' && serviceNode.includes('fallback') ? 'fallback' : 'network'
 
       const timeStreamDimensions = [
         { Name: 'region', Value: `${process.env.REGION || ''}` },
