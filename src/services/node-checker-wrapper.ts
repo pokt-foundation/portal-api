@@ -107,10 +107,11 @@ export class NodeCheckerWrapper {
           error = errorMsg = nodeCheckPromise.reason
         } else {
           error = nodeCheckPromise.value.response as Error
-          errorMsg = error.message
+          // Converting to stream will get string representation of most errors
+          errorMsg = error.message || (error as unknown as string)
         }
 
-        logger.log('error', `${formattedType} ERROR: ${JSON.stringify(error)}`, {
+        logger.log('error', `${formattedType} ERROR: ${error || errorMsg}`, {
           requestID: requestID,
           serviceNode: node.publicKey,
           blockchainID,
@@ -139,7 +140,7 @@ export class NodeCheckerWrapper {
           delivered: false,
           fallback: false,
           method: checkType,
-          error: errorMsg,
+          error: (error as string) || errorMsg,
           origin: this.origin,
           data: undefined,
           sessionHash,
