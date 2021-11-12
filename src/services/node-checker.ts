@@ -313,7 +313,8 @@ export class NodeChecker {
       HTTPMethod.POST,
       path,
       consensusEnabled ? undefined : node,
-      consensusEnabled
+      consensusEnabled,
+      undefined
     )
 
     if (relayResponse instanceof Error) {

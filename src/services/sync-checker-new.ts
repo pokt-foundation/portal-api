@@ -3,7 +3,6 @@ import { Redis } from 'ioredis'
 import { Configuration, Node, Pocket, PocketAAT, Session } from '@pokt-network/pocket-js'
 import { getNodeNetworkData } from '../utils/cache'
 import { hashBlockchainNodes } from '../utils/helpers'
-import { ArchivalChecker } from './archival-check'
 import { MetricsRecorder } from './metrics-recorder'
 import { NodeChecker, NodeCheckResponse, SyncCheck } from './node-checker'
 import { NodeCheckerWrapper } from './node-checker-wrapper'
@@ -14,16 +13,8 @@ const logger = require('../services/logger')
 export class PocketSyncChecker extends NodeCheckerWrapper {
   defaultSyncAllowance: number
 
-  constructor(
-    pocket: Pocket,
-    redis: Redis,
-    metricsRecorder: MetricsRecorder,
-    pocketSession: Session,
-    origin: string,
-    defaultSyncAllowance = 0
-  ) {
+  constructor(pocket: Pocket, redis: Redis, metricsRecorder: MetricsRecorder, pocketSession: Session, origin: string) {
     super(pocket, redis, metricsRecorder, pocketSession, origin)
-    this.defaultSyncAllowance = defaultSyncAllowance
   }
 
   /**
@@ -50,11 +41,12 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     altruistURL: string,
     applicationID: string,
     applicationPublicKey: string,
-    requestID: string
+    requestID: string,
+    defaultAllowance = 5
   ): Promise<Node[]> {
     const sessionHash = hashBlockchainNodes(blockchainID, this.pocketSession.sessionNodes)
 
-    const allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
+    const allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : defaultAllowance
 
     const syncedNodesKey = `sync-check-${sessionHash}`
 
@@ -253,7 +245,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
         blockchainID,
         pocketAAT,
         pocketConfiguration,
-        'CHAIN CHECK CHALLENGE:',
+        'SYNC CHECK CHALLENGE:',
         requestID
       )
     }
@@ -268,7 +260,6 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
    * @returns altruist block height
    */
   private async getSyncFromAltruist(syncCheckOptions: SyncCheckOptions, altruistURL: string): Promise<number> {
-    // Remove user/pass from the altruist URL
     const redactedAltruistURL = altruistURL.replace(/[\w]*:\/\/[^\/]*@/g, '')
     const syncCheckPath = syncCheckOptions.path ? syncCheckOptions.path : ''
 
