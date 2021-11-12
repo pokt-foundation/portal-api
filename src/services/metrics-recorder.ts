@@ -213,7 +213,7 @@ export class MetricsRecorder {
       const timeStreamMeasure = {
         Dimensions: timeStreamDimensions,
         MeasureName: 'elapsedTime',
-        MeasureValue: `${parseFloat(elapsedTime.toFixed(4))}`,
+        MeasureValue: `${parseFloat(elapsedTime.toString())}`,
         MeasureValueType: 'DOUBLE',
         Time: Date.now().toString(),
       }
