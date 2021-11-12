@@ -70,6 +70,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       INFLUX_TOKEN,
       INFLUX_ORG,
       ARCHIVAL_CHAINS,
+      ALWAYS_REDIRECT_TO_ALTRUISTS,
     } = await this.get('configuration.environment.values')
 
     const environment: string = NODE_ENV || 'production'
@@ -90,6 +91,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const influxToken: string = INFLUX_TOKEN || ''
     const influxOrg: string = INFLUX_ORG || ''
     const archivalChains: string[] = (ARCHIVAL_CHAINS || '').replace(' ', '').split(',')
+    const alwaysRedirectToAltruists: boolean = ALWAYS_REDIRECT_TO_ALTRUISTS === 'true'
 
     if (aatPlan !== AatPlans.PREMIUM && !AatPlans.values.includes(aatPlan)) {
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
@@ -130,6 +132,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('defaultSyncAllowance').to(defaultSyncAllowance)
     this.bind('defaultLogLimitBlocks').to(defaultLogLimitBlocks)
     this.bind('redirects').to(redirects)
+    this.bind('alwaysRedirectToAltruists').to(alwaysRedirectToAltruists)
 
     // Unlock primary client account for relay signing
     try {

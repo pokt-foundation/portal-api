@@ -50,6 +50,7 @@ export class V1Controller {
     @inject('defaultLogLimitBlocks') private defaultLogLimitBlocks: number,
     @inject('influxWriteAPI') private influxWriteAPI: WriteApi,
     @inject('archivalChains') private archivalChains: string[],
+    @inject('alwaysRedirectToAltruists') private alwaysRedirectToAltruists: boolean,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -91,6 +92,7 @@ export class V1Controller {
       altruists: this.altruists,
       aatPlan: this.aatPlan,
       defaultLogLimitBlocks: this.defaultLogLimitBlocks,
+      alwaysRedirectToAltruists: this.alwaysRedirectToAltruists,
     })
   }
 
