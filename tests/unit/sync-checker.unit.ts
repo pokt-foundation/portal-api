@@ -316,6 +316,7 @@ describe('Sync checker service (unit)', () => {
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
           undefined,
           undefined,
+          undefined,
           undefined
         )) as Session,
       })
@@ -338,6 +339,7 @@ describe('Sync checker service (unit)', () => {
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
           undefined,
           undefined,
           undefined
@@ -370,6 +372,7 @@ describe('Sync checker service (unit)', () => {
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
           undefined,
           undefined,
+          undefined,
           undefined
         )) as Session,
       })
@@ -392,6 +395,7 @@ describe('Sync checker service (unit)', () => {
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
           undefined,
           undefined,
           undefined
@@ -424,6 +428,7 @@ describe('Sync checker service (unit)', () => {
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
           undefined,
           undefined,
+          undefined,
           undefined
         )) as Session,
       })
@@ -446,6 +451,7 @@ describe('Sync checker service (unit)', () => {
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
           undefined,
           undefined,
           undefined
@@ -475,6 +481,7 @@ describe('Sync checker service (unit)', () => {
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
           undefined,
           undefined,
           undefined
@@ -514,6 +521,7 @@ describe('Sync checker service (unit)', () => {
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
           undefined,
           undefined,
+          undefined,
           undefined
         )) as Session,
       })
@@ -549,6 +557,7 @@ describe('Sync checker service (unit)', () => {
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
           undefined,
           undefined,
+          undefined,
           undefined
         )) as Session,
       })
@@ -575,6 +584,7 @@ describe('Sync checker service (unit)', () => {
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
           undefined,
           undefined,
           undefined
@@ -611,6 +621,7 @@ describe('Sync checker service (unit)', () => {
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
           undefined,
           undefined,
           undefined
@@ -659,6 +670,7 @@ describe('Sync checker service (unit)', () => {
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
           undefined,
           undefined,
+          undefined,
           undefined
         )) as Session,
       })
@@ -683,6 +695,7 @@ describe('Sync checker service (unit)', () => {
       const pocketClient = pocketMock.object()
 
       const pocketSession = (await pocketClient.sessionManager.getCurrentSession(
+        undefined,
         undefined,
         undefined,
         undefined

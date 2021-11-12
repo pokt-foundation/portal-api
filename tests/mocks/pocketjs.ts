@@ -152,7 +152,7 @@ export class PocketMock {
     // Default mock functions
     // TODO: Implement custom results
     const sessionManager = new Mock<SessionManager>()
-      .setup((instance) => instance.getCurrentSession(It.IsAny(), It.IsAny(), It.IsAny()))
+      .setup((instance) => instance.getCurrentSession(It.IsAny(), It.IsAny(), It.IsAny(), It.IsAny()))
       .returnsAsync(this.session)
       .object()
 
