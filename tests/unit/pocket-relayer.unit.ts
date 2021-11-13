@@ -692,6 +692,7 @@ describe('Pocket relayer service (unit)', () => {
       const { sessionNodes } = (await pocket.sessionManager.getCurrentSession(
         undefined,
         undefined,
+        undefined,
         undefined
       )) as Session
       const sessionKey = `session-${hashBlockchainNodes(blockchainID, sessionNodes)}`
@@ -770,6 +771,7 @@ describe('Pocket relayer service (unit)', () => {
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
       const pocket = mock.object()
       const { sessionNodes } = (await pocket.sessionManager.getCurrentSession(
+        undefined,
         undefined,
         undefined,
         undefined
