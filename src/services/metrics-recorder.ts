@@ -196,7 +196,7 @@ export class MetricsRecorder {
       // MARKED FOR REMOVAL --------------------------------------
 
       // AWS Timestream Metrics
-      const nodeType = serviceNode.includes('fallback') ? 'fallback' : 'network'
+      const nodeType = typeof serviceNode === 'string' && serviceNode.includes('fallback') ? 'fallback' : 'network'
 
       const timeStreamDimensions = [
         { Name: 'region', Value: `${process.env.REGION || ''}` },
@@ -213,7 +213,7 @@ export class MetricsRecorder {
       const timeStreamMeasure = {
         Dimensions: timeStreamDimensions,
         MeasureName: 'elapsedTime',
-        MeasureValue: `${parseFloat(elapsedTime.toFixed(4))}`,
+        MeasureValue: `${parseFloat(elapsedTime.toString())}`,
         MeasureValueType: 'DOUBLE',
         Time: Date.now().toString(),
       }

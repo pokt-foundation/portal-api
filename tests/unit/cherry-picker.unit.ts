@@ -290,7 +290,7 @@ describe('Cherry picker service (unit)', () => {
 
       const pocketSession = (await new PocketMock()
         .object()
-        .sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session
+        .sessionManager.getCurrentSession(undefined, undefined, undefined, undefined)) as Session
 
       const { sessionNodes } = pocketSession
 
