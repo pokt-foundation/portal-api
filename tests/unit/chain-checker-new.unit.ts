@@ -46,7 +46,7 @@ describe('Chain checker new service (unit)', () => {
 
     pocketSession = (await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session
 
-    chainChecker = new PocketChainChecker(pocket, redis, metricsRecorder, pocketSession, 'chain-check-origin')
+    chainChecker = new PocketChainChecker(pocket, redis, metricsRecorder, pocketSession, 'chain-check')
 
     await redis.flushall()
   })

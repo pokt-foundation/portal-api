@@ -112,7 +112,7 @@ describe('Sync checker service new (unit)', () => {
     const pocket = pocketMock.object()
 
     pocketSession = (await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session
-    syncChecker = new PocketSyncChecker(pocket, redis, metricsRecorder, pocketSession, 'sync-check-origin')
+    syncChecker = new PocketSyncChecker(pocket, redis, metricsRecorder, pocketSession, 'sync-check')
 
     //// Add responses to axios mock
     axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
