@@ -13,8 +13,16 @@ const logger = require('../services/logger')
 export class PocketSyncChecker extends NodeCheckerWrapper {
   defaultSyncAllowance: number
 
-  constructor(pocket: Pocket, redis: Redis, metricsRecorder: MetricsRecorder, origin: string) {
+  constructor(
+    pocket: Pocket,
+    redis: Redis,
+    metricsRecorder: MetricsRecorder,
+    origin: string,
+    defaultSyncAllowance: number
+  ) {
     super(pocket, redis, metricsRecorder, origin)
+
+    this.defaultSyncAllowance = defaultSyncAllowance
   }
 
   /**
@@ -26,7 +34,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
    * @param blockchainID Blockchain to request data from.
    * @param pocketAAT Pocket Authentication Token object.
    * @param pocketConfiguration pocket's configuration object.
-   * @param altruistURL altruist's URL.
+   * @param blockchainSyncBackup altruist's URL.
    * @param applicationID application database's ID.
    * @param applicationPublicKey application's public key.
    * @param requestID request id.
@@ -39,15 +47,14 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     pocketAAT: PocketAAT,
     pocketConfiguration: Configuration | undefined,
     pocketSession: Session,
-    altruistURL: string,
+    blockchainSyncBackup: string,
     applicationID: string,
     applicationPublicKey: string,
-    requestID: string,
-    defaultAllowance = 5
+    requestID: string
   ): Promise<Node[]> {
     const sessionHash = hashBlockchainNodes(blockchainID, pocketSession.sessionNodes)
 
-    const allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : defaultAllowance
+    const allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
 
     const syncedNodesKey = `sync-check-${sessionHash}`
 
@@ -59,7 +66,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
       return syncedNodes
     }
 
-    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, altruistURL)
+    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
 
     const nodeChecker = new NodeChecker(this.pocket, pocketConfiguration || this.pocket.configuration)
 

@@ -17,6 +17,7 @@ const logger = require('../../src/services/logger')
 const EVM_RELAY_RESPONSE = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c9c" }'
 const SOLANA_RELAY_RESPONSE = '{"jsonrpc":"2.0","result":85377210,"id":1}'
 const POCKET_RELAY_RESPONSE = '{"height":35758}'
+const DEFAULT_SYNC_ALLOWANCE = 5
 
 const ALTRUIST_URL = {
   '0021': 'https://eth-mainnet:pass@backups.example.org:18081',
@@ -112,7 +113,7 @@ describe('Sync checker service new (unit)', () => {
     const pocket = pocketMock.object()
 
     pocketSession = (await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session
-    syncChecker = new PocketSyncChecker(pocket, redis, metricsRecorder, 'sync-check')
+    syncChecker = new PocketSyncChecker(pocket, redis, metricsRecorder, 'sync-check', DEFAULT_SYNC_ALLOWANCE)
 
     //// Add responses to axios mock
     axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
@@ -399,7 +400,13 @@ describe('Sync checker service new (unit)', () => {
         EVM_RELAY_RESPONSE,
         penalizedNode,
       ]
-      syncChecker = new PocketSyncChecker(pocketMock.object(), redis, metricsRecorder, 'sync-check-origin')
+      syncChecker = new PocketSyncChecker(
+        pocketMock.object(),
+        redis,
+        metricsRecorder,
+        'sync-check-origin',
+        DEFAULT_SYNC_ALLOWANCE
+      )
 
       const syncedNodes = await syncChecker.check(
         nodes,
@@ -439,7 +446,13 @@ describe('Sync checker service new (unit)', () => {
         secondHighestNode,
         secondHighestNode,
       ]
-      syncChecker = new PocketSyncChecker(pocketMock.object(), redis, metricsRecorder, 'sync-check-origin')
+      syncChecker = new PocketSyncChecker(
+        pocketMock.object(),
+        redis,
+        metricsRecorder,
+        'sync-check-origin',
+        DEFAULT_SYNC_ALLOWANCE
+      )
 
       const syncedNodes = await syncChecker.check(
         nodes,
@@ -471,7 +484,13 @@ describe('Sync checker service new (unit)', () => {
         EVM_RELAY_RESPONSE,
         new RpcError('90', MAX_RELAYS_ERROR),
       ]
-      syncChecker = new PocketSyncChecker(pocketMock.object(), redis, metricsRecorder, 'sync-check-origin')
+      syncChecker = new PocketSyncChecker(
+        pocketMock.object(),
+        redis,
+        metricsRecorder,
+        'sync-check-origin',
+        DEFAULT_SYNC_ALLOWANCE
+      )
 
       const syncedNodes = await syncChecker.check(
         nodes,
