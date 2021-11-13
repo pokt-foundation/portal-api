@@ -170,6 +170,7 @@ export class NodeChecker {
    * @param resultKey key field from the relay response that's expected to have a value on failing non-archive nodes
    * @param comparator value to compare the resultKey against.
    * @param path optional. Blockchain's path to send the request to.
+   * @param swap optional. Instead of returning success on archival nodes, return success on not archival nodes.
    * @returns Response object containing the relay response and boolean.
    * assuring whether the node supports supports archival or not.
    */
@@ -179,8 +180,9 @@ export class NodeChecker {
     blockchainID: string,
     aat: PocketAAT,
     resultKey: string,
-    comparator: string,
-    path?: string
+    comparator: string | number,
+    path?: string,
+    swap = false
   ): Promise<NodeCheckResponse<ArchivalCheck>> {
     let payloadResponse: object
 
@@ -188,7 +190,7 @@ export class NodeChecker {
       payloadResponse = payload
       const result = NodeChecker.parseBlockFromPayload(payload, resultKey).toString()
 
-      return result !== comparatorVal
+      return swap ? result !== comparatorVal.toString() : result === comparatorVal.toString()
     }
 
     const { success, relayResponse } = await this.processCheck(
@@ -225,31 +227,6 @@ export class NodeChecker {
   }
 
   /**
-   * Performs a consensus relay on all nodes. Meant to be used to slash nodes that fail any of the checks
-   * @param data payload to send to the blockchain.
-   * @param blockchainID Blockchain to request data from.
-   * @param aat Pocket Authentication token object.
-   * @param path  optional. Blockchain's path to send the request to.
-   * @returns relay response from the blockchain.
-   */
-  async sendConsensusRelay(
-    data: string,
-    blockchainID: string,
-    aat: PocketAAT,
-    path?: string
-  ): Promise<RelayResponse | Error> {
-    return this.sendRelay(
-      data,
-      blockchainID,
-      aat,
-      undefined,
-      path,
-      this.updateConfigurationConsensus(this.configuration),
-      true
-    )
-  }
-
-  /**
    * Helper function for request the blockchains data, asserting is valid and return the result from a comparator function
    * over the obtained relay response.
    * @param node node to perfom the request.
@@ -277,11 +254,40 @@ export class NodeChecker {
       return { success: false, relayResponse, output: 0 }
     }
 
-    const payload = JSON.parse(relayResponse.payload)
+    let payload = JSON.parse(relayResponse.payload)
+
+    if (Array.isArray(payload)) {
+      payload = payload[0]
+    }
 
     const successCheck = comparatorFn(payload, comparator)
 
     return { relayResponse, success: successCheck, output: payload }
+  }
+
+  /**
+   * Performs a consensus relay on all nodes. Meant to be used to slash nodes that fail any of the checks
+   * @param data payload to send to the blockchain.
+   * @param blockchainID Blockchain to request data from.
+   * @param aat Pocket Authentication token object.
+   * @param path  optional. Blockchain's path to send the request to.
+   * @returns relay response from the blockchain.
+   */
+  async sendConsensusRelay(
+    data: string,
+    blockchainID: string,
+    aat: PocketAAT,
+    path?: string
+  ): Promise<RelayResponse | Error> {
+    return this.sendRelay(
+      data,
+      blockchainID,
+      aat,
+      undefined,
+      path,
+      this.updateConfigurationConsensus(this.configuration),
+      true
+    )
   }
 
   /**
@@ -352,12 +358,12 @@ export class NodeChecker {
    * @param pocketConfiguration Pocket's Configuration object.
    * @returns updated configuration object.
    */
-  private updateConfigurationTimeout(pocketConfiguration: Configuration): Configuration {
+  private updateConfigurationTimeout(pocketConfiguration: Configuration, timeout = 4000): Configuration {
     return new Configuration(
       pocketConfiguration.maxDispatchers,
       pocketConfiguration.maxSessions,
       pocketConfiguration.consensusNodeCount,
-      4000,
+      timeout,
       pocketConfiguration.acceptDisputedResponses,
       pocketConfiguration.sessionBlockFrequency,
       pocketConfiguration.blockTime,

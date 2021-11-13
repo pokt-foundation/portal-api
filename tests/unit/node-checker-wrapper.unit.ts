@@ -67,6 +67,10 @@ describe('Node checker wrapper (unit)', () => {
     axiosMock.restore()
   })
 
+  it('should be defined', async () => {
+    expect(nodeCheckerWrapper).to.be.ok()
+  })
+
   it('performs blockchain challenge succesffully', async () => {
     await nodeCheckerWrapper['performChallenge'](CHAINCHECK_PAYLOAD, '0027', undefined, pocketConfiguration, '', '', '')
 
