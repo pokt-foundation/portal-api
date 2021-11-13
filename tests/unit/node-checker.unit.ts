@@ -105,7 +105,7 @@ describe('Node checker (unit)', () => {
 
   it('compares a relayResponse against a helper function', async () => {
     // Comparator function, taken from chain check
-    const isCorrectChain = (payload: any, chainIDArg) => {
+    const isCorrectChain = (payload: object, chainIDArg) => {
       const nodeChainID = NodeChecker.parseBlockFromPayload(payload, 'result')
 
       return nodeChainID === chainIDArg

@@ -74,7 +74,7 @@ export class NodeChecker {
   ): Promise<NodeCheckResponse<ChainCheck>> {
     let nodeChainID: number
 
-    const isCorrectChain = (payload: any, chainIDArg) => {
+    const isCorrectChain = (payload: object, chainIDArg) => {
       nodeChainID = NodeChecker.parseBlockFromPayload(payload, 'result')
       return nodeChainID === chainIDArg
     }
@@ -129,7 +129,7 @@ export class NodeChecker {
   ): Promise<NodeCheckResponse<SyncCheck>> {
     let blockheight: number
 
-    const isSynced = (payload: any, minimumAllowedHeight) => {
+    const isSynced = (payload: object, minimumAllowedHeight) => {
       blockheight = NodeChecker.parseBlockFromPayload(payload, resultKey)
 
       if (source > 0 && allowance >= 0) {
@@ -246,6 +246,7 @@ export class NodeChecker {
     aat: PocketAAT,
     path: string | undefined,
     comparator: string | number,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     comparatorFn: (value: any, comparator) => boolean
   ): Promise<ProcessCheck> {
     const relayResponse = await this.sendRelay(data, blockchainID, aat, node, path)
