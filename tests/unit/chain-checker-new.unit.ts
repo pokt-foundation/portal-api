@@ -46,7 +46,7 @@ describe('Chain checker new service (unit)', () => {
 
     pocketSession = (await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session
 
-    chainChecker = new PocketChainChecker(pocket, redis, metricsRecorder, pocketSession, 'chain-check')
+    chainChecker = new PocketChainChecker(pocket, redis, metricsRecorder, 'chain-check')
 
     await redis.flushall()
   })
@@ -78,6 +78,7 @@ describe('Chain checker new service (unit)', () => {
       '0027',
       undefined,
       pocketConfiguration,
+      pocketSession,
       '1234',
       '5678',
       'abcd'
@@ -97,6 +98,7 @@ describe('Chain checker new service (unit)', () => {
       '0027',
       undefined,
       pocketConfiguration,
+      pocketSession,
       '1234',
       '5678',
       'abcd'
@@ -114,7 +116,7 @@ describe('Chain checker new service (unit)', () => {
 
     const pocketClient = pocketMock.object()
     const chainID = 100
-    const pocketChainChecker = new PocketChainChecker(pocketClient, redis, metricsRecorder, pocketSession, '')
+    const pocketChainChecker = new PocketChainChecker(pocketClient, redis, metricsRecorder, '')
     const checkedNodes = await pocketChainChecker.check(
       nodes,
       CHAINCHECK_PAYLOAD,
@@ -122,6 +124,7 @@ describe('Chain checker new service (unit)', () => {
       '0027',
       undefined,
       pocketConfiguration,
+      pocketSession,
       '1234',
       '5678',
       'abcd'
@@ -147,7 +150,7 @@ describe('Chain checker new service (unit)', () => {
     const pocketClient = pocketMock.object()
     const chainID = 100
 
-    const pocketChainChecker = new PocketChainChecker(pocketClient, redis, metricsRecorder, pocketSession, '')
+    const pocketChainChecker = new PocketChainChecker(pocketClient, redis, metricsRecorder, '')
     const checkedNodes = await pocketChainChecker.check(
       nodes,
       CHAINCHECK_PAYLOAD,
@@ -155,6 +158,7 @@ describe('Chain checker new service (unit)', () => {
       '0027',
       undefined,
       pocketConfiguration,
+      pocketSession,
       '1234',
       '5678',
       'abcd'

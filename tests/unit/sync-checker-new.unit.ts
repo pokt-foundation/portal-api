@@ -112,7 +112,7 @@ describe('Sync checker service new (unit)', () => {
     const pocket = pocketMock.object()
 
     pocketSession = (await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session
-    syncChecker = new PocketSyncChecker(pocket, redis, metricsRecorder, pocketSession, 'sync-check')
+    syncChecker = new PocketSyncChecker(pocket, redis, metricsRecorder, 'sync-check')
 
     //// Add responses to axios mock
     axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
@@ -174,6 +174,7 @@ describe('Sync checker service new (unit)', () => {
         blockchains['0021'].hash,
         undefined,
         pocketConfiguration,
+        pocketSession,
         ALTRUIST_URL['0021'],
         '1234',
         '5678',
@@ -192,6 +193,7 @@ describe('Sync checker service new (unit)', () => {
         blockchains['0021'].hash,
         undefined,
         pocketConfiguration,
+        pocketSession,
         ALTRUIST_URL['0021'],
         '1234',
         '5678',
@@ -214,6 +216,7 @@ describe('Sync checker service new (unit)', () => {
         blockchains['0006'].hash,
         undefined,
         pocketConfiguration,
+        pocketSession,
         ALTRUIST_URL['0006'],
         '1234',
         '5678',
@@ -232,6 +235,7 @@ describe('Sync checker service new (unit)', () => {
         blockchains['0006'].hash,
         undefined,
         pocketConfiguration,
+        pocketSession,
         ALTRUIST_URL['0006'],
         '1234',
         '5678',
@@ -253,6 +257,7 @@ describe('Sync checker service new (unit)', () => {
         blockchains['0001'].hash,
         undefined,
         pocketConfiguration,
+        pocketSession,
         ALTRUIST_URL['0001'],
         '1234',
         '5678',
@@ -271,6 +276,7 @@ describe('Sync checker service new (unit)', () => {
         blockchains['0001'].hash,
         undefined,
         pocketConfiguration,
+        pocketSession,
         ALTRUIST_URL['0001'],
         '1234',
         '5678',
@@ -292,6 +298,7 @@ describe('Sync checker service new (unit)', () => {
         blockchains['0006'].hash,
         undefined,
         pocketConfiguration,
+        pocketSession,
         ALTRUIST_URL['0006'],
         '1234',
         '5678',
@@ -321,6 +328,7 @@ describe('Sync checker service new (unit)', () => {
         blockchains['0021'].hash,
         undefined,
         pocketConfiguration,
+        pocketSession,
         ALTRUIST_URL['0021'],
         '1234',
         '5678',
@@ -348,6 +356,7 @@ describe('Sync checker service new (unit)', () => {
         blockchains['0021'].hash,
         undefined,
         pocketConfiguration,
+        pocketSession,
         ALTRUIST_URL['0021'],
         '1234',
         '5678',
@@ -368,6 +377,7 @@ describe('Sync checker service new (unit)', () => {
         blockchains['0021'].hash,
         undefined,
         pocketConfiguration,
+        pocketSession,
         ALTRUIST_URL['0021'],
         '1234',
         '5678',
@@ -389,13 +399,7 @@ describe('Sync checker service new (unit)', () => {
         EVM_RELAY_RESPONSE,
         penalizedNode,
       ]
-      syncChecker = new PocketSyncChecker(
-        pocketMock.object(),
-        redis,
-        metricsRecorder,
-        pocketSession,
-        'sync-check-origin'
-      )
+      syncChecker = new PocketSyncChecker(pocketMock.object(), redis, metricsRecorder, 'sync-check-origin')
 
       const syncedNodes = await syncChecker.check(
         nodes,
@@ -403,6 +407,7 @@ describe('Sync checker service new (unit)', () => {
         blockchains['0021'].hash,
         undefined,
         pocketConfiguration,
+        pocketSession,
         ALTRUIST_URL['0021'],
         '1234',
         '5678',
@@ -434,13 +439,7 @@ describe('Sync checker service new (unit)', () => {
         secondHighestNode,
         secondHighestNode,
       ]
-      syncChecker = new PocketSyncChecker(
-        pocketMock.object(),
-        redis,
-        metricsRecorder,
-        pocketSession,
-        'sync-check-origin'
-      )
+      syncChecker = new PocketSyncChecker(pocketMock.object(), redis, metricsRecorder, 'sync-check-origin')
 
       const syncedNodes = await syncChecker.check(
         nodes,
@@ -448,6 +447,7 @@ describe('Sync checker service new (unit)', () => {
         blockchains['0021'].hash,
         undefined,
         pocketConfiguration,
+        pocketSession,
         ALTRUIST_URL['0021'],
         '1234',
         '5678',
@@ -471,13 +471,7 @@ describe('Sync checker service new (unit)', () => {
         EVM_RELAY_RESPONSE,
         new RpcError('90', MAX_RELAYS_ERROR),
       ]
-      syncChecker = new PocketSyncChecker(
-        pocketMock.object(),
-        redis,
-        metricsRecorder,
-        pocketSession,
-        'sync-check-origin'
-      )
+      syncChecker = new PocketSyncChecker(pocketMock.object(), redis, metricsRecorder, 'sync-check-origin')
 
       const syncedNodes = await syncChecker.check(
         nodes,
@@ -485,6 +479,7 @@ describe('Sync checker service new (unit)', () => {
         blockchains['0021'].hash,
         undefined,
         pocketConfiguration,
+        pocketSession,
         ALTRUIST_URL['0021'],
         '1234',
         '5678',

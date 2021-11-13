@@ -52,7 +52,7 @@ describe('Archival checker new service (unit)', () => {
 
     pocketSession = (await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session
 
-    archivalChecker = new ArchivalChecker(pocket, redis, metricsRecorder, pocketSession, 'archival-check')
+    archivalChecker = new ArchivalChecker(pocket, redis, metricsRecorder, 'archival-check')
 
     await redis.flushall()
   })
@@ -78,7 +78,7 @@ describe('Archival checker new service (unit)', () => {
 
     const pocketClient = pocketMock.object()
 
-    archivalChecker = new ArchivalChecker(pocketClient, redis, metricsRecorder, pocketSession, '')
+    archivalChecker = new ArchivalChecker(pocketClient, redis, metricsRecorder, '')
 
     let checkedNodes = await archivalChecker.check(
       DEFAULT_NODES,
@@ -86,6 +86,7 @@ describe('Archival checker new service (unit)', () => {
       '0027',
       undefined,
       pocketConfiguration,
+      pocketSession,
       '1234',
       '5678',
       'abcd'
@@ -104,6 +105,7 @@ describe('Archival checker new service (unit)', () => {
       '0027',
       undefined,
       pocketConfiguration,
+      pocketSession,
       '1234',
       '5678',
       'abcd'
@@ -120,6 +122,7 @@ describe('Archival checker new service (unit)', () => {
       '0027',
       undefined,
       pocketConfiguration,
+      pocketSession,
       '1234',
       '5678',
       'abcd'
@@ -144,7 +147,7 @@ describe('Archival checker new service (unit)', () => {
 
     const pocketClient = pocketMock.object()
 
-    archivalChecker = new ArchivalChecker(pocketClient, redis, metricsRecorder, pocketSession, '')
+    archivalChecker = new ArchivalChecker(pocketClient, redis, metricsRecorder, '')
 
     const checkedNodes = await archivalChecker.check(
       DEFAULT_NODES,
@@ -152,6 +155,7 @@ describe('Archival checker new service (unit)', () => {
       '0027',
       undefined,
       pocketConfiguration,
+      pocketSession,
       '1234',
       '5678',
       'abcd'

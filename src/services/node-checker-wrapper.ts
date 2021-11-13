@@ -12,14 +12,12 @@ export class NodeCheckerWrapper {
   pocket: Pocket
   redis: Redis
   metricsRecorder: MetricsRecorder
-  pocketSession: Session
   origin: string
 
-  constructor(pocket: Pocket, redis: Redis, metricsRecorder: MetricsRecorder, pocketSession: Session, origin: string) {
+  constructor(pocket: Pocket, redis: Redis, metricsRecorder: MetricsRecorder, origin: string) {
     this.pocket = pocket
     this.redis = redis
     this.metricsRecorder = metricsRecorder
-    this.pocketSession = pocketSession
     this.origin = origin
   }
 
@@ -79,13 +77,14 @@ export class NodeCheckerWrapper {
     nodes: Node[],
     nodesPromise: PromiseSettledResult<NodeCheckResponse<T>>[],
     blockchainID: string,
+    pocketSession: Session,
     requestID: string,
     relayStart: [number, number],
     applicationID: string,
     applicationPublicKey: string
   ): Promise<NodeCheckResponse<T>[]> {
     const filteredNodes: NodeCheckResponse<T>[] = []
-    const { sessionNodes } = this.pocketSession
+    const { sessionNodes } = pocketSession
     const sessionHash = hashBlockchainNodes(blockchainID, sessionNodes)
 
     for (const [idx, nodeCheckPromise] of nodesPromise.entries()) {
@@ -146,7 +145,7 @@ export class NodeCheckerWrapper {
           data: undefined,
           sessionHash,
           bytes: 0,
-          pocketSession: this.pocketSession,
+          pocketSession: pocketSession,
         }
 
         switch (checkType) {
@@ -248,6 +247,7 @@ export class NodeCheckerWrapper {
     blockchainID: string,
     aat: PocketAAT,
     configuration: Configuration,
+    pocketSession: Session,
     log: string,
     requestID: string,
     path?: string
@@ -259,7 +259,7 @@ export class NodeCheckerWrapper {
       requestID: requestID,
       blockchainID,
       origin: this.origin,
-      sessionHash: hashBlockchainNodes(blockchainID, this.pocketSession.sessionNodes),
+      sessionHash: hashBlockchainNodes(blockchainID, pocketSession.sessionNodes),
     })
   }
 }

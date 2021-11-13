@@ -53,7 +53,7 @@ describe('Node checker wrapper (unit)', () => {
 
     nodeChecker = new NodeChecker(pocket, pocketConfiguration)
 
-    nodeCheckerWrapper = new NodeCheckerWrapper(pocket, redis, metricsRecorder, pocketSession, ORIGIN)
+    nodeCheckerWrapper = new NodeCheckerWrapper(pocket, redis, metricsRecorder, ORIGIN)
 
     await redis.flushall()
   })
@@ -72,7 +72,16 @@ describe('Node checker wrapper (unit)', () => {
   })
 
   it('performs blockchain challenge succesffully', async () => {
-    await nodeCheckerWrapper['performChallenge'](CHAINCHECK_PAYLOAD, '0027', undefined, pocketConfiguration, '', '', '')
+    await nodeCheckerWrapper['performChallenge'](
+      CHAINCHECK_PAYLOAD,
+      '0027',
+      undefined,
+      pocketConfiguration,
+      pocketSession,
+      '',
+      '',
+      ''
+    )
 
     // Succesfull challenge will contain the response payload in the response body
     const expectedLog = logSpy.calledWith(
@@ -131,6 +140,7 @@ describe('Node checker wrapper (unit)', () => {
         DEFAULT_NODES,
         nodeChainChecks,
         '0027',
+        pocketSession,
         '1234',
         relayStart,
         '5678',
@@ -155,7 +165,7 @@ describe('Node checker wrapper (unit)', () => {
       const pocket = pocketMock.object()
 
       nodeChecker = new NodeChecker(pocket, pocketConfiguration)
-      nodeCheckerWrapper = new NodeCheckerWrapper(pocket, redis, metricsRecorder, pocketSession, ORIGIN)
+      nodeCheckerWrapper = new NodeCheckerWrapper(pocket, redis, metricsRecorder, ORIGIN)
 
       const nodeChainChecks = await Promise.allSettled(
         DEFAULT_NODES.map((node) => nodeChecker.chain(node, CHAINCHECK_PAYLOAD, '0027', undefined, 100))
@@ -168,6 +178,7 @@ describe('Node checker wrapper (unit)', () => {
         DEFAULT_NODES,
         nodeChainChecks,
         '0027',
+        pocketSession,
         '1234',
         relayStart,
         '5678',

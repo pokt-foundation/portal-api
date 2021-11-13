@@ -13,8 +13,8 @@ const logger = require('../services/logger')
 export class PocketSyncChecker extends NodeCheckerWrapper {
   defaultSyncAllowance: number
 
-  constructor(pocket: Pocket, redis: Redis, metricsRecorder: MetricsRecorder, pocketSession: Session, origin: string) {
-    super(pocket, redis, metricsRecorder, pocketSession, origin)
+  constructor(pocket: Pocket, redis: Redis, metricsRecorder: MetricsRecorder, origin: string) {
+    super(pocket, redis, metricsRecorder, origin)
   }
 
   /**
@@ -38,13 +38,14 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     blockchainID: string,
     pocketAAT: PocketAAT,
     pocketConfiguration: Configuration | undefined,
+    pocketSession: Session,
     altruistURL: string,
     applicationID: string,
     applicationPublicKey: string,
     requestID: string,
     defaultAllowance = 5
   ): Promise<Node[]> {
-    const sessionHash = hashBlockchainNodes(blockchainID, this.pocketSession.sessionNodes)
+    const sessionHash = hashBlockchainNodes(blockchainID, pocketSession.sessionNodes)
 
     const allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : defaultAllowance
 
@@ -85,6 +86,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
           nodes,
           nodeSyncChecks,
           blockchainID,
+          pocketSession,
           requestID,
           relayStart,
           applicationID,
@@ -218,7 +220,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
           error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${topBlockheight} altruist block height: ${altruistBlockHeight} node height: ${node.output.blockHeight} sync allowance: ${allowance}`,
           origin: this.origin,
           data: undefined,
-          pocketSession: this.pocketSession,
+          pocketSession: pocketSession,
         })
       })
     )
@@ -245,6 +247,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
         blockchainID,
         pocketAAT,
         pocketConfiguration,
+        pocketSession,
         'SYNC CHECK CHALLENGE:',
         requestID
       )

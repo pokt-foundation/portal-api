@@ -15,8 +15,8 @@ export type ArchivalCheckOptions = {
 }
 
 export class ArchivalChecker extends NodeCheckerWrapper {
-  constructor(pocket: Pocket, redis: Redis, metricsRecorder: MetricsRecorder, pocketSession: Session, origin: string) {
-    super(pocket, redis, metricsRecorder, pocketSession, origin)
+  constructor(pocket: Pocket, redis: Redis, metricsRecorder: MetricsRecorder, origin: string) {
+    super(pocket, redis, metricsRecorder, origin)
   }
 
   async check(
@@ -25,11 +25,12 @@ export class ArchivalChecker extends NodeCheckerWrapper {
     blockchainID: string,
     pocketAAT: PocketAAT,
     pocketConfiguration: Configuration | undefined,
+    pocketSession: Session,
     applicationID: string,
     applicationPublicKey: string,
     requestID: string
   ): Promise<Node[]> {
-    const sessionHash = hashBlockchainNodes(blockchainID, this.pocketSession.sessionNodes)
+    const sessionHash = hashBlockchainNodes(blockchainID, pocketSession.sessionNodes)
     const archivalNodesKey = `archival-check-${sessionHash}`
 
     const archivalNodes: Node[] = await this.cacheNodes(nodes, archivalNodesKey)
@@ -53,6 +54,7 @@ export class ArchivalChecker extends NodeCheckerWrapper {
           nodes,
           nodeArchivalChecks,
           blockchainID,
+          pocketSession,
           requestID,
           relayStart,
           applicationID,
@@ -83,6 +85,7 @@ export class ArchivalChecker extends NodeCheckerWrapper {
         blockchainID,
         pocketAAT,
         pocketConfiguration,
+        pocketSession,
         'ARCHIVAL CHECK CHALLENGE:',
         requestID,
         path

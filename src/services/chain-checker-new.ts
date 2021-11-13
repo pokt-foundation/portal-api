@@ -8,8 +8,8 @@ import { NodeCheckerWrapper } from './node-checker-wrapper'
 const logger = require('../services/logger')
 
 export class PocketChainChecker extends NodeCheckerWrapper {
-  constructor(pocket: Pocket, redis: Redis, metricsRecorder: MetricsRecorder, pocketSession: Session, origin: string) {
-    super(pocket, redis, metricsRecorder, pocketSession, origin)
+  constructor(pocket: Pocket, redis: Redis, metricsRecorder: MetricsRecorder, origin: string) {
+    super(pocket, redis, metricsRecorder, origin)
   }
 
   /**
@@ -32,11 +32,12 @@ export class PocketChainChecker extends NodeCheckerWrapper {
     blockchainID: string,
     pocketAAT: PocketAAT,
     pocketConfiguration: Configuration | undefined,
+    pocketSession: Session,
     applicationID: string,
     applicationPublicKey: string,
     requestID: string
   ): Promise<Node[]> {
-    const sessionHash = hashBlockchainNodes(blockchainID, this.pocketSession.sessionNodes)
+    const sessionHash = hashBlockchainNodes(blockchainID, pocketSession.sessionNodes)
     const checkedNodesKey = `chain-check-${sessionHash}`
 
     const checkedNodes: Node[] = await this.cacheNodes(nodes, checkedNodesKey)
@@ -60,6 +61,7 @@ export class PocketChainChecker extends NodeCheckerWrapper {
           nodes,
           nodeChainChecks,
           blockchainID,
+          pocketSession,
           requestID,
           relayStart,
           applicationID,
@@ -90,6 +92,7 @@ export class PocketChainChecker extends NodeCheckerWrapper {
         blockchainID,
         pocketAAT,
         pocketConfiguration,
+        pocketSession,
         'CHAIN CHECK CHALLENGE:',
         requestID
       )
