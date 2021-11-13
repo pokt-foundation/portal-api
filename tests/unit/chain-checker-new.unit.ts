@@ -44,7 +44,12 @@ describe('Chain checker new service (unit)', () => {
     pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = DEFAULT_CHAINCHECK_RESPONSE
     const pocket = pocketMock.object()
 
-    pocketSession = (await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session
+    pocketSession = (await pocket.sessionManager.getCurrentSession(
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    )) as Session
 
     chainChecker = new PocketChainChecker(pocket, redis, metricsRecorder, 'chain-check')
 

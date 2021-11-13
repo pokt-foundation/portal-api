@@ -49,7 +49,12 @@ describe('Node checker wrapper (unit)', () => {
     pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = DEFAULT_CHAINCHECK_RESPONSE
     const pocket = pocketMock.object()
 
-    pocketSession = (await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session
+    pocketSession = (await pocket.sessionManager.getCurrentSession(
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    )) as Session
 
     nodeChecker = new NodeChecker(pocket, pocketConfiguration)
 

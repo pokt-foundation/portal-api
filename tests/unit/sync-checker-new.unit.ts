@@ -112,7 +112,12 @@ describe('Sync checker service new (unit)', () => {
     pocketMock.relayResponse[blockchains['0001'].syncCheckOptions.body] = POCKET_RELAY_RESPONSE
     const pocket = pocketMock.object()
 
-    pocketSession = (await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session
+    pocketSession = (await pocket.sessionManager.getCurrentSession(
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    )) as Session
     syncChecker = new PocketSyncChecker(pocket, redis, metricsRecorder, 'sync-check', DEFAULT_SYNC_ALLOWANCE)
 
     //// Add responses to axios mock

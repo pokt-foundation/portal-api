@@ -50,7 +50,12 @@ describe('Archival checker new service (unit)', () => {
     pocketMock.relayResponse[ARCHIVALCHECK_PAYLOAD.body] = DEFAULT_ARCHIVALCHECK_RESPONSE
     const pocket = pocketMock.object()
 
-    pocketSession = (await pocket.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session
+    pocketSession = (await pocket.sessionManager.getCurrentSession(
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    )) as Session
 
     archivalChecker = new ArchivalChecker(pocket, redis, metricsRecorder, 'archival-check')
 
