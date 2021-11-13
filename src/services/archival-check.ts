@@ -11,7 +11,7 @@ export type ArchivalCheckOptions = {
   path?: string
   body: string
   resultKey: string
-  comparator: string
+  comparator: string | number
 }
 
 export class ArchivalChecker extends NodeCheckerWrapper {

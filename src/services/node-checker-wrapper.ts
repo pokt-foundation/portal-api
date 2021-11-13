@@ -36,8 +36,9 @@ export class NodeCheckerWrapper {
 
     const checkedNodesCached = await this.redis.get(cacheKey)
 
-    if (checkedNodesCached) {
-      checkedNodesList = JSON.parse(checkedNodesCached)
+    checkedNodesList = JSON.parse(checkedNodesCached)
+
+    if (checkedNodesList && checkedNodesList.length > 0) {
       for (const node of nodes) {
         if (checkedNodesList.includes(node.publicKey)) {
           checkedNodes.push(node)
