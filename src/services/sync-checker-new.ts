@@ -6,7 +6,6 @@ import { hashBlockchainNodes } from '../utils/helpers'
 import { MetricsRecorder } from './metrics-recorder'
 import { NodeChecker, NodeCheckResponse, SyncCheck } from './node-checker'
 import { NodeCheckerWrapper } from './node-checker-wrapper'
-import { SyncCheckOptions } from './sync-checker'
 
 const logger = require('../services/logger')
 
@@ -322,4 +321,11 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     }
     return 0
   }
+}
+
+export interface SyncCheckOptions {
+  path?: string
+  body: string
+  resultKey: string
+  allowance?: number
 }

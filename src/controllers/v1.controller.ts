@@ -9,11 +9,11 @@ import { WriteApi } from '@influxdata/influxdb-client'
 
 import { Applications, LoadBalancers } from '../models'
 import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from '../repositories'
-import { ChainChecker } from '../services/chain-checker'
+import { PocketChainChecker } from '../services/chain-checker-new'
 import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { PocketRelayer } from '../services/pocket-relayer'
-import { SyncChecker } from '../services/sync-checker'
+import { PocketSyncChecker } from '../services/sync-checker-new'
 import { loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
 
@@ -23,8 +23,8 @@ export class V1Controller {
   cherryPicker: CherryPicker
   metricsRecorder: MetricsRecorder
   pocketRelayer: PocketRelayer
-  syncChecker: SyncChecker
-  chainChecker: ChainChecker
+  syncChecker: PocketSyncChecker
+  chainChecker: PocketChainChecker
 
   constructor(
     @inject('secretKey') private secretKey: string,
@@ -71,8 +71,15 @@ export class V1Controller {
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
     })
-    this.syncChecker = new SyncChecker(this.redis, this.metricsRecorder, this.defaultSyncAllowance, this.origin)
-    this.chainChecker = new ChainChecker(this.redis, this.metricsRecorder, this.origin)
+    this.syncChecker = new PocketSyncChecker(
+      this.pocket,
+      this.redis,
+      this.metricsRecorder,
+      this.origin,
+      this.defaultSyncAllowance
+    )
+
+    this.chainChecker = new PocketChainChecker(this.pocket, this.redis, this.metricsRecorder, this.origin)
     this.pocketRelayer = new PocketRelayer({
       host: this.host,
       origin: this.origin,
