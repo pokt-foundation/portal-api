@@ -160,7 +160,14 @@ export class NodeCheckerWrapper {
             break
         }
 
-        await this.metricsRecorder.recordMetric(metricLog)
+        this.metricsRecorder.recordMetric(metricLog).catch(function log(e) {
+          logger.log('error', 'Error recording metrics: ' + e, {
+            requestID: requestID,
+            relayType: 'APP',
+            typeID: applicationID,
+            serviceNode: node.publicKey,
+          })
+        })
         continue
       }
 

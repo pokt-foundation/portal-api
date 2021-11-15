@@ -217,23 +217,33 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
             sessionHash,
           })
 
-          return this.metricsRecorder.recordMetric({
-            requestID: requestID,
-            applicationID: applicationID,
-            applicationPublicKey: applicationPublicKey,
-            blockchainID,
-            serviceNode: nodeData.publicKey,
-            relayStart,
-            result: 500,
-            bytes: Buffer.byteLength('OUT OF SYNC', 'utf8'),
-            delivered: false,
-            fallback: false,
-            method: 'synccheck',
-            error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${topBlockheight} altruist block height: ${altruistBlockHeight} node height: ${nodeData.blockHeight} sync allowance: ${allowance}`,
-            origin: this.origin,
-            data: undefined,
-            pocketSession: pocketSession,
-          })
+          this.metricsRecorder
+            .recordMetric({
+              requestID: requestID,
+              applicationID: applicationID,
+              applicationPublicKey: applicationPublicKey,
+              blockchainID,
+              serviceNode: nodeData.publicKey,
+              relayStart,
+              result: 500,
+              bytes: Buffer.byteLength('OUT OF SYNC', 'utf8'),
+              delivered: false,
+              fallback: false,
+              method: 'synccheck',
+              error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${topBlockheight} altruist block height: ${altruistBlockHeight} node height: ${nodeData.blockHeight} sync allowance: ${allowance}`,
+              origin: this.origin,
+              data: undefined,
+              pocketSession: pocketSession,
+            })
+            .catch(function log(e) {
+              logger.log('error', 'Error recording metrics: ' + e, {
+                requestID: requestID,
+                relayType: 'APP',
+                typeID: applicationID,
+                serviceNode: nodeData.publicKey,
+              })
+            })
+          return
         }
 
         logger.log(
