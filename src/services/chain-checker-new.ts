@@ -13,13 +13,16 @@ export class PocketChainChecker extends NodeCheckerWrapper {
   }
 
   /**
-   * Perfoms a chain check on all the nodes provided, slashing nodes that fail the check and caching the response.
+   * Perfoms a chain check on all the nodes provided, this is nodes must return the same chainID request to
+   * validate they can actually serve relays from the requested blockchain, failing to do so will result
+   * in the node getting slashed.
    * @param nodes nodes to perfom the check on.
    * @param data payload to be send to the blockchain.
    * @param chainID  blockchain chain's ID to evaluate against.
    * @param blockchainID Blockchain to request data from.
    * @param pocketAAT Pocket Authentication Token object.
    * @param pocketConfiguration pocket's configuration object.
+   * @param pocketSession. pocket's current session object.
    * @param applicationID application database's ID.
    * @param applicationPublicKey application's public key.
    * @param requestID request id.

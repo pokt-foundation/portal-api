@@ -33,6 +33,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
    * @param blockchainID Blockchain to request data from.
    * @param pocketAAT Pocket Authentication Token object.
    * @param pocketConfiguration pocket's configuration object.
+   * @param pocketSession. pocket's current session object.
    * @param blockchainSyncBackup altruist's URL.
    * @param applicationID application database's ID.
    * @param applicationPublicKey application's public key.
@@ -172,7 +173,9 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     syncedNodes = syncSuccess.map(({ node }) => node)
     syncedNodesList = syncedNodes.map(({ publicKey }) => publicKey)
 
-    // Records and log all nodes in and out of sync, otherwise, remove failure mark
+    // Records and log all nodes in and out of sync, otherwise, remove failure mark. nodeSyncChecks may hold incomplete
+    // data if the check for some reason failed, that's why first is needed to check if the sync check response
+    // of a node actually holds a valid response.
     await Promise.allSettled(
       nodeSyncChecks.map(async (node, idx) => {
         let nodeData = {
@@ -203,56 +206,56 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
 
         const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, nodeData.publicKey, requestID)
 
-        if (syncedNode) {
-          logger.log(
-            'info',
-            `SYNC-CHECK IN-SYNC: ${syncedNode.node.publicKey} height: ${syncedNode.output.blockHeight}`,
-            {
-              requestID: requestID,
-              serviceNode: syncedNode.node.publicKey,
-              blockchainID,
-              origin: this.origin,
-              serviceURL,
-              serviceDomain,
-              sessionHash,
-            }
-          )
+        if (!syncedNode) {
+          logger.log('info', `SYNC-CHECK BEHIND: ${nodeData.publicKey} height: ${nodeData.blockHeight}`, {
+            requestID: requestID,
+            serviceNode: nodeData.publicKey,
+            blockchainID,
+            origin: this.origin,
+            serviceURL,
+            serviceDomain,
+            sessionHash,
+          })
 
-          return this.redis.set(
-            blockchainID + '-' + syncedNode.node.publicKey + '-failure',
-            'false',
-            'EX',
-            60 * 60 * 24 * 30
-          )
+          return this.metricsRecorder.recordMetric({
+            requestID: requestID,
+            applicationID: applicationID,
+            applicationPublicKey: applicationPublicKey,
+            blockchainID,
+            serviceNode: nodeData.publicKey,
+            relayStart,
+            result: 500,
+            bytes: Buffer.byteLength('OUT OF SYNC', 'utf8'),
+            delivered: false,
+            fallback: false,
+            method: 'synccheck',
+            error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${topBlockheight} altruist block height: ${altruistBlockHeight} node height: ${nodeData.blockHeight} sync allowance: ${allowance}`,
+            origin: this.origin,
+            data: undefined,
+            pocketSession: pocketSession,
+          })
         }
 
-        logger.log('info', `SYNC-CHECK BEHIND: ${nodeData.publicKey} height: ${nodeData.blockHeight}`, {
-          requestID: requestID,
-          serviceNode: nodeData.publicKey,
-          blockchainID,
-          origin: this.origin,
-          serviceURL,
-          serviceDomain,
-          sessionHash,
-        })
+        logger.log(
+          'info',
+          `SYNC-CHECK IN-SYNC: ${syncedNode.node.publicKey} height: ${syncedNode.output.blockHeight}`,
+          {
+            requestID: requestID,
+            serviceNode: syncedNode.node.publicKey,
+            blockchainID,
+            origin: this.origin,
+            serviceURL,
+            serviceDomain,
+            sessionHash,
+          }
+        )
 
-        return this.metricsRecorder.recordMetric({
-          requestID: requestID,
-          applicationID: applicationID,
-          applicationPublicKey: applicationPublicKey,
-          blockchainID,
-          serviceNode: nodeData.publicKey,
-          relayStart,
-          result: 500,
-          bytes: Buffer.byteLength('OUT OF SYNC', 'utf8'),
-          delivered: false,
-          fallback: false,
-          method: 'synccheck',
-          error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${topBlockheight} altruist block height: ${altruistBlockHeight} node height: ${nodeData.blockHeight} sync allowance: ${allowance}`,
-          origin: this.origin,
-          data: undefined,
-          pocketSession: pocketSession,
-        })
+        return this.redis.set(
+          blockchainID + '-' + syncedNode.node.publicKey + '-failure',
+          'false',
+          'EX',
+          60 * 60 * 24 * 30
+        )
       })
     )
 

@@ -19,9 +19,23 @@ export class ArchivalChecker extends NodeCheckerWrapper {
     super(pocket, redis, metricsRecorder, origin)
   }
 
+  /**
+   * Perfoms an archival check on all the nodes provided, this is nodes must confirm they're able to relay
+   * archival request, failing to do so will result in the node getting slashed.
+   * @param nodes nodes to perfom the check on.
+   * @param archivalCheckOptions. options containing the blockchain's archival configuration.
+   * @param blockchainID Blockchain to request data from.
+   * @param pocketAAT Pocket Authentication Token object.
+   * @param pocketConfiguration pocket's configuration object.
+   * @param pocketSession. pocket's current session object.
+   * @param applicationID application database's ID.
+   * @param applicationPublicKey application's public key.
+   * @param requestID request id.
+   * @returns nodes that passed the chain check.
+   */
   async check(
     nodes: Node[],
-    { body, resultKey, comparator, path }: ArchivalCheckOptions,
+    archivalCheckOptions: ArchivalCheckOptions,
     blockchainID: string,
     pocketAAT: PocketAAT,
     pocketConfiguration: Configuration | undefined,
@@ -30,6 +44,8 @@ export class ArchivalChecker extends NodeCheckerWrapper {
     applicationPublicKey: string,
     requestID: string
   ): Promise<Node[]> {
+    const { body, resultKey, comparator, path } = archivalCheckOptions
+
     const sessionHash = hashBlockchainNodes(blockchainID, pocketSession.sessionNodes)
     const archivalNodesKey = `archival-check-${sessionHash}`
 
