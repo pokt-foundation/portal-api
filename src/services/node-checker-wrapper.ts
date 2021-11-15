@@ -53,7 +53,7 @@ export class NodeCheckerWrapper {
       return nodes
     } else {
       // Set lock as this thread checks the Chain with 60 second ttl.
-      // If any major errors happen below, it will retry the Chain check every 60 seconds.
+      // If any major errors happen below, it will retry the check every 60 seconds.
       await this.redis.set('lock-' + cacheKey, 'true', 'EX', 60)
     }
 
@@ -70,7 +70,7 @@ export class NodeCheckerWrapper {
    * @param relayStart time when the checks started.
    * @param applicationID application database's ID.
    * @param applicationPublicKey application's public key.
-   * @returns nodes having succesful and valid check results.
+   * @returns nodes having successful and valid check results.
    */
   protected async filterNodes<T>(
     checkType: Check,
