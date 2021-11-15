@@ -183,16 +183,14 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
           blockHeight: 0,
         }
 
-        if (node.status !== 'fulfilled') {
-          nodeData = {
-            publicKey: nodes[idx].publicKey,
-            blockHeight: 0,
-          }
-        } else {
+        if (node.status === 'fulfilled' && !(node.value.response instanceof Error)) {
           nodeData = {
             publicKey: nodes[idx].publicKey,
             blockHeight: node.value.output.blockHeight,
           }
+        } else {
+          // Don't log failing nodes
+          return
         }
 
         const syncedNode = syncSuccess.find(({ node: { publicKey } }) => publicKey === nodeData.publicKey)
