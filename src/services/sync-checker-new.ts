@@ -178,36 +178,21 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     // of a node actually holds a valid response.
     await Promise.allSettled(
       nodeSyncChecks.map(async (node, idx) => {
-        let nodeData = {
-          publicKey: '',
-          blockHeight: 0,
-        }
-
-        if (node.status === 'fulfilled' && !(node.value.response instanceof Error)) {
-          nodeData = {
-            publicKey: nodes[idx].publicKey,
-            blockHeight: node.value.output.blockHeight,
-          }
-        } else {
-          // Don't log failing nodes
+        // Don't log failing nodes
+        if (node.status !== 'fulfilled' || node.value.response instanceof Error) {
           return
         }
 
-        const syncedNode = syncSuccess.find(({ node: { publicKey } }) => publicKey === nodeData.publicKey)
+        const { publicKey } = node.value.node
+        const { blockHeight } = node.value.output
 
-        if (syncedNode) {
-          nodeData = {
-            publicKey: syncedNode.node.publicKey,
-            blockHeight: syncedNode.output.blockHeight,
-          }
-        }
-
-        const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, nodeData.publicKey, requestID)
+        const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, publicKey, requestID)
+        const syncedNode = syncSuccess.find(({ node: { publicKey: nodePublicKey } }) => nodePublicKey === publicKey)
 
         if (!syncedNode) {
-          logger.log('info', `SYNC-CHECK BEHIND: ${nodeData.publicKey} height: ${nodeData.blockHeight}`, {
+          logger.log('warn', `SYNC-CHECK BEHIND: ${publicKey} height: ${blockHeight}`, {
             requestID: requestID,
-            serviceNode: nodeData.publicKey,
+            serviceNode: publicKey,
             blockchainID,
             origin: this.origin,
             serviceURL,
@@ -221,14 +206,14 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
               applicationID: applicationID,
               applicationPublicKey: applicationPublicKey,
               blockchainID,
-              serviceNode: nodeData.publicKey,
+              serviceNode: publicKey,
               relayStart,
               result: 500,
               bytes: Buffer.byteLength('OUT OF SYNC', 'utf8'),
               delivered: false,
               fallback: false,
               method: 'synccheck',
-              error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${topBlockheight} altruist block height: ${altruistBlockHeight} node height: ${nodeData.blockHeight} sync allowance: ${allowance}`,
+              error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${topBlockheight} altruist block height: ${altruistBlockHeight} node height: ${blockHeight} sync allowance: ${allowance}`,
               origin: this.origin,
               data: undefined,
               pocketSession: pocketSession,
@@ -238,32 +223,23 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
                 requestID: requestID,
                 relayType: 'APP',
                 typeID: applicationID,
-                serviceNode: nodeData.publicKey,
+                serviceNode: publicKey,
               })
             })
           return
         }
 
-        logger.log(
-          'info',
-          `SYNC-CHECK IN-SYNC: ${syncedNode.node.publicKey} height: ${syncedNode.output.blockHeight}`,
-          {
-            requestID: requestID,
-            serviceNode: syncedNode.node.publicKey,
-            blockchainID,
-            origin: this.origin,
-            serviceURL,
-            serviceDomain,
-            sessionHash,
-          }
-        )
+        logger.log('info', `SYNC-CHECK IN-SYNC: ${publicKey} height: ${blockHeight}`, {
+          requestID: requestID,
+          serviceNode: publicKey,
+          blockchainID,
+          origin: this.origin,
+          serviceURL,
+          serviceDomain,
+          sessionHash,
+        })
 
-        return this.redis.set(
-          blockchainID + '-' + syncedNode.node.publicKey + '-failure',
-          'false',
-          'EX',
-          60 * 60 * 24 * 30
-        )
+        return this.redis.set(blockchainID + '-' + publicKey + '-failure', 'false', 'EX', 60 * 60 * 24 * 30)
       })
     )
 
