@@ -508,6 +508,7 @@ export class PocketRelayer {
         typeID: application.id,
         origin: this.origin,
         blockchainID,
+        requestID,
       })
 
       return pocketSession
