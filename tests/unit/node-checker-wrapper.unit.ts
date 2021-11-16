@@ -134,7 +134,7 @@ describe('Node checker wrapper (unit)', () => {
       const relayStart = process.hrtime()
 
       const nodeChainChecks = await Promise.allSettled(
-        DEFAULT_NODES.map((node) => nodeChecker.chain(node, CHAINCHECK_PAYLOAD, '0027', undefined, 100))
+        DEFAULT_NODES.map((node) => nodeChecker.performChainCheck(node, CHAINCHECK_PAYLOAD, '0027', undefined, 100))
       )
 
       expect(nodeChainChecks).to.have.length(5)
@@ -173,7 +173,7 @@ describe('Node checker wrapper (unit)', () => {
       nodeCheckerWrapper = new NodeCheckerWrapper(pocket, redis, metricsRecorder, ORIGIN)
 
       const nodeChainChecks = await Promise.allSettled(
-        DEFAULT_NODES.map((node) => nodeChecker.chain(node, CHAINCHECK_PAYLOAD, '0027', undefined, 100))
+        DEFAULT_NODES.map((node) => nodeChecker.performChainCheck(node, CHAINCHECK_PAYLOAD, '0027', undefined, 100))
       )
 
       expect(nodeChainChecks).to.have.length(5)

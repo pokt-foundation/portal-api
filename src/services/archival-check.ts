@@ -60,7 +60,9 @@ export class ArchivalChecker extends NodeCheckerWrapper {
 
     const relayStart = process.hrtime()
     const nodeArchivalChecks = await Promise.allSettled(
-      nodes.map((node) => nodeChecker.archival(node, body, blockchainID, pocketAAT, resultKey, comparator, path, true))
+      nodes.map((node) =>
+        nodeChecker.performArchivalCheck(node, body, blockchainID, pocketAAT, resultKey, comparator, path, true)
+      )
     )
 
     archivalNodes.push(

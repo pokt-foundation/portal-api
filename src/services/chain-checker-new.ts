@@ -54,7 +54,7 @@ export class PocketChainChecker extends NodeCheckerWrapper {
 
     const relayStart = process.hrtime()
     const nodeChainChecks = await Promise.allSettled(
-      nodes.map((node) => nodeChecker.chain(node, data, blockchainID, pocketAAT, chainID))
+      nodes.map((node) => nodeChecker.performChainCheck(node, data, blockchainID, pocketAAT, chainID))
     )
 
     checkedNodes.push(

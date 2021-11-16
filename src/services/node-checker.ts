@@ -46,7 +46,7 @@ export class NodeChecker {
    * @param key key for which the value is stored
    * @returns decimal representation of the object's response
    */
-  static parseBlockFromPayload(payload: object, key: string): number {
+  static parseHexFromPayload(payload: object, key: string): number {
     const rawHeight = get(payload, key) || '0'
 
     return blockHexToDecimal(rawHeight)
@@ -64,7 +64,7 @@ export class NodeChecker {
    * @returns Response object containing the relay response, request output and boolean
    * assuring whether the node supports the correct chain or not
    */
-  async chain(
+  async performChainCheck(
     node: Node,
     data: string,
     blockchainID: string,
@@ -74,8 +74,8 @@ export class NodeChecker {
   ): Promise<NodeCheckResponse<ChainCheck>> {
     let nodeChainID: number
 
-    const isCorrectChain = (payload: object, chainIDArg) => {
-      nodeChainID = NodeChecker.parseBlockFromPayload(payload, 'result')
+    const isCorrectChain = function (payload: object, chainIDArg: number) {
+      nodeChainID = NodeChecker.parseHexFromPayload(payload, 'result')
       return nodeChainID === chainIDArg
     }
 
@@ -117,7 +117,7 @@ export class NodeChecker {
    * @returns response object containing the relay response, request output and boolean
    * assuring whether the node is on sync with the source, or has a block height over 0 in case no source was provided.
    */
-  async sync(
+  async performSyncCheck(
     node: Node,
     data: string,
     blockchainID: string,
@@ -129,8 +129,8 @@ export class NodeChecker {
   ): Promise<NodeCheckResponse<SyncCheck>> {
     let blockheight: number
 
-    const isSynced = (payload: object, minimumAllowedHeight) => {
-      blockheight = NodeChecker.parseBlockFromPayload(payload, resultKey)
+    const isSynced = function (payload: object, minimumAllowedHeight) {
+      blockheight = NodeChecker.parseHexFromPayload(payload, resultKey)
 
       if (source > 0 && allowance >= 0) {
         return blockheight >= minimumAllowedHeight
@@ -174,7 +174,7 @@ export class NodeChecker {
    * @returns Response object containing the relay response and boolean.
    * assuring whether the node supports supports archival or not.
    */
-  async archival(
+  async performArchivalCheck(
     node: Node,
     data: string,
     blockchainID: string,
@@ -186,9 +186,9 @@ export class NodeChecker {
   ): Promise<NodeCheckResponse<ArchivalCheck>> {
     let payloadResponse: object
 
-    const isArchival = (payload: object, comparatorVal: string) => {
+    const isArchival = function (payload: object, comparatorVal: string) {
       payloadResponse = payload
-      const result = NodeChecker.parseBlockFromPayload(payload, resultKey).toString()
+      const result = NodeChecker.parseHexFromPayload(payload, resultKey).toString()
 
       return swap ? result !== comparatorVal.toString() : result === comparatorVal.toString()
     }
@@ -227,7 +227,7 @@ export class NodeChecker {
   }
 
   /**
-   * Helper function for request the blockchains data, asserting is valid and return the result from a comparator function
+   * Helper function for requesting the blockchain data, asserting it's valid, and returning the result from a comparator function
    * over the obtained relay response.
    * @param node node to perfom the request.
    * @param data payload to send to the blockchain.

@@ -53,7 +53,7 @@ describe('Node checker (unit)', () => {
   it('parses block from payload', async () => {
     const expectedResult = 100
 
-    const result = NodeChecker.parseBlockFromPayload(JSON.parse(DEFAULT_CHAINCHECK_RESPONSE), 'result')
+    const result = NodeChecker.parseHexFromPayload(JSON.parse(DEFAULT_CHAINCHECK_RESPONSE), 'result')
 
     expect(result).to.be.equal(expectedResult)
   })
@@ -106,7 +106,7 @@ describe('Node checker (unit)', () => {
   it('compares a relayResponse against a helper function', async () => {
     // Comparator function, taken from chain check
     const isCorrectChain = (payload: object, chainIDArg) => {
-      const nodeChainID = NodeChecker.parseBlockFromPayload(payload, 'result')
+      const nodeChainID = NodeChecker.parseHexFromPayload(payload, 'result')
 
       return nodeChainID === chainIDArg
     }
@@ -137,24 +137,45 @@ describe('Node checker (unit)', () => {
   })
 
   it('performs successfull and failing chain check', async () => {
-    const successChainCheck = await nodeChecker.chain(DEFAULT_NODES[0], CHAINCHECK_PAYLOAD, '0001', undefined, 100, '')
+    const successChainCheck = await nodeChecker.performChainCheck(
+      DEFAULT_NODES[0],
+      CHAINCHECK_PAYLOAD,
+      '0001',
+      undefined,
+      100,
+      ''
+    )
 
     expect(successChainCheck.success).to.be.true()
 
-    const failingChainCheck = await nodeChecker.chain(DEFAULT_NODES[0], CHAINCHECK_PAYLOAD, '0001', undefined, 200, '')
+    const failingChainCheck = await nodeChecker.performChainCheck(
+      DEFAULT_NODES[0],
+      CHAINCHECK_PAYLOAD,
+      '0001',
+      undefined,
+      200,
+      ''
+    )
 
     expect(failingChainCheck.success).to.be.false()
 
     pocketMock.fail = true
 
-    const errorChainCheck = await nodeChecker.chain(DEFAULT_NODES[0], CHAINCHECK_PAYLOAD, '0001', undefined, 100, '')
+    const errorChainCheck = await nodeChecker.performChainCheck(
+      DEFAULT_NODES[0],
+      CHAINCHECK_PAYLOAD,
+      '0001',
+      undefined,
+      100,
+      ''
+    )
 
     expect(errorChainCheck.success).to.be.false()
   })
 
   it('performs successfull and failing sync check', async () => {
     // With source
-    const successSyncCheckSource = await nodeChecker.sync(
+    const successSyncCheckSource = await nodeChecker.performSyncCheck(
       DEFAULT_NODES[0],
       SYNCCHECK_PAYLOAD.body,
       '0001',
@@ -168,7 +189,7 @@ describe('Node checker (unit)', () => {
     expect(successSyncCheckSource.success).to.be.true()
 
     // Without source
-    const successSyncCheck = await nodeChecker.sync(
+    const successSyncCheck = await nodeChecker.performSyncCheck(
       DEFAULT_NODES[0],
       SYNCCHECK_PAYLOAD.body,
       '0001',
@@ -181,7 +202,7 @@ describe('Node checker (unit)', () => {
 
     expect(successSyncCheck.success).to.be.true()
 
-    const failingSyncCheck = await nodeChecker.sync(
+    const failingSyncCheck = await nodeChecker.performSyncCheck(
       DEFAULT_NODES[0],
       SYNCCHECK_PAYLOAD.body,
       '0001',
@@ -196,7 +217,7 @@ describe('Node checker (unit)', () => {
 
     pocketMock.fail = true
 
-    const errorSyncCheck = await nodeChecker.sync(
+    const errorSyncCheck = await nodeChecker.performSyncCheck(
       DEFAULT_NODES[0],
       SYNCCHECK_PAYLOAD.body,
       '0001',
@@ -211,7 +232,7 @@ describe('Node checker (unit)', () => {
   })
 
   it('performs successfull and failing archival check', async () => {
-    const successArchivalCheck = await nodeChecker.archival(
+    const successArchivalCheck = await nodeChecker.performArchivalCheck(
       DEFAULT_NODES[0],
       ARCHIVALCHECK_PAYLOAD.body,
       '0001',
@@ -223,7 +244,7 @@ describe('Node checker (unit)', () => {
     expect(successArchivalCheck.success).to.be.true()
 
     console.log('LLEGAMO AQUI')
-    const successArchivalCheckArray = await nodeChecker.archival(
+    const successArchivalCheckArray = await nodeChecker.performArchivalCheck(
       DEFAULT_NODES[0],
       ARCHIVALCHECK_PAYLOAD.bodyArray,
       '0001',
@@ -234,7 +255,7 @@ describe('Node checker (unit)', () => {
 
     expect(successArchivalCheckArray.success).to.be.true()
 
-    const failingArchivalCheck = await nodeChecker.archival(
+    const failingArchivalCheck = await nodeChecker.performArchivalCheck(
       DEFAULT_NODES[0],
       ARCHIVALCHECK_PAYLOAD.body,
       '0001',
@@ -247,7 +268,7 @@ describe('Node checker (unit)', () => {
 
     pocketMock.fail = true
 
-    const errorArchivalCheck = await nodeChecker.archival(
+    const errorArchivalCheck = await nodeChecker.performArchivalCheck(
       DEFAULT_NODES[0],
       ARCHIVALCHECK_PAYLOAD.body,
       '0001',

@@ -67,7 +67,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     const relayStart = process.hrtime()
     const nodeSyncChecks = await Promise.allSettled(
       nodes.map((node) =>
-        nodeChecker.sync(
+        nodeChecker.performSyncCheck(
           node,
           syncCheckOptions.body,
           blockchainID,
@@ -288,7 +288,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
 
       if (!(syncResponse instanceof Error)) {
         const payload = syncResponse.data // object that includes 'resultKey'
-        const blockHeight = NodeChecker.parseBlockFromPayload(payload, syncCheckOptions.resultKey)
+        const blockHeight = NodeChecker.parseHexFromPayload(payload, syncCheckOptions.resultKey)
 
         return blockHeight
       }
