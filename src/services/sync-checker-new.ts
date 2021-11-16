@@ -269,7 +269,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
   }
 
   /**
-   * Obtains the blockheight from ann altruist node.
+   * Obtains the blockheight from an altruist node.
    * @param syncCheckOptions options containing the blockchain's height configuration.
    * @param altruistURL altruist's URL.
    * @returns altruist block height

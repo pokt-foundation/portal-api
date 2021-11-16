@@ -3,7 +3,6 @@ import MockAdapter from 'axios-mock-adapter'
 import RedisMock from 'ioredis-mock'
 import { expect, sinon } from '@loopback/testlab'
 import { Configuration, Session, RpcError } from '@pokt-network/pocket-js'
-
 import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
 import { ArchivalChecker } from '../../src/services/archival-check'
 import { CherryPicker } from '../../src/services/cherry-picker'

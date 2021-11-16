@@ -3,6 +3,10 @@ import { Pocket, Configuration, Node, RelayResponse, PocketAAT, HTTPMethod, RpcE
 import { blockHexToDecimal } from '../utils/block'
 import { checkEnforcementJSON } from '../utils/enforcements'
 
+const CONSENSUS_NODE_COUNT = 5
+const CONSENSUS_TIMEOUT = 2000
+const CONSENSUS_ACCEPT_DISPUTED_RESPONSE = false
+
 export type Check = 'sync-check' | 'chain-check' | 'archival-check'
 
 export type NodeCheckResponse<T> = {
@@ -233,8 +237,7 @@ export class NodeChecker {
    * @param data payload to send to the blockchain.
    * @param blockchainID Blockchain to request data from.
    * @param aat Pocket Authentication token object.
-   * @param resultKey key to extract data from the JSON response, for nested keys can be added using dot notation
-   * (i.e. 'example.nested').
+   * @param path Blockchain's path to send the request to.
    * @param comparator value to compare the extracted output from resultKey.
    * @param comparatorFn Function to compare the extracted values, expected a boolean response.
    * @returns relayResponse, boolean for comparator response and resultKey output
@@ -343,9 +346,9 @@ export class NodeChecker {
     return new Configuration(
       pocketConfiguration.maxDispatchers,
       pocketConfiguration.maxSessions,
-      5,
-      2000,
-      false,
+      CONSENSUS_NODE_COUNT,
+      CONSENSUS_TIMEOUT,
+      CONSENSUS_ACCEPT_DISPUTED_RESPONSE,
       pocketConfiguration.sessionBlockFrequency,
       pocketConfiguration.blockTime,
       pocketConfiguration.maxSessionRefreshRetries,

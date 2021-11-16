@@ -23,12 +23,12 @@ export class ArchivalChecker extends NodeCheckerWrapper {
    * Perfoms an archival check on all the nodes provided, this is nodes must confirm they're able to relay
    * archival request, failing to do so will result in the node getting slashed.
    * @param nodes nodes to perfom the check on.
-   * @param archivalCheckOptions. options containing the blockchain's archival configuration.
+   * @param archivalCheckOptions options containing the blockchain's archival configuration.
    * @param blockchainID Blockchain to request data from.
    * @param pocketAAT Pocket Authentication Token object.
    * @param pocketConfiguration pocket's configuration object.
-   * @param pocketSession. pocket's current session object.
-   * @param applicationID application database's ID.
+   * @param pocketSession pocket's current session object.
+   * @param applicationID application's database ID.
    * @param applicationPublicKey application's public key.
    * @param requestID request id.
    * @returns nodes that passed the chain check.
