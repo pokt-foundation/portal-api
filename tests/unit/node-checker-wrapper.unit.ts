@@ -103,7 +103,7 @@ describe('Node checker wrapper (unit)', () => {
     const redisSetSpy = sinon.spy(redis, 'set')
     const cacheKey = 'nodes'
 
-    let cachedNodes = await nodeCheckerWrapper['cacheNodes'](DEFAULT_NODES, cacheKey)
+    let cachedNodes = await nodeCheckerWrapper['checkForCachedNodes'](DEFAULT_NODES, cacheKey)
 
     expect(cachedNodes).to.have.length(0)
     expect(redisGetSpy.callCount).to.be.equal(2)
@@ -114,7 +114,7 @@ describe('Node checker wrapper (unit)', () => {
     expect(cacheLock).to.be.equal('true')
 
     // Call with cache lock on (no cache)
-    cachedNodes = await nodeCheckerWrapper['cacheNodes'](DEFAULT_NODES, cacheKey)
+    cachedNodes = await nodeCheckerWrapper['checkForCachedNodes'](DEFAULT_NODES, cacheKey)
 
     expect(cachedNodes).to.have.length(5)
     expect(redisGetSpy.callCount).to.be.equal(5)
@@ -122,7 +122,7 @@ describe('Node checker wrapper (unit)', () => {
 
     // // After saving to cache
     await redis.set('nodes', JSON.stringify(DEFAULT_NODES.slice(1).map((node) => node.publicKey)))
-    cachedNodes = await nodeCheckerWrapper['cacheNodes'](DEFAULT_NODES, cacheKey)
+    cachedNodes = await nodeCheckerWrapper['checkForCachedNodes'](DEFAULT_NODES, cacheKey)
 
     expect(cachedNodes).to.have.length(4)
     expect(redisGetSpy.callCount).to.be.equal(6)
@@ -140,17 +140,17 @@ describe('Node checker wrapper (unit)', () => {
       expect(nodeChainChecks).to.have.length(5)
 
       console.log(nodeChainChecks)
-      const filteredNodes = await nodeCheckerWrapper['filterNodes']<ChainCheck>(
-        'chain-check',
-        DEFAULT_NODES,
-        nodeChainChecks,
-        '0027',
+      const filteredNodes = await nodeCheckerWrapper['filterNodes']<ChainCheck>({
+        checkType: 'chain-check',
+        nodes: DEFAULT_NODES,
+        checksResult: nodeChainChecks,
+        blockchainID: '0027',
         pocketSession,
-        '1234',
+        requestID: '1234',
         relayStart,
-        '5678',
-        'abcd'
-      )
+        applicationID: '5678',
+        applicationPublicKey: 'abcd',
+      })
 
       expect(filteredNodes).to.have.length(5)
     })
@@ -178,17 +178,17 @@ describe('Node checker wrapper (unit)', () => {
 
       expect(nodeChainChecks).to.have.length(5)
 
-      const filteredNodes = await nodeCheckerWrapper['filterNodes']<ChainCheck>(
-        'chain-check',
-        DEFAULT_NODES,
-        nodeChainChecks,
-        '0027',
+      const filteredNodes = await nodeCheckerWrapper['filterNodes']<ChainCheck>({
+        checkType: 'chain-check',
+        nodes: DEFAULT_NODES,
+        checksResult: nodeChainChecks,
+        blockchainID: '0027',
         pocketSession,
-        '1234',
+        requestID: '1234',
         relayStart,
-        '5678',
-        'abcd'
-      )
+        applicationID: '5678',
+        applicationPublicKey: 'abcd',
+      })
 
       expect(filteredNodes).to.have.length(3)
     })

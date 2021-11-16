@@ -85,17 +85,17 @@ describe('Archival checker new service (unit)', () => {
 
     archivalChecker = new ArchivalChecker(pocketClient, redis, metricsRecorder, '')
 
-    let checkedNodes = await archivalChecker.check(
-      DEFAULT_NODES,
-      ARCHIVALCHECK_PAYLOAD,
-      '0027',
-      undefined,
+    let checkedNodes = await archivalChecker.check({
+      nodes: DEFAULT_NODES,
+      archivalCheckOptions: ARCHIVALCHECK_PAYLOAD,
+      blockchainID: '0027',
+      pocketAAT: undefined,
       pocketConfiguration,
       pocketSession,
-      '1234',
-      '5678',
-      'abcd'
-    )
+      applicationID: '1234',
+      applicationPublicKey: '5678',
+      requestID: 'abcd',
+    })
 
     expect(checkedNodes).to.be.Array()
     expect(checkedNodes).to.have.length(5)
@@ -104,34 +104,34 @@ describe('Archival checker new service (unit)', () => {
     expect(redisSetSpy.callCount).to.be.equal(7)
 
     // Subsequent calls should retrieve results from redis instead
-    checkedNodes = await archivalChecker.check(
-      DEFAULT_NODES,
-      ARCHIVALCHECK_PAYLOAD,
-      '0027',
-      undefined,
+    checkedNodes = await archivalChecker.check({
+      nodes: DEFAULT_NODES,
+      archivalCheckOptions: ARCHIVALCHECK_PAYLOAD,
+      blockchainID: '0027',
+      pocketAAT: undefined,
       pocketConfiguration,
       pocketSession,
-      '1234',
-      '5678',
-      'abcd'
-    )
+      applicationID: '1234',
+      applicationPublicKey: '5678',
+      requestID: 'abcd',
+    })
 
     expect(redisGetSpy.callCount).to.be.equal(8)
     expect(redisSetSpy.callCount).to.be.equal(7)
   })
 
   it('fails the archival check', async () => {
-    const checkedNodes = await archivalChecker.check(
-      DEFAULT_NODES,
-      ARCHIVALCHECK_PAYLOAD,
-      '0027',
-      undefined,
+    const checkedNodes = await archivalChecker.check({
+      nodes: DEFAULT_NODES,
+      archivalCheckOptions: ARCHIVALCHECK_PAYLOAD,
+      blockchainID: '0027',
+      pocketAAT: undefined,
       pocketConfiguration,
       pocketSession,
-      '1234',
-      '5678',
-      'abcd'
-    )
+      applicationID: '1234',
+      applicationPublicKey: '5678',
+      requestID: 'abcd',
+    })
 
     expect(checkedNodes).to.be.Array()
     expect(checkedNodes).to.have.length(0)
@@ -154,17 +154,17 @@ describe('Archival checker new service (unit)', () => {
 
     archivalChecker = new ArchivalChecker(pocketClient, redis, metricsRecorder, '')
 
-    const checkedNodes = await archivalChecker.check(
-      DEFAULT_NODES,
-      ARCHIVALCHECK_PAYLOAD,
-      '0027',
-      undefined,
+    const checkedNodes = await archivalChecker.check({
+      nodes: DEFAULT_NODES,
+      archivalCheckOptions: ARCHIVALCHECK_PAYLOAD,
+      blockchainID: '0027',
+      pocketAAT: undefined,
       pocketConfiguration,
       pocketSession,
-      '1234',
-      '5678',
-      'abcd'
-    )
+      applicationID: '1234',
+      applicationPublicKey: '5678',
+      requestID: 'abcd',
+    })
 
     expect(checkedNodes).to.be.Array()
     expect(checkedNodes).to.have.length(4)

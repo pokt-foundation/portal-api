@@ -565,18 +565,18 @@ export class PocketRelayer {
 
     if (blockchainSyncCheck) {
       // Check Sync
-      syncCheckPromise = this.syncChecker.check(
+      syncCheckPromise = this.syncChecker.check({
         nodes,
-        blockchainSyncCheck,
         blockchainID,
         pocketAAT,
-        this.pocketConfiguration,
         pocketSession,
         blockchainSyncBackup,
-        application.id,
-        application.gatewayAAT.applicationPublicKey,
-        requestID
-      )
+        requestID,
+        syncCheckOptions: blockchainSyncCheck,
+        pocketConfiguration: this.pocketConfiguration,
+        applicationID: application.id,
+        applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+      })
     }
 
     const checkersPromise = Promise.allSettled([chainCheckPromise, syncCheckPromise])

@@ -28,7 +28,7 @@ export class NodeCheckerWrapper {
    * @param cacheKey key to get/set results.
    * @returns nodes cached or provided on case of cache/lock.
    */
-  protected async cacheNodes(nodes: Node[], cacheKey: string): Promise<Node[]> {
+  protected async checkForCachedNodes(nodes: Node[], cacheKey: string): Promise<Node[]> {
     const checkedNodes: Node[] = []
     let checkedNodesList: string[] = []
 
@@ -64,7 +64,7 @@ export class NodeCheckerWrapper {
    * Logs responses from the node checks and filters failing nodes.
    * @param checkType type of check made.
    * @param nodes nodes to be filtered.
-   * @param nodesPromise results of a check on node's.
+   * @param checksResult results of a check on node's.
    * @param blockchainID blockchain used for the checks.
    * @param requestID request id.
    * @param relayStart time when the checks started.
@@ -72,22 +72,22 @@ export class NodeCheckerWrapper {
    * @param applicationPublicKey application's public key.
    * @returns nodes having successful and valid check results.
    */
-  protected async filterNodes<T>(
-    checkType: Check,
-    nodes: Node[],
-    nodesPromise: PromiseSettledResult<NodeCheckResponse<T>>[],
-    blockchainID: string,
-    pocketSession: Session,
-    requestID: string,
-    relayStart: [number, number],
-    applicationID: string,
-    applicationPublicKey: string
-  ): Promise<NodeCheckResponse<T>[]> {
+  protected async filterNodes<T>({
+    checkType,
+    nodes,
+    checksResult,
+    blockchainID,
+    pocketSession,
+    requestID,
+    applicationID,
+    applicationPublicKey,
+    relayStart,
+  }: FilterParams<T>): Promise<NodeCheckResponse<T>[]> {
     const filteredNodes: NodeCheckResponse<T>[] = []
     const { sessionNodes } = pocketSession
     const sessionHash = hashBlockchainNodes(blockchainID, sessionNodes)
 
-    for (const [idx, nodeCheckPromise] of nodesPromise.entries()) {
+    for (const [idx, nodeCheckPromise] of checksResult.entries()) {
       const node = nodes[idx]
 
       const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
@@ -98,7 +98,6 @@ export class NodeCheckerWrapper {
       const rejected = nodeCheckPromise.status === 'rejected'
       const failed = rejected || nodeCheckPromise.value.response instanceof Error
 
-      // Error
       if (failed) {
         let error: string | Error
         let errorMsg: string
@@ -269,4 +268,16 @@ export class NodeCheckerWrapper {
       sessionHash: hashBlockchainNodes(blockchainID, pocketSession.sessionNodes),
     })
   }
+}
+
+export type FilterParams<T> = {
+  checkType: Check
+  nodes: Node[]
+  checksResult: PromiseSettledResult<NodeCheckResponse<T>>[]
+  blockchainID: string
+  pocketSession: Session
+  requestID: string
+  applicationID: string
+  applicationPublicKey: string
+  relayStart: [number, number]
 }

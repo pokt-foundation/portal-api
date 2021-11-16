@@ -71,13 +71,13 @@ export class V1Controller {
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
     })
-    this.syncChecker = new PocketSyncChecker(
-      this.pocket,
-      this.redis,
-      this.metricsRecorder,
-      this.origin,
-      this.defaultSyncAllowance
-    )
+    this.syncChecker = new PocketSyncChecker({
+      pocket: this.pocket,
+      redis: this.redis,
+      metricsRecorder: this.metricsRecorder,
+      origin: this.origin,
+      defaultSyncAllowance: this.defaultSyncAllowance,
+    })
 
     this.chainChecker = new PocketChainChecker(this.pocket, this.redis, this.metricsRecorder, this.origin)
     this.pocketRelayer = new PocketRelayer({

@@ -1,5 +1,5 @@
 import { Redis } from 'ioredis'
-import { Pocket, PocketAAT, Configuration, Node, Session } from '@pokt-network/pocket-js'
+import { Configuration, Node, Pocket, PocketAAT, Session } from '@pokt-network/pocket-js'
 import { hashBlockchainNodes } from '../utils/helpers'
 import { MetricsRecorder } from './metrics-recorder'
 import { ArchivalCheck, NodeChecker } from './node-checker'
@@ -33,23 +33,23 @@ export class ArchivalChecker extends NodeCheckerWrapper {
    * @param requestID request id.
    * @returns nodes that passed the chain check.
    */
-  async check(
-    nodes: Node[],
-    archivalCheckOptions: ArchivalCheckOptions,
-    blockchainID: string,
-    pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration | undefined,
-    pocketSession: Session,
-    applicationID: string,
-    applicationPublicKey: string,
-    requestID: string
-  ): Promise<Node[]> {
+  async check({
+    nodes,
+    archivalCheckOptions,
+    blockchainID,
+    pocketAAT,
+    pocketConfiguration,
+    pocketSession,
+    applicationID,
+    applicationPublicKey,
+    requestID,
+  }: ArchivalCheckParams): Promise<Node[]> {
     const { body, resultKey, comparator, path } = archivalCheckOptions
 
     const sessionHash = hashBlockchainNodes(blockchainID, pocketSession.sessionNodes)
     const archivalNodesKey = `archival-check-${sessionHash}`
 
-    const archivalNodes: Node[] = await this.cacheNodes(nodes, archivalNodesKey)
+    const archivalNodes: Node[] = await this.checkForCachedNodes(nodes, archivalNodesKey)
     const archivalNodesList: string[] = []
 
     if (archivalNodes.length > 0) {
@@ -65,17 +65,17 @@ export class ArchivalChecker extends NodeCheckerWrapper {
 
     archivalNodes.push(
       ...(
-        await this.filterNodes<ArchivalCheck>(
-          'archival-check',
+        await this.filterNodes<ArchivalCheck>({
           nodes,
-          nodeArchivalChecks,
           blockchainID,
           pocketSession,
           requestID,
           relayStart,
           applicationID,
-          applicationPublicKey
-        )
+          applicationPublicKey,
+          checkType: 'archival-check',
+          checksResult: nodeArchivalChecks,
+        })
       ).map(({ node }) => node)
     )
     archivalNodesList.push(...archivalNodes.map(({ publicKey }) => publicKey))
@@ -110,4 +110,16 @@ export class ArchivalChecker extends NodeCheckerWrapper {
 
     return archivalNodes
   }
+}
+
+export type ArchivalCheckParams = {
+  nodes: Node[]
+  archivalCheckOptions: ArchivalCheckOptions
+  blockchainID: string
+  pocketAAT: PocketAAT
+  pocketConfiguration: Configuration | undefined
+  pocketSession: Session
+  applicationID: string
+  applicationPublicKey: string
+  requestID: string
 }

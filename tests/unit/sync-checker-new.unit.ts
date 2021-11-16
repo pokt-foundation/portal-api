@@ -118,7 +118,13 @@ describe('Sync checker service new (unit)', () => {
       undefined,
       undefined
     )) as Session
-    syncChecker = new PocketSyncChecker(pocket, redis, metricsRecorder, 'sync-check', DEFAULT_SYNC_ALLOWANCE)
+    syncChecker = new PocketSyncChecker({
+      pocket,
+      redis,
+      metricsRecorder,
+      origin: 'sync-check',
+      defaultSyncAllowance: DEFAULT_SYNC_ALLOWANCE,
+    })
 
     //// Add responses to axios mock
     axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
@@ -174,18 +180,18 @@ describe('Sync checker service new (unit)', () => {
       const redisGetSpy = sinon.spy(redis, 'get')
       const redisSetSpy = sinon.spy(redis, 'set')
 
-      let syncedNodes = await syncChecker.check(
+      let syncedNodes = await syncChecker.check({
         nodes,
-        blockchains['0021'].syncCheckOptions,
-        blockchains['0021'].hash,
-        undefined,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
+        blockchainID: blockchains['0021'].hash,
+        pocketAAT: undefined,
         pocketConfiguration,
         pocketSession,
-        ALTRUIST_URL['0021'],
-        '1234',
-        '5678',
-        'abcd'
-      )
+        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        applicationID: '1234',
+        applicationPublicKey: '5678',
+        requestID: 'abcd',
+      })
 
       expect(syncedNodes).to.have.length(5)
 
@@ -193,18 +199,18 @@ describe('Sync checker service new (unit)', () => {
       expect(redisSetSpy.callCount).to.be.equal(12)
 
       // Subsequent calls should retrieve results from redis instead
-      syncedNodes = await syncChecker.check(
+      syncedNodes = await syncChecker.check({
         nodes,
-        blockchains['0021'].syncCheckOptions,
-        blockchains['0021'].hash,
-        undefined,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
+        blockchainID: blockchains['0021'].hash,
+        pocketAAT: undefined,
         pocketConfiguration,
         pocketSession,
-        ALTRUIST_URL['0021'],
-        '1234',
-        '5678',
-        'abcd'
-      )
+        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        applicationID: '1234',
+        applicationPublicKey: '5678',
+        requestID: 'abcd',
+      })
 
       expect(redisGetSpy.callCount).to.be.equal(13)
       expect(redisSetSpy.callCount).to.be.equal(12)
@@ -216,18 +222,18 @@ describe('Sync checker service new (unit)', () => {
       const redisGetSpy = sinon.spy(redis, 'get')
       const redisSetSpy = sinon.spy(redis, 'set')
 
-      let syncedNodes = await syncChecker.check(
+      let syncedNodes = await syncChecker.check({
         nodes,
-        blockchains['0006'].syncCheckOptions,
-        blockchains['0006'].hash,
-        undefined,
+        syncCheckOptions: blockchains['0006'].syncCheckOptions,
+        blockchainID: blockchains['0006'].hash,
+        pocketAAT: undefined,
         pocketConfiguration,
         pocketSession,
-        ALTRUIST_URL['0006'],
-        '1234',
-        '5678',
-        'abcd'
-      )
+        blockchainSyncBackup: ALTRUIST_URL['0006'],
+        applicationID: '1234',
+        applicationPublicKey: '5678',
+        requestID: 'abcd',
+      })
 
       expect(syncedNodes).to.have.length(5)
 
@@ -235,18 +241,18 @@ describe('Sync checker service new (unit)', () => {
       expect(redisSetSpy.callCount).to.be.equal(12)
 
       // Subsequent calls should retrieve results from redis instead
-      syncedNodes = await syncChecker.check(
+      syncedNodes = await syncChecker.check({
         nodes,
-        blockchains['0006'].syncCheckOptions,
-        blockchains['0006'].hash,
-        undefined,
+        syncCheckOptions: blockchains['0006'].syncCheckOptions,
+        blockchainID: blockchains['0006'].hash,
+        pocketAAT: undefined,
         pocketConfiguration,
         pocketSession,
-        ALTRUIST_URL['0006'],
-        '1234',
-        '5678',
-        'abcd'
-      )
+        blockchainSyncBackup: ALTRUIST_URL['0006'],
+        applicationID: '1234',
+        applicationPublicKey: '5678',
+        requestID: 'abcd',
+      })
       expect(redisGetSpy.callCount).to.be.equal(13)
       expect(redisSetSpy.callCount).to.be.equal(12)
     })
@@ -257,18 +263,18 @@ describe('Sync checker service new (unit)', () => {
       const redisGetSpy = sinon.spy(redis, 'get')
       const redisSetSpy = sinon.spy(redis, 'set')
 
-      let syncedNodes = await syncChecker.check(
+      let syncedNodes = await syncChecker.check({
         nodes,
-        blockchains['0001'].syncCheckOptions,
-        blockchains['0001'].hash,
-        undefined,
+        syncCheckOptions: blockchains['0001'].syncCheckOptions,
+        blockchainID: blockchains['0001'].hash,
+        pocketAAT: undefined,
         pocketConfiguration,
         pocketSession,
-        ALTRUIST_URL['0001'],
-        '1234',
-        '5678',
-        'abcd'
-      )
+        blockchainSyncBackup: ALTRUIST_URL['0001'],
+        applicationID: '1234',
+        applicationPublicKey: '5678',
+        requestID: 'abcd',
+      })
 
       expect(syncedNodes).to.have.length(5)
 
@@ -276,18 +282,18 @@ describe('Sync checker service new (unit)', () => {
       expect(redisSetSpy.callCount).to.be.equal(12)
 
       // Subsequent calls should retrieve results from redis instead
-      syncedNodes = await syncChecker.check(
+      syncedNodes = await syncChecker.check({
         nodes,
-        blockchains['0001'].syncCheckOptions,
-        blockchains['0001'].hash,
-        undefined,
+        syncCheckOptions: blockchains['0001'].syncCheckOptions,
+        blockchainID: blockchains['0001'].hash,
+        pocketAAT: undefined,
         pocketConfiguration,
         pocketSession,
-        ALTRUIST_URL['0001'],
-        '1234',
-        '5678',
-        'abcd'
-      )
+        blockchainSyncBackup: ALTRUIST_URL['0001'],
+        applicationID: '1234',
+        applicationPublicKey: '5678',
+        requestID: 'abcd',
+      })
 
       expect(redisGetSpy.callCount).to.be.equal(13)
       expect(redisSetSpy.callCount).to.be.equal(12)
@@ -298,18 +304,18 @@ describe('Sync checker service new (unit)', () => {
 
       blockchains['0006'].syncCheckOptions.resultKey = 'height' // should be 'result'
 
-      const syncedNodes = await syncChecker.check(
+      const syncedNodes = await syncChecker.check({
         nodes,
-        blockchains['0006'].syncCheckOptions,
-        blockchains['0006'].hash,
-        undefined,
+        syncCheckOptions: blockchains['0006'].syncCheckOptions,
+        blockchainID: blockchains['0006'].hash,
+        pocketAAT: undefined,
         pocketConfiguration,
         pocketSession,
-        ALTRUIST_URL['0006'],
-        '1234',
-        '5678',
-        'abcd'
-      )
+        blockchainSyncBackup: ALTRUIST_URL['0006'],
+        applicationID: '1234',
+        applicationPublicKey: '5678',
+        requestID: 'abcd',
+      })
 
       expect(syncedNodes).to.have.length(5)
 
@@ -328,18 +334,18 @@ describe('Sync checker service new (unit)', () => {
 
       pocketMock.fail = true
 
-      const syncedNodes = await syncChecker.check(
+      const syncedNodes = await syncChecker.check({
         nodes,
-        blockchains['0021'].syncCheckOptions,
-        blockchains['0021'].hash,
-        undefined,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
+        blockchainID: blockchains['0021'].hash,
+        pocketAAT: undefined,
         pocketConfiguration,
         pocketSession,
-        ALTRUIST_URL['0021'],
-        '1234',
-        '5678',
-        'abcd'
-      )
+        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        applicationID: '1234',
+        applicationPublicKey: '5678',
+        requestID: 'abcd',
+      })
 
       expect(syncedNodes).to.have.length(5)
 
@@ -356,18 +362,18 @@ describe('Sync checker service new (unit)', () => {
 
       pocketMock.fail = true
 
-      const syncedNodes = await syncChecker.check(
+      const syncedNodes = await syncChecker.check({
         nodes,
-        blockchains['0021'].syncCheckOptions,
-        blockchains['0021'].hash,
-        undefined,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
+        blockchainID: blockchains['0021'].hash,
+        pocketAAT: undefined,
         pocketConfiguration,
         pocketSession,
-        ALTRUIST_URL['0021'],
-        '1234',
-        '5678',
-        'abcd'
-      )
+        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        applicationID: '1234',
+        applicationPublicKey: '5678',
+        requestID: 'abcd',
+      })
 
       expect(syncedNodes).to.have.length(0)
     })
@@ -377,18 +383,18 @@ describe('Sync checker service new (unit)', () => {
 
       const nodes = DEFAULT_NODES
 
-      const syncedNodes = await syncChecker.check(
+      const syncedNodes = await syncChecker.check({
         nodes,
-        blockchains['0021'].syncCheckOptions,
-        blockchains['0021'].hash,
-        undefined,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
+        blockchainID: blockchains['0021'].hash,
+        pocketAAT: undefined,
         pocketConfiguration,
         pocketSession,
-        ALTRUIST_URL['0021'],
-        '1234',
-        '5678',
-        'abcd'
-      )
+        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        applicationID: '1234',
+        applicationPublicKey: '5678',
+        requestID: 'abcd',
+      })
 
       expect(syncedNodes).to.have.length(0)
     })
@@ -405,26 +411,26 @@ describe('Sync checker service new (unit)', () => {
         EVM_RELAY_RESPONSE,
         penalizedNode,
       ]
-      syncChecker = new PocketSyncChecker(
-        pocketMock.object(),
+      syncChecker = new PocketSyncChecker({
+        pocket: pocketMock.object(),
         redis,
         metricsRecorder,
-        'sync-check-origin',
-        DEFAULT_SYNC_ALLOWANCE
-      )
+        origin: 'sync-check-origin',
+        defaultSyncAllowance: DEFAULT_SYNC_ALLOWANCE,
+      })
 
-      const syncedNodes = await syncChecker.check(
+      const syncedNodes = await syncChecker.check({
         nodes,
-        blockchains['0021'].syncCheckOptions,
-        blockchains['0021'].hash,
-        undefined,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
+        blockchainID: blockchains['0021'].hash,
+        pocketAAT: undefined,
         pocketConfiguration,
         pocketSession,
-        ALTRUIST_URL['0021'],
-        '1234',
-        '5678',
-        'abcd'
-      )
+        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        applicationID: '1234',
+        applicationPublicKey: '5678',
+        requestID: 'abcd',
+      })
 
       expect(syncedNodes).to.have.length(4)
 
@@ -451,26 +457,26 @@ describe('Sync checker service new (unit)', () => {
         secondHighestNode,
         secondHighestNode,
       ]
-      syncChecker = new PocketSyncChecker(
-        pocketMock.object(),
+      syncChecker = new PocketSyncChecker({
+        pocket: pocketMock.object(),
         redis,
         metricsRecorder,
-        'sync-check-origin',
-        DEFAULT_SYNC_ALLOWANCE
-      )
+        origin: 'sync-check-origin',
+        defaultSyncAllowance: DEFAULT_SYNC_ALLOWANCE,
+      })
 
-      const syncedNodes = await syncChecker.check(
+      const syncedNodes = await syncChecker.check({
         nodes,
-        blockchains['0021'].syncCheckOptions,
-        blockchains['0021'].hash,
-        undefined,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
+        blockchainID: blockchains['0021'].hash,
+        pocketAAT: undefined,
         pocketConfiguration,
         pocketSession,
-        ALTRUIST_URL['0021'],
-        '1234',
-        '5678',
-        'abcd'
-      )
+        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        applicationID: '1234',
+        applicationPublicKey: '5678',
+        requestID: 'abcd',
+      })
 
       expect(syncedNodes).to.have.length(1)
 
@@ -489,26 +495,26 @@ describe('Sync checker service new (unit)', () => {
         EVM_RELAY_RESPONSE,
         new RpcError('90', MAX_RELAYS_ERROR),
       ]
-      syncChecker = new PocketSyncChecker(
-        pocketMock.object(),
+      syncChecker = new PocketSyncChecker({
+        pocket: pocketMock.object(),
         redis,
         metricsRecorder,
-        'sync-check-origin',
-        DEFAULT_SYNC_ALLOWANCE
-      )
+        origin: 'sync-check-origin',
+        defaultSyncAllowance: DEFAULT_SYNC_ALLOWANCE,
+      })
 
-      const syncedNodes = await syncChecker.check(
+      const syncedNodes = await syncChecker.check({
         nodes,
-        blockchains['0021'].syncCheckOptions,
-        blockchains['0021'].hash,
-        undefined,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
+        blockchainID: blockchains['0021'].hash,
+        pocketAAT: undefined,
         pocketConfiguration,
         pocketSession,
-        ALTRUIST_URL['0021'],
-        '1234',
-        '5678',
-        'abcd'
-      )
+        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        applicationID: '1234',
+        applicationPublicKey: '5678',
+        requestID: 'abcd',
+      })
 
       expect(syncedNodes).to.have.length(4)
 

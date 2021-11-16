@@ -12,13 +12,7 @@ const logger = require('../services/logger')
 export class PocketSyncChecker extends NodeCheckerWrapper {
   defaultSyncAllowance: number
 
-  constructor(
-    pocket: Pocket,
-    redis: Redis,
-    metricsRecorder: MetricsRecorder,
-    origin: string,
-    defaultSyncAllowance: number
-  ) {
+  constructor({ pocket, redis, metricsRecorder, origin, defaultSyncAllowance }: SyncCheckConstructor) {
     super(pocket, redis, metricsRecorder, origin)
 
     this.defaultSyncAllowance = defaultSyncAllowance
@@ -40,18 +34,18 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
    * @param requestID request id.
    * @returns nodes that passed the sync check.
    */
-  async check(
-    nodes: Node[],
-    syncCheckOptions: SyncCheckOptions,
-    blockchainID: string,
-    pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration | undefined,
-    pocketSession: Session,
-    blockchainSyncBackup: string,
-    applicationID: string,
-    applicationPublicKey: string,
-    requestID: string
-  ): Promise<Node[]> {
+  async check({
+    nodes,
+    syncCheckOptions,
+    blockchainID,
+    pocketAAT,
+    pocketConfiguration,
+    pocketSession,
+    blockchainSyncBackup,
+    applicationID,
+    applicationPublicKey,
+    requestID,
+  }: SyncCheckerParams): Promise<Node[]> {
     const sessionHash = hashBlockchainNodes(blockchainID, pocketSession.sessionNodes)
 
     const allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
@@ -59,7 +53,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     const syncedNodesKey = `sync-check-${sessionHash}`
 
     const syncedRelayNodes: NodeCheckResponse<SyncCheck>[] = []
-    let syncedNodes: Node[] = await this.cacheNodes(nodes, syncedNodesKey)
+    let syncedNodes: Node[] = await this.checkForCachedNodes(nodes, syncedNodesKey)
     let syncedNodesList: string[] = []
 
     if (syncedNodes.length > 0) {
@@ -88,17 +82,17 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
 
     syncedRelayNodes.push(
       ...(
-        await this.filterNodes<SyncCheck>(
-          'sync-check',
+        await this.filterNodes<SyncCheck>({
           nodes,
-          nodeSyncChecks,
           blockchainID,
           pocketSession,
           requestID,
           relayStart,
           applicationID,
-          applicationPublicKey
-        )
+          applicationPublicKey,
+          checkType: 'sync-check',
+          checksResult: nodeSyncChecks,
+        })
       ).sort((a, b) => b.output.blockHeight - a.output.blockHeight)
     )
     syncedNodes.push(...syncedRelayNodes.map(({ node }) => node))
@@ -315,4 +309,25 @@ export interface SyncCheckOptions {
   body: string
   resultKey: string
   allowance?: number
+}
+
+export type SyncCheckerParams = {
+  nodes: Node[]
+  syncCheckOptions: SyncCheckOptions
+  blockchainID: string
+  pocketAAT: PocketAAT
+  pocketConfiguration: Configuration | undefined
+  pocketSession: Session
+  blockchainSyncBackup: string
+  applicationID: string
+  applicationPublicKey: string
+  requestID: string
+}
+
+export type SyncCheckConstructor = {
+  pocket: Pocket
+  redis: Redis
+  metricsRecorder: MetricsRecorder
+  origin: string
+  defaultSyncAllowance: number
 }

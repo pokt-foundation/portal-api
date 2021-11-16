@@ -43,7 +43,7 @@ export class PocketChainChecker extends NodeCheckerWrapper {
     const sessionHash = hashBlockchainNodes(blockchainID, pocketSession.sessionNodes)
     const checkedNodesKey = `chain-check-${sessionHash}`
 
-    const checkedNodes: Node[] = await this.cacheNodes(nodes, checkedNodesKey)
+    const checkedNodes: Node[] = await this.checkForCachedNodes(nodes, checkedNodesKey)
     const checkedNodesList: string[] = []
 
     if (checkedNodes.length > 0) {
@@ -59,17 +59,17 @@ export class PocketChainChecker extends NodeCheckerWrapper {
 
     checkedNodes.push(
       ...(
-        await this.filterNodes<ChainCheck>(
-          'chain-check',
+        await this.filterNodes<ChainCheck>({
           nodes,
-          nodeChainChecks,
           blockchainID,
           pocketSession,
           requestID,
           relayStart,
           applicationID,
-          applicationPublicKey
-        )
+          applicationPublicKey,
+          checkType: 'chain-check',
+          checksResult: nodeChainChecks,
+        })
       ).map(({ node }) => node)
     )
     checkedNodesList.push(...checkedNodes.map(({ publicKey }) => publicKey))
