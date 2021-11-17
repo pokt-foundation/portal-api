@@ -1,7 +1,6 @@
 import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
 import { Encryptor } from 'strong-cryptor'
-import { HttpErrors } from '@loopback/rest'
 import { Client, sinon, expect } from '@loopback/testlab'
 import { PocketGatewayApplication } from '../..'
 import { ApplicationsRepository } from '../../src/repositories/applications.repository'
@@ -511,7 +510,7 @@ describe('V1 controller (acceptance)', () => {
       setupApplication(pocket, {
         REDIRECTS: '',
       })
-    ).to.rejectedWith(HttpErrors.InternalServerError)
+    ).to.rejectedWith(Error)
   })
 
   it('fails on invalid redirect load balancer', async () => {
