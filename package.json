@@ -74,6 +74,7 @@
     "@pokt-network/pocket-js": "^0.6.17-rc",
     "aws-sdk": "^2.1023.0",
     "axios": "^0.21.1",
+    "datadog-winston": "^1.5.1",
     "dotenv": "^8.2.0",
     "eslint-plugin-import": "^2.23.4",
     "ethers": "^5.4.1",
