@@ -94,7 +94,7 @@
     "strong-cryptor": "^2.2.0",
     "tslib": "^2.0.0",
     "winston": "^3.3.3",
-    "winston-cloudwatch": "^3.0.1",
+    "winston-cloudwatch": "^3.1.1",
     "winston-logzio": "^5.1.2"
   },
   "devDependencies": {
