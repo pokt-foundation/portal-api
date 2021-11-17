@@ -16,7 +16,6 @@ export type SendRelayOptions = {
   application: Applications
   rpcID?: number
   preferredNodeAddress?: string
-  ipAddress?: string
   httpMethod: HTTPMethod
   overallTimeOut?: number
   rawData: object | string
