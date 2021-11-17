@@ -108,6 +108,7 @@ const options = {
     service: logName,
     ddsource: 'nodejs',
     intakeRegion: 'eu',
+    ddtags: `region:${region}`,
   },
 }
 
@@ -115,11 +116,13 @@ const getTransports = () => {
   const transports = [new winstonTransports.Console(options.console)]
 
   if (environment === 'production' || environment === 'staging') {
-    if (logToCloudWatch) {
+    if (logToCloudWatch || logToDataDog) {
       if (!region) {
         throw new HttpErrors.InternalServerError('REGION required in ENV')
       }
+    }
 
+    if (logToCloudWatch) {
       transports.push(new WinstonCloudwatch(options.aws))
     }
 
