@@ -122,7 +122,6 @@ export class PocketRelayer {
   async sendRelay({
     rawData,
     rpcID,
-    ipAddress,
     relayPath,
     httpMethod,
     application,
@@ -206,7 +205,6 @@ export class PocketRelayer {
           const relayResponse = await this._sendRelay({
             data,
             rpcID,
-            ipAddress,
             relayPath,
             httpMethod,
             requestID,
@@ -438,7 +436,6 @@ export class PocketRelayer {
   async _sendRelay({
     data,
     rpcID,
-    ipAddress,
     relayPath,
     httpMethod,
     requestID,
@@ -454,7 +451,6 @@ export class PocketRelayer {
   }: {
     data: string
     rpcID: number
-    ipAddress: string
     relayPath: string
     httpMethod: HTTPMethod
     requestID: string
@@ -781,7 +777,7 @@ export class PocketRelayer {
             nextRPCID = rpcID + parsedRawData.length
           }
 
-          const clientStickyKey = `${ipAddress}-${blockchainID}-${nextRPCID}`
+          const clientStickyKey = `${this.ipAddress}-${blockchainID}-${nextRPCID}`
 
           await this.redis.set(
             clientStickyKey,

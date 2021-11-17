@@ -189,7 +189,6 @@ export class V1Controller {
       const options: SendRelayOptions = {
         rawData, // see if this can be replaced by parsedRawData
         rpcID,
-        ipAddress: this.ipAddress,
         relayPath: this.relayPath,
         httpMethod: this.httpMethod,
         application,
