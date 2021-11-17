@@ -11,8 +11,6 @@ import {
   SequenceHandler,
 } from '@loopback/rest'
 
-const requestIP = require('detect-client-ip')
-
 const SequenceActions = RestBindings.SequenceActions
 
 export class GatewaySequence implements SequenceHandler {
@@ -29,7 +27,9 @@ export class GatewaySequence implements SequenceHandler {
       const { request, response } = context
 
       // Record the host, user-agent, and origin for processing
-      context.bind('ipAddress').to(requestIP.retriveIP(request))
+      const realIP = request.headers['x-forwarded-for'] || request.socket.remoteAddress || 'no-ip-found'
+
+      context.bind('ipAddress').to(realIP)
       context.bind('headers').to(request.headers)
       context.bind('host').to(request.headers['host'])
       context.bind('userAgent').to(request.headers['user-agent'])
@@ -37,10 +37,6 @@ export class GatewaySequence implements SequenceHandler {
       context.bind('contentType').to(request.headers['content-type'])
       context.bind('relayPath').to(request.headers['relay-path'])
       context.bind('httpMethod').to(request.method)
-
-      console.log('request object', request)
-      console.log('-----------')
-      console.log('request object headers', request.headers)
 
       let secretKey = ''
 
