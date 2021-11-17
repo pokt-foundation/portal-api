@@ -62,6 +62,7 @@
     "tests"
   ],
   "dependencies": {
+    "@fullerstack/nax-ipware": "0.0.4",
     "@influxdata/influxdb-client": "^1.15.0",
     "@loopback/boot": "^3.4.1",
     "@loopback/context": "^3.17.0",

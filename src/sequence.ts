@@ -1,3 +1,4 @@
+import { Ipware } from '@fullerstack/nax-ipware'
 import shortID from 'shortid'
 import { inject } from '@loopback/context'
 import {
@@ -10,6 +11,8 @@ import {
   Send,
   SequenceHandler,
 } from '@loopback/rest'
+
+const ipware = new Ipware()
 
 const SequenceActions = RestBindings.SequenceActions
 
@@ -25,8 +28,10 @@ export class GatewaySequence implements SequenceHandler {
   async handle(context: RequestContext): Promise<void> {
     try {
       const { request, response } = context
+      const ipInfo = ipware.getClientIP(request)
 
       // Record the host, user-agent, and origin for processing
+      context.bind('ipAddress').to(ipInfo.ip)
       context.bind('headers').to(request.headers)
       context.bind('host').to(request.headers['host'])
       context.bind('userAgent').to(request.headers['user-agent'])
