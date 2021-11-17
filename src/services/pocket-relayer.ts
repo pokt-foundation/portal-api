@@ -33,6 +33,7 @@ export class PocketRelayer {
   host: string
   origin: string
   userAgent: string
+  ipAddress: string
   pocket: Pocket
   pocketConfiguration: Configuration
   cherryPicker: CherryPicker
@@ -55,6 +56,7 @@ export class PocketRelayer {
     host,
     origin,
     userAgent,
+    ipAddress,
     pocket,
     pocketConfiguration,
     cherryPicker,
@@ -75,6 +77,7 @@ export class PocketRelayer {
     host: string
     origin: string
     userAgent: string
+    ipAddress: string
     pocket: Pocket
     pocketConfiguration: Configuration
     cherryPicker: CherryPicker
@@ -95,6 +98,7 @@ export class PocketRelayer {
     this.host = host
     this.origin = origin
     this.userAgent = userAgent
+    this.ipAddress = ipAddress
     this.pocket = pocket
     this.pocketConfiguration = pocketConfiguration
     this.cherryPicker = cherryPicker
@@ -117,9 +121,12 @@ export class PocketRelayer {
 
   async sendRelay({
     rawData,
+    rpcID,
+    ipAddress,
     relayPath,
     httpMethod,
     application,
+    preferredNodeAddress,
     requestID,
     requestTimeOut,
     overallTimeOut,
@@ -130,7 +137,6 @@ export class PocketRelayer {
       this.relayRetries = relayRetries
     }
     const {
-      blockchain,
       blockchainEnforceResult,
       blockchainSyncCheck,
       blockchainIDCheck,
@@ -199,12 +205,14 @@ export class PocketRelayer {
           // Send this relay attempt
           const relayResponse = await this._sendRelay({
             data,
+            rpcID,
+            ipAddress,
             relayPath,
             httpMethod,
             requestID,
             application,
+            preferredNodeAddress,
             requestTimeOut,
-            blockchain,
             blockchainID,
             blockchainEnforceResult,
             blockchainSyncCheck,
@@ -429,12 +437,14 @@ export class PocketRelayer {
   // Private function to allow relay retries
   async _sendRelay({
     data,
+    rpcID,
+    ipAddress,
     relayPath,
     httpMethod,
     requestID,
     application,
+    preferredNodeAddress,
     requestTimeOut,
-    blockchain,
     blockchainEnforceResult,
     blockchainSyncCheck,
     blockchainSyncBackup,
@@ -443,12 +453,14 @@ export class PocketRelayer {
     blockchainChainID,
   }: {
     data: string
+    rpcID: number | 0
+    ipAddress: string
     relayPath: string
     httpMethod: HTTPMethod
     requestID: string
     application: Applications
+    preferredNodeAddress: string | undefined
     requestTimeOut: number | undefined
-    blockchain: string
     blockchainEnforceResult: string
     blockchainSyncCheck: SyncCheckOptions
     blockchainSyncBackup: string
@@ -680,7 +692,17 @@ export class PocketRelayer {
       }
     }
 
-    const node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
+    let node: Node
+
+    // Before cherry picking, check to see if preferred node is in the set of good nodes
+    const preferredNodeIndex = nodes.findIndex((x) => x.address === preferredNodeAddress)
+
+    if (preferredNodeAddress && preferredNodeIndex > 0) {
+      console.log('STICKINESS SUCCESS', preferredNodeAddress)
+      node = nodes[preferredNodeIndex]
+    } else {
+      node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
+    }
 
     if (this.checkDebug) {
       logger.log('debug', JSON.stringify(pocketSession), {
@@ -744,6 +766,29 @@ export class PocketRelayer {
         return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey)
       } else {
         // Success
+        if (rpcID > 0) {
+          const parsedRawData = Object.keys(data).length > 0 ? JSON.parse(data.toString()) : JSON.stringify(data)
+          let nextRPCID = rpcID + 1
+
+          // If this was a stacked RPC call with multiple calls in an array, increment the RPC ID accordingly
+          if (parsedRawData instanceof Array) {
+            nextRPCID = rpcID + parsedRawData.length
+          }
+
+          const clientStickyKey = `${ipAddress}-${blockchainID}-${nextRPCID}`
+
+          await this.redis.set(
+            clientStickyKey,
+            JSON.stringify({ applicationID: application.id, nodeAddress: node.address }),
+            'EX',
+            300
+          )
+          const clientStickyAppNodeRaw = await this.redis.get(clientStickyKey)
+          const clientStickyAppNode = JSON.parse(clientStickyAppNodeRaw)
+
+          console.log('STICKINESS SET', clientStickyKey, clientStickyAppNode)
+        }
+
         return relayResponse
       }
       // Error
