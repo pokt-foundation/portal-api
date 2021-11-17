@@ -317,7 +317,7 @@ export class V1Controller {
       const clientStickyAppNode = JSON.parse(clientStickyAppNodeRaw)
 
       if (clientStickyAppNode?.applicationID && clientStickyAppNode?.nodeAddress) {
-        logger.log('info', `STICKINESS FOUND ${JSON.stringify(clientStickyAppNode)}`)
+        logger.log('info', `STICKINESS FOUND ${clientStickyKey} ${JSON.stringify(clientStickyAppNode)}`)
         return {
           preferredApplicationID: clientStickyAppNode.applicationID,
           preferredNodeAddress: clientStickyAppNode.nodeAddress,

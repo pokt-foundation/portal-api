@@ -29,6 +29,11 @@ export class GatewaySequence implements SequenceHandler {
       // Record the host, user-agent, and origin for processing
       const realIP = request.headers['x-forwarded-for'] || request.socket.remoteAddress || 'no-ip-found'
 
+      console.log(request.headers['x-forwarded-for'])
+      console.log(request.headers)
+      console.log(request.socket.remoteAddress)
+      console.log(realIP)
+
       context.bind('ipAddress').to(realIP)
       context.bind('headers').to(request.headers)
       context.bind('host').to(request.headers['host'])
