@@ -75,11 +75,10 @@ export class EnvironmentObserver implements LifeCycleObserver {
       const variable = process.env[name]
 
       if (!variable && EnvironmentObserver.optionalEnvVars.indexOf(name) < 0) {
-        if (ENV === 'production' && EnvironmentObserver.requiredEnvVarsOnlyInProd.indexOf(name) >= 0) {
-          // Do nothing as is valid that is empty on production
-        } else {
-          throw new Error(`${name} required in ENV`)
+        if (ENV !== 'production' && EnvironmentObserver.requiredEnvVarsOnlyInProd.indexOf(name) >= 0) {
+          return
         }
+        throw new Error(`${name} required in ENV`)
       }
 
       configValues[name] = variable
