@@ -453,7 +453,7 @@ export class PocketRelayer {
     blockchainChainID,
   }: {
     data: string
-    rpcID: number | 0
+    rpcID: number
     ipAddress: string
     relayPath: string
     httpMethod: HTTPMethod
