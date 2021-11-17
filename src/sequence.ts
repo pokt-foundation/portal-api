@@ -1,4 +1,3 @@
-import { Ipware } from '@fullerstack/nax-ipware'
 import shortID from 'shortid'
 import { inject } from '@loopback/context'
 import {
@@ -38,6 +37,10 @@ export class GatewaySequence implements SequenceHandler {
       context.bind('contentType').to(request.headers['content-type'])
       context.bind('relayPath').to(request.headers['relay-path'])
       context.bind('httpMethod').to(request.method)
+
+      console.log('request object', request)
+      console.log('-----------')
+      console.log('request object headers', request.headers)
 
       let secretKey = ''
 
