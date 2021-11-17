@@ -1,9 +1,11 @@
 import crypto from 'crypto'
+import os from 'os'
 import { LogEntry } from 'winston'
 import WinstonCloudwatch from 'winston-cloudwatch'
 import { HttpErrors } from '@loopback/rest'
 
 require('dotenv').config()
+const DatadogWinston = require('datadog-winston')
 
 const { createLogger, format, transports: winstonTransports } = require('winston')
 const { printf } = format
@@ -30,6 +32,8 @@ const logToCloudWatch = process.env.LOG_TO_CLOUDWATCH === 'true'
 const accessKeyID = process.env.AWS_ACCESS_KEY_ID || ''
 const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || ''
 const region = process.env.REGION || ''
+const logToDataDog = process.env.LOG_TO_DATADOG === 'true'
+const ddApiKey = process.env.DATADOG_API_KEY || ''
 
 const timestampUTC = () => {
   const timestamp = new Date()
@@ -41,9 +45,9 @@ const consoleFormat = printf(
   ({
     level,
     message,
-    requestID,
-    relayType,
-    typeID,
+    requestID = '',
+    relayType = '',
+    typeID = '',
     error = '',
     elapsedTime,
     blockchainID = '',
@@ -69,7 +73,7 @@ const logFormat = format.combine(
   consoleFormat
 )
 
-const logGroup = (process.env.REGION_NAME || '') + '/ecs/gateway'
+const logName = (process.env.REGION_NAME || '') + '/ecs/gateway'
 
 const options = {
   console: {
@@ -80,12 +84,12 @@ const options = {
   },
   aws: {
     name: 'cloudwatch-log',
-    logGroupName: logGroup,
+    logGroupName: logName,
     logStreamName: function () {
       // Spread log streams across hours as the server stays up
       const date = new Date().toISOString().slice(0, 13)
 
-      return logGroup + '-' + date + '-' + crypto.createHash('md5').update(startTime).digest('hex')
+      return logName + '-' + date + '-' + crypto.createHash('md5').update(startTime).digest('hex')
     },
     awsRegion: region,
     awsAccessKeyId: accessKeyID,
@@ -98,23 +102,34 @@ const options = {
       })
     },
   },
+  datadog: {
+    apiKey: ddApiKey,
+    hostname: os.hostname(),
+    service: logName,
+    ddsource: 'nodejs',
+    intakeRegion: 'eu',
+  },
 }
 
 const getTransports = () => {
   const transports = [new winstonTransports.Console(options.console)]
 
-  if ((environment === 'production' || environment === 'staging') && logToCloudWatch) {
-    if (!accessKeyID) {
-      throw new HttpErrors.InternalServerError('AWS_ACCESS_KEY_ID required in ENV')
-    }
-    if (!awsSecretAccessKey) {
-      throw new HttpErrors.InternalServerError('AWS_SECRET_ACCESS_KEY required in ENV')
-    }
-    if (!region) {
-      throw new HttpErrors.InternalServerError('REGION required in ENV')
+  if (environment === 'production' || environment === 'staging') {
+    if (logToCloudWatch) {
+      if (!region) {
+        throw new HttpErrors.InternalServerError('REGION required in ENV')
+      }
+
+      transports.push(new WinstonCloudwatch(options.aws))
     }
 
-    transports.push(new WinstonCloudwatch(options.aws))
+    if (logToDataDog) {
+      if (!ddApiKey) {
+        throw new HttpErrors.InternalServerError('DATADOG_API_KEY required in ENV')
+      }
+
+      transports.push(new DatadogWinston(options.datadog))
+    }
   }
 
   return transports
