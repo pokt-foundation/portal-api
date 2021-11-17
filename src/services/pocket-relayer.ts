@@ -698,8 +698,14 @@ export class PocketRelayer {
     const preferredNodeIndex = nodes.findIndex((x) => x.address === preferredNodeAddress)
 
     if (preferredNodeAddress && preferredNodeIndex > 0) {
-      console.log('STICKINESS SUCCESS', preferredNodeAddress)
       node = nodes[preferredNodeIndex]
+
+      logger.log('info', 'STICKINESS SUCCESS', {
+        requestID: requestID,
+        relayType: 'APP',
+        typeID: application.id,
+        serviceNode: node.publicKey,
+      })
     } else {
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
     }
@@ -786,7 +792,12 @@ export class PocketRelayer {
           const clientStickyAppNodeRaw = await this.redis.get(clientStickyKey)
           const clientStickyAppNode = JSON.parse(clientStickyAppNodeRaw)
 
-          console.log('STICKINESS SET', clientStickyKey, clientStickyAppNode)
+          logger.log('info', `STICKINESS SET ${clientStickyKey} ${JSON.stringify(clientStickyAppNode)}`, {
+            requestID: requestID,
+            relayType: 'APP',
+            typeID: application.id,
+            serviceNode: node.publicKey,
+          })
         }
 
         return relayResponse
