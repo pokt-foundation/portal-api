@@ -697,8 +697,6 @@ export class PocketRelayer {
 
     let node: Node
 
-    // console.log('------ NODES ADDRESS:', nodes.map((n) => n.address))
-    // console.log('------ NODES PUBLICK EY:', nodes.map((n) => n.publicKey))
     // Before cherry picking, check to see if preferred node is in the set of good nodes
     const preferredNodeIndex = nodes.findIndex((x) => x.address === preferredNodeAddress)
 
@@ -706,7 +704,6 @@ export class PocketRelayer {
       node = nodes[preferredNodeIndex]
     } else {
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
-      console.log('SELECTED', node.address, node.publicKey)
     }
 
     if (this.checkDebug) {
