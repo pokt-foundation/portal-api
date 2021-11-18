@@ -19,6 +19,13 @@ import { loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
 const logger = require('../services/logger')
 
+const DEFAULT_STICKINESS_DURATION = 300 // Seconds
+const DEFAULT_STICKINESS_PARAMS = {
+  preferredApplicationID: '',
+  preferredNodeAddress: '',
+  rpcID: 0,
+}
+
 export class V1Controller {
   cherryPicker: CherryPicker
   metricsRecorder: MetricsRecorder
@@ -173,7 +180,12 @@ export class V1Controller {
 
       // Fetch applications contained in this Load Balancer. Verify they exist and choose
       // one randomly for the relay. First check RPC ID to see if this client should be stuck to an app and node.
-      const { preferredApplicationID, preferredNodeAddress, rpcID } = await this.checkClientStickiness(rawData)
+
+      const { stickiness = false, stickinessDuration = DEFAULT_STICKINESS_DURATION } = loadBalancer
+
+      const { preferredApplicationID, preferredNodeAddress, rpcID } = stickiness
+        ? await this.checkClientStickiness(rawData)
+        : DEFAULT_STICKINESS_PARAMS
 
       const application = await this.fetchLoadBalancerApplication(
         loadBalancer.id,
@@ -193,6 +205,7 @@ export class V1Controller {
         httpMethod: this.httpMethod,
         application,
         preferredNodeAddress,
+        stickinessDuration,
         requestID: this.requestID,
         requestTimeOut: parseInt(loadBalancer.requestTimeOut),
         overallTimeOut: parseInt(loadBalancer.overallTimeOut),
@@ -258,14 +271,20 @@ export class V1Controller {
 
     try {
       const application = await this.fetchApplication(id, filter)
-      const { preferredNodeAddress, rpcID } = await this.checkClientStickiness(rawData)
 
       if (application?.id) {
+        const { stickiness = false, stickinessDuration = DEFAULT_STICKINESS_DURATION } = application
+
+        const { preferredNodeAddress, rpcID } = stickiness
+          ? await this.checkClientStickiness(rawData)
+          : DEFAULT_STICKINESS_PARAMS
+
         const sendRelayOptions: SendRelayOptions = {
           rawData,
           rpcID,
           application,
           preferredNodeAddress,
+          stickinessDuration,
           relayPath: this.relayPath,
           httpMethod: this.httpMethod,
           requestID: this.requestID,
@@ -316,7 +335,6 @@ export class V1Controller {
       const clientStickyAppNode = JSON.parse(clientStickyAppNodeRaw)
 
       if (clientStickyAppNode?.applicationID && clientStickyAppNode?.nodeAddress) {
-        logger.log('info', `STICKINESS FOUND ${clientStickyKey} ${JSON.stringify(clientStickyAppNode)}`)
         return {
           preferredApplicationID: clientStickyAppNode.applicationID,
           preferredNodeAddress: clientStickyAppNode.nodeAddress,

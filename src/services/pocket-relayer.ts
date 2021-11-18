@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
+import { getAddressFromPublicKey } from 'pocket-tools'
 import { JSONObject } from '@loopback/context'
 import { HttpErrors } from '@loopback/rest'
 import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
@@ -126,6 +127,7 @@ export class PocketRelayer {
     httpMethod,
     application,
     preferredNodeAddress,
+    stickinessDuration,
     requestID,
     requestTimeOut,
     overallTimeOut,
@@ -210,6 +212,7 @@ export class PocketRelayer {
             requestID,
             application,
             preferredNodeAddress,
+            stickinessDuration,
             requestTimeOut,
             blockchainID,
             blockchainEnforceResult,
@@ -238,6 +241,7 @@ export class PocketRelayer {
                 origin: this.origin,
                 data,
                 pocketSession: this.pocketSession,
+                sticky: await PocketRelayer.stickyRelayResult(preferredNodeAddress, relayResponse.proof.servicerPubKey),
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -291,6 +295,7 @@ export class PocketRelayer {
                 origin: this.origin,
                 data,
                 pocketSession: this.pocketSession,
+                sticky: await PocketRelayer.stickyRelayResult(preferredNodeAddress, relayResponse.servicer_node),
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -441,6 +446,7 @@ export class PocketRelayer {
     requestID,
     application,
     preferredNodeAddress,
+    stickinessDuration,
     requestTimeOut,
     blockchainEnforceResult,
     blockchainSyncCheck,
@@ -456,6 +462,7 @@ export class PocketRelayer {
     requestID: string
     application: Applications
     preferredNodeAddress: string | undefined
+    stickinessDuration: number | undefined
     requestTimeOut: number | undefined
     blockchainEnforceResult: string
     blockchainSyncCheck: SyncCheckOptions
@@ -695,13 +702,6 @@ export class PocketRelayer {
 
     if (preferredNodeAddress && preferredNodeIndex >= 0) {
       node = nodes[preferredNodeIndex]
-
-      logger.log('info', 'STICKINESS SUCCESS', {
-        requestID: requestID,
-        relayType: 'APP',
-        typeID: application.id,
-        serviceNode: node.publicKey,
-      })
     } else {
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
     }
@@ -783,17 +783,8 @@ export class PocketRelayer {
             clientStickyKey,
             JSON.stringify({ applicationID: application.id, nodeAddress: node.address }),
             'EX',
-            300
+            stickinessDuration
           )
-          const clientStickyAppNodeRaw = await this.redis.get(clientStickyKey)
-          const clientStickyAppNode = JSON.parse(clientStickyAppNodeRaw)
-
-          logger.log('info', `STICKINESS SET ${clientStickyKey} ${JSON.stringify(clientStickyAppNode)}`, {
-            requestID: requestID,
-            relayType: 'APP',
-            typeID: application.id,
-            serviceNode: node.publicKey,
-          })
         }
 
         return relayResponse
@@ -841,5 +832,16 @@ export class PocketRelayer {
       pocketConfiguration.validateRelayResponses,
       pocketConfiguration.rejectSelfSignedCertificates
     )
+  }
+
+  static async stickyRelayResult(
+    preferredNodeAddress: string | undefined,
+    relayNodePublicKey: string
+  ): Promise<string> {
+    if (!preferredNodeAddress) {
+      return 'NONE'
+    }
+
+    return preferredNodeAddress === (await getAddressFromPublicKey(relayNodePublicKey)) ? 'SUCCESS' : 'FAILURE'
   }
 }

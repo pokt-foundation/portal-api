@@ -43,7 +43,19 @@ export class Applications extends Entity {
   @property({
     type: 'object',
   })
-  aat?: object;
+  aat?: object
+
+  @property({
+    type: 'boolean',
+    required: false,
+  })
+  stickiness?: boolean
+
+  @property({
+    type: 'number',
+    required: false,
+  })
+  stickinessDuration?: number;
 
   // Define well-known properties here
 
