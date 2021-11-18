@@ -785,6 +785,16 @@ export class PocketRelayer {
             'EX',
             stickinessDuration
           )
+
+          // Some rpcID requests skips one number when sending them consecutively
+          const nextClientStickyKey = `${this.ipAddress}-${blockchainID}-${++nextRPCID}`
+
+          await this.redis.set(
+            nextClientStickyKey,
+            JSON.stringify({ applicationID: application.id, nodeAddress: node.address }),
+            'EX',
+            stickinessDuration
+          )
         }
 
         return relayResponse
