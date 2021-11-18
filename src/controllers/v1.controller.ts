@@ -19,7 +19,7 @@ import { loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
 const logger = require('../services/logger')
 
-const DEFAULT_STICKINESS_DURATION = 300 // Seconds
+const DEFAULT_STICKINESS_DURATION = 30 // Seconds
 const DEFAULT_STICKINESS_PARAMS = {
   preferredApplicationID: '',
   preferredNodeAddress: '',
