@@ -19,7 +19,12 @@ import { loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
 const logger = require('../services/logger')
 
-const DEFAULT_STICKINESS_DURATION = 300
+const DEFAULT_STICKINESS_DURATION = 300 // Seconds
+const DEFAULT_STICKINESS_PARAMS = {
+  preferredApplicationID: '',
+  preferredNodeAddress: '',
+  rpcID: 0,
+}
 
 export class V1Controller {
   cherryPicker: CherryPicker
@@ -180,11 +185,7 @@ export class V1Controller {
 
       const { preferredApplicationID, preferredNodeAddress, rpcID } = stickiness
         ? await this.checkClientStickiness(rawData)
-        : {
-            preferredApplicationID: '',
-            preferredNodeAddress: '',
-            rpcID: 0,
-          }
+        : DEFAULT_STICKINESS_PARAMS
 
       const application = await this.fetchLoadBalancerApplication(
         loadBalancer.id,
@@ -276,7 +277,7 @@ export class V1Controller {
 
         const { preferredNodeAddress, rpcID } = stickiness
           ? await this.checkClientStickiness(rawData)
-          : { preferredNodeAddress: '', rpcID: 0 }
+          : DEFAULT_STICKINESS_PARAMS
 
         const sendRelayOptions: SendRelayOptions = {
           rawData,
