@@ -25,10 +25,10 @@ import { gatewayTestDB } from '../fixtures/test.datasource'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
+const logger = require('../../src/services/logger')
+
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
-
 const DEFAULT_LOG_LIMIT = 10000
-
 const DEFAULT_HOST = 'eth-mainnet-x'
 
 // Properties below might not reflect real-world values
@@ -145,6 +145,7 @@ describe('Pocket relayer service (unit)', () => {
   let pocketMock: PocketMock
   let pocketRelayer: PocketRelayer
   let axiosMock: MockAdapter
+  let logSpy: sinon.SinonSpy
 
   const origin = 'unit-test'
 
@@ -194,13 +195,11 @@ describe('Pocket relayer service (unit)', () => {
     sinon.restore()
   })
 
-  const clean = async () => {
+  beforeEach(async () => {
     await blockchainRepository.deleteAll()
     await redis.flushall()
     sinon.restore()
-  }
-
-  beforeEach(clean)
+  })
 
   it('should be defined', async () => {
     expect(pocketRelayer).to.be.ok()
@@ -1135,6 +1134,88 @@ describe('Pocket relayer service (unit)', () => {
       })
 
       expect(relayResponse).to.be.deepEqual(JSON.parse(mock.relayResponse[rawData] as string))
+    })
+
+    it('relay requesting a preferred node should use that one if available', async () => {
+      logSpy = sinon.spy(logger, 'log')
+
+      const { address: preferredNodeAddress } = DEFAULT_NODES[0]
+
+      const mock = new PocketMock()
+
+      const relayRequest = (id) => `{"method":"eth_chainId","id":${id},"jsonrpc":"2.0"}`
+      const relayResponseData = (id) => `{"id":${id},"jsonrpc":"2.0","result":"0x64"}`
+
+      // Reset default values
+      mock.relayResponse = {}
+
+      // Add some default relay requests
+      for (let i = 0; i < 10; i++) {
+        mock.relayResponse[relayRequest(i)] = relayResponseData(i)
+      }
+
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+
+      const pocket = mock.object()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        ipAddress: '127.0.0.1',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: false,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+      })
+
+      for (let i = 0; i <= 5; i++) {
+        const relayResponse = await poktRelayer.sendRelay({
+          rawData: relayRequest(i),
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          preferredNodeAddress,
+          rpcID: i,
+          stickinessDuration: 300,
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          relayRetries: 0,
+        })
+        const expected = JSON.parse(mock.relayResponse[relayRequest(i)] as string)
+
+        expect(relayResponse).to.be.deepEqual(expected)
+      }
+
+      // Counts the number of times the sticky relay succeeded
+      let successStickyResponses = 0
+
+      logSpy.getCalls().forEach(
+        (call) =>
+          (successStickyResponses = call.calledWith(
+            'info',
+            sinon.match.any,
+            sinon.match((log: object) => {
+              return log['sticky'] === true
+            })
+          )
+            ? ++successStickyResponses
+            : successStickyResponses)
+      )
+
+      expect(successStickyResponses).to.be.equal(5)
     })
 
     describe('security checks', () => {
