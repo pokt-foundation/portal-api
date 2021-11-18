@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
+import { getAddressFromPublicKey } from 'pocket-tools'
 import { JSONObject } from '@loopback/context'
 import { HttpErrors } from '@loopback/rest'
 import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
@@ -240,6 +241,7 @@ export class PocketRelayer {
                 origin: this.origin,
                 data,
                 pocketSession: this.pocketSession,
+                sticky: preferredNodeAddress === (await getAddressFromPublicKey(relayResponse.proof.servicerPubKey)),
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -293,6 +295,7 @@ export class PocketRelayer {
                 origin: this.origin,
                 data,
                 pocketSession: this.pocketSession,
+                sticky: preferredNodeAddress === (await getAddressFromPublicKey(relayResponse.servicer_node)),
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -694,20 +697,16 @@ export class PocketRelayer {
 
     let node: Node
 
+    // console.log('------ NODES ADDRESS:', nodes.map((n) => n.address))
+    // console.log('------ NODES PUBLICK EY:', nodes.map((n) => n.publicKey))
     // Before cherry picking, check to see if preferred node is in the set of good nodes
     const preferredNodeIndex = nodes.findIndex((x) => x.address === preferredNodeAddress)
 
     if (preferredNodeAddress && preferredNodeIndex >= 0) {
       node = nodes[preferredNodeIndex]
-
-      logger.log('info', 'STICKINESS SUCCESS', {
-        requestID: requestID,
-        relayType: 'APP',
-        typeID: application.id,
-        serviceNode: node.publicKey,
-      })
     } else {
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
+      console.log('SELECTED', node.address, node.publicKey)
     }
 
     if (this.checkDebug) {
@@ -789,15 +788,6 @@ export class PocketRelayer {
             'EX',
             stickinessDuration
           )
-          const clientStickyAppNodeRaw = await this.redis.get(clientStickyKey)
-          const clientStickyAppNode = JSON.parse(clientStickyAppNodeRaw)
-
-          logger.log('info', `STICKINESS SET ${clientStickyKey} ${JSON.stringify(clientStickyAppNode)}`, {
-            requestID: requestID,
-            relayType: 'APP',
-            typeID: application.id,
-            serviceNode: node.publicKey,
-          })
         }
 
         return relayResponse
