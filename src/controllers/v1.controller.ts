@@ -330,7 +330,6 @@ export class V1Controller {
       })
 
       const clientStickyKey = `${this.ipAddress}-${blockchainID}-${rpcID}`
-
       const clientStickyAppNodeRaw = await this.redis.get(clientStickyKey)
       const clientStickyAppNode = JSON.parse(clientStickyAppNodeRaw)
 

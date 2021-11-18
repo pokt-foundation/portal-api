@@ -182,7 +182,6 @@ describe('V1 controller (acceptance)', () => {
 
     await loadBalancersRepository.createAll(LOAD_BALANCERS)
     await blockchainsRepository.createAll(BLOCKCHAINS)
-
     await applicationsRepository.createAll(APPLICATIONS)
   })
 
@@ -545,7 +544,6 @@ describe('V1 controller (acceptance)', () => {
 
     const relayRequest = (id) => `{"method":"eth_chainId","id":${id},"jsonrpc":"2.0"}`
     const relayResponseData = (id) => `{"id":${id},"jsonrpc":"2.0","result":"0x64"}`
-
     const mockPocket = new PocketMock()
 
     // Reset default values
