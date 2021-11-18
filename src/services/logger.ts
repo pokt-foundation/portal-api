@@ -25,7 +25,7 @@ interface Log {
   serviceDomain: string
   sessionKey: string
   sessionHash: string
-  sticky: boolean
+  sticky: string
 }
 
 const environment = process.env.NODE_ENV || 'production'
@@ -58,7 +58,7 @@ const consoleFormat = printf(
     serviceDomain = '',
     sessionKey = '',
     sessionHash = '',
-    sticky = false,
+    sticky = 'NONE',
   }: Log) => {
     return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${serviceURL}] [${serviceDomain}] [${sessionKey}] [${sessionHash}] [${error}] [${elapsedTime}] [${blockchainID}] [${origin}] [sticky: ${sticky}] ${message}`
   }

@@ -83,7 +83,7 @@ export class MetricsRecorder {
     data: string | undefined
     pocketSession: Session | undefined
     timeout?: number
-    sticky?: boolean
+    sticky?: string
   }): Promise<void> {
     try {
       const { sessionNodes } = pocketSession || {}

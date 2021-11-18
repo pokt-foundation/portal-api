@@ -1208,7 +1208,7 @@ describe('Pocket relayer service (unit)', () => {
             'info',
             sinon.match.any,
             sinon.match((log: object) => {
-              return log['sticky'] === true
+              return log['sticky'] === 'SUCCESS'
             })
           )
             ? ++successStickyResponses

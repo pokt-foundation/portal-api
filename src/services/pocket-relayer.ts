@@ -241,7 +241,7 @@ export class PocketRelayer {
                 origin: this.origin,
                 data,
                 pocketSession: this.pocketSession,
-                sticky: preferredNodeAddress === (await getAddressFromPublicKey(relayResponse.proof.servicerPubKey)),
+                sticky: await PocketRelayer.stickyRelayResult(preferredNodeAddress, relayResponse.proof.servicerPubKey),
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -295,7 +295,7 @@ export class PocketRelayer {
                 origin: this.origin,
                 data,
                 pocketSession: this.pocketSession,
-                sticky: preferredNodeAddress === (await getAddressFromPublicKey(relayResponse.servicer_node)),
+                sticky: await PocketRelayer.stickyRelayResult(preferredNodeAddress, relayResponse.servicer_node),
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -832,5 +832,16 @@ export class PocketRelayer {
       pocketConfiguration.validateRelayResponses,
       pocketConfiguration.rejectSelfSignedCertificates
     )
+  }
+
+  static async stickyRelayResult(
+    prefferedNodeAddress: string | undefined,
+    relayNodePublicKey: string
+  ): Promise<string> {
+    if (!prefferedNodeAddress) {
+      return 'NONE'
+    }
+
+    return prefferedNodeAddress === (await getAddressFromPublicKey(relayNodePublicKey)) ? 'SUCCESS' : 'FAILURE'
   }
 }
