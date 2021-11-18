@@ -178,14 +178,13 @@ export class V1Controller {
 
       const { stickiness = false, stickinessDuration = DEFAULT_STICKINESS_DURATION } = loadBalancer
 
-      const stickinessData = stickiness
+      const { preferredApplicationID, preferredNodeAddress, rpcID } = stickiness
         ? await this.checkClientStickiness(rawData)
         : {
             preferredApplicationID: '',
             preferredNodeAddress: '',
             rpcID: 0,
           }
-      const { preferredApplicationID, preferredNodeAddress, rpcID } = stickinessData
 
       const application = await this.fetchLoadBalancerApplication(
         loadBalancer.id,
@@ -275,13 +274,9 @@ export class V1Controller {
       if (application?.id) {
         const { stickiness = false, stickinessDuration = DEFAULT_STICKINESS_DURATION } = application
 
-        const stickinessData = stickiness
+        const { preferredNodeAddress, rpcID } = stickiness
           ? await this.checkClientStickiness(rawData)
-          : {
-              preferredNodeAddress: '',
-              rpcID: 0,
-            }
-        const { preferredNodeAddress, rpcID } = stickinessData
+          : { preferredNodeAddress: '', rpcID: 0 }
 
         const sendRelayOptions: SendRelayOptions = {
           rawData,
