@@ -6,13 +6,7 @@
 		"dnsSearchDomains": null,
 		"environmentFiles": null,
 		"logConfiguration": {
-		  "logDriver": "awslogs",
-		  "secretOptions": null,
-		  "options": {
-			"awslogs-group": "/ecs/gateway",
-			"awslogs-region": "ap-northeast-2",
-			"awslogs-stream-prefix": "ecs"
-		  }
+		  "logDriver": "none"
 		},
 		"entryPoint": [],
 		"portMappings": [
