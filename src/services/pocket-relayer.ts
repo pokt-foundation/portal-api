@@ -693,7 +693,7 @@ export class PocketRelayer {
     // Before cherry picking, check to see if preferred node is in the set of good nodes
     const preferredNodeIndex = nodes.findIndex((x) => x.address === preferredNodeAddress)
 
-    if (preferredNodeAddress && preferredNodeIndex > 0) {
+    if (preferredNodeAddress && preferredNodeIndex >= 0) {
       node = nodes[preferredNodeIndex]
 
       logger.log('info', 'STICKINESS SUCCESS', {
