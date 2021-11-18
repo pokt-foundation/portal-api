@@ -30,7 +30,19 @@ export class LoadBalancers extends Entity {
   @property({
     type: 'number',
   })
-  logLimitBlocks?: number;
+  logLimitBlocks?: number
+
+  @property({
+    type: 'boolean',
+    required: false,
+  })
+  stickiness?: boolean
+
+  @property({
+    type: 'number',
+    required: false,
+  })
+  stickinessDuration?: number;
 
   // Define well-known properties here
 

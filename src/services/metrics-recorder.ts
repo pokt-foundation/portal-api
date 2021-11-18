@@ -65,6 +65,7 @@ export class MetricsRecorder {
     data,
     pocketSession,
     timeout,
+    sticky,
   }: {
     requestID: string
     applicationID: string
@@ -82,6 +83,7 @@ export class MetricsRecorder {
     data: string | undefined
     pocketSession: Session | undefined
     timeout?: number
+    sticky?: string
   }): Promise<void> {
     try {
       const { sessionNodes } = pocketSession || {}
@@ -121,6 +123,7 @@ export class MetricsRecorder {
           origin,
           blockchainID,
           sessionHash,
+          sticky,
         })
       } else if (result === 500) {
         logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -135,6 +138,7 @@ export class MetricsRecorder {
           origin,
           blockchainID,
           sessionHash,
+          sticky,
         })
       } else if (result === 503) {
         logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -149,6 +153,7 @@ export class MetricsRecorder {
           origin,
           blockchainID,
           sessionHash,
+          sticky,
         })
       }
 
