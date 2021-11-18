@@ -835,13 +835,13 @@ export class PocketRelayer {
   }
 
   static async stickyRelayResult(
-    prefferedNodeAddress: string | undefined,
+    preferredNodeAddress: string | undefined,
     relayNodePublicKey: string
   ): Promise<string> {
-    if (!prefferedNodeAddress) {
+    if (!preferredNodeAddress) {
       return 'NONE'
     }
 
-    return prefferedNodeAddress === (await getAddressFromPublicKey(relayNodePublicKey)) ? 'SUCCESS' : 'FAILURE'
+    return preferredNodeAddress === (await getAddressFromPublicKey(relayNodePublicKey)) ? 'SUCCESS' : 'FAILURE'
   }
 }
