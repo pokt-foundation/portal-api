@@ -126,6 +126,7 @@ export class PocketRelayer {
     httpMethod,
     application,
     preferredNodeAddress,
+    stickinessDuration,
     requestID,
     requestTimeOut,
     overallTimeOut,
@@ -210,6 +211,7 @@ export class PocketRelayer {
             requestID,
             application,
             preferredNodeAddress,
+            stickinessDuration,
             requestTimeOut,
             blockchainID,
             blockchainEnforceResult,
@@ -441,6 +443,7 @@ export class PocketRelayer {
     requestID,
     application,
     preferredNodeAddress,
+    stickinessDuration,
     requestTimeOut,
     blockchainEnforceResult,
     blockchainSyncCheck,
@@ -456,6 +459,7 @@ export class PocketRelayer {
     requestID: string
     application: Applications
     preferredNodeAddress: string | undefined
+    stickinessDuration: number | undefined
     requestTimeOut: number | undefined
     blockchainEnforceResult: string
     blockchainSyncCheck: SyncCheckOptions
@@ -783,7 +787,7 @@ export class PocketRelayer {
             clientStickyKey,
             JSON.stringify({ applicationID: application.id, nodeAddress: node.address }),
             'EX',
-            300
+            stickinessDuration
           )
           const clientStickyAppNodeRaw = await this.redis.get(clientStickyKey)
           const clientStickyAppNode = JSON.parse(clientStickyAppNodeRaw)
