@@ -183,9 +183,10 @@ export class V1Controller {
       // one randomly for the relay. First check RPC ID to see if this client should be stuck to an app and node.
 
       const { stickiness = false, stickinessDuration = DEFAULT_STICKINESS_DURATION } = loadBalancer
+      const stickyKeyPrefix = stickiness ? loadBalancer?.id : ''
 
       const { preferredApplicationID, preferredNodeAddress, rpcID } = stickiness
-        ? await this.checkClientStickiness(rawData, stickinessDuration)
+        ? await this.checkClientStickiness(rawData, stickyKeyPrefix)
         : DEFAULT_STICKINESS_PARAMS
 
       const application = await this.fetchLoadBalancerApplication(
@@ -201,16 +202,19 @@ export class V1Controller {
 
       const options: SendRelayOptions = {
         rawData,
-        rpcID,
         relayPath: this.relayPath,
         httpMethod: this.httpMethod,
         application,
-        preferredNodeAddress,
-        stickinessDuration,
         requestID: this.requestID,
         requestTimeOut: parseInt(loadBalancer.requestTimeOut),
         overallTimeOut: parseInt(loadBalancer.overallTimeOut),
         relayRetries: parseInt(loadBalancer.relayRetries),
+        stickinessOptions: {
+          preferredNodeAddress,
+          duration: stickinessDuration,
+          keyPrefix: stickyKeyPrefix,
+          rpcID,
+        },
       }
 
       if (loadBalancer.logLimitBlocks) {
@@ -275,20 +279,24 @@ export class V1Controller {
 
       if (application?.id) {
         const { stickiness = false, stickinessDuration = DEFAULT_STICKINESS_DURATION } = application
+        const stickyKeyPrefix = stickiness ? application?.id : ''
 
         const { preferredNodeAddress, rpcID } = stickiness
-          ? await this.checkClientStickiness(rawData)
+          ? await this.checkClientStickiness(rawData, stickyKeyPrefix)
           : DEFAULT_STICKINESS_PARAMS
 
         const sendRelayOptions: SendRelayOptions = {
           rawData,
-          rpcID,
           application,
-          preferredNodeAddress,
-          stickinessDuration,
           relayPath: this.relayPath,
           httpMethod: this.httpMethod,
           requestID: this.requestID,
+          stickinessOptions: {
+            preferredNodeAddress,
+            duration: stickinessDuration,
+            keyPrefix: stickyKeyPrefix,
+            rpcID,
+          },
         }
 
         return await this.pocketRelayer.sendRelay(sendRelayOptions)
@@ -313,13 +321,13 @@ export class V1Controller {
 
   async checkClientStickiness(
     rawData: object,
-    stickinessDuration = DEFAULT_STICKINESS_DURATION
+    prefix: string
   ): Promise<{ preferredApplicationID: string; preferredNodeAddress: string; rpcID: number }> {
     // Parse the raw data to determine the lowest RPC ID in the call
     const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
     const rpcID = parseRPCID(parsedRawData)
 
-    if (rpcID > 0) {
+    if (prefix || rpcID > 0) {
       const { blockchainID } = await loadBlockchain(
         this.host,
         this.redis,
@@ -332,34 +340,13 @@ export class V1Controller {
         throw new HttpErrors.BadRequest(`Incorrect blockchain: ${this.host}`)
       })
 
-      const clientStickyKey = `${this.ipAddress}-${blockchainID}-${rpcID}`
+      const keyPrefix = prefix ? prefix : rpcID
+
+      const clientStickyKey = `${keyPrefix}-${this.ipAddress}-${blockchainID}`
       const clientStickyAppNodeRaw = await this.redis.get(clientStickyKey)
       const clientStickyAppNode = JSON.parse(clientStickyAppNodeRaw)
 
       if (clientStickyAppNode?.applicationID && clientStickyAppNode?.nodeAddress) {
-        const { applicationID, nodeAddress } = clientStickyAppNode
-
-        // Expects the node is going to be a good guy and sets ahead the next
-        // two ids to be relayed by it, in case of failure the cache is removed
-        // in the relayer.
-        const nextRPCID = getNextRPCID(rpcID, rawData)
-        let nextClientStickyKey = `${this.ipAddress}-${blockchainID}-${nextRPCID}`
-
-        await this.redis.set(
-          nextClientStickyKey,
-          JSON.stringify({ blockchainID, applicationID: applicationID, nodeAddress }),
-          'EX',
-          stickinessDuration
-        )
-
-        nextClientStickyKey = `${this.ipAddress}-${blockchainID}-${nextRPCID + 1}`
-        await this.redis.set(
-          nextClientStickyKey,
-          JSON.stringify({ blockchainID, applicationID: applicationID, nodeAddress }),
-          'EX',
-          stickinessDuration
-        )
-
         return {
           preferredApplicationID: clientStickyAppNode.applicationID,
           preferredNodeAddress: clientStickyAppNode.nodeAddress,

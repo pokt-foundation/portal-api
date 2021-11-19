@@ -14,9 +14,7 @@ export type BlockchainDetails = {
 
 export type SendRelayOptions = {
   application: Applications
-  rpcID?: number
-  preferredNodeAddress?: string
-  stickinessDuration?: number
+  stickinessOptions: StickinessOptions
   httpMethod: HTTPMethod
   overallTimeOut?: number
   rawData: object | string
@@ -25,4 +23,11 @@ export type SendRelayOptions = {
   requestTimeOut?: number
   relayRetries?: number
   logLimitBlocks?: number
+}
+
+export type StickinessOptions = {
+  preferredNodeAddress: string
+  duration: number
+  keyPrefix?: string
+  rpcID?: number
 }

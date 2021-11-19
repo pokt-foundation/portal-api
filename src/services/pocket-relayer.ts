@@ -26,7 +26,7 @@ import { getNextRPCID, hashBlockchainNodes } from '../utils/helpers'
 import { parseMethod } from '../utils/parsing'
 import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
-import { SendRelayOptions } from '../utils/types'
+import { SendRelayOptions, StickinessOptions } from '../utils/types'
 import { enforceEVMLimits } from './limiter'
 const logger = require('../services/logger')
 
@@ -120,23 +120,33 @@ export class PocketRelayer {
     this.altruists = JSON.parse(altruists)
   }
 
+  static async stickyRelayResult(
+    preferredNodeAddress: string | undefined,
+    relayNodePublicKey: string
+  ): Promise<string> {
+    if (!preferredNodeAddress) {
+      return 'NONE'
+    }
+
+    return preferredNodeAddress === (await getAddressFromPublicKey(relayNodePublicKey)) ? 'SUCCESS' : 'FAILURE'
+  }
+
   async sendRelay({
     rawData,
-    rpcID,
     relayPath,
     httpMethod,
     application,
-    preferredNodeAddress,
-    stickinessDuration,
     requestID,
     requestTimeOut,
     overallTimeOut,
     relayRetries,
+    stickinessOptions,
     logLimitBlocks,
   }: SendRelayOptions): Promise<string | Error> {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries
     }
+    const { preferredNodeAddress } = stickinessOptions
     const {
       blockchainEnforceResult,
       blockchainSyncCheck,
@@ -206,14 +216,12 @@ export class PocketRelayer {
           // Send this relay attempt
           const relayResponse = await this._sendRelay({
             data,
-            rpcID,
             relayPath,
             httpMethod,
             requestID,
             application,
-            preferredNodeAddress,
-            stickinessDuration,
             requestTimeOut,
+            stickinessOptions,
             blockchainID,
             blockchainEnforceResult,
             blockchainSyncCheck,
@@ -440,13 +448,10 @@ export class PocketRelayer {
   // Private function to allow relay retries
   async _sendRelay({
     data,
-    rpcID,
     relayPath,
     httpMethod,
     requestID,
     application,
-    preferredNodeAddress,
-    stickinessDuration,
     requestTimeOut,
     blockchainEnforceResult,
     blockchainSyncCheck,
@@ -454,15 +459,13 @@ export class PocketRelayer {
     blockchainIDCheck,
     blockchainID,
     blockchainChainID,
+    stickinessOptions,
   }: {
     data: string
-    rpcID: number
     relayPath: string
     httpMethod: HTTPMethod
     requestID: string
     application: Applications
-    preferredNodeAddress: string | undefined
-    stickinessDuration: number | undefined
     requestTimeOut: number | undefined
     blockchainEnforceResult: string
     blockchainSyncCheck: SyncCheckOptions
@@ -470,6 +473,7 @@ export class PocketRelayer {
     blockchainIDCheck: string
     blockchainID: string
     blockchainChainID: string
+    stickinessOptions?: StickinessOptions
   }): Promise<RelayResponse | Error> {
     const secretKeyDetails: SecretKeyDetails = {
       secretKey: this.secretKey,
@@ -697,6 +701,7 @@ export class PocketRelayer {
 
     let node: Node
 
+    const { preferredNodeAddress } = stickinessOptions
     // Before cherry picking, check to see if preferred node is in the set of good nodes
     const preferredNodeIndex = nodes.findIndex((x) => x.address === preferredNodeAddress)
 
@@ -767,30 +772,9 @@ export class PocketRelayer {
         // then this result is invalid
         return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey)
       } else {
+        await this.setStickinessKey(stickinessOptions, blockchainID, application.id, node.address, data)
+
         // Success
-        const nextRPCID = getNextRPCID(rpcID, data)
-        const clientStickyKey = `${this.ipAddress}-${blockchainID}-${nextRPCID}`
-        const nextRequest = await this.redis.get(clientStickyKey)
-
-        if (!nextRequest && rpcID > 0) {
-          await this.redis.set(
-            clientStickyKey,
-            JSON.stringify({ applicationID: application.id, nodeAddress: node.address }),
-            'EX',
-            stickinessDuration
-          )
-
-          // Some rpcID requests skips one number when sending them consecutively
-          const nextClientStickyKey = `${this.ipAddress}-${blockchainID}-${nextRPCID + 1}`
-
-          await this.redis.set(
-            nextClientStickyKey,
-            JSON.stringify({ applicationID: application.id, nodeAddress: node.address }),
-            'EX',
-            stickinessDuration
-          )
-        }
-
         return relayResponse
       }
       // Error
@@ -799,17 +783,6 @@ export class PocketRelayer {
       if (relayResponse.message === MAX_RELAYS_ERROR) {
         await removeNodeFromSession(this.redis, blockchainID, (pocketSession as Session).sessionNodes, node.publicKey)
       }
-
-      // Delete node stickiness for next two relays
-      if (preferredNodeAddress === node.address && rpcID > 0) {
-        const nextRPCID = getNextRPCID(rpcID, data)
-
-        const clientStickyKey = `${this.ipAddress}-${blockchainID}-${nextRPCID}`
-        const nextClientStickyKey = `${this.ipAddress}-${blockchainID}-${nextRPCID + 1}`
-
-        await this.redis.del(clientStickyKey, nextClientStickyKey)
-      }
-
       return new RelayError(relayResponse.message, 500, node?.publicKey)
       // ConsensusNode
     } else {
@@ -848,14 +821,41 @@ export class PocketRelayer {
     )
   }
 
-  static async stickyRelayResult(
-    preferredNodeAddress: string | undefined,
-    relayNodePublicKey: string
-  ): Promise<string> {
-    if (!preferredNodeAddress) {
-      return 'NONE'
+  async setStickinessKey(
+    { duration, keyPrefix, rpcID }: StickinessOptions,
+    blockchainID: string,
+    applicationID: string,
+    nodeAddress: string,
+    data: string
+  ): Promise<void> {
+    if (!keyPrefix && !rpcID) {
+      return
     }
 
-    return preferredNodeAddress === (await getAddressFromPublicKey(relayNodePublicKey)) ? 'SUCCESS' : 'FAILURE'
+    // If no key prefix is given, set based on rpcID
+    if (keyPrefix) {
+      const clientStickyKey = `${keyPrefix}-${this.ipAddress}-${blockchainID}`
+
+      const nextRequest = await this.redis.get(clientStickyKey)
+
+      if (nextRequest) {
+        return
+      }
+
+      await this.redis.set(clientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', duration)
+    } else {
+      const nextRPCID = getNextRPCID(rpcID, data)
+      const clientStickyKey = `${nextRPCID}-${this.ipAddress}-${blockchainID}`
+      const nextRequest = await this.redis.get(clientStickyKey)
+
+      if (!nextRequest && rpcID > 0) {
+        await this.redis.set(clientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', duration)
+
+        // Some rpcID requests skips one number when sending them consecutively
+        const nextClientStickyKey = `${this.ipAddress}-${blockchainID}-${nextRPCID + 1}`
+
+        await this.redis.set(nextClientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', duration)
+      }
+    }
   }
 }
