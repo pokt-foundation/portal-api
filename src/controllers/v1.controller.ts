@@ -179,8 +179,11 @@ export class V1Controller {
       }
 
       // Fetch applications contained in this Load Balancer. Verify they exist and choose
-      // one randomly for the relay. First check RPC ID to see if this client should be stuck to an app and node.
-
+      // one randomly for the relay.
+      // For sticking sessions (sessions which must be relied using the same node for data consistency)
+      // There's two ways to handle them: rpcID or prefix (full sticky), on rpcID the stickiness works
+      // with increasing rpcID relays to maintain consistency and with prefix all relays from a load
+      // balancer go to the same app/node regardless the data.
       const { stickiness = false, stickinessDuration = DEFAULT_STICKINESS_DURATION, useRPCID = true } = loadBalancer
       const stickyKeyPrefix = stickiness && !useRPCID ? loadBalancer?.id : ''
 

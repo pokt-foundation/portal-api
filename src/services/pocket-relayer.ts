@@ -832,10 +832,17 @@ export class PocketRelayer {
       return
     }
 
-    // If no key prefix is given, set based on rpcID
+    // If no key prefix is given, set based on rpcID.
+    // Prefix is needed in case the rpcID is not used due to the way the key works.
+    // If the key only had ip and blockcChainID, then could happen the unlikely case
+    // where when connected to two different apps that both have stickiness on,
+    // one will overwrite the other with its session node and the other will have an
+    // invalid node to send relays to resulting in a cascade of failures=
     if (keyPrefix) {
       const clientStickyKey = `${keyPrefix}-${this.ipAddress}-${blockchainID}`
 
+      // Check if key is already set to rotate the selected node when the
+      // sticky duration ends
       const nextRequest = await this.redis.get(clientStickyKey)
 
       if (nextRequest) {
