@@ -495,6 +495,7 @@ describe('Pocket relayer service (unit)', () => {
         requestTimeOut: undefined,
         overallTimeOut: undefined,
         stickinessOptions: {
+          stickiness: false,
           duration: 0,
           preferredNodeAddress: '',
         },
@@ -548,6 +549,7 @@ describe('Pocket relayer service (unit)', () => {
         requestTimeOut: undefined,
         overallTimeOut: undefined,
         stickinessOptions: {
+          stickiness: false,
           duration: 0,
           preferredNodeAddress: '',
         },
@@ -598,6 +600,7 @@ describe('Pocket relayer service (unit)', () => {
         requestTimeOut: undefined,
         overallTimeOut: undefined,
         stickinessOptions: {
+          stickiness: false,
           duration: 0,
           preferredNodeAddress: '',
         },
@@ -647,6 +650,7 @@ describe('Pocket relayer service (unit)', () => {
         overallTimeOut: 1,
         relayRetries: 1,
         stickinessOptions: {
+          stickiness: false,
           duration: 0,
           preferredNodeAddress: '',
         },
@@ -693,6 +697,7 @@ describe('Pocket relayer service (unit)', () => {
         requestTimeOut: undefined,
         overallTimeOut: undefined,
         stickinessOptions: {
+          stickiness: false,
           duration: 0,
           preferredNodeAddress: '',
         },
@@ -755,6 +760,7 @@ describe('Pocket relayer service (unit)', () => {
         requestTimeOut: undefined,
         overallTimeOut: undefined,
         stickinessOptions: {
+          stickiness: false,
           duration: 0,
           preferredNodeAddress: '',
         },
@@ -780,6 +786,7 @@ describe('Pocket relayer service (unit)', () => {
         requestTimeOut: undefined,
         overallTimeOut: undefined,
         stickinessOptions: {
+          stickiness: false,
           duration: 0,
           preferredNodeAddress: '',
         },
@@ -845,6 +852,7 @@ describe('Pocket relayer service (unit)', () => {
         requestTimeOut: undefined,
         overallTimeOut: undefined,
         stickinessOptions: {
+          stickiness: false,
           duration: 0,
           preferredNodeAddress: '',
         },
@@ -870,6 +878,7 @@ describe('Pocket relayer service (unit)', () => {
         requestTimeOut: undefined,
         overallTimeOut: undefined,
         stickinessOptions: {
+          stickiness: false,
           duration: 0,
           preferredNodeAddress: '',
         },
@@ -926,6 +935,7 @@ describe('Pocket relayer service (unit)', () => {
         requestTimeOut: undefined,
         overallTimeOut: undefined,
         stickinessOptions: {
+          stickiness: false,
           duration: 0,
           preferredNodeAddress: '',
         },
@@ -978,6 +988,7 @@ describe('Pocket relayer service (unit)', () => {
         requestTimeOut: undefined,
         overallTimeOut: undefined,
         stickinessOptions: {
+          stickiness: false,
           duration: 0,
           preferredNodeAddress: '',
         },
@@ -1029,6 +1040,7 @@ describe('Pocket relayer service (unit)', () => {
         requestTimeOut: undefined,
         overallTimeOut: undefined,
         stickinessOptions: {
+          stickiness: false,
           duration: 0,
           preferredNodeAddress: '',
         },
@@ -1082,6 +1094,7 @@ describe('Pocket relayer service (unit)', () => {
         requestTimeOut: undefined,
         overallTimeOut: undefined,
         stickinessOptions: {
+          stickiness: false,
           duration: 0,
           preferredNodeAddress: '',
         },
@@ -1133,6 +1146,7 @@ describe('Pocket relayer service (unit)', () => {
         requestTimeOut: undefined,
         overallTimeOut: undefined,
         stickinessOptions: {
+          stickiness: false,
           duration: 0,
           preferredNodeAddress: '',
         },
@@ -1187,6 +1201,7 @@ describe('Pocket relayer service (unit)', () => {
         requestTimeOut: undefined,
         overallTimeOut: undefined,
         stickinessOptions: {
+          stickiness: false,
           duration: 0,
           preferredNodeAddress: '',
         },
@@ -1247,6 +1262,7 @@ describe('Pocket relayer service (unit)', () => {
           httpMethod: HTTPMethod.POST,
           application: APPLICATION as unknown as Applications,
           stickinessOptions: {
+            stickiness: true,
             preferredNodeAddress,
             rpcID: i,
             duration: 300,
@@ -1327,6 +1343,7 @@ describe('Pocket relayer service (unit)', () => {
           httpMethod: HTTPMethod.POST,
           application: APPLICATION as unknown as Applications,
           stickinessOptions: {
+            stickiness: true,
             preferredNodeAddress,
             rpcID: 0,
             duration: 300,
@@ -1408,6 +1425,7 @@ describe('Pocket relayer service (unit)', () => {
             requestTimeOut: undefined,
             overallTimeOut: undefined,
             stickinessOptions: {
+              stickiness: false,
               duration: 0,
               preferredNodeAddress: '',
             },
@@ -1467,6 +1485,7 @@ describe('Pocket relayer service (unit)', () => {
             requestTimeOut: undefined,
             overallTimeOut: undefined,
             stickinessOptions: {
+              stickiness: false,
               duration: 0,
               preferredNodeAddress: '',
             },
@@ -1525,6 +1544,7 @@ describe('Pocket relayer service (unit)', () => {
             requestTimeOut: undefined,
             overallTimeOut: undefined,
             stickinessOptions: {
+              stickiness: false,
               duration: 0,
               preferredNodeAddress: '',
             },
@@ -1598,6 +1618,7 @@ describe('Pocket relayer service (unit)', () => {
           requestTimeOut: undefined,
           overallTimeOut: undefined,
           stickinessOptions: {
+            stickiness: false,
             duration: 0,
             preferredNodeAddress: '',
           },
@@ -1623,6 +1644,7 @@ describe('Pocket relayer service (unit)', () => {
           requestTimeOut: undefined,
           overallTimeOut: undefined,
           stickinessOptions: {
+            stickiness: false,
             duration: 0,
             preferredNodeAddress: '',
           },
@@ -1648,6 +1670,7 @@ describe('Pocket relayer service (unit)', () => {
           requestTimeOut: undefined,
           overallTimeOut: undefined,
           stickinessOptions: {
+            stickiness: false,
             duration: 0,
             preferredNodeAddress: '',
           },
@@ -1672,6 +1695,7 @@ describe('Pocket relayer service (unit)', () => {
           requestTimeOut: undefined,
           overallTimeOut: undefined,
           stickinessOptions: {
+            stickiness: false,
             duration: 0,
             preferredNodeAddress: '',
           },
@@ -1704,6 +1728,7 @@ describe('Pocket relayer service (unit)', () => {
           requestTimeOut: undefined,
           overallTimeOut: undefined,
           stickinessOptions: {
+            stickiness: false,
             duration: 0,
             preferredNodeAddress: '',
           },
@@ -1741,6 +1766,7 @@ describe('Pocket relayer service (unit)', () => {
           requestTimeOut: undefined,
           overallTimeOut: undefined,
           stickinessOptions: {
+            stickiness: false,
             duration: 0,
             preferredNodeAddress: '',
           },
@@ -1803,6 +1829,7 @@ describe('Pocket relayer service (unit)', () => {
           requestTimeOut: undefined,
           overallTimeOut: undefined,
           stickinessOptions: {
+            stickiness: false,
             duration: 0,
             preferredNodeAddress: '',
           },
@@ -1835,6 +1862,7 @@ describe('Pocket relayer service (unit)', () => {
           requestTimeOut: undefined,
           overallTimeOut: undefined,
           stickinessOptions: {
+            stickiness: false,
             duration: 0,
             preferredNodeAddress: '',
           },

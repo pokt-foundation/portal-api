@@ -209,6 +209,7 @@ export class V1Controller {
         overallTimeOut: parseInt(loadBalancer.overallTimeOut),
         relayRetries: parseInt(loadBalancer.relayRetries),
         stickinessOptions: {
+          stickiness,
           preferredNodeAddress,
           duration: stickinessDuration,
           keyPrefix: stickyKeyPrefix,
@@ -291,6 +292,7 @@ export class V1Controller {
           httpMethod: this.httpMethod,
           requestID: this.requestID,
           stickinessOptions: {
+            stickiness,
             preferredNodeAddress,
             duration: stickinessDuration,
             keyPrefix: stickyKeyPrefix,

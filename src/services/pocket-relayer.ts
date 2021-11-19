@@ -822,13 +822,13 @@ export class PocketRelayer {
   }
 
   async setStickinessKey(
-    { duration, keyPrefix, rpcID }: StickinessOptions,
+    { stickiness, duration, keyPrefix, rpcID }: StickinessOptions,
     blockchainID: string,
     applicationID: string,
     nodeAddress: string,
     data: string
   ): Promise<void> {
-    if (!keyPrefix && !rpcID) {
+    if (!stickiness || (!keyPrefix && !rpcID)) {
       return
     }
 

@@ -26,6 +26,7 @@ export type SendRelayOptions = {
 }
 
 export type StickinessOptions = {
+  stickiness: boolean
   preferredNodeAddress: string
   duration: number
   keyPrefix?: string
