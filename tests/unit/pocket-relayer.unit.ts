@@ -494,6 +494,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
       const expected = JSON.parse(mock.relayResponse[rawData] as string)
@@ -543,6 +548,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
       const expected = JSON.parse(mock.relayResponse[rawData] as string)
@@ -589,6 +599,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
       const expected = mock.relayResponse[rawData]
@@ -634,6 +649,11 @@ describe('Pocket relayer service (unit)', () => {
         requestTimeOut: 0,
         overallTimeOut: 1,
         relayRetries: 1,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
       })
 
       expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
@@ -676,6 +696,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
@@ -734,6 +759,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
@@ -755,6 +785,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
@@ -816,6 +851,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
@@ -837,6 +877,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
@@ -889,6 +934,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
@@ -937,6 +987,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
@@ -984,6 +1039,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
@@ -1033,6 +1093,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })) as Error
 
@@ -1080,6 +1145,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })) as Error
 
@@ -1130,13 +1200,18 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
       expect(relayResponse).to.be.deepEqual(JSON.parse(mock.relayResponse[rawData] as string))
     })
 
-    it('relay requesting a preferred node should use that one if available', async () => {
+    it('relay requesting a preferred node should use that one if available with rpcID', async () => {
       logSpy = sinon.spy(logger, 'log')
 
       const { address: preferredNodeAddress } = DEFAULT_NODES[0]
@@ -1186,15 +1261,100 @@ describe('Pocket relayer service (unit)', () => {
           relayPath: '',
           httpMethod: HTTPMethod.POST,
           application: APPLICATION as unknown as Applications,
-          preferredNodeAddress,
-          rpcID: i,
-          stickinessDuration: 300,
+          stickinessOptions: {
+            stickiness: true,
+            preferredNodeAddress,
+            rpcID: i,
+            duration: 300,
+          },
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
           relayRetries: 0,
         })
         const expected = JSON.parse(mock.relayResponse[relayRequest(i)] as string)
+
+        expect(relayResponse).to.be.deepEqual(expected)
+      }
+
+      // Counts the number of times the sticky relay succeeded
+      let successStickyResponses = 0
+
+      logSpy.getCalls().forEach(
+        (call) =>
+          (successStickyResponses = call.calledWith(
+            'info',
+            sinon.match.any,
+            sinon.match((log: object) => {
+              return log['sticky'] === 'SUCCESS'
+            })
+          )
+            ? ++successStickyResponses
+            : successStickyResponses)
+      )
+
+      expect(successStickyResponses).to.be.equal(5)
+    })
+
+    it('relay requesting a preferred node should use that one if available with prefix', async () => {
+      logSpy = sinon.spy(logger, 'log')
+
+      const { address: preferredNodeAddress } = DEFAULT_NODES[0]
+
+      const mock = new PocketMock()
+
+      // Reset default values
+      mock.relayResponse = {}
+
+      const relayRequest = '{"method":"eth_chainId","id":0,"jsonrpc":"2.0"}'
+
+      mock.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
+
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+
+      const pocket = mock.object()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        ipAddress: '127.0.0.1',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: false,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+      })
+
+      for (let i = 0; i <= 5; i++) {
+        const relayResponse = await poktRelayer.sendRelay({
+          rawData: relayRequest,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          stickinessOptions: {
+            stickiness: true,
+            preferredNodeAddress,
+            rpcID: 0,
+            duration: 300,
+            keyPrefix: 'myPrefix',
+          },
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          relayRetries: 0,
+        })
+        const expected = JSON.parse(mock.relayResponse[relayRequest] as string)
 
         expect(relayResponse).to.be.deepEqual(expected)
       }
@@ -1264,6 +1424,11 @@ describe('Pocket relayer service (unit)', () => {
             requestID: '1234',
             requestTimeOut: undefined,
             overallTimeOut: undefined,
+            stickinessOptions: {
+              stickiness: false,
+              duration: 0,
+              preferredNodeAddress: '',
+            },
             relayRetries: 0,
           })
         } catch (error) {
@@ -1319,6 +1484,11 @@ describe('Pocket relayer service (unit)', () => {
             requestID: '1234',
             requestTimeOut: undefined,
             overallTimeOut: undefined,
+            stickinessOptions: {
+              stickiness: false,
+              duration: 0,
+              preferredNodeAddress: '',
+            },
             relayRetries: 0,
           })
         } catch (error) {
@@ -1373,6 +1543,11 @@ describe('Pocket relayer service (unit)', () => {
             requestID: '1234',
             requestTimeOut: undefined,
             overallTimeOut: undefined,
+            stickinessOptions: {
+              stickiness: false,
+              duration: 0,
+              preferredNodeAddress: '',
+            },
             relayRetries: 0,
           })
         } catch (error) {
@@ -1442,6 +1617,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })
 
@@ -1463,6 +1643,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })
 
@@ -1484,6 +1669,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
 
           relayRetries: 0,
         })
@@ -1504,6 +1694,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })
 
@@ -1532,6 +1727,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })) as Error
 
@@ -1565,6 +1765,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })
 
@@ -1623,6 +1828,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })
 
@@ -1651,6 +1861,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })) as Error
 

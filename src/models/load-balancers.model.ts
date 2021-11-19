@@ -42,7 +42,14 @@ export class LoadBalancers extends Entity {
     type: 'number',
     required: false,
   })
-  stickinessDuration?: number;
+  stickinessDuration?: number
+
+  @property({
+    type: 'number',
+    required: false,
+    default: true,
+  })
+  useRPCID?: boolean;
 
   // Define well-known properties here
 
