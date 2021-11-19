@@ -772,7 +772,7 @@ export class PocketRelayer {
         // then this result is invalid
         return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey)
       } else {
-        await this.setStickinessKey(stickinessOptions, blockchainID, application.id, node.address, data)
+        await this.setStickinessKey(stickinessOptions, blockchainID, application.id, node.address, data, requestID)
 
         // Success
         return relayResponse
@@ -822,15 +822,18 @@ export class PocketRelayer {
   }
 
   async setStickinessKey(
-    { stickiness, duration, keyPrefix, rpcID }: StickinessOptions,
+    { stickiness, duration, keyPrefix, rpcID, relaysLimit }: StickinessOptions,
     blockchainID: string,
     applicationID: string,
     nodeAddress: string,
-    data: string
+    data: string,
+    requestID?: string
   ): Promise<void> {
     if (!stickiness || (!keyPrefix && !rpcID)) {
       return
     }
+
+    let clientStickyKey
 
     // If no key prefix is given, set based on rpcID.
     // Prefix is needed in case the rpcID is not used due to the way the key works.
@@ -839,20 +842,19 @@ export class PocketRelayer {
     // one will overwrite the other with its session node and the other will have an
     // invalid node to send relays to resulting in a cascade of failures.
     if (keyPrefix) {
-      const clientStickyKey = `${keyPrefix}-${this.ipAddress}-${blockchainID}`
+      clientStickyKey = `${keyPrefix}-${this.ipAddress}-${blockchainID}`
 
       // Check if key is already set to rotate the selected node when the
       // sticky duration ends
       const nextRequest = await this.redis.get(clientStickyKey)
 
-      if (nextRequest) {
-        return
+      if (!nextRequest) {
+        await this.redis.set(clientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', duration)
       }
-
-      await this.redis.set(clientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', duration)
     } else {
       const nextRPCID = getNextRPCID(rpcID, data)
-      const clientStickyKey = `${nextRPCID}-${this.ipAddress}-${blockchainID}`
+
+      clientStickyKey = `${nextRPCID}-${this.ipAddress}-${blockchainID}`
 
       if (rpcID > 0) {
         await this.redis.set(clientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', duration)
@@ -861,6 +863,25 @@ export class PocketRelayer {
         const nextClientStickyKey = `${this.ipAddress}-${blockchainID}-${nextRPCID + 1}`
 
         await this.redis.set(nextClientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', duration)
+      }
+    }
+
+    // Limit needs to be set for some apps as they can overflow session nodes
+    // await is not used here as the value does not need to be exact, a small
+    // overflow is allowed.
+    if (relaysLimit) {
+      const limitKey = `${clientStickyKey}-limit`
+
+      const relaysDone = Number.parseInt((await this.redis.get(limitKey)) || '0')
+
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      this.redis.incr(limitKey)
+
+      if (!relaysDone) {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        this.redis.expire(limitKey, duration)
+      } else if (relaysDone >= relaysLimit) {
+        this.redis.del(limitKey, clientStickyKey)
       }
     }
   }
