@@ -14,7 +14,6 @@ import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
-import { getNextRPCID } from '../utils/helpers'
 import { parseRPCID } from '../utils/parsing'
 import { loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
@@ -182,8 +181,8 @@ export class V1Controller {
       // Fetch applications contained in this Load Balancer. Verify they exist and choose
       // one randomly for the relay. First check RPC ID to see if this client should be stuck to an app and node.
 
-      const { stickiness = false, stickinessDuration = DEFAULT_STICKINESS_DURATION } = loadBalancer
-      const stickyKeyPrefix = stickiness ? loadBalancer?.id : ''
+      const { stickiness = false, stickinessDuration = DEFAULT_STICKINESS_DURATION, useRPCID = true } = loadBalancer
+      const stickyKeyPrefix = stickiness && !useRPCID ? loadBalancer?.id : ''
 
       const { preferredApplicationID, preferredNodeAddress, rpcID } = stickiness
         ? await this.checkClientStickiness(rawData, stickyKeyPrefix)
