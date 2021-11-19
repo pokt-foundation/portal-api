@@ -846,9 +846,8 @@ export class PocketRelayer {
     } else {
       const nextRPCID = getNextRPCID(rpcID, data)
       const clientStickyKey = `${nextRPCID}-${this.ipAddress}-${blockchainID}`
-      const nextRequest = await this.redis.get(clientStickyKey)
 
-      if (!nextRequest && rpcID > 0) {
+      if (rpcID > 0) {
         await this.redis.set(clientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', duration)
 
         // Some rpcID requests skips one number when sending them consecutively
