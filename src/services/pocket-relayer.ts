@@ -22,7 +22,7 @@ import {
   checkSecretKey,
   SecretKeyDetails,
 } from '../utils/enforcements'
-import { hashBlockchainNodes } from '../utils/helpers'
+import { getNextRPCID, hashBlockchainNodes } from '../utils/helpers'
 import { parseMethod } from '../utils/parsing'
 import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
@@ -768,17 +768,11 @@ export class PocketRelayer {
         return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey)
       } else {
         // Success
-        if (rpcID > 0) {
-          const parsedRawData = Object.keys(data).length > 0 ? JSON.parse(data.toString()) : JSON.stringify(data)
-          let nextRPCID = rpcID + 1
+        const nextRPCID = getNextRPCID(rpcID, data)
+        const clientStickyKey = `${this.ipAddress}-${blockchainID}-${nextRPCID}`
+        const nextRequest = await this.redis.get(clientStickyKey)
 
-          // If this was a stacked RPC call with multiple calls in an array, increment the RPC ID accordingly
-          if (parsedRawData instanceof Array) {
-            nextRPCID = rpcID + parsedRawData.length
-          }
-
-          const clientStickyKey = `${this.ipAddress}-${blockchainID}-${nextRPCID}`
-
+        if (!nextRequest && rpcID > 0) {
           await this.redis.set(
             clientStickyKey,
             JSON.stringify({ applicationID: application.id, nodeAddress: node.address }),
@@ -787,7 +781,7 @@ export class PocketRelayer {
           )
 
           // Some rpcID requests skips one number when sending them consecutively
-          const nextClientStickyKey = `${this.ipAddress}-${blockchainID}-${++nextRPCID}`
+          const nextClientStickyKey = `${this.ipAddress}-${blockchainID}-${nextRPCID + 1}`
 
           await this.redis.set(
             nextClientStickyKey,
@@ -804,6 +798,16 @@ export class PocketRelayer {
       // Remove node from session if error is due to max relays allowed reached
       if (relayResponse.message === MAX_RELAYS_ERROR) {
         await removeNodeFromSession(this.redis, blockchainID, (pocketSession as Session).sessionNodes, node.publicKey)
+      }
+
+      // Delete node stickiness for next two relays
+      if (preferredNodeAddress === node.address && rpcID > 0) {
+        const nextRPCID = getNextRPCID(rpcID, data)
+
+        const clientStickyKey = `${this.ipAddress}-${blockchainID}-${nextRPCID}`
+        const nextClientStickyKey = `${this.ipAddress}-${blockchainID}-${nextRPCID + 1}`
+
+        await this.redis.del(clientStickyKey, nextClientStickyKey)
       }
 
       return new RelayError(relayResponse.message, 500, node?.publicKey)

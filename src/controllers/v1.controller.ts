@@ -14,6 +14,7 @@ import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
+import { getNextRPCID } from '../utils/helpers'
 import { parseRPCID } from '../utils/parsing'
 import { loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
@@ -184,7 +185,7 @@ export class V1Controller {
       const { stickiness = false, stickinessDuration = DEFAULT_STICKINESS_DURATION } = loadBalancer
 
       const { preferredApplicationID, preferredNodeAddress, rpcID } = stickiness
-        ? await this.checkClientStickiness(rawData)
+        ? await this.checkClientStickiness(rawData, stickinessDuration)
         : DEFAULT_STICKINESS_PARAMS
 
       const application = await this.fetchLoadBalancerApplication(
@@ -311,7 +312,8 @@ export class V1Controller {
   }
 
   async checkClientStickiness(
-    rawData: object
+    rawData: object,
+    stickinessDuration = DEFAULT_STICKINESS_DURATION
   ): Promise<{ preferredApplicationID: string; preferredNodeAddress: string; rpcID: number }> {
     // Parse the raw data to determine the lowest RPC ID in the call
     const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
@@ -335,6 +337,29 @@ export class V1Controller {
       const clientStickyAppNode = JSON.parse(clientStickyAppNodeRaw)
 
       if (clientStickyAppNode?.applicationID && clientStickyAppNode?.nodeAddress) {
+        const { applicationID, nodeAddress } = clientStickyAppNode
+
+        // Expects the node is going to be a good guy and sets ahead the next
+        // two ids to be relayed by it, in case of failure the cache is removed
+        // in the relayer.
+        const nextRPCID = getNextRPCID(rpcID, rawData)
+        let nextClientStickyKey = `${this.ipAddress}-${blockchainID}-${nextRPCID}`
+
+        await this.redis.set(
+          nextClientStickyKey,
+          JSON.stringify({ blockchainID, applicationID: applicationID, nodeAddress }),
+          'EX',
+          stickinessDuration
+        )
+
+        nextClientStickyKey = `${this.ipAddress}-${blockchainID}-${nextRPCID + 1}`
+        await this.redis.set(
+          nextClientStickyKey,
+          JSON.stringify({ blockchainID, applicationID: applicationID, nodeAddress }),
+          'EX',
+          stickinessDuration
+        )
+
         return {
           preferredApplicationID: clientStickyAppNode.applicationID,
           preferredNodeAddress: clientStickyAppNode.nodeAddress,
