@@ -837,7 +837,7 @@ export class PocketRelayer {
     // If the key only had ip and blockcChainID, then could happen the unlikely case
     // where when connected to two different apps that both have stickiness on,
     // one will overwrite the other with its session node and the other will have an
-    // invalid node to send relays to resulting in a cascade of failures=
+    // invalid node to send relays to resulting in a cascade of failures.
     if (keyPrefix) {
       const clientStickyKey = `${keyPrefix}-${this.ipAddress}-${blockchainID}`
 
