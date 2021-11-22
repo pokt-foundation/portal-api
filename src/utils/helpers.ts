@@ -13,15 +13,3 @@ export function hashBlockchainNodes(blockchainID: string, nodes: Node[] = []): s
     )
     .digest('hex')}`
 }
-
-export function getNextRPCID(rpcID: number, rawData: string | object): number {
-  const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
-  let nextRPCID = rpcID + 1
-
-  // If this was a stacked RPC call with multiple calls in an array, increment the RPC ID accordingly
-  if (parsedRawData instanceof Array) {
-    nextRPCID = rpcID + parsedRawData.length
-  }
-
-  return nextRPCID
-}
