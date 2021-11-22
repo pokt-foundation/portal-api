@@ -140,8 +140,12 @@ const LOAD_BALANCERS = [
     requestTimeout: 5000,
     applicationIDs: APPLICATIONS.map((app) => app.id),
     logLimitBlocks: 25000,
-    stickiness: true,
-    stickinessDuration: 300,
+    stickinessOptions: {
+      stickiness: true,
+      duration: 300,
+      useRPCID: true,
+      relaysLimit: 1e6,
+    },
   },
   {
     id: 'df9gjsjg43db9fsajfjg93fk',
@@ -150,9 +154,12 @@ const LOAD_BALANCERS = [
     requestTimeout: 5000,
     applicationIDs: APPLICATIONS.map((app) => app.id),
     logLimitBlocks: 25000,
-    stickiness: true,
-    stickinessDuration: 300,
-    useRPCID: false,
+    stickinessOptions: {
+      stickiness: true,
+      duration: 300,
+      useRPCID: false,
+      relaysLimit: 1e6,
+    },
   },
 ]
 

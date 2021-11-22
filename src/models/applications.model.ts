@@ -1,4 +1,5 @@
 import { Entity, model, property } from '@loopback/repository'
+import { StickinessOptions } from './load-balancers.model'
 
 @model({ settings: { strict: false } })
 export class Applications extends Entity {
@@ -55,7 +56,14 @@ export class Applications extends Entity {
     type: 'number',
     required: false,
   })
-  stickinessDuration?: number;
+  stickinessDuration?: number
+
+  @property({
+    type: 'object',
+    required: false,
+    defautl: {},
+  })
+  stickinessOptions?: StickinessOptions;
 
   // Define well-known properties here
 
