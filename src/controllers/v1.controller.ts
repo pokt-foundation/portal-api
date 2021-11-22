@@ -189,8 +189,9 @@ export class V1Controller {
       // There's two ways to handle them: rpcID or prefix (full sticky), on rpcID the stickiness works
       // with increasing rpcID relays to maintain consistency and with prefix all relays from a load
       // balancer go to the same app/node regardless the data.
-      const { stickiness, duration, useRPCID, relaysLimit } =
-        loadBalancer?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
+      const { duration, useRPCID, relaysLimit } = loadBalancer?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
+      // TODO: Remove
+      const stickiness = true
       const stickyKeyPrefix = stickiness && !useRPCID ? loadBalancer?.id : ''
 
       const { preferredApplicationID, preferredNodeAddress, rpcID } = stickiness
