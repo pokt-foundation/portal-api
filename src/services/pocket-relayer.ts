@@ -700,11 +700,13 @@ export class PocketRelayer {
 
     if (preferredNodeAddress && preferredNodeIndex >= 0) {
       node = nodes[preferredNodeIndex]
-      // If node have been marked as failure, remove stickiness. Value is retrieved as string
-      const isNodeFailing = (await this.cherryPicker.fetchRawFailureLog(blockchainID, node.publicKey)) === 'true'
+      // If node have been marked as failure, remove stickiness. Key is a counter on node errors
+      const nodeErrorCount = Number.parseInt(
+        (await this.redis.get(blockchainID + '-' + node.publicKey + '-errors')) || '0'
+      )
 
       // value is retrieved as string
-      if (isNodeFailing) {
+      if (nodeErrorCount > 5) {
         await nodeSticker.remove()
       } else {
         cherryPick = false
