@@ -25,10 +25,10 @@ import { gatewayTestDB } from '../fixtures/test.datasource'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
+const logger = require('../../src/services/logger')
+
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
-
 const DEFAULT_LOG_LIMIT = 10000
-
 const DEFAULT_HOST = 'eth-mainnet-x'
 
 // Properties below might not reflect real-world values
@@ -145,6 +145,7 @@ describe('Pocket relayer service (unit)', () => {
   let pocketMock: PocketMock
   let pocketRelayer: PocketRelayer
   let axiosMock: MockAdapter
+  let logSpy: sinon.SinonSpy
 
   const origin = 'unit-test'
 
@@ -166,6 +167,7 @@ describe('Pocket relayer service (unit)', () => {
       host: DEFAULT_HOST,
       origin: '',
       userAgent: '',
+      ipAddress: '',
       pocket,
       pocketConfiguration,
       cherryPicker,
@@ -193,13 +195,11 @@ describe('Pocket relayer service (unit)', () => {
     sinon.restore()
   })
 
-  const clean = async () => {
+  beforeEach(async () => {
     await blockchainRepository.deleteAll()
     await redis.flushall()
     sinon.restore()
-  }
-
-  beforeEach(clean)
+  })
 
   it('should be defined', async () => {
     expect(pocketRelayer).to.be.ok()
@@ -290,6 +290,7 @@ describe('Pocket relayer service (unit)', () => {
       host: DEFAULT_HOST,
       origin: '',
       userAgent: '',
+      ipAddress: '',
       pocket,
       pocketConfiguration,
       cherryPicker,
@@ -329,6 +330,7 @@ describe('Pocket relayer service (unit)', () => {
       host: DEFAULT_HOST,
       origin: '',
       userAgent: '',
+      ipAddress: '',
       pocket,
       pocketConfiguration,
       cherryPicker,
@@ -466,6 +468,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -491,6 +494,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
       const expected = JSON.parse(mock.relayResponse[rawData] as string)
@@ -514,6 +522,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -539,6 +548,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
       const expected = JSON.parse(mock.relayResponse[rawData] as string)
@@ -559,6 +573,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet-string',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -584,6 +599,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
       const expected = mock.relayResponse[rawData]
@@ -602,6 +622,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -628,6 +649,11 @@ describe('Pocket relayer service (unit)', () => {
         requestTimeOut: 0,
         overallTimeOut: 1,
         relayRetries: 1,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
       })
 
       expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
@@ -644,6 +670,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet-x',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -669,6 +696,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
@@ -701,6 +733,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -726,6 +759,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
@@ -747,6 +785,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
@@ -782,6 +825,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -807,6 +851,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
@@ -828,6 +877,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
@@ -854,6 +908,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -879,6 +934,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
@@ -901,6 +961,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -926,6 +987,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
@@ -947,6 +1013,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -972,6 +1039,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
@@ -992,6 +1064,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -1020,6 +1093,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })) as Error
 
@@ -1038,6 +1116,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -1066,6 +1145,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })) as Error
 
@@ -1090,6 +1174,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -1115,10 +1200,182 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
       expect(relayResponse).to.be.deepEqual(JSON.parse(mock.relayResponse[rawData] as string))
+    })
+
+    it('relay requesting a preferred node should use that one if available with rpcID', async () => {
+      logSpy = sinon.spy(logger, 'log')
+
+      const { address: preferredNodeAddress } = DEFAULT_NODES[0]
+
+      const mock = new PocketMock()
+
+      const relayRequest = (id) => `{"method":"eth_chainId","id":${id},"jsonrpc":"2.0"}`
+      const relayResponseData = (id) => `{"id":${id},"jsonrpc":"2.0","result":"0x64"}`
+
+      // Reset default values
+      mock.relayResponse = {}
+
+      // Add some default relay requests
+      for (let i = 0; i < 10; i++) {
+        mock.relayResponse[relayRequest(i)] = relayResponseData(i)
+      }
+
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+
+      const pocket = mock.object()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        ipAddress: '127.0.0.1',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: false,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+      })
+
+      for (let i = 0; i <= 5; i++) {
+        const relayResponse = await poktRelayer.sendRelay({
+          rawData: relayRequest(i),
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          stickinessOptions: {
+            stickiness: true,
+            preferredNodeAddress,
+            rpcID: i,
+            duration: 300,
+          },
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          relayRetries: 0,
+        })
+        const expected = JSON.parse(mock.relayResponse[relayRequest(i)] as string)
+
+        expect(relayResponse).to.be.deepEqual(expected)
+      }
+
+      // Counts the number of times the sticky relay succeeded
+      let successStickyResponses = 0
+
+      logSpy.getCalls().forEach(
+        (call) =>
+          (successStickyResponses = call.calledWith(
+            'info',
+            sinon.match.any,
+            sinon.match((log: object) => {
+              return log['sticky'] === 'SUCCESS'
+            })
+          )
+            ? ++successStickyResponses
+            : successStickyResponses)
+      )
+
+      expect(successStickyResponses).to.be.equal(5)
+    })
+
+    it('relay requesting a preferred node should use that one if available with prefix', async () => {
+      logSpy = sinon.spy(logger, 'log')
+
+      const { address: preferredNodeAddress } = DEFAULT_NODES[0]
+
+      const mock = new PocketMock()
+
+      // Reset default values
+      mock.relayResponse = {}
+
+      const relayRequest = '{"method":"eth_chainId","id":0,"jsonrpc":"2.0"}'
+
+      mock.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
+
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+
+      const pocket = mock.object()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        ipAddress: '127.0.0.1',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: false,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+      })
+
+      for (let i = 0; i <= 5; i++) {
+        const relayResponse = await poktRelayer.sendRelay({
+          rawData: relayRequest,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          stickinessOptions: {
+            stickiness: true,
+            preferredNodeAddress,
+            rpcID: 0,
+            duration: 300,
+            keyPrefix: 'myPrefix',
+          },
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          relayRetries: 0,
+        })
+        const expected = JSON.parse(mock.relayResponse[relayRequest] as string)
+
+        expect(relayResponse).to.be.deepEqual(expected)
+      }
+
+      // Counts the number of times the sticky relay succeeded
+      let successStickyResponses = 0
+
+      logSpy.getCalls().forEach(
+        (call) =>
+          (successStickyResponses = call.calledWith(
+            'info',
+            sinon.match.any,
+            sinon.match((log: object) => {
+              return log['sticky'] === 'SUCCESS'
+            })
+          )
+            ? ++successStickyResponses
+            : successStickyResponses)
+      )
+
+      expect(successStickyResponses).to.be.equal(5)
     })
 
     describe('security checks', () => {
@@ -1140,6 +1397,7 @@ describe('Pocket relayer service (unit)', () => {
           host: 'eth-mainnet-x',
           origin: '',
           userAgent: '',
+          ipAddress: '',
           pocket,
           pocketConfiguration,
           cherryPicker,
@@ -1166,6 +1424,11 @@ describe('Pocket relayer service (unit)', () => {
             requestID: '1234',
             requestTimeOut: undefined,
             overallTimeOut: undefined,
+            stickinessOptions: {
+              stickiness: false,
+              duration: 0,
+              preferredNodeAddress: '',
+            },
             relayRetries: 0,
           })
         } catch (error) {
@@ -1194,6 +1457,7 @@ describe('Pocket relayer service (unit)', () => {
           host: 'eth-mainnet-x',
           origin: invalidOrigin,
           userAgent: '',
+          ipAddress: '',
           pocket,
           pocketConfiguration,
           cherryPicker,
@@ -1220,6 +1484,11 @@ describe('Pocket relayer service (unit)', () => {
             requestID: '1234',
             requestTimeOut: undefined,
             overallTimeOut: undefined,
+            stickinessOptions: {
+              stickiness: false,
+              duration: 0,
+              preferredNodeAddress: '',
+            },
             relayRetries: 0,
           })
         } catch (error) {
@@ -1247,6 +1516,7 @@ describe('Pocket relayer service (unit)', () => {
           host: 'eth-mainnet-x',
           origin: '',
           userAgent: invalidUserAgent,
+          ipAddress: '',
           pocket,
           pocketConfiguration,
           cherryPicker,
@@ -1273,6 +1543,11 @@ describe('Pocket relayer service (unit)', () => {
             requestID: '1234',
             requestTimeOut: undefined,
             overallTimeOut: undefined,
+            stickinessOptions: {
+              stickiness: false,
+              duration: 0,
+              preferredNodeAddress: '',
+            },
             relayRetries: 0,
           })
         } catch (error) {
@@ -1306,6 +1581,7 @@ describe('Pocket relayer service (unit)', () => {
           host: 'eth-mainnet',
           origin: '',
           userAgent: '',
+          ipAddress: '',
           pocket,
           pocketConfiguration,
           cherryPicker,
@@ -1341,6 +1617,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })
 
@@ -1362,6 +1643,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })
 
@@ -1383,6 +1669,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
 
           relayRetries: 0,
         })
@@ -1403,6 +1694,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })
 
@@ -1431,6 +1727,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })) as Error
 
@@ -1464,6 +1765,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })
 
@@ -1496,6 +1802,7 @@ describe('Pocket relayer service (unit)', () => {
           host: 'eth-mainnet-string',
           origin: '',
           userAgent: '',
+          ipAddress: '',
           pocket,
           pocketConfiguration,
           cherryPicker,
@@ -1521,6 +1828,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })
 
@@ -1549,6 +1861,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })) as Error
 
