@@ -705,6 +705,9 @@ export class PocketRelayer {
 
       // value is retrieved as string
       if (isNodeFailing) {
+        logger.log('warn', `node ${node.publicKey} failing, removing... | key: ${nodeSticker.clientStickyKey}`, {
+          requestID,
+        })
         await nodeSticker.remove()
       } else {
         cherryPick = false
