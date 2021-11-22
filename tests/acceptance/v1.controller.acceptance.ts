@@ -198,6 +198,7 @@ describe('V1 controller (acceptance)', () => {
     pocketMock = new PocketMock(undefined, undefined, undefined)
     pocketMock.relayResponse = relayResponses
 
+    // @ts-ignore
     await loadBalancersRepository.createAll(LOAD_BALANCERS)
     await blockchainsRepository.createAll(BLOCKCHAINS)
     await applicationsRepository.createAll(APPLICATIONS)
