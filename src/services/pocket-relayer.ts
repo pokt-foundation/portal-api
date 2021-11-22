@@ -1,6 +1,5 @@
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
-import { getAddressFromPublicKey } from 'pocket-tools'
 import { JSONObject } from '@loopback/context'
 import { HttpErrors } from '@loopback/rest'
 import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
