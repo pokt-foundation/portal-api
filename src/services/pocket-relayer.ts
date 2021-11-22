@@ -700,17 +700,24 @@ export class PocketRelayer {
 
     if (preferredNodeAddress && preferredNodeIndex >= 0) {
       node = nodes[preferredNodeIndex]
-      // If node have been marked as failure, remove stickiness. Value is retrieved as string
-      const nodeKey = await this.cherryPicker.fetchRawFailureLog(blockchainID, node.publicKey)
-      const isNodeFailing = nodeKey === 'true'
+      // If node have been marked as failure, remove stickiness. Key is a counter on node errors
+      const nodeErrorCount = Number.parseInt(
+        (await this.redis.get(blockchainID + '-' + node.publicKey + '-errors')) || '0'
+      )
 
-      logger.log('info', `node rawFailureLog ${nodeKey}`, {
+      logger.log('info', `node ErrorCount ${nodeErrorCount}`, {
         requestID,
+        applicationID: application.id,
+        serviceNode: node.publicKey,
+        blockchainID,
       })
       // value is retrieved as string
-      if (isNodeFailing) {
-        logger.log('warn', `node ${node.publicKey} failing, removing... | key: ${nodeSticker.clientStickyKey}`, {
+      if (nodeErrorCount > 5) {
+        logger.log('info', `node removed from sticky pool`, {
           requestID,
+          applicationID: application.id,
+          serviceNode: node.publicKey,
+          blockchainID,
         })
         await nodeSticker.remove()
       } else {
