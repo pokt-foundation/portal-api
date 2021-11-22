@@ -61,11 +61,17 @@ export async function setupApplication(pocket?: typeof Pocket, envs?: object): P
     ...(pocket && { '@pokt-network/pocket-js': { Pocket: pocket, Configuration, HttpRpcProvider } }),
   })
 
+  const appEnvs = envs ? { ...DUMMY_ENV, ...envs } : { ...DUMMY_ENV }
+
+  // Add all envs to the process.env so they fail if they're not properly set by the environment observer check
+  for (const [name, value] of Object.entries(appEnvs)) {
+    process.env[name] = value as string
+  }
+
   const app = new appWithMock.PocketGatewayApplication({
     rest: restConfig,
     env: {
-      load: false,
-      values: envs ? { ...DUMMY_ENV, ...envs } : DUMMY_ENV,
+      load: true,
     },
   })
 
