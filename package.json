@@ -14,7 +14,7 @@
   ],
   "main": "index.js",
   "engines": {
-    "node": ">=10.19.0 <=12.15.0"
+    "node": ">=12.16.0 <=16.13.0"
   },
   "scripts": {
     "build": "lb-tsc",
@@ -27,9 +27,9 @@
     "eslint": "lb-eslint --report-unused-disable-directives .",
     "eslint:fix": "npm run eslint -- --fix",
     "pretest": "npm run clean && npm run build",
-    "test": "lb-tsc && MONGO_ENDPOINT=test ALTRUISTS='{\"0001\": \"https://user:pass@backups.example.org:18081\"}' mocha --exit --recursive dist/tests",
-    "test:parallel": "lb-tsc && MONGO_ENDPOINT=test ALTRUISTS='{\"0001\": \"https://user:pass@backups.example.org:18081\"}' mocha -p --exit --recursive dist/tests",
-    "test:cover": "lb-tsc && MONGO_ENDPOINT=test ALTRUISTS='{\"0001\": \"https://user:pass@backups.example.org:18081\"}' nyc mocha --exit --recursive dist/tests",
+    "test": "lb-tsc && DISABLE_TIMESTREAM=true MONGO_ENDPOINT=test ALTRUISTS='{\"0001\": \"https://user:pass@backups.example.org:18081\"}' mocha --exit --recursive dist/tests",
+    "test:parallel": "lb-tsc && DISABLE_TIMESTREAM=true MONGO_ENDPOINT=test ALTRUISTS='{\"0001\": \"https://user:pass@backups.example.org:18081\"}' mocha -p --exit --recursive dist/tests",
+    "test:cover": "lb-tsc && DISABLE_TIMESTREAM=true MONGO_ENDPOINT=test ALTRUISTS='{\"0001\": \"https://user:pass@backups.example.org:18081\"}' nyc mocha --exit --recursive dist/tests",
     "test:dev": "lb-mocha --allow-console-logs dist/tests/**/*.js && npm run posttest",
     "docker:build": "docker build -t pocket-gateway .",
     "docker:run": "docker run -p 3000:3000 -d pocket-gateway",
@@ -62,6 +62,7 @@
     "tests"
   ],
   "dependencies": {
+    "@fullerstack/nax-ipware": "0.0.4",
     "@influxdata/influxdb-client": "^1.15.0",
     "@loopback/boot": "^3.4.1",
     "@loopback/context": "^3.17.0",
@@ -71,9 +72,10 @@
     "@loopback/rest": "^9.3.1",
     "@loopback/rest-explorer": "3.3.1",
     "@loopback/service-proxy": "^3.2.1",
-    "@pokt-network/pocket-js": "0.6.16-rc",
-    "aws-sdk": "^2.971.0",
+    "@pokt-network/pocket-js": "^0.7.0-rc",
+    "aws-sdk": "^2.1023.0",
     "axios": "^0.21.1",
+    "datadog-winston": "^1.5.1",
     "dotenv": "^8.2.0",
     "eslint-plugin-import": "^2.23.4",
     "ethers": "^5.4.1",
@@ -92,7 +94,7 @@
     "strong-cryptor": "^2.2.0",
     "tslib": "^2.0.0",
     "winston": "^3.3.3",
-    "winston-cloudwatch": "^3.0.1",
+    "winston-cloudwatch": "^3.1.1",
     "winston-logzio": "^5.1.2"
   },
   "devDependencies": {

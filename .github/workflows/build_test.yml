@@ -18,10 +18,11 @@ jobs:
       MONGO_ENDPOINT: endpoint
       LOGZ_TOKEN: token
       NODE_ENV: development
+      COMMIT_HASH: ${{ github.sha }}
 
     strategy:
       matrix:
-        node-version: [12.x]
+        node-version: [16.x]
 
     steps:
       - uses: actions/checkout@v2

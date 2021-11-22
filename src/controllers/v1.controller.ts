@@ -1,18 +1,35 @@
-import { inject } from '@loopback/context'
-import { FilterExcludingWhere, repository } from '@loopback/repository'
-import { post, param, requestBody, HttpErrors } from '@loopback/rest'
-import { Applications, LoadBalancers } from '../models'
-import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from '../repositories'
-import { Pocket, Configuration, HTTPMethod } from '@pokt-network/pocket-js'
+import AWS from 'aws-sdk'
 import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
+import { inject } from '@loopback/context'
+import { FilterExcludingWhere, repository } from '@loopback/repository'
+import { HttpErrors, param, post, requestBody } from '@loopback/rest'
+import { Configuration, HTTPMethod, Pocket } from '@pokt-network/pocket-js'
+import { WriteApi } from '@influxdata/influxdb-client'
+
+import { Applications, LoadBalancers } from '../models'
+import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from '../repositories'
+import { ChainChecker } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
-import { PocketRelayer, SendRelayOptions } from '../services/pocket-relayer'
+import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
-import { ChainChecker } from '../services/chain-checker'
-
+import { parseRPCID } from '../utils/parsing'
+import { loadBlockchain } from '../utils/relayer'
+import { SendRelayOptions } from '../utils/types'
 const logger = require('../services/logger')
+
+const DEFAULT_STICKINESS_APP_PARAMS = {
+  preferredApplicationID: '',
+  preferredNodeAddress: '',
+  rpcID: 0,
+}
+const DEFAULT_STICKINESS_PARAMS = {
+  stickiness: false,
+  duration: 30, // seconds
+  useRPCID: true,
+  relaysLimit: 0,
+}
 
 export class V1Controller {
   cherryPicker: CherryPicker
@@ -27,6 +44,7 @@ export class V1Controller {
     @inject('origin') private origin: string,
     @inject('userAgent') private userAgent: string,
     @inject('contentType') private contentType: string,
+    @inject('ipAddress') private ipAddress: string,
     @inject('httpMethod') private httpMethod: HTTPMethod,
     @inject('relayPath') private relayPath: string,
     @inject('relayRetries') private relayRetries: number,
@@ -34,6 +52,7 @@ export class V1Controller {
     @inject('pocketConfiguration') private pocketConfiguration: Configuration,
     @inject('redisInstance') private redis: Redis,
     @inject('pgPool') private pgPool: PGPool,
+    @inject('timestreamClient') private timestreamClient: AWS.TimestreamWrite,
     @inject('databaseEncryptionKey') private databaseEncryptionKey: string,
     @inject('processUID') private processUID: string,
     @inject('altruists') private altruists: string,
@@ -42,6 +61,9 @@ export class V1Controller {
     @inject('aatPlan') private aatPlan: string,
     @inject('redirects') private redirects: string,
     @inject('defaultLogLimitBlocks') private defaultLogLimitBlocks: number,
+    @inject('influxWriteAPI') private influxWriteAPI: WriteApi,
+    @inject('archivalChains') private archivalChains: string[],
+    @inject('alwaysRedirectToAltruists') private alwaysRedirectToAltruists: boolean,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -52,10 +74,13 @@ export class V1Controller {
     this.cherryPicker = new CherryPicker({
       redis: this.redis,
       checkDebug: this.checkDebug(),
+      archivalChains: this.archivalChains,
     })
     this.metricsRecorder = new MetricsRecorder({
       redis: this.redis,
+      influxWriteAPI: this.influxWriteAPI,
       pgPool: this.pgPool,
+      timestreamClient: this.timestreamClient,
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
     })
@@ -65,6 +90,7 @@ export class V1Controller {
       host: this.host,
       origin: this.origin,
       userAgent: this.userAgent,
+      ipAddress: this.ipAddress,
       pocket: this.pocket,
       pocketConfiguration: this.pocketConfiguration,
       cherryPicker: this.cherryPicker,
@@ -80,6 +106,7 @@ export class V1Controller {
       altruists: this.altruists,
       aatPlan: this.aatPlan,
       defaultLogLimitBlocks: this.defaultLogLimitBlocks,
+      alwaysRedirectToAltruists: this.alwaysRedirectToAltruists,
     })
   }
 
@@ -101,7 +128,9 @@ export class V1Controller {
   ): Promise<string | Error> {
     for (const redirect of JSON.parse(this.redirects)) {
       if (this.pocketRelayer.host.toLowerCase().includes(redirect.domain, 0)) {
+        // Modify the host using the stored blockchain name from .env
         this.pocketRelayer.host = redirect.blockchain
+        this.host = redirect.blockchain
         return this.loadBalancerRelay(redirect.loadBalancerID, rawData)
       }
     }
@@ -150,59 +179,70 @@ export class V1Controller {
     try {
       const loadBalancer = await this.fetchLoadBalancer(id, filter)
 
-      if (loadBalancer?.id) {
-        const {
-          blockchain,
-          // eslint-disable-next-line
-          blockchainEnforceResult: _enforceResult,
-          // eslint-disable-next-line
-          blockchainSyncCheck: _syncCheck,
-        } = await this.pocketRelayer.loadBlockchain()
-        // Fetch applications contained in this Load Balancer. Verify they exist and choose
-        // one randomly for the relay.
-        const application = await this.fetchLoadBalancerApplication(
-          loadBalancer.id,
-          loadBalancer.applicationIDs,
-          blockchain,
-          filter
-        )
-
-        if (application?.id) {
-          const options: SendRelayOptions = {
-            rawData,
-            relayPath: this.relayPath,
-            httpMethod: this.httpMethod,
-            application: application,
-            requestID: this.requestID,
-            requestTimeOut: parseInt(loadBalancer.requestTimeOut),
-            overallTimeOut: parseInt(loadBalancer.overallTimeOut),
-            relayRetries: parseInt(loadBalancer.relayRetries),
-          }
-
-          if (loadBalancer.logLimitBlocks) {
-            Object.assign(options, { logLimitBlocks: loadBalancer.logLimitBlocks })
-          }
-
-          return await this.pocketRelayer.sendRelay(options)
-        }
+      if (!loadBalancer?.id) {
+        throw new HttpErrors.InternalServerError('Load balancer not found')
       }
+
+      // Fetch applications contained in this Load Balancer. Verify they exist and choose
+      // one randomly for the relay.
+      // For sticking sessions (sessions which must be relied using the same node for data consistency)
+      // There's two ways to handle them: rpcID or prefix (full sticky), on rpcID the stickiness works
+      // with increasing rpcID relays to maintain consistency and with prefix all relays from a load
+      // balancer go to the same app/node regardless the data.
+      const { stickiness, duration, useRPCID, relaysLimit } =
+        loadBalancer?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
+      const stickyKeyPrefix = stickiness && !useRPCID ? loadBalancer?.id : ''
+
+      const { preferredApplicationID, preferredNodeAddress, rpcID } = stickiness
+        ? await this.checkClientStickiness(rawData, stickyKeyPrefix)
+        : DEFAULT_STICKINESS_APP_PARAMS
+
+      const application = await this.fetchLoadBalancerApplication(
+        loadBalancer.id,
+        loadBalancer.applicationIDs,
+        preferredApplicationID,
+        filter
+      )
+
+      if (!application?.id) {
+        throw new HttpErrors.InternalServerError('No application found in the load balancer')
+      }
+
+      const options: SendRelayOptions = {
+        rawData,
+        relayPath: this.relayPath,
+        httpMethod: this.httpMethod,
+        application,
+        requestID: this.requestID,
+        requestTimeOut: parseInt(loadBalancer.requestTimeOut),
+        overallTimeOut: parseInt(loadBalancer.overallTimeOut),
+        relayRetries: parseInt(loadBalancer.relayRetries),
+        stickinessOptions: {
+          stickiness,
+          preferredNodeAddress,
+          duration,
+          keyPrefix: stickyKeyPrefix,
+          rpcID,
+          relaysLimit,
+        },
+      }
+
+      if (loadBalancer.logLimitBlocks) {
+        Object.assign(options, { logLimitBlocks: loadBalancer.logLimitBlocks })
+      }
+
+      return await this.pocketRelayer.sendRelay(options)
     } catch (e) {
       logger.log('error', e.message, {
         requestID: this.requestID,
         relayType: 'LB',
         typeID: id,
         serviceNode: '',
+        origin: this.origin,
       })
+
       return new HttpErrors.InternalServerError(e.message)
     }
-
-    logger.log('error', 'Load balancer configuration error', {
-      requestID: this.requestID,
-      relayType: 'LB',
-      typeID: id,
-      serviceNode: '',
-    })
-    return new HttpErrors.InternalServerError('Load balancer configuration error')
   }
 
   /**
@@ -248,12 +288,28 @@ export class V1Controller {
       const application = await this.fetchApplication(id, filter)
 
       if (application?.id) {
+        const { stickiness, duration, useRPCID, relaysLimit } =
+          application?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
+        const stickyKeyPrefix = stickiness && !useRPCID ? application?.id : ''
+
+        const { preferredNodeAddress, rpcID } = stickiness
+          ? await this.checkClientStickiness(rawData, stickyKeyPrefix)
+          : DEFAULT_STICKINESS_APP_PARAMS
+
         const sendRelayOptions: SendRelayOptions = {
           rawData,
           application,
           relayPath: this.relayPath,
           httpMethod: this.httpMethod,
           requestID: this.requestID,
+          stickinessOptions: {
+            stickiness,
+            preferredNodeAddress,
+            duration,
+            keyPrefix: stickyKeyPrefix,
+            rpcID,
+            relaysLimit,
+          },
         }
 
         return await this.pocketRelayer.sendRelay(sendRelayOptions)
@@ -274,6 +330,44 @@ export class V1Controller {
       serviceNode: '',
     })
     return new HttpErrors.InternalServerError('Application not found')
+  }
+
+  async checkClientStickiness(
+    rawData: object,
+    prefix: string
+  ): Promise<{ preferredApplicationID: string; preferredNodeAddress: string; rpcID: number }> {
+    // Parse the raw data to determine the lowest RPC ID in the call
+    const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
+    const rpcID = parseRPCID(parsedRawData)
+
+    if (prefix || rpcID > 0) {
+      const { blockchainID } = await loadBlockchain(
+        this.host,
+        this.redis,
+        this.blockchainsRepository,
+        this.defaultLogLimitBlocks
+      ).catch(() => {
+        logger.log('error', `Incorrect blockchain: ${this.host}`, {
+          origin: this.origin,
+        })
+        throw new HttpErrors.BadRequest(`Incorrect blockchain: ${this.host}`)
+      })
+
+      const keyPrefix = prefix ? prefix : rpcID
+
+      const clientStickyKey = `${keyPrefix}-${this.ipAddress}-${blockchainID}`
+      const clientStickyAppNodeRaw = await this.redis.get(clientStickyKey)
+      const clientStickyAppNode = JSON.parse(clientStickyAppNodeRaw)
+
+      if (clientStickyAppNode?.applicationID && clientStickyAppNode?.nodeAddress) {
+        return {
+          preferredApplicationID: clientStickyAppNode.applicationID,
+          preferredNodeAddress: clientStickyAppNode.nodeAddress,
+          rpcID,
+        }
+      }
+    }
+    return { preferredApplicationID: '', preferredNodeAddress: '', rpcID }
   }
 
   // Pull LoadBalancer records from redis then DB
@@ -314,7 +408,7 @@ export class V1Controller {
   async fetchLoadBalancerApplication(
     id: string,
     applicationIDs: string[],
-    blockchain: string,
+    preferredApplicationID: string | undefined,
     filter: FilterExcludingWhere | undefined
   ): Promise<Applications | undefined> {
     let verifiedIDs: string[] = []
@@ -344,6 +438,12 @@ export class V1Controller {
       filter,
     );
     */
+
+    // Check if preferred app ID is in set, if so, use that
+    if (verifiedIDs.includes(preferredApplicationID)) {
+      return this.fetchApplication(preferredApplicationID, filter)
+    }
+
     return this.fetchApplication(verifiedIDs[Math.floor(Math.random() * verifiedIDs.length)], filter)
   }
 

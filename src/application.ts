@@ -1,28 +1,29 @@
+import crypto from 'crypto'
+import os from 'os'
+import path from 'path'
+import process from 'process'
+import AWS from 'aws-sdk'
+import Redis from 'ioredis'
+import pg from 'pg'
 import { BootMixin } from '@loopback/boot'
 import { ApplicationConfig } from '@loopback/core'
 import { RepositoryMixin } from '@loopback/repository'
 import { RestApplication, HttpErrors } from '@loopback/rest'
-import { DEFAULT_POCKET_CONFIG } from './config/pocket-config'
 import { ServiceMixin } from '@loopback/service-proxy'
-import { GatewaySequence } from './sequence'
-import { Account } from '@pokt-network/pocket-js/dist/keybase/models/account'
-
-import path from 'path'
-import AatPlans from './config/aat-plans.json'
-
-const logger = require('./services/logger')
-
 import { Pocket, Configuration, HttpRpcProvider } from '@pokt-network/pocket-js'
+import { Account } from '@pokt-network/pocket-js/dist/keybase/models/account'
+import { InfluxDB } from '@influxdata/influxdb-client'
 
-import Redis from 'ioredis'
-import crypto from 'crypto'
-import os from 'os'
-import process from 'process'
-import pg from 'pg'
+import AatPlans from './config/aat-plans.json'
+import { DEFAULT_POCKET_CONFIG } from './config/pocket-config'
+import { GatewaySequence } from './sequence'
+const https = require('https')
+const logger = require('./services/logger')
 
 require('log-timestamp')
 require('dotenv').config()
 
+// Portal API
 export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryMixin(RestApplication))) {
   constructor(options: ApplicationConfig = {}) {
     super(options)
@@ -64,6 +65,12 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       DEFAULT_LOG_LIMIT_BLOCKS,
       AAT_PLAN,
       REDIRECTS,
+      COMMIT_HASH,
+      INFLUX_URL,
+      INFLUX_TOKEN,
+      INFLUX_ORG,
+      ARCHIVAL_CHAINS,
+      ALWAYS_REDIRECT_TO_ALTRUISTS,
     } = await this.get('configuration.environment.values')
 
     const environment: string = NODE_ENV || 'production'
@@ -79,39 +86,15 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const defaultLogLimitBlocks: number = parseInt(DEFAULT_LOG_LIMIT_BLOCKS) || 10000
     const aatPlan = AAT_PLAN || AatPlans.PREMIUM
     const redirects: string | object[] = REDIRECTS || ''
+    const commitHash: string | string = COMMIT_HASH || ''
+    const influxURL: string = INFLUX_URL || ''
+    const influxToken: string = INFLUX_TOKEN || ''
+    const influxOrg: string = INFLUX_ORG || ''
+    const archivalChains: string[] = (ARCHIVAL_CHAINS || '').replace(' ', '').split(',')
+    const alwaysRedirectToAltruists: boolean = ALWAYS_REDIRECT_TO_ALTRUISTS === 'true'
 
-    if (!dispatchURL) {
-      throw new HttpErrors.InternalServerError('DISPATCH_URL required in ENV')
-    }
-    if (!altruists) {
-      throw new HttpErrors.InternalServerError('ALTRUISTS required in ENV')
-    }
-    if (!clientPrivateKey) {
-      throw new HttpErrors.InternalServerError('GATEWAY_CLIENT_PRIVATE_KEY required in ENV')
-    }
-    if (!clientPassphrase) {
-      throw new HttpErrors.InternalServerError('GATEWAY_CLIENT_PASSPHRASE required in ENV')
-    }
-    if (!pocketSessionBlockFrequency || pocketSessionBlockFrequency === '') {
-      throw new HttpErrors.InternalServerError('POCKET_SESSION_BLOCK_FREQUENCY required in ENV')
-    }
-    if (!pocketBlockTime || pocketBlockTime === '') {
-      throw new HttpErrors.InternalServerError('POCKET_BLOCK_TIME required in ENV')
-    }
-    if (!databaseEncryptionKey) {
-      throw new HttpErrors.InternalServerError('DATABASE_ENCRYPTION_KEY required in ENV')
-    }
-    if (defaultSyncAllowance < 0) {
-      throw new HttpErrors.InternalServerError('DEFAULT_SYNC_ALLOWANCE required in ENV')
-    }
-    if (defaultLogLimitBlocks < 0) {
-      throw new HttpErrors.InternalServerError('DEFAULT_LOG_LIMIT_BLOCKS required in ENV')
-    }
     if (aatPlan !== AatPlans.PREMIUM && !AatPlans.values.includes(aatPlan)) {
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
-    }
-    if (!redirects) {
-      throw new HttpErrors.InternalServerError('REDIRECTS required in ENV')
     }
 
     const dispatchers = []
@@ -141,7 +124,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const rpcProvider = new HttpRpcProvider(dispatchers[0])
     const pocket = new Pocket(dispatchers, rpcProvider, configuration)
 
-    // Bind to application context for shared re-use
     this.bind('pocketInstance').to(pocket)
     this.bind('pocketConfiguration').to(configuration)
     this.bind('relayRetries').to(parseInt(relayRetries))
@@ -150,6 +132,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('defaultSyncAllowance').to(defaultSyncAllowance)
     this.bind('defaultLogLimitBlocks').to(defaultLogLimitBlocks)
     this.bind('redirects').to(redirects)
+    this.bind('alwaysRedirectToAltruists').to(alwaysRedirectToAltruists)
 
     // Unlock primary client account for relay signing
     try {
@@ -167,37 +150,53 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const redisEndpoint: string = REDIS_ENDPOINT || ''
     const redisPort: string = REDIS_PORT || ''
 
-    if (!redisEndpoint) {
-      throw new HttpErrors.InternalServerError('REDIS_ENDPOINT required in ENV')
-    }
-    if (!redisPort) {
-      throw new HttpErrors.InternalServerError('REDIS_PORT required in ENV')
-    }
-    const redis = new Redis(parseInt(redisPort), redisEndpoint)
+    const redis = new Redis(parseInt(redisPort), redisEndpoint, {
+      keyPrefix: `${commitHash}-`,
+    })
 
     this.bind('redisInstance').to(redis)
 
     // New metrics postgres for error recording
     const psqlConnection: string = PSQL_CONNECTION || ''
 
-    if (!psqlConnection) {
-      throw new HttpErrors.InternalServerError('PSQL_CONNECTION required in ENV')
-    }
-    const psqlConfig = {
+    const pgPool = new pg.Pool({
       connectionString: psqlConnection,
       ssl: environment === 'production' || environment === 'staging' ? true : false,
-    }
-    const pgPool = new pg.Pool(psqlConfig)
+    })
 
     this.bind('pgPool').to(pgPool)
 
-    this.bind('databaseEncryptionKey').to(databaseEncryptionKey)
-    this.bind('aatPlan').to(aatPlan)
+    // Timestream
+    const timestreamAgent = new https.Agent({
+      maxSockets: 5000,
+    })
+
+    // Always US-East-2
+    const timestreamClient = new AWS.TimestreamWrite({
+      maxRetries: 10,
+      httpOptions: {
+        timeout: 20000,
+        agent: timestreamAgent,
+      },
+      region: 'us-east-2',
+    })
+
+    this.bind('timestreamClient').to(timestreamClient)
+
+    // Influx DB
+    const influxBucket = environment === 'production' ? 'mainnetRelay' : 'mainnetRelayStaging'
+    const influxClient = new InfluxDB({ url: influxURL, token: influxToken })
+    const writeApi = influxClient.getWriteApi(influxOrg, influxBucket)
+
+    this.bind('influxWriteAPI').to(writeApi)
 
     // Create a UID for this process
     const parts = [os.hostname(), process.pid, +new Date()]
     const hash = crypto.createHash('md5').update(parts.join(''))
 
     this.bind('processUID').to(hash.digest('hex'))
+    this.bind('databaseEncryptionKey').to(databaseEncryptionKey)
+    this.bind('aatPlan').to(aatPlan)
+    this.bind('archivalChains').to(archivalChains)
   }
 }

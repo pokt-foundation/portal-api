@@ -1,17 +1,18 @@
+import axios from 'axios'
+import MockAdapter from 'axios-mock-adapter'
+import { Encryptor } from 'strong-cryptor'
 import { Client, sinon, expect } from '@loopback/testlab'
 import { PocketGatewayApplication } from '../..'
-import { setupApplication } from './test-helper'
+import { ApplicationsRepository } from '../../src/repositories/applications.repository'
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
+import { LoadBalancersRepository } from '../../src/repositories/load-balancers.repository'
 import { gatewayTestDB } from '../fixtures/test.datasource'
 import { MockRelayResponse, PocketMock } from '../mocks/pocketjs'
-import { ApplicationsRepository } from '../../src/repositories/applications.repository'
-import { Encryptor } from 'strong-cryptor'
-import { LoadBalancersRepository } from '../../src/repositories/load-balancers.repository'
-import { HttpErrors } from '@loopback/rest'
-import MockAdapter from 'axios-mock-adapter'
-import axios from 'axios'
+import { setupApplication } from './test-helper'
 
-// Must be the same one from the test environment
+const logger = require('../../src/services/logger')
+
+// Must be the same one from the test environment on ./test-helper.ts
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
 
 // Might not actually reflect real-world values
@@ -118,21 +119,47 @@ const APPLICATION = {
   },
 }
 
+const APPLICATIONS = [
+  APPLICATION,
+  { ...APPLICATION, id: 'fg5fdj31d714kdif9g9fe68foth' },
+  { ...APPLICATION, id: 'cienuohoddigue4w232s9rjafgx' },
+]
+
 const LOAD_BALANCERS = [
   {
     id: 'gt4a1s9rfrebaf8g31bsdc04',
     user: 'test@test.com',
     name: 'test load balancer',
     requestTimeout: 5000,
-    applicationIDs: Array(10).fill(APPLICATION.id),
+    applicationIDs: APPLICATIONS.map((app) => app.id),
   },
   {
     id: 'gt4a1s9rfrebaf8g31bsdc05',
     user: 'test@test.com',
     name: 'test load balancer',
     requestTimeout: 5000,
-    applicationIDs: Array(10).fill(APPLICATION.id),
+    applicationIDs: APPLICATIONS.map((app) => app.id),
     logLimitBlocks: 25000,
+    stickinessOptions: {
+      stickiness: true,
+      duration: 300,
+      useRPCID: true,
+      relaysLimit: 1e6,
+    },
+  },
+  {
+    id: 'df9gjsjg43db9fsajfjg93fk',
+    user: 'test@test.com',
+    name: 'test load balancer',
+    requestTimeout: 5000,
+    applicationIDs: APPLICATIONS.map((app) => app.id),
+    logLimitBlocks: 25000,
+    stickinessOptions: {
+      stickiness: true,
+      duration: 300,
+      useRPCID: false,
+      relaysLimit: 1e6,
+    },
   },
 ]
 
@@ -163,8 +190,7 @@ describe('V1 controller (acceptance)', () => {
 
   beforeEach(async () => {
     relayResponses = {
-      '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}':
-        '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}',
+      '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}': '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}',
       '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","toBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}':
         '{"jsonrpc":"2.0","id":1,"result":[{"address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff","blockHash":"0x2ad90e24266edd835bb03071c0c0b58ee8356c2feb4576d15b3c2c2b2ef319c5","blockNumber":"0xc5bdc9","data":"0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000767fe9edc9e0df98e07454847909b5e959d7ca0e0000000000000000000000000000000000000000000000019274b259f653fc110000000000000000000000000000000000000000000000104bf2ffa4dcbf8de5","logIndex":"0x4c","removed":false,"topics":["0x0f6672f78a59ba8e5e5b5d38df3ebc67f3c792e2c9259b8d97d7f00dd78ba1b3","0x000000000000000000000000e5feeac09d36b18b3fa757e5cf3f8da6b8e27f4c"],"transactionHash":"0x14430f1e344b5f95ea68a5f4c0538fc732cc97efdc68f6ee0ba20e2c633542f6","transactionIndex":"0x1a"}]}',
     }
@@ -174,7 +200,7 @@ describe('V1 controller (acceptance)', () => {
 
     await loadBalancersRepository.createAll(LOAD_BALANCERS)
     await blockchainsRepository.createAll(BLOCKCHAINS)
-    await applicationsRepository.create(APPLICATION)
+    await applicationsRepository.createAll(APPLICATIONS)
   })
 
   afterEach(async () => {
@@ -192,11 +218,13 @@ describe('V1 controller (acceptance)', () => {
   it('invokes GET /v1/{appId} and successfully relays a request', async () => {
     const pocket = pocketMock.class()
 
+    relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet-x')
       .expect(200)
@@ -215,7 +243,7 @@ describe('V1 controller (acceptance)', () => {
 
     const res = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .expect(200)
@@ -233,7 +261,7 @@ describe('V1 controller (acceptance)', () => {
 
     const res = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .expect(200)
@@ -253,7 +281,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .expect(200)
@@ -287,7 +315,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .set('authorization', 'invalid key')
@@ -318,7 +346,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .set('origin', 'localhost')
@@ -353,7 +381,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet-x')
       .set('origin', 'unlocalhost')
@@ -374,7 +402,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .expect(200)
@@ -393,7 +421,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/sd9fj31d714kgos42e68f9gh')
-      .send({ method: 'eth_chainId', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_chainId', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .expect(200)
@@ -409,7 +437,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc04')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet-x')
       .expect(200)
@@ -453,13 +481,13 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/lb/invalid')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .expect(200)
 
     expect(response.body).to.have.property('message')
-    expect(response.body.message).to.be.equal('Load balancer configuration error')
+    expect(response.body.message).to.be.equal('Load balancer not found')
   })
 
   it('returns error on load balancer relay failure', async () => {
@@ -470,7 +498,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc04')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
       .expect(200)
@@ -489,7 +517,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet-x')
       .expect(200)
@@ -506,7 +534,7 @@ describe('V1 controller (acceptance)', () => {
       setupApplication(pocket, {
         REDIRECTS: '',
       })
-    ).to.rejectedWith(HttpErrors.InternalServerError)
+    ).to.rejectedWith(Error)
   })
 
   it('fails on invalid redirect load balancer', async () => {
@@ -519,7 +547,7 @@ describe('V1 controller (acceptance)', () => {
 
     const response = await client
       .post('/')
-      .send({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'invalid host')
       .expect(200)
@@ -527,5 +555,117 @@ describe('V1 controller (acceptance)', () => {
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
     expect(response.body).to.have.property('message')
     expect(response.body.message).to.be.equal('Invalid domain')
+  })
+
+  it('Perfoms sticky requests on LBs that support it using rpcID', async () => {
+    const logSpy = sinon.spy(logger, 'log')
+
+    const relayRequest = (id) => `{"method":"eth_chainId","id":${id},"jsonrpc":"2.0"}`
+    const relayResponseData = (id) => `{"id":${id},"jsonrpc":"2.0","result":"0x64"}`
+    const mockPocket = new PocketMock()
+
+    // Reset default values
+    mockPocket.relayResponse = {}
+
+    // Sync/Chain check
+    mockPocket.relayResponse['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+    mockPocket.relayResponse['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+
+    // Add some default relay requests
+    for (let i = 0; i < 10; i++) {
+      mockPocket.relayResponse[relayRequest(i)] = relayResponseData(i)
+    }
+
+    const pocketClass = mockPocket.class()
+
+    ;({ app, client } = await setupApplication(pocketClass))
+
+    for (let i = 1; i <= 5; i++) {
+      const response = await client
+        .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc05')
+        .send({ method: 'eth_chainId', id: i, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    }
+
+    // Counts the number of times the sticky relay succeeded
+    let successStickyResponses = 0
+
+    logSpy.getCalls().forEach(
+      (call) =>
+        (successStickyResponses = call.calledWith(
+          'info',
+          sinon.match.any,
+          sinon.match((log: object) => {
+            return log['sticky'] === 'SUCCESS'
+          })
+        )
+          ? ++successStickyResponses
+          : successStickyResponses)
+    )
+
+    // First request does  not count as sticky
+    expect(successStickyResponses).to.be.equal(4)
+  })
+
+  it('Perfoms sticky requests on LBs that support it using prefix', async () => {
+    const logSpy = sinon.spy(logger, 'log')
+
+    const relayRequest = '{"method":"eth_chainId","id":0,"jsonrpc":"2.0"}'
+    const mockPocket = new PocketMock()
+
+    // Reset default values
+    mockPocket.relayResponse = {}
+
+    // Sync/Chain check
+    mockPocket.relayResponse['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+    mockPocket.relayResponse['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+
+    mockPocket.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
+
+    const pocketClass = mockPocket.class()
+
+    ;({ app, client } = await setupApplication(pocketClass))
+
+    for (let i = 1; i <= 5; i++) {
+      const response = await client
+        .post('/v1/lb/df9gjsjg43db9fsajfjg93fk')
+        .send({ method: 'eth_chainId', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    }
+
+    // Counts the number of times the sticky relay succeeded
+    let successStickyResponses = 0
+
+    logSpy.getCalls().forEach(
+      (call) =>
+        (successStickyResponses = call.calledWith(
+          'info',
+          sinon.match.any,
+          sinon.match((log: object) => {
+            return log['sticky'] === 'SUCCESS'
+          })
+        )
+          ? ++successStickyResponses
+          : successStickyResponses)
+    )
+
+    // First request does  not count as sticky
+    expect(successStickyResponses).to.be.equal(4)
   })
 })

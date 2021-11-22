@@ -1,6 +1,5 @@
 /* eslint-disable no-prototype-builtins */
 import { Mock, It } from 'moq.ts'
-import { DEFAULT_POCKET_CONFIG } from '../../src/config/pocket-config'
 import {
   Pocket,
   Configuration,
@@ -23,6 +22,7 @@ import {
   Keybase,
   Account,
 } from '@pokt-network/pocket-js'
+import { DEFAULT_POCKET_CONFIG } from '../../src/config/pocket-config'
 
 export const DEFAULT_NODES = [
   new Node(
@@ -152,7 +152,7 @@ export class PocketMock {
     // Default mock functions
     // TODO: Implement custom results
     const sessionManager = new Mock<SessionManager>()
-      .setup((instance) => instance.getCurrentSession(It.IsAny(), It.IsAny(), It.IsAny()))
+      .setup((instance) => instance.getCurrentSession(It.IsAny(), It.IsAny(), It.IsAny(), It.IsAny()))
       .returnsAsync(this.session)
       .object()
 
@@ -187,7 +187,9 @@ export class PocketMock {
           It.IsAny()
         )
       )
-      .callback(({ args: [data] }) => Promise.resolve(this._sendRelay(data)))
+      .callback(({ args: [data, blockchain, pocketAAT, configuration, headers, method, path, node] }) =>
+        Promise.resolve(this._sendRelay(data, node))
+      )
 
     return repoMock.object()
   }
@@ -237,7 +239,9 @@ export class PocketMock {
    * @param data relay request payload
    * @returns response payload of request
    */
-  _sendRelay(data: string): RelayResponse | RpcError {
+  _sendRelay(data: string, node?: Node): RelayResponse | RpcError {
+    const nodePublicKey = node ? node.publicKey : '142e2b65610a798b0e4e3f45927ae0b986a71852039c28a625dcf11d2fc48637'
+
     let relayResponse
 
     const _relayResponse = this._getRelayResponse(data)
@@ -258,7 +262,7 @@ export class PocketMock {
         new RelayProofResponse(
           BigInt(17386131212264644),
           BigInt(32889),
-          '142e2b65610a798b0e4e3f45927ae0b986a71852039c28a625dcf11d2fc48637',
+          nodePublicKey,
           '0027',
           poktAAT,
           'c57e5076153450855e7018ab5b8de37034f04d4884f33020f339fc634228951ff1ecb69f39ab31bc6544f869f6ce10dd4cbc186fceb496d02b443a9420d09b03',
@@ -270,7 +274,7 @@ export class PocketMock {
           new RelayProof(
             BigInt(17386131212264644),
             BigInt(32889),
-            '142e2b65610a798b0e4e3f45927ae0b986a71852039c28a625dcf11d2fc48637',
+            nodePublicKey,
             '0027',
             poktAAT,
             'c57e5076153450855e7018ab5b8de37034f04d4884f33020f339fc634228951ff1ecb69f39ab31bc6544f869f6ce10dd4cbc186fceb496d02b443a9420d09b03',

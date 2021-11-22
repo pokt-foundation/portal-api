@@ -1,5 +1,5 @@
-import { Request, RestBindings, get, ResponseObject } from '@loopback/rest'
 import { inject } from '@loopback/context'
+import { Request, RestBindings, get, ResponseObject } from '@loopback/rest'
 
 /**
  * OpenAPI response for ping()
@@ -29,7 +29,24 @@ const PING_RESPONSE: ResponseObject = {
 }
 
 /**
- * A simple controller to bounce back http requests
+ * OpenAPI response for version()
+ */
+const VERSION_RESPONSE: ResponseObject = {
+  description: 'Version response',
+  content: {
+    'application/json': {
+      schema: {
+        type: 'object',
+        properties: {
+          commit: { type: 'string' },
+        },
+      },
+    },
+  },
+}
+
+/**
+ * A simple controller to bounce back http requests and provide version info
  */
 export class PingController {
   constructor(@inject(RestBindings.Http.REQUEST) private req: Request) {}
@@ -63,5 +80,15 @@ export class PingController {
       url: this.req.url,
       headers: Object.assign({}, this.req.headers),
     }
+  }
+
+  @get('/version', {
+    responses: {
+      '200': VERSION_RESPONSE,
+    },
+  })
+  version(): object {
+    // Reply with the current project's commit
+    return { commit: process.env.COMMIT_HASH }
   }
 }

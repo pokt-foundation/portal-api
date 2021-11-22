@@ -1,15 +1,16 @@
-import { SyncChecker } from '../../src/services/sync-checker'
+import axios from 'axios'
+import MockAdapter from 'axios-mock-adapter'
 import RedisMock from 'ioredis-mock'
-import { metricsRecorderMock } from '../mocks/metricsRecorder'
-import { MetricsRecorder } from '../../src/services/metrics-recorder'
-import { CherryPicker } from '../../src/services/cherry-picker'
-import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
+import { expect, sinon } from '@loopback/testlab'
 import { Configuration, Session, RpcError } from '@pokt-network/pocket-js'
 import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
-import { expect, sinon } from '@loopback/testlab'
-import MockAdapter from 'axios-mock-adapter'
-import axios from 'axios'
-import { MAX_RELAYS_ERROR } from '../../src/errors/types'
+import { CherryPicker } from '../../src/services/cherry-picker'
+import { MetricsRecorder } from '../../src/services/metrics-recorder'
+import { SyncChecker } from '../../src/services/sync-checker'
+import { MAX_RELAYS_ERROR } from '../../src/utils/constants'
+import { hashBlockchainNodes } from '../../src/utils/helpers'
+import { metricsRecorderMock } from '../mocks/metrics-recorder'
+import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
 const logger = require('../../src/services/logger')
 
@@ -172,7 +173,7 @@ describe('Sync checker service (unit)', () => {
         pocket,
         undefined,
         pocketConfiguration,
-        ''
+        undefined
       )
 
       const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
@@ -199,7 +200,7 @@ describe('Sync checker service (unit)', () => {
         pocket,
         undefined,
         pocketConfiguration,
-        ''
+        undefined
       )
 
       const expectedBlockHeight = 0
@@ -228,7 +229,7 @@ describe('Sync checker service (unit)', () => {
         pocket,
         undefined,
         pocketConfiguration,
-        ''
+        undefined
       )
 
       const expectedBlockHeight = 0
@@ -280,7 +281,8 @@ describe('Sync checker service (unit)', () => {
       pocketClient,
       undefined,
       pocketConfiguration,
-      ''
+      '',
+      undefined
     )
 
     const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
@@ -311,7 +313,12 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL['0021'],
         pocketAAT: undefined,
         pocketConfiguration,
-        sessionKey: '',
+        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )) as Session,
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -331,7 +338,12 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL['0021'],
         pocketAAT: undefined,
         pocketConfiguration,
-        sessionKey: '',
+        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )) as Session,
       })
 
       expect(redisGetSpy.callCount).to.be.equal(13)
@@ -357,7 +369,12 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL['0006'],
         pocketAAT: undefined,
         pocketConfiguration,
-        sessionKey: '',
+        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )) as Session,
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -377,7 +394,12 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL['0006'],
         pocketAAT: undefined,
         pocketConfiguration,
-        sessionKey: '',
+        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )) as Session,
       })
 
       expect(redisGetSpy.callCount).to.be.equal(13)
@@ -403,7 +425,12 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL['0001'],
         pocketAAT: undefined,
         pocketConfiguration,
-        sessionKey: '',
+        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )) as Session,
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -423,7 +450,12 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL['0001'],
         pocketAAT: undefined,
         pocketConfiguration,
-        sessionKey: '',
+        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )) as Session,
       })
 
       expect(redisGetSpy.callCount).to.be.equal(13)
@@ -448,7 +480,12 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL['0006'],
         pocketAAT: undefined,
         pocketConfiguration,
-        sessionKey: '',
+        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )) as Session,
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -481,7 +518,12 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL['0021'],
         pocketAAT: undefined,
         pocketConfiguration,
-        sessionKey: '',
+        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )) as Session,
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -512,7 +554,12 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL['0021'],
         pocketAAT: undefined,
         pocketConfiguration,
-        sessionKey: '',
+        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )) as Session,
       })
 
       expect(syncedNodes).to.have.length(0)
@@ -536,7 +583,12 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL['0021'],
         pocketAAT: undefined,
         pocketConfiguration,
-        sessionKey: '',
+        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )) as Session,
       })
 
       expect(syncedNodes).to.have.length(0)
@@ -568,7 +620,12 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL['0021'],
         pocketAAT: undefined,
         pocketConfiguration,
-        sessionKey: '',
+        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )) as Session,
       })
 
       expect(syncedNodes).to.have.length(4)
@@ -610,7 +667,12 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL['0021'],
         pocketAAT: undefined,
         pocketConfiguration,
-        sessionKey: '',
+        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )) as Session,
       })
 
       expect(syncedNodes).to.have.length(1)
@@ -632,9 +694,12 @@ describe('Sync checker service (unit)', () => {
       ]
       const pocketClient = pocketMock.object()
 
-      const sessionKey = (
-        (await pocketClient.sessionManager.getCurrentSession(undefined, undefined, undefined)) as Session
-      ).sessionKey
+      const pocketSession = (await pocketClient.sessionManager.getCurrentSession(
+        undefined,
+        undefined,
+        undefined,
+        undefined
+      )) as Session
 
       const syncedNodes = await syncChecker.consensusFilter({
         nodes,
@@ -647,12 +712,14 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: ALTRUIST_URL['0021'],
         pocketAAT: undefined,
         pocketConfiguration,
-        sessionKey,
+        pocketSession,
       })
 
       expect(syncedNodes).to.have.length(4)
 
-      const removedNode = await redis.smembers(`session-${sessionKey}`)
+      const removedNode = await redis.smembers(
+        `session-${hashBlockchainNodes(blockchains['0021'].hash, pocketSession.sessionNodes)}`
+      )
 
       expect(removedNode).to.have.length(1)
     })

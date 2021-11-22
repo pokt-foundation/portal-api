@@ -1,6 +1,5 @@
-import { BaseProfiler, ProfileResult } from '@pokt-network/pocket-js'
-
 import { Pool as PGPool } from 'pg'
+import { BaseProfiler, ProfileResult } from '@pokt-network/pocket-js'
 
 // import pgFormat from 'pg-format';
 // const logger = require('../services/logger');
