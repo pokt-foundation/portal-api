@@ -604,7 +604,11 @@ export class PocketRelayer {
       if (isCheckPromiseResolved(chainCheckResult)) {
         chainCheckedNodes = (chainCheckResult as PromiseFulfilledResult<Node[]>).value
       } else {
-        const error = 'ChainID check failure'
+        let error = 'ChainID check failure'
+
+        if (chainCheckResult.status === 'rejected') {
+          error += ': ' + chainCheckResult.reason
+        }
         const method = 'checks'
 
         this.metricsRecorder
