@@ -35,6 +35,9 @@ export class SyncChecker {
     pocketAAT,
     pocketConfiguration,
     pocketSession,
+    clientStickyKey,
+    ipAddress,
+    preferredNode,
   }: ConsensusFilterOptions): Promise<Node[]> {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
     syncCheckOptions.allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
@@ -278,6 +281,10 @@ export class SyncChecker {
       blockchainID,
       origin: this.origin,
       sessionHash,
+      ipAddress: ipAddress,
+      clientStickyKey: clientStickyKey,
+      nodes,
+      preferredNode: preferredNode,
     })
     await this.redis.set(
       syncedNodesKey,
@@ -632,4 +639,7 @@ export type ConsensusFilterOptions = {
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
   pocketSession: Session
+  clientStickyKey?: string
+  ipAddress?: string
+  preferredNode?: string
 }

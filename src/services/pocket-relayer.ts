@@ -572,6 +572,9 @@ export class PocketRelayer {
         pocket: this.pocket,
         pocketConfiguration: this.pocketConfiguration,
         pocketSession,
+        ipAddress: this.ipAddress,
+        clientStickyKey: nodeSticker.clientStickyKey,
+        preferredNode: nodeSticker.preferredNodeAddress,
       }
 
       chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
@@ -591,6 +594,9 @@ export class PocketRelayer {
         pocketAAT,
         pocketConfiguration: this.pocketConfiguration,
         pocketSession,
+        ipAddress: this.ipAddress,
+        clientStickyKey: nodeSticker.clientStickyKey,
+        preferredNode: nodeSticker.preferredNodeAddress,
       }
 
       syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
