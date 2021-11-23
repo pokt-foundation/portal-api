@@ -279,6 +279,7 @@ export class PocketRelayer {
               error = JSON.stringify(relayResponse.message)
             }
 
+            // If sticky and is over error threshold, remove stickiness
             const sticky = await NodeSticker.stickyRelayResult(preferredNodeAddress, relayResponse.servicer_node)
 
             if (sticky === 'SUCCESS') {
