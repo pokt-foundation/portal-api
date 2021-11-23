@@ -3,6 +3,8 @@ import { Redis } from 'ioredis'
 import { getAddressFromPublicKey } from 'pocket-tools'
 import { StickinessOptions } from '../utils/types'
 
+const logger = require('./logger')
+
 // Small utility class to contain several methods regarding node stickiness configuration.
 export class NodeSticker {
   stickiness: boolean
@@ -80,7 +82,8 @@ export class NodeSticker {
     blockchainID: string,
     applicationID: string,
     nodeAddress: string,
-    relayLimiter = true
+    relayLimiter = true,
+    requestID?: string
   ): Promise<void> {
     if (!this.stickiness || (!this.keyPrefix && !this.rpcID)) {
       return
@@ -108,19 +111,23 @@ export class NodeSticker {
     }
 
     if (relayLimiter && this.relaysLimit) {
-      await this.checkRelaysLimit()
+      await this.checkRelaysLimit(requestID)
     }
   }
 
   // Limit needs to be set for some apps as they can overflow session nodes
   // await is not used here as the value does not need to be exact, a small
   // overflow is allowed.
-  async checkRelaysLimit(): Promise<void> {
+  async checkRelaysLimit(requestID?: string): Promise<void> {
     const limitKey = `${this.clientStickyKey}-limit`
 
     const relaysDone = Number.parseInt((await this.redis.get(limitKey)) || '0')
 
     this.redis.incr(limitKey)
+
+    logger.log('error', `relays done on ${limitKey}: ${relaysDone} `, {
+      requestID,
+    })
 
     if (!relaysDone) {
       this.redis.expire(limitKey, this.duration)
