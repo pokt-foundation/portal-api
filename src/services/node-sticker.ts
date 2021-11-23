@@ -129,6 +129,7 @@ export class NodeSticker {
     logger.log('info', `relays done on ${limitKey}: ${relaysDone} `, {
       requestID,
       cache,
+      preferredNodeAddress: this.preferredNodeAddress,
     })
 
     if (!relaysDone) {
