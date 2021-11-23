@@ -284,7 +284,7 @@ export class PocketRelayer {
             if (sticky === 'SUCCESS') {
               const errorCount = await nodeSticker.increaseErrorCount()
 
-              logger.log('info', 'sticky error count' + errorCount, {
+              logger.log('info', 'sticky error count ' + errorCount, {
                 requestID,
                 serviceNode: relayResponse.servicer_node,
                 applicationID: application.id,
@@ -737,18 +737,16 @@ export class PocketRelayer {
     if (preferredNodeAddress && preferredNodeIndex >= 0) {
       node = nodes[preferredNodeIndex]
       // If node have been marked as failure, remove stickiness. Key is a counter on node errors
-      const nodeErrorCount = Number.parseInt(
-        (await this.redis.get(blockchainID + '-' + node.publicKey + '-errors')) || '0'
-      )
+      const errorCount = await nodeSticker.getErrorCount()
 
-      logger.log('info', `node ErrorCount ${nodeErrorCount}`, {
+      logger.log('info', 'pre-cherry pick error count' + errorCount, {
         requestID,
-        applicationID: application.id,
         serviceNode: node.publicKey,
-        blockchainID,
+        applicationID: application.id,
+        clientStickyKey: nodeSticker.clientStickyKey,
       })
       // value is retrieved as string
-      if (nodeErrorCount > 5) {
+      if (errorCount > 5) {
         logger.log('info', `node removed from sticky pool`, {
           requestID,
           applicationID: application.id,

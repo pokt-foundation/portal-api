@@ -135,7 +135,6 @@ export class NodeSticker {
     if (!relaysDone) {
       this.redis.expire(limitKey, this.duration)
     } else if (relaysDone >= this.relaysLimit) {
-      this.redis.del(limitKey)
       await this.remove()
     }
   }
