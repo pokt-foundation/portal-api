@@ -284,12 +284,6 @@ export class PocketRelayer {
             if (sticky === 'SUCCESS') {
               const errorCount = await nodeSticker.increaseErrorCount()
 
-              logger.log('info', 'sticky error count ' + errorCount, {
-                requestID,
-                serviceNode: relayResponse.servicer_node,
-                applicationID: application.id,
-                clientStickyKey: nodeSticker.clientStickyKey,
-              })
               if (errorCount > 5) {
                 await nodeSticker.remove()
               }
@@ -556,19 +550,7 @@ export class PocketRelayer {
     const nodesToRemove = await this.redis.smembers(sessionCacheKey)
 
     if (nodesToRemove.length > 0) {
-      nodes = nodes.filter(async ({ publicKey }) => {
-        // Remove stickiness from exhausted node
-        if (nodeSticker.stickiness && (await getAddressFromPublicKey(publicKey)) === preferredNodeAddress) {
-          await nodeSticker.remove()
-          logger.log('info', `deleted exhausted preferred app from sticky pool: ${preferredNodeAddress}`, {
-            requestID,
-            typeID: application.id,
-            serviceNode: publicKey,
-          })
-        }
-
-        return !nodesToRemove.includes(publicKey)
-      })
+      nodes = nodes.filter(({ publicKey }) => !nodesToRemove.includes(publicKey))
     }
 
     if (nodes.length === 0) {
@@ -639,7 +621,7 @@ export class PocketRelayer {
       if (isCheckPromiseResolved(chainCheckResult)) {
         chainCheckedNodes = (chainCheckResult as PromiseFulfilledResult<Node[]>).value
       } else {
-        const error = 'ChainID check failure: ' + JSON.stringify(chainCheckResult)
+        const error = 'ChainID check failure: '
 
         const method = 'checks'
 
@@ -678,7 +660,7 @@ export class PocketRelayer {
       if (isCheckPromiseResolved(syncCheckResult)) {
         syncCheckedNodes = (syncCheckResult as PromiseFulfilledResult<Node[]>).value
       } else {
-        const error = 'Sync check failure' + JSON.stringify(syncCheckResult)
+        const error = 'Sync check failure'
         const method = 'checks'
 
         this.metricsRecorder
@@ -736,23 +718,11 @@ export class PocketRelayer {
 
     if (preferredNodeAddress && preferredNodeIndex >= 0) {
       node = nodes[preferredNodeIndex]
-      // If node have been marked as failure, remove stickiness. Key is a counter on node errors
+
+      // If node have exceeding errors, remove stickiness.
       const errorCount = await nodeSticker.getErrorCount()
 
-      logger.log('info', 'pre-cherry pick error count' + errorCount, {
-        requestID,
-        serviceNode: node.publicKey,
-        applicationID: application.id,
-        clientStickyKey: nodeSticker.clientStickyKey,
-      })
-      // value is retrieved as string
       if (errorCount > 5) {
-        logger.log('info', `node removed from sticky pool`, {
-          requestID,
-          applicationID: application.id,
-          serviceNode: node.publicKey,
-          blockchainID,
-        })
         await nodeSticker.remove()
       } else {
         cherryPick = false
@@ -824,7 +794,7 @@ export class PocketRelayer {
         // then this result is invalid
         return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey)
       } else {
-        await nodeSticker.setStickinessKey(blockchainID, application.id, node.address, true, requestID)
+        await nodeSticker.setStickinessKey(blockchainID, application.id, node.address, true)
 
         // Success
         return relayResponse
