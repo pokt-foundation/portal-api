@@ -49,7 +49,7 @@ export async function getNodeNetworkData(redis: Redis, publicKey: string, reques
   let nodeUrl: NodeURLInfo = { serviceURL: '', serviceDomain: '' }
 
   // Might come empty or undefined on relay failure
-  if (!publicKey) {
+  if (!publicKey || publicKey.length !== 64) {
     return nodeUrl
   }
 

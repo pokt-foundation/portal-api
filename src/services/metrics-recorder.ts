@@ -255,10 +255,11 @@ export class MetricsRecorder {
       ]
 
       if (result !== 200) {
-        // Increment error log
-        await this.redis.incr(blockchainID + '-' + serviceNode + '-errors')
-        await this.redis.expire(blockchainID + '-' + serviceNode + '-errors', 3600)
-
+        if (serviceNode && serviceNode.length === 64) {
+          // Increment error log
+          await this.redis.incr(blockchainID + '-' + serviceNode + '-errors')
+          await this.redis.expire(blockchainID + '-' + serviceNode + '-errors', 3600)
+        }
         await this.processBulkErrors([errorValues], redisTimestamp, redisErrorKey, logger)
       }
     } catch (err) {
