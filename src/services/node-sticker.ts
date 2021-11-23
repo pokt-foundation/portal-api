@@ -141,6 +141,17 @@ export class NodeSticker {
   }
 
   async remove(): Promise<void> {
-    await this.redis.del(this.clientStickyKey)
+    await this.redis.del(this.clientStickyKey, `${this.clientStickyKey}-errors`, `${this.clientStickyKey}-limit`)
+  }
+
+  async increaseErrorCount(): Promise<number> {
+    const count = await this.redis.incr(`${this.clientStickyKey}-errors`)
+
+    await this.redis.expire(`${this.clientStickyKey}-errors`, this.duration)
+    return count
+  }
+
+  async getErrorCount(): Promise<number> {
+    return Number.parseInt((await this.redis.get(`${this.clientStickyKey}-errors`)) || '0')
   }
 }

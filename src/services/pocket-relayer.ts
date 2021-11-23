@@ -279,6 +279,22 @@ export class PocketRelayer {
               error = JSON.stringify(relayResponse.message)
             }
 
+            const sticky = await NodeSticker.stickyRelayResult(preferredNodeAddress, relayResponse.servicer_node)
+
+            if (sticky === 'SUCCESS') {
+              const errorCount = await nodeSticker.increaseErrorCount()
+
+              logger.log('info', 'sticky error count' + errorCount, {
+                requestID,
+                serviceNode: relayResponse.servicer_node,
+                applicationID: application.id,
+                clientStickyKey: nodeSticker.clientStickyKey,
+              })
+              if (errorCount > 5) {
+                await nodeSticker.remove()
+              }
+            }
+
             this.metricsRecorder
               .recordMetric({
                 requestID,
@@ -296,7 +312,7 @@ export class PocketRelayer {
                 origin: this.origin,
                 data,
                 pocketSession: this.pocketSession,
-                sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relayResponse.servicer_node),
+                sticky,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -623,7 +639,7 @@ export class PocketRelayer {
       if (isCheckPromiseResolved(chainCheckResult)) {
         chainCheckedNodes = (chainCheckResult as PromiseFulfilledResult<Node[]>).value
       } else {
-        const error = 'ChainID check failure: ' + chainCheckResult
+        const error = 'ChainID check failure: ' + JSON.stringify(chainCheckResult)
 
         const method = 'checks'
 
@@ -662,7 +678,7 @@ export class PocketRelayer {
       if (isCheckPromiseResolved(syncCheckResult)) {
         syncCheckedNodes = (syncCheckResult as PromiseFulfilledResult<Node[]>).value
       } else {
-        const error = 'Sync check failure'
+        const error = 'Sync check failure' + JSON.stringify(syncCheckResult)
         const method = 'checks'
 
         this.metricsRecorder
