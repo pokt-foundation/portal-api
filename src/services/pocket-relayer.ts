@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
+import { getAddressFromPublicKey } from 'pocket-tools'
 import { JSONObject } from '@loopback/context'
 import { HttpErrors } from '@loopback/rest'
 import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
@@ -539,7 +540,19 @@ export class PocketRelayer {
     const nodesToRemove = await this.redis.smembers(sessionCacheKey)
 
     if (nodesToRemove.length > 0) {
-      nodes = nodes.filter((n) => !nodesToRemove.includes(n.publicKey))
+      nodes = nodes.filter(async ({ publicKey }) => {
+        // Remove stickiness from exhausted node
+        if (nodeSticker.stickiness && (await getAddressFromPublicKey(publicKey)) === preferredNodeAddress) {
+          await nodeSticker.remove()
+          logger.log('info', `deleted exhausted preferred app from sticky pool: ${preferredNodeAddress}`, {
+            requestID,
+            typeID: application.id,
+            serviceNode: publicKey,
+          })
+        }
+
+        return !nodesToRemove.includes(publicKey)
+      })
     }
 
     if (nodes.length === 0) {
