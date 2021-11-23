@@ -632,7 +632,4 @@ export type ConsensusFilterOptions = {
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
   pocketSession: Session
-  clientStickyKey?: string
-  ipAddress?: string
-  preferredNode?: string
 }
