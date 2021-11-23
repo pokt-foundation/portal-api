@@ -92,12 +92,11 @@ export class NodeSticker {
     if (!this.stickiness || (!this.keyPrefix && !this.rpcID)) {
       return
     }
-    let nextRequest
 
     if (this.keyPrefix) {
       // Check if key is already set to rotate the selected node when the
       // sticky duration ends
-      nextRequest = await this.redis.get(this.clientStickyKey)
+      const nextRequest = await this.redis.get(this.clientStickyKey)
 
       if (!nextRequest) {
         await this.redis.set(this.clientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', this.duration)
