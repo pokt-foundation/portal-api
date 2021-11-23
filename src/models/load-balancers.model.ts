@@ -26,12 +26,6 @@ export class StickinessOptions {
     required: false,
   })
   relaysLimit?: number
-
-  @property({
-    type: 'boolean',
-    required: true,
-  })
-  stickinessTemp: boolean
 }
 
 @model({ settings: { strict: false } })
