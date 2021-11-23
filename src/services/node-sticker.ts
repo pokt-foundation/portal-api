@@ -88,11 +88,12 @@ export class NodeSticker {
     if (!this.stickiness || (!this.keyPrefix && !this.rpcID)) {
       return
     }
+    let nextRequest
 
     if (this.keyPrefix) {
       // Check if key is already set to rotate the selected node when the
       // sticky duration ends
-      const nextRequest = await this.redis.get(this.clientStickyKey)
+      nextRequest = await this.redis.get(this.clientStickyKey)
 
       if (!nextRequest) {
         await this.redis.set(this.clientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', this.duration)
@@ -111,14 +112,14 @@ export class NodeSticker {
     }
 
     if (relayLimiter && this.relaysLimit) {
-      await this.checkRelaysLimit(requestID)
+      await this.checkRelaysLimit(requestID, nextRequest)
     }
   }
 
   // Limit needs to be set for some apps as they can overflow session nodes
   // await is not used here as the value does not need to be exact, a small
   // overflow is allowed.
-  async checkRelaysLimit(requestID?: string): Promise<void> {
+  async checkRelaysLimit(requestID?: string, cache?: string): Promise<void> {
     const limitKey = `${this.clientStickyKey}-limit`
 
     const relaysDone = Number.parseInt((await this.redis.get(limitKey)) || '0')
@@ -127,6 +128,7 @@ export class NodeSticker {
 
     logger.log('info', `relays done on ${limitKey}: ${relaysDone} `, {
       requestID,
+      cache,
     })
 
     if (!relaysDone) {
