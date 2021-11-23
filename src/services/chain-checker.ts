@@ -32,9 +32,6 @@ export class ChainChecker {
     pocketAAT,
     pocketConfiguration,
     pocketSession,
-    clientStickyKey,
-    ipAddress,
-    preferredNode,
   }: ChainIDFilterOptions): Promise<Node[]> {
     const sessionHash = hashBlockchainNodes(blockchainID, pocketSession.sessionNodes)
 
@@ -143,10 +140,6 @@ export class ChainChecker {
       blockchainID,
       origin: this.origin,
       sessionHash,
-      ipAddress: ipAddress,
-      clientStickyKey: clientStickyKey,
-      nodes,
-      preferredNode: preferredNode,
     })
     await this.redis.set(
       checkedNodesKey,

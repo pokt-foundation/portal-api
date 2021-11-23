@@ -583,9 +583,6 @@ export class PocketRelayer {
         pocket: this.pocket,
         pocketConfiguration: this.pocketConfiguration,
         pocketSession,
-        ipAddress: this.ipAddress,
-        clientStickyKey: nodeSticker.clientStickyKey,
-        preferredNode: nodeSticker.preferredNodeAddress,
       }
 
       chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
@@ -605,9 +602,6 @@ export class PocketRelayer {
         pocketAAT,
         pocketConfiguration: this.pocketConfiguration,
         pocketSession,
-        ipAddress: this.ipAddress,
-        clientStickyKey: nodeSticker.clientStickyKey,
-        preferredNode: nodeSticker.preferredNodeAddress,
       }
 
       syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
@@ -794,7 +788,7 @@ export class PocketRelayer {
         // then this result is invalid
         return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey)
       } else {
-        await nodeSticker.setStickinessKey(blockchainID, application.id, node.address, true)
+        await nodeSticker.setStickinessKey(blockchainID, application.id, node.address)
 
         // Success
         return relayResponse
