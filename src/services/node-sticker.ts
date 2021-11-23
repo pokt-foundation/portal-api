@@ -125,7 +125,7 @@ export class NodeSticker {
 
     this.redis.incr(limitKey)
 
-    logger.log('error', `relays done on ${limitKey}: ${relaysDone} `, {
+    logger.log('info', `relays done on ${limitKey}: ${relaysDone} `, {
       requestID,
     })
 
