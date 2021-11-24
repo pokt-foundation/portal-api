@@ -2,6 +2,7 @@
 import { Redis } from 'ioredis'
 import { getAddressFromPublicKey } from 'pocket-tools'
 import { Node } from '@pokt-network/pocket-js'
+import { checkWhitelist } from '../utils/enforcements'
 import { StickinessOptions } from '../utils/types'
 
 export type StickyResult = 'SUCCESS' | 'FAILURE' | 'NONE'
@@ -12,10 +13,11 @@ const logger = require('./logger')
 export class NodeSticker {
   stickiness: boolean
   duration: number
+  preferredNodeAddress: string
   keyPrefix?: string
   rpcID?: number
   relaysLimit?: number
-  preferredNodeAddress: string
+  whitelistOrigins?: string[]
 
   redis: Redis
   blockchainID: string
@@ -29,7 +31,7 @@ export class NodeSticker {
   clientLimitKey: string
 
   constructor(
-    { stickiness, duration, keyPrefix, rpcID, relaysLimit, preferredNodeAddress }: StickinessOptions,
+    { stickiness, duration, keyPrefix, rpcID, relaysLimit, preferredNodeAddress, whitelistOrigins }: StickinessOptions,
     blockchainID: string,
     ipAddress: string,
     redis: Redis,
@@ -38,11 +40,12 @@ export class NodeSticker {
     typeID?: string
   ) {
     this.stickiness = stickiness
+    this.preferredNodeAddress = preferredNodeAddress
     this.duration = duration
     this.keyPrefix = keyPrefix
     this.rpcID = rpcID
     this.relaysLimit = relaysLimit
-    this.preferredNodeAddress = preferredNodeAddress
+    this.whitelistOrigins = whitelistOrigins
 
     this.blockchainID = blockchainID
     this.ipAddress = ipAddress
@@ -118,8 +121,17 @@ export class NodeSticker {
     return nodes[preferredNodeIndex]
   }
 
-  async setStickinessKey(applicationID: string, nodeAddress: string, relayLimiter = true): Promise<void> {
+  async setStickinessKey(
+    applicationID: string,
+    nodeAddress: string,
+    origin?: string,
+    relayLimiter = true
+  ): Promise<void> {
     if (!this.stickiness || (!this.keyPrefix && !this.rpcID)) {
+      return
+    }
+
+    if (!checkWhitelist(this.whitelistOrigins, origin, 'substring')) {
       return
     }
 
