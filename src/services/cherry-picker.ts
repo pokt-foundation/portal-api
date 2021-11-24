@@ -301,18 +301,18 @@ export class CherryPicker {
     // The app/node with the highest success rate and the lowest average latency will
     // be 10 times more likely to be selected than a node that has had failures.
     let weightFactor = 10
-    let fastestNodeLatency = 0
+    let previousNodeLatency = 0
     let latencyDifference = 0
 
     // This multiplier is tested to produce a curve that adequately punishes slow nodes
-    const weightMultiplier = 8
+    const weightMultiplier = 14
 
     for (const sortedLog of sortedLogs) {
       // Set the benchmark from the fastest node
-      if (!fastestNodeLatency) {
-        fastestNodeLatency = sortedLog.averageSuccessLatency
+      if (!previousNodeLatency) {
+        previousNodeLatency = sortedLog.averageSuccessLatency
       } else {
-        latencyDifference = sortedLog.averageSuccessLatency - fastestNodeLatency
+        latencyDifference = sortedLog.averageSuccessLatency - previousNodeLatency
       }
 
       // The amount you subtract here from the weight factor should be variable based on how
@@ -320,9 +320,10 @@ export class CherryPicker {
       // Previously this value was hardcoded 2 in the first bucket
       if (latencyDifference) {
         weightFactor = weightFactor - Math.round(latencyDifference * weightMultiplier)
-      }
-      if (weightFactor <= 0) {
-        weightFactor = 1
+
+        if (weightFactor <= 0) {
+          weightFactor = 1
+        }
       }
 
       // Brand new sessions include all nodes in this group so we avoid putting failures here
