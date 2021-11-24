@@ -501,17 +501,17 @@ export class PocketRelayer {
     const aatParams: [string, string, string, string] =
       this.aatPlan === AatPlans.FREEMIUM
         ? [
-            application.gatewayAAT.version,
-            application.freeTierAAT.clientPublicKey,
-            application.freeTierAAT.applicationPublicKey,
-            application.freeTierAAT.applicationSignature,
-          ]
+          application.gatewayAAT.version,
+          application.freeTierAAT.clientPublicKey,
+          application.freeTierAAT.applicationPublicKey,
+          application.freeTierAAT.applicationSignature,
+        ]
         : [
-            application.gatewayAAT.version,
-            application.gatewayAAT.clientPublicKey,
-            application.gatewayAAT.applicationPublicKey,
-            application.gatewayAAT.applicationSignature,
-          ]
+          application.gatewayAAT.version,
+          application.gatewayAAT.clientPublicKey,
+          application.gatewayAAT.applicationPublicKey,
+          application.gatewayAAT.applicationSignature,
+        ]
 
     // Checks pass; create AAT
     const pocketAAT = new PocketAAT(...aatParams)
