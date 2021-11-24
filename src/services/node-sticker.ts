@@ -17,10 +17,12 @@ export class NodeSticker {
   relaysLimit?: number
   preferredNodeAddress: string
 
+  redis: Redis
   blockchainID: string
   ipAddress: string
-  redis: Redis
   data?: string | object
+  requestID?: string
+  typeID?: string
 
   clientStickyKey: string
   clientErrorKey: string
@@ -31,7 +33,9 @@ export class NodeSticker {
     blockchainID: string,
     ipAddress: string,
     redis: Redis,
-    data?: string | object
+    data?: string | object,
+    requestID?: string,
+    typeID?: string
   ) {
     this.stickiness = stickiness
     this.duration = duration
@@ -44,6 +48,8 @@ export class NodeSticker {
     this.ipAddress = ipAddress
     this.redis = redis
     this.data = data
+    this.requestID = requestID
+    this.typeID = typeID
 
     // If no key prefix is given, set based on rpcID.
     // Prefix is needed in case the rpcID is not used due to the way the key works.
@@ -86,13 +92,7 @@ export class NodeSticker {
     return preferredNodeAddress === (await getAddressFromPublicKey(relayNodePublicKey)) ? 'SUCCESS' : 'FAILURE'
   }
 
-  async getStickyNode(
-    nodes: Node[],
-    exhaustedNodes: string[],
-    requestID?: string,
-    blockchainID?: string,
-    applicationID?: string
-  ): Promise<Node | undefined> {
+  async getStickyNode(nodes: Node[], exhaustedNodes: string[]): Promise<Node | undefined> {
     const preferredNodeIndex = nodes.findIndex(({ address }) => address === this.preferredNodeAddress)
 
     if (preferredNodeIndex < 0) {
@@ -103,7 +103,7 @@ export class NodeSticker {
     if (
       exhaustedNodes.some(async (publicKey) => (await getAddressFromPublicKey(publicKey)) === this.preferredNodeAddress)
     ) {
-      await this.remove(requestID, blockchainID, applicationID)
+      await this.remove('exhausted node')
       return undefined
     }
 
@@ -111,19 +111,14 @@ export class NodeSticker {
     const errorCount = await this.getErrorCount()
 
     if (errorCount > 5) {
-      await this.remove(requestID, blockchainID, applicationID)
+      await this.remove('error limit exceeded')
       return undefined
     }
 
     return nodes[preferredNodeIndex]
   }
 
-  async setStickinessKey(
-    blockchainID: string,
-    applicationID: string,
-    nodeAddress: string,
-    relayLimiter = true
-  ): Promise<void> {
+  async setStickinessKey(applicationID: string, nodeAddress: string, relayLimiter = true): Promise<void> {
     if (!this.stickiness || (!this.keyPrefix && !this.rpcID)) {
       return
     }
@@ -143,7 +138,7 @@ export class NodeSticker {
         const nextRPCID = NodeSticker.getNextRPCID(this.rpcID, this.data)
 
         // Some rpcID requests skips one number when sending them consecutively
-        const nextClientStickyKey = `${this.ipAddress}-${blockchainID}-${nextRPCID + 1}`
+        const nextClientStickyKey = `${this.ipAddress}-${this.blockchainID}-${nextRPCID + 1}`
 
         await this.redis.set(nextClientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', this.duration)
       }
@@ -158,24 +153,22 @@ export class NodeSticker {
   // await is not used here as the value does not need to be exact, a small
   // overflow is allowed.
   async checkRelaysLimit(): Promise<void> {
-    const limitKey = `${this.clientStickyKey}-limit`
+    const relaysDone = Number.parseInt((await this.redis.get(this.clientLimitKey)) || '0')
 
-    const relaysDone = Number.parseInt((await this.redis.get(limitKey)) || '0')
-
-    this.redis.incr(limitKey)
+    this.redis.incr(this.clientLimitKey)
 
     if (!relaysDone) {
-      this.redis.expire(limitKey, this.duration)
+      this.redis.expire(this.clientLimitKey, this.duration)
     } else if (relaysDone >= this.relaysLimit) {
-      await this.remove()
+      await this.remove('relays limit exceeded')
     }
   }
 
-  async remove(requestID?: string, blockchainID?: string, typeID?: string): Promise<void> {
-    logger.log('info', 'sticky node forcefully removed', {
-      requestID,
-      typeID,
-      blockchainID,
+  async remove(reason?: string): Promise<void> {
+    logger.log('info', `sticky node forcefully removed${reason ? `: ${reason}` : ''}`, {
+      requestID: this.requestID,
+      typeID: this.typeID,
+      blockchainID: this.blockchainID,
       serviceNode: this.preferredNodeAddress,
     })
 

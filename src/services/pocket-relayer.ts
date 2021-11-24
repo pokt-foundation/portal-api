@@ -152,7 +152,15 @@ export class PocketRelayer {
     )
 
     const { preferredNodeAddress } = stickinessOptions
-    const nodeSticker = new NodeSticker(stickinessOptions, blockchainID, this.ipAddress, this.redis, rawData)
+    const nodeSticker = new NodeSticker(
+      stickinessOptions,
+      blockchainID,
+      this.ipAddress,
+      this.redis,
+      rawData,
+      requestID,
+      application.id
+    )
 
     const overallStart = process.hrtime()
 
@@ -285,7 +293,7 @@ export class PocketRelayer {
               const errorCount = await nodeSticker.increaseErrorCount()
 
               if (errorCount > 5) {
-                await nodeSticker.remove(requestID, blockchainID, application.id)
+                await nodeSticker.remove('error limit exceeded')
               }
             }
 
@@ -706,7 +714,7 @@ export class PocketRelayer {
     let node: Node
 
     if (nodeSticker.preferredNodeAddress) {
-      node = await nodeSticker.getStickyNode(nodes, exhaustedNodes, requestID, blockchainID, application.id)
+      node = await nodeSticker.getStickyNode(nodes, exhaustedNodes)
     }
 
     if (!node) {
@@ -774,7 +782,7 @@ export class PocketRelayer {
         // then this result is invalid
         return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey)
       } else {
-        await nodeSticker.setStickinessKey(blockchainID, application.id, node.address)
+        await nodeSticker.setStickinessKey(application.id, node.address)
 
         // Success
         return relayResponse
