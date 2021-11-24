@@ -5,6 +5,8 @@ import { StickinessOptions } from '../utils/types'
 
 export type StickyResult = 'SUCCESS' | 'FAILURE' | 'NONE'
 
+const logger = require('./logger')
+
 // Small utility class to contain several methods regarding node stickiness configuration.
 export class NodeSticker {
   stickiness: boolean
@@ -136,7 +138,14 @@ export class NodeSticker {
     }
   }
 
-  async remove(): Promise<void> {
+  async remove(requestID?: string, blockchainID?: string, typeID?: string): Promise<void> {
+    logger.log('info', 'sticky node forcefully removed', {
+      requestID,
+      typeID,
+      blockchainID,
+      serviceNode: this.preferredNodeAddress,
+    })
+
     await this.redis.del(this.clientStickyKey, this.clientErrorKey, this.clientLimitKey)
   }
 
