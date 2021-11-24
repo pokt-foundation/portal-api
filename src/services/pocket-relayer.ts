@@ -285,7 +285,7 @@ export class PocketRelayer {
               const errorCount = await nodeSticker.increaseErrorCount()
 
               if (errorCount > 5) {
-                await nodeSticker.remove()
+                await nodeSticker.remove(requestID, blockchainID, application.id)
               }
             }
 
@@ -717,7 +717,7 @@ export class PocketRelayer {
       const errorCount = await nodeSticker.getErrorCount()
 
       if (errorCount > 5) {
-        await nodeSticker.remove()
+        await nodeSticker.remove(requestID, blockchainID, application.id)
       } else {
         cherryPick = false
       }
