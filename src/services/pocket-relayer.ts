@@ -152,7 +152,15 @@ export class PocketRelayer {
     )
 
     const { preferredNodeAddress } = stickinessOptions
-    const nodeSticker = new NodeSticker(stickinessOptions, blockchainID, this.ipAddress, this.redis, rawData)
+    const nodeSticker = new NodeSticker(
+      stickinessOptions,
+      blockchainID,
+      this.ipAddress,
+      this.redis,
+      rawData,
+      requestID,
+      application.id
+    )
 
     const overallStart = process.hrtime()
 
@@ -285,7 +293,7 @@ export class PocketRelayer {
               const errorCount = await nodeSticker.increaseErrorCount()
 
               if (errorCount > 5) {
-                await nodeSticker.remove(requestID, blockchainID, application.id)
+                await nodeSticker.remove('error limit exceeded')
               }
             }
 
@@ -501,17 +509,17 @@ export class PocketRelayer {
     const aatParams: [string, string, string, string] =
       this.aatPlan === AatPlans.FREEMIUM
         ? [
-          application.gatewayAAT.version,
-          application.freeTierAAT.clientPublicKey,
-          application.freeTierAAT.applicationPublicKey,
-          application.freeTierAAT.applicationSignature,
-        ]
+            application.gatewayAAT.version,
+            application.freeTierAAT.clientPublicKey,
+            application.freeTierAAT.applicationPublicKey,
+            application.freeTierAAT.applicationSignature,
+          ]
         : [
-          application.gatewayAAT.version,
-          application.gatewayAAT.clientPublicKey,
-          application.gatewayAAT.applicationPublicKey,
-          application.gatewayAAT.applicationSignature,
-        ]
+            application.gatewayAAT.version,
+            application.gatewayAAT.clientPublicKey,
+            application.gatewayAAT.applicationPublicKey,
+            application.gatewayAAT.applicationSignature,
+          ]
 
     // Checks pass; create AAT
     const pocketAAT = new PocketAAT(...aatParams)
@@ -547,10 +555,10 @@ export class PocketRelayer {
     this.pocketSession = pocketSession
     const sessionCacheKey = `session-${sessionKey}`
 
-    const nodesToRemove = await this.redis.smembers(sessionCacheKey)
+    const exhaustedNodes = await this.redis.smembers(sessionCacheKey)
 
-    if (nodesToRemove.length > 0) {
-      nodes = nodes.filter(({ publicKey }) => !nodesToRemove.includes(publicKey))
+    if (exhaustedNodes.length > 0) {
+      nodes = nodes.filter(({ publicKey }) => !exhaustedNodes.includes(publicKey))
     }
 
     if (nodes.length === 0) {
@@ -704,26 +712,12 @@ export class PocketRelayer {
     }
 
     let node: Node
-    let cherryPick = true
 
-    const { preferredNodeAddress } = nodeSticker
-    // Before cherry picking, check to see if preferred node is in the set of good nodes
-    const preferredNodeIndex = nodes.findIndex((x) => x.address === preferredNodeAddress)
-
-    if (preferredNodeAddress && preferredNodeIndex >= 0) {
-      node = nodes[preferredNodeIndex]
-
-      // If node have exceeding errors, remove stickiness.
-      const errorCount = await nodeSticker.getErrorCount()
-
-      if (errorCount > 5) {
-        await nodeSticker.remove(requestID, blockchainID, application.id)
-      } else {
-        cherryPick = false
-      }
+    if (nodeSticker.preferredNodeAddress) {
+      node = await nodeSticker.getStickyNode(nodes, exhaustedNodes)
     }
 
-    if (cherryPick) {
+    if (!node) {
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
     }
 
@@ -788,7 +782,7 @@ export class PocketRelayer {
         // then this result is invalid
         return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey)
       } else {
-        await nodeSticker.setStickinessKey(blockchainID, application.id, node.address)
+        await nodeSticker.setStickinessKey(application.id, node.address, this.origin)
 
         // Success
         return relayResponse
