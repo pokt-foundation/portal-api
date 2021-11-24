@@ -32,4 +32,5 @@ export type StickinessOptions = {
   relaysLimit?: number
   keyPrefix?: string
   rpcID?: number
+  stickyOrigins?: string[]
 }

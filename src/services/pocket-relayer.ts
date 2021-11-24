@@ -782,7 +782,7 @@ export class PocketRelayer {
         // then this result is invalid
         return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey)
       } else {
-        await nodeSticker.setStickinessKey(application.id, node.address)
+        await nodeSticker.setStickinessKey(application.id, node.address, this.origin)
 
         // Success
         return relayResponse

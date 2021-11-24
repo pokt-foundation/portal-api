@@ -26,6 +26,13 @@ export class StickinessOptions {
     required: false,
   })
   relaysLimit?: number
+
+  @property({
+    type: 'array',
+    itemType: 'string',
+    required: false,
+  })
+  stickyOrigins?: string[]
 }
 
 @model({ settings: { strict: false } })
