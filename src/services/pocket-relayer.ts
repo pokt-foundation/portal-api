@@ -278,6 +278,17 @@ export class PocketRelayer {
               error = JSON.stringify(relayResponse.message)
             }
 
+            // If sticky and is over error threshold, remove stickiness
+            const sticky = await NodeSticker.stickyRelayResult(preferredNodeAddress, relayResponse.servicer_node)
+
+            if (sticky === 'SUCCESS') {
+              const errorCount = await nodeSticker.increaseErrorCount()
+
+              if (errorCount > 5) {
+                await nodeSticker.remove()
+              }
+            }
+
             this.metricsRecorder
               .recordMetric({
                 requestID,
@@ -295,7 +306,7 @@ export class PocketRelayer {
                 origin: this.origin,
                 data,
                 pocketSession: this.pocketSession,
-                sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relayResponse.servicer_node),
+                sticky,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -539,7 +550,7 @@ export class PocketRelayer {
     const nodesToRemove = await this.redis.smembers(sessionCacheKey)
 
     if (nodesToRemove.length > 0) {
-      nodes = nodes.filter((n) => !nodesToRemove.includes(n.publicKey))
+      nodes = nodes.filter(({ publicKey }) => !nodesToRemove.includes(publicKey))
     }
 
     if (nodes.length === 0) {
@@ -604,7 +615,8 @@ export class PocketRelayer {
       if (isCheckPromiseResolved(chainCheckResult)) {
         chainCheckedNodes = (chainCheckResult as PromiseFulfilledResult<Node[]>).value
       } else {
-        const error = 'ChainID check failure'
+        const error = 'ChainID check failure: '
+
         const method = 'checks'
 
         this.metricsRecorder
@@ -700,11 +712,11 @@ export class PocketRelayer {
 
     if (preferredNodeAddress && preferredNodeIndex >= 0) {
       node = nodes[preferredNodeIndex]
-      // If node have been marked as failure, remove stickiness. Value is retrieved as string
-      const isNodeFailing = (await this.cherryPicker.fetchRawFailureLog(blockchainID, node.publicKey)) === 'true'
 
-      // value is retrieved as string
-      if (isNodeFailing) {
+      // If node have exceeding errors, remove stickiness.
+      const errorCount = await nodeSticker.getErrorCount()
+
+      if (errorCount > 5) {
         await nodeSticker.remove()
       } else {
         cherryPick = false

@@ -3,6 +3,8 @@ import { Redis } from 'ioredis'
 import { getAddressFromPublicKey } from 'pocket-tools'
 import { StickinessOptions } from '../utils/types'
 
+export type StickyResult = 'SUCCESS' | 'FAILURE' | 'NONE'
+
 // Small utility class to contain several methods regarding node stickiness configuration.
 export class NodeSticker {
   stickiness: boolean
@@ -18,6 +20,8 @@ export class NodeSticker {
   data?: string | object
 
   clientStickyKey: string
+  clientErrorKey: string
+  clientLimitKey: string
 
   constructor(
     { stickiness, duration, keyPrefix, rpcID, relaysLimit, preferredNodeAddress }: StickinessOptions,
@@ -51,6 +55,9 @@ export class NodeSticker {
 
       this.clientStickyKey = `${nextRPCID}-${this.ipAddress}-${blockchainID}`
     }
+
+    this.clientErrorKey = `${this.clientStickyKey}-errors`
+    this.clientLimitKey = `${this.clientStickyKey}-limit`
   }
 
   static getNextRPCID(rpcID: number, rawData: string | object): number {
@@ -68,7 +75,7 @@ export class NodeSticker {
   static async stickyRelayResult(
     preferredNodeAddress: string | undefined,
     relayNodePublicKey: string
-  ): Promise<string> {
+  ): Promise<StickyResult> {
     if (!preferredNodeAddress) {
       return 'NONE'
     }
@@ -125,12 +132,22 @@ export class NodeSticker {
     if (!relaysDone) {
       this.redis.expire(limitKey, this.duration)
     } else if (relaysDone >= this.relaysLimit) {
-      this.redis.del(limitKey)
       await this.remove()
     }
   }
 
   async remove(): Promise<void> {
-    await this.redis.del(this.clientStickyKey)
+    await this.redis.del(this.clientStickyKey, this.clientErrorKey, this.clientLimitKey)
+  }
+
+  async increaseErrorCount(): Promise<number> {
+    const count = await this.redis.incr(this.clientErrorKey)
+
+    await this.redis.expire(this.clientErrorKey, this.duration)
+    return count
+  }
+
+  async getErrorCount(): Promise<number> {
+    return Number.parseInt((await this.redis.get(this.clientErrorKey)) || '0')
   }
 }
