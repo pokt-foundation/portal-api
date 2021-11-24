@@ -173,7 +173,7 @@ const LOAD_BALANCERS = [
       duration: 300,
       useRPCID: false,
       relaysLimit: 1e6,
-      whitelistOrigins: ['localhost'],
+      stickyOrigins: ['localhost'],
     },
   },
 ]

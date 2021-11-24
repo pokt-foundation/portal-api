@@ -32,7 +32,7 @@ export class StickinessOptions {
     itemType: 'string',
     required: false,
   })
-  whitelistOrigins?: string[]
+  stickyOrigins?: string[]
 }
 
 @model({ settings: { strict: false } })

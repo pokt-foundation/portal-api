@@ -17,7 +17,7 @@ export class NodeSticker {
   keyPrefix?: string
   rpcID?: number
   relaysLimit?: number
-  whitelistOrigins?: string[]
+  stickyOrigins?: string[]
 
   redis: Redis
   blockchainID: string
@@ -31,7 +31,7 @@ export class NodeSticker {
   clientLimitKey: string
 
   constructor(
-    { stickiness, duration, keyPrefix, rpcID, relaysLimit, preferredNodeAddress, whitelistOrigins }: StickinessOptions,
+    { stickiness, duration, keyPrefix, rpcID, relaysLimit, preferredNodeAddress, stickyOrigins }: StickinessOptions,
     blockchainID: string,
     ipAddress: string,
     redis: Redis,
@@ -45,7 +45,7 @@ export class NodeSticker {
     this.keyPrefix = keyPrefix
     this.rpcID = rpcID
     this.relaysLimit = relaysLimit
-    this.whitelistOrigins = whitelistOrigins
+    this.stickyOrigins = stickyOrigins
 
     this.blockchainID = blockchainID
     this.ipAddress = ipAddress
@@ -131,7 +131,7 @@ export class NodeSticker {
       return
     }
 
-    if (!checkWhitelist(this.whitelistOrigins, origin, 'substring')) {
+    if (!checkWhitelist(this.stickyOrigins, origin, 'substring')) {
       return
     }
 

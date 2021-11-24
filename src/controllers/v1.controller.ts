@@ -29,7 +29,7 @@ const DEFAULT_STICKINESS_PARAMS = {
   duration: 30, // seconds
   useRPCID: true,
   relaysLimit: 0,
-  whitelistOrigins: [],
+  stickyOrigins: [],
 }
 
 export class V1Controller {
@@ -190,7 +190,7 @@ export class V1Controller {
       // There's two ways to handle them: rpcID or prefix (full sticky), on rpcID the stickiness works
       // with increasing rpcID relays to maintain consistency and with prefix all relays from a load
       // balancer go to the same app/node regardless the data.
-      const { stickiness, duration, useRPCID, relaysLimit, whitelistOrigins } =
+      const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =
         loadBalancer?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
       const stickyKeyPrefix = stickiness && !useRPCID ? loadBalancer?.id : ''
 
@@ -225,7 +225,7 @@ export class V1Controller {
           keyPrefix: stickyKeyPrefix,
           rpcID,
           relaysLimit,
-          whitelistOrigins,
+          stickyOrigins,
         },
       }
 
@@ -290,7 +290,7 @@ export class V1Controller {
       const application = await this.fetchApplication(id, filter)
 
       if (application?.id) {
-        const { stickiness, duration, useRPCID, relaysLimit, whitelistOrigins } =
+        const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =
           application?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
         const stickyKeyPrefix = stickiness && !useRPCID ? application?.id : ''
 
@@ -311,7 +311,7 @@ export class V1Controller {
             keyPrefix: stickyKeyPrefix,
             rpcID,
             relaysLimit,
-            whitelistOrigins,
+            stickyOrigins,
           },
         }
 
