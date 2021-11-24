@@ -146,9 +146,6 @@ export class NodeSticker {
       serviceNode: this.preferredNodeAddress,
     })
 
-    await this.redis.del(this.clientStickyKey, this.clientErrorKey, this.clientLimitKey)
-  }
-
   async increaseErrorCount(): Promise<number> {
     const count = await this.redis.incr(this.clientErrorKey)
 
