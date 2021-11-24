@@ -301,23 +301,46 @@ export class CherryPicker {
     // The app/node with the highest success rate and the lowest average latency will
     // be 10 times more likely to be selected than a node that has had failures.
     let weightFactor = 10
+    let previousNodeLatency = 0
+    let latencyDifference = 0
+
+    // This multiplier is tested to produce a curve that adequately punishes slow nodes
+    const weightMultiplier = 15
 
     for (const sortedLog of sortedLogs) {
-      // Brand new sessions include all nodes in this group so we avoid putting failures here
-      if (sortedLog.successRate > 0.98 && !sortedLog.failure) {
-        // For untested apps/nodes and those > 98% success rates, weight their selection
-        for (let x = 1; x <= weightFactor; x++) {
-          rankedItems.push(sortedLog.id)
-        }
-        weightFactor = weightFactor - 2
-      } else if (sortedLog.successRate > 0.95 && !sortedLog.failure) {
-        // For all apps/nodes with reasonable success rate, weight their selection less
-        for (let x = 1; x <= weightFactor; x++) {
-          rankedItems.push(sortedLog.id)
-        }
-        weightFactor = weightFactor - 3
+      // Set the benchmark from the fastest node
+      if (!previousNodeLatency) {
+        previousNodeLatency = sortedLog.averageSuccessLatency
+      } else {
+        latencyDifference = sortedLog.averageSuccessLatency - previousNodeLatency
+      }
+
+      // The amount you subtract here from the weight factor should be variable based on how
+      // far off this node's average elapsedTime is from the fastest node.
+      // Previously this value was hardcoded 2 in the first bucket
+      if (latencyDifference) {
+        weightFactor = weightFactor - Math.round(latencyDifference * weightMultiplier)
+
         if (weightFactor <= 0) {
           weightFactor = 1
+        }
+      }
+
+      // Brand new sessions include all nodes in this group so we avoid putting failures here
+      if (sortedLog.successRate > 0.95 && !sortedLog.failure) {
+        // For untested apps/nodes and those > 95% success rates, weight their selection
+        for (let x = 1; x <= weightFactor; x++) {
+          rankedItems.push(sortedLog.id)
+        }
+      } else if (sortedLog.successRate > 0.9 && !sortedLog.failure) {
+        // For all apps/nodes with reasonable success rate, weight their selection less
+        weightFactor = weightFactor - 2
+        if (weightFactor <= 0) {
+          weightFactor = 1
+        }
+
+        for (let x = 1; x <= weightFactor; x++) {
+          rankedItems.push(sortedLog.id)
         }
       } else if (sortedLog.successRate > 0) {
         // For all apps/nodes with limited success rate, do not weight
