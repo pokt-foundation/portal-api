@@ -305,7 +305,7 @@ export class CherryPicker {
     let latencyDifference = 0
 
     // This multiplier is tested to produce a curve that adequately punishes slow nodes
-    const weightMultiplier = 14
+    const weightMultiplier = 15
 
     for (const sortedLog of sortedLogs) {
       // Set the benchmark from the fastest node
