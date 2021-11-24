@@ -705,7 +705,7 @@ export class PocketRelayer {
 
     let node: Node
 
-    if (nodeSticker.stickiness) {
+    if (nodeSticker.preferredNodeAddress) {
       node = await nodeSticker.getStickyNode(nodes, exhaustedNodes, requestID, blockchainID, application.id)
     }
 
