@@ -14,6 +14,7 @@ import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
+import { checkWhitelist } from '../utils/enforcements'
 import { parseRPCID } from '../utils/parsing'
 import { loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
@@ -195,7 +196,7 @@ export class V1Controller {
       const stickyKeyPrefix = stickiness && !useRPCID ? loadBalancer?.id : ''
 
       const { preferredApplicationID, preferredNodeAddress, rpcID } = stickiness
-        ? await this.checkClientStickiness(rawData, stickyKeyPrefix)
+        ? await this.checkClientStickiness(rawData, stickyKeyPrefix, stickyOrigins, this.origin)
         : DEFAULT_STICKINESS_APP_PARAMS
 
       const application = await this.fetchLoadBalancerApplication(
@@ -295,7 +296,7 @@ export class V1Controller {
         const stickyKeyPrefix = stickiness && !useRPCID ? application?.id : ''
 
         const { preferredNodeAddress, rpcID } = stickiness
-          ? await this.checkClientStickiness(rawData, stickyKeyPrefix)
+          ? await this.checkClientStickiness(rawData, stickyKeyPrefix, stickyOrigins, this.origin)
           : DEFAULT_STICKINESS_APP_PARAMS
 
         const sendRelayOptions: SendRelayOptions = {
@@ -337,11 +338,19 @@ export class V1Controller {
 
   async checkClientStickiness(
     rawData: object,
-    prefix: string
+    prefix: string,
+    stickyOrigins: string[],
+    origin: string
   ): Promise<{ preferredApplicationID: string; preferredNodeAddress: string; rpcID: number }> {
     // Parse the raw data to determine the lowest RPC ID in the call
     const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
     const rpcID = parseRPCID(parsedRawData)
+
+    // Users/bots could fetch several origins from the same ip which not all allow stickiness,
+    // this is needed to not trigger stickiness on those other origins if is already saved.
+    if (!checkWhitelist(stickyOrigins, origin, 'substring')) {
+      return { preferredApplicationID: '', preferredNodeAddress: '', rpcID }
+    }
 
     if (prefix || rpcID > 0) {
       const { blockchainID } = await loadBlockchain(
