@@ -501,17 +501,17 @@ export class PocketRelayer {
     const aatParams: [string, string, string, string] =
       this.aatPlan === AatPlans.FREEMIUM
         ? [
-          application.gatewayAAT.version,
-          application.freeTierAAT.clientPublicKey,
-          application.freeTierAAT.applicationPublicKey,
-          application.freeTierAAT.applicationSignature,
-        ]
+            application.gatewayAAT.version,
+            application.freeTierAAT.clientPublicKey,
+            application.freeTierAAT.applicationPublicKey,
+            application.freeTierAAT.applicationSignature,
+          ]
         : [
-          application.gatewayAAT.version,
-          application.gatewayAAT.clientPublicKey,
-          application.gatewayAAT.applicationPublicKey,
-          application.gatewayAAT.applicationSignature,
-        ]
+            application.gatewayAAT.version,
+            application.gatewayAAT.clientPublicKey,
+            application.gatewayAAT.applicationPublicKey,
+            application.gatewayAAT.applicationSignature,
+          ]
 
     // Checks pass; create AAT
     const pocketAAT = new PocketAAT(...aatParams)
@@ -547,10 +547,10 @@ export class PocketRelayer {
     this.pocketSession = pocketSession
     const sessionCacheKey = `session-${sessionKey}`
 
-    const nodesToRemove = await this.redis.smembers(sessionCacheKey)
+    const exhaustedNodes = await this.redis.smembers(sessionCacheKey)
 
-    if (nodesToRemove.length > 0) {
-      nodes = nodes.filter(({ publicKey }) => !nodesToRemove.includes(publicKey))
+    if (exhaustedNodes.length > 0) {
+      nodes = nodes.filter(({ publicKey }) => !exhaustedNodes.includes(publicKey))
     }
 
     if (nodes.length === 0) {
@@ -704,26 +704,12 @@ export class PocketRelayer {
     }
 
     let node: Node
-    let cherryPick = true
 
-    const { preferredNodeAddress } = nodeSticker
-    // Before cherry picking, check to see if preferred node is in the set of good nodes
-    const preferredNodeIndex = nodes.findIndex((x) => x.address === preferredNodeAddress)
-
-    if (preferredNodeAddress && preferredNodeIndex >= 0) {
-      node = nodes[preferredNodeIndex]
-
-      // If node have exceeding errors, remove stickiness.
-      const errorCount = await nodeSticker.getErrorCount()
-
-      if (errorCount > 5) {
-        await nodeSticker.remove(requestID, blockchainID, application.id)
-      } else {
-        cherryPick = false
-      }
+    if (nodeSticker.stickiness) {
+      node = await nodeSticker.getStickyNode(nodes, exhaustedNodes, requestID, blockchainID, application.id)
     }
 
-    if (cherryPick) {
+    if (!node) {
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
     }
 

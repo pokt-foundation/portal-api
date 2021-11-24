@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import { Redis } from 'ioredis'
 import { getAddressFromPublicKey } from 'pocket-tools'
+import { Node } from '@pokt-network/pocket-js'
 import { StickinessOptions } from '../utils/types'
 
 export type StickyResult = 'SUCCESS' | 'FAILURE' | 'NONE'
@@ -83,6 +84,38 @@ export class NodeSticker {
     }
 
     return preferredNodeAddress === (await getAddressFromPublicKey(relayNodePublicKey)) ? 'SUCCESS' : 'FAILURE'
+  }
+
+  async getStickyNode(
+    nodes: Node[],
+    exhaustedNodes: string[],
+    requestID?: string,
+    blockchainID?: string,
+    applicationID?: string
+  ): Promise<Node | undefined> {
+    const preferredNodeIndex = nodes.findIndex(({ address }) => address === this.preferredNodeAddress)
+
+    if (preferredNodeIndex < 0) {
+      return undefined
+    }
+
+    // Remove stickiness if node is exhausted
+    if (
+      exhaustedNodes.some(async (publicKey) => (await getAddressFromPublicKey(publicKey)) === this.preferredNodeAddress)
+    ) {
+      await this.remove(requestID, blockchainID, applicationID)
+      return undefined
+    }
+
+    // If node have exceeding errors, remove stickiness.
+    const errorCount = await this.getErrorCount()
+
+    if (errorCount > 5) {
+      await this.remove(requestID, blockchainID, applicationID)
+      return undefined
+    }
+
+    return nodes[preferredNodeIndex]
   }
 
   async setStickinessKey(
