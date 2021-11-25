@@ -177,7 +177,8 @@ export class NodeSticker {
   }
 
   async remove(reason?: string): Promise<void> {
-    logger.log('info', `sticky node forcefully removed${reason ? `: ${reason}` : ''}`, {
+    logger.log('info', 'sticky node forcefully removed', {
+      reason,
       requestID: this.requestID,
       typeID: this.typeID,
       blockchainID: this.blockchainID,
