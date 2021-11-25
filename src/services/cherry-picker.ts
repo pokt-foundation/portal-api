@@ -327,12 +327,12 @@ export class CherryPicker {
       }
 
       // Brand new sessions include all nodes in this group so we avoid putting failures here
-      if (sortedLog.successRate > 0.95 && !sortedLog.failure) {
+      if (sortedLog.successRate > 0.85 && !sortedLog.failure) {
         // For untested apps/nodes and those > 95% success rates, weight their selection
         for (let x = 1; x <= weightFactor; x++) {
           rankedItems.push(sortedLog.id)
         }
-      } else if (sortedLog.successRate > 0.9 && !sortedLog.failure) {
+      } else if (sortedLog.successRate > 0.5 && !sortedLog.failure) {
         // For all apps/nodes with reasonable success rate, weight their selection less
         weightFactor = weightFactor - 2
         if (weightFactor <= 0) {
