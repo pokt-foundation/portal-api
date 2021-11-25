@@ -131,22 +131,22 @@ export class CherryPicker {
     const selectedNode = Math.floor(Math.random() * rankedItems.length)
     const node = rawNodes[rankedItems[selectedNode]]
 
-    if (this.checkDebug) {
-      logger.log('debug', 'Number of weighted nodes for selection: ' + rankedItems.length, {
-        requestID: requestID,
-        relayType: 'APP',
-        typeID: application.id,
-        serviceNode: '',
-        blockchainID: blockchain,
-      })
-      logger.log('debug', 'Selected ' + selectedNode + ' : ' + node.publicKey, {
-        requestID: requestID,
-        relayType: 'APP',
-        typeID: application.id,
-        serviceNode: '',
-        blockchainID: blockchain,
-      })
-    }
+    // if (this.checkDebug) {
+    logger.log('debug', 'Number of weighted nodes for selection: ' + rankedItems.length, {
+      requestID: requestID,
+      relayType: 'APP',
+      typeID: application.id,
+      serviceNode: '',
+      blockchainID: blockchain,
+    })
+    logger.log('debug', 'Selected ' + selectedNode + ' : ' + node.publicKey, {
+      requestID: requestID,
+      relayType: 'APP',
+      typeID: application.id,
+      serviceNode: '',
+      blockchainID: blockchain,
+    })
+    // }
     return node
   }
 
@@ -451,14 +451,14 @@ export class CherryPicker {
       return 0
     })
 
-    if (this.checkDebug) {
-      logger.log('debug', 'Sorted logs: ' + JSON.stringify(sortedLogs), {
-        requestID: requestID,
-        relayType: relayType,
-        typeID: typeID,
-        serviceNode: '',
-      })
-    }
+    // if (this.checkDebug) {
+    logger.log('debug', 'Sorted logs: ' + JSON.stringify(sortedLogs), {
+      requestID: requestID,
+      relayType: relayType,
+      typeID: typeID,
+      serviceNode: '',
+    })
+    // }
     return sortedLogs
   }
 }
