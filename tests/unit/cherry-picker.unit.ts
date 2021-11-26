@@ -327,13 +327,13 @@ describe('Cherry picker service (unit)', () => {
     expect(cherryPicker).to.be.ok()
   })
 
-  it('sort logs based on success rate and average latency', () => {
+  it('sort logs based on average latency', () => {
     const unsortedLogs = [
       {
         id: '0',
         attempts: 5,
         successRate: 0.8,
-        averageSuccessLatency: 2,
+        averageSuccessLatency: 2.5,
         failure: true,
       },
       {
@@ -347,14 +347,14 @@ describe('Cherry picker service (unit)', () => {
         id: '2',
         attempts: 5,
         successRate: 0.9,
-        averageSuccessLatency: 3,
+        averageSuccessLatency: 2,
         failure: false,
       },
       {
         id: '6',
         attempts: 1,
         successRate: 0.9,
-        averageSuccessLatency: 1,
+        averageSuccessLatency: 1.5,
         failure: false,
       },
       {
@@ -378,21 +378,21 @@ describe('Cherry picker service (unit)', () => {
         id: '6',
         attempts: 1,
         successRate: 0.9,
-        averageSuccessLatency: 1,
+        averageSuccessLatency: 1.5,
         failure: false,
       },
       {
         id: '2',
         attempts: 5,
         successRate: 0.9,
-        averageSuccessLatency: 3,
+        averageSuccessLatency: 2,
         failure: false,
       },
       {
         id: '0',
         attempts: 5,
         successRate: 0.8,
-        averageSuccessLatency: 2,
+        averageSuccessLatency: 2.5,
         failure: true,
       },
       {
