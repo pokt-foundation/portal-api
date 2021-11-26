@@ -52,7 +52,7 @@ export class CherryPicker {
     sortedLogs = this.sortLogs(sortedLogs, requestID, 'LB', loadBalancerID)
 
     // Iterate through sorted logs and form in to a weighted list
-    // 15 failures per 15 minutes allowed on apps (all 5 nodes failed 3 times)
+    // 50 failures per 5 minutes allowed on apps (all 5 nodes failed 3 times)
     let rankedItems = await this.rankItems(blockchain, sortedLogs, 50)
 
     // If we have no applications left because all are failures, ¯\_(ツ)_/¯
