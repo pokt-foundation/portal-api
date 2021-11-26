@@ -9,6 +9,7 @@ import { Session } from '@pokt-network/pocket-js'
 import { Point, WriteApi } from '@influxdata/influxdb-client'
 
 import { getNodeNetworkData } from '../utils/cache'
+import { BLOCK_TIMING_ERROR } from '../utils/constants'
 import { hashBlockchainNodes } from '../utils/helpers'
 import { CherryPicker } from './cherry-picker'
 const os = require('os')
@@ -256,10 +257,10 @@ export class MetricsRecorder {
 
       if (result !== 200) {
         // TODO: FIND Better way to check for valid service nodes (public key)
-        if (serviceNode && serviceNode.length === 64) {
+        if (serviceNode && serviceNode.length === 64 && error !== BLOCK_TIMING_ERROR) {
           // Increment error log
           await this.redis.incr(blockchainID + '-' + serviceNode + '-errors')
-          await this.redis.expire(blockchainID + '-' + serviceNode + '-errors', 3600)
+          await this.redis.expire(blockchainID + '-' + serviceNode + '-errors', 60)
         }
         await this.processBulkErrors([errorValues], redisTimestamp, redisErrorKey, logger)
       }
