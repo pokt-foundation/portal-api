@@ -174,8 +174,8 @@ export class CherryPicker {
     timeout?: number,
     pocketSession?: Session
   ): Promise<void> {
-    await this._updateServiceQuality(blockchainID, applicationID, elapsedTime, result, 900, timeout, pocketSession)
-    await this._updateServiceQuality(blockchainID, serviceNode, elapsedTime, result, 7200, timeout, pocketSession)
+    await this._updateServiceQuality(blockchainID, applicationID, elapsedTime, result, 300, timeout, pocketSession)
+    await this._updateServiceQuality(blockchainID, serviceNode, elapsedTime, result, 300, timeout, pocketSession)
   }
 
   async _updateServiceQuality(
