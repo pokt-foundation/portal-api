@@ -307,7 +307,7 @@ export class CherryPicker {
     const weightMultiplier = 15
 
     for (const sortedLog of sortedLogs) {
-      // Set the benchmark from the fastest node
+      // Set the benchmark from the previous node and measure the delta
       if (!previousNodeLatency) {
         previousNodeLatency = sortedLog.averageSuccessLatency
       } else {
@@ -326,7 +326,7 @@ export class CherryPicker {
       }
 
       // Brand new sessions include all nodes in this group so we avoid putting failures here
-      if (sortedLog.successRate > 0.85 && !sortedLog.failure) {
+      if (sortedLog.successRate > 0.95 && !sortedLog.failure) {
         // For untested apps/nodes and those > 95% success rates, weight their selection
         for (let x = 1; x <= weightFactor; x++) {
           rankedItems.push(sortedLog.id)
@@ -435,17 +435,10 @@ export class CherryPicker {
 
   sortLogs(array: ServiceLog[], requestID: string, relayType: string, typeID: string): ServiceLog[] {
     const sortedLogs = array.sort((a: ServiceLog, b: ServiceLog) => {
-      if (a.successRate < b.successRate) {
+      if (a.averageSuccessLatency > b.averageSuccessLatency) {
         return 1
-      } else if (a.successRate > b.successRate) {
+      } else if (a.averageSuccessLatency < b.averageSuccessLatency) {
         return -1
-      }
-      if (a.successRate === b.successRate) {
-        if (a.averageSuccessLatency > b.averageSuccessLatency) {
-          return 1
-        } else if (a.averageSuccessLatency < b.averageSuccessLatency) {
-          return -1
-        }
       }
       return 0
     })
