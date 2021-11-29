@@ -136,23 +136,45 @@ const LOAD_BALANCERS = [
   {
     id: 'gt4a1s9rfrebaf8g31bsdc05',
     user: 'test@test.com',
-    name: 'test load balancer',
+    name: 'test load balancer sticky rpc',
     requestTimeout: 5000,
     applicationIDs: APPLICATIONS.map((app) => app.id),
     logLimitBlocks: 25000,
-    stickiness: true,
-    stickinessDuration: 300,
+    stickinessOptions: {
+      stickiness: true,
+      duration: 300,
+      useRPCID: true,
+      relaysLimit: 1e6,
+    },
   },
   {
     id: 'df9gjsjg43db9fsajfjg93fk',
     user: 'test@test.com',
-    name: 'test load balancer',
+    name: 'test load balancer sticky prefix',
     requestTimeout: 5000,
     applicationIDs: APPLICATIONS.map((app) => app.id),
     logLimitBlocks: 25000,
-    stickiness: true,
-    stickinessDuration: 300,
-    useRPCID: false,
+    stickinessOptions: {
+      stickiness: true,
+      duration: 300,
+      useRPCID: false,
+      relaysLimit: 1e6,
+    },
+  },
+  {
+    id: 'd8ejd7834ht9d9sj345gfsoaao',
+    user: 'test@test.com',
+    name: 'test load balancer sticky prefix with whitelist',
+    requestTimeout: 5000,
+    applicationIDs: APPLICATIONS.map((app) => app.id),
+    logLimitBlocks: 25000,
+    stickinessOptions: {
+      stickiness: true,
+      duration: 300,
+      useRPCID: false,
+      relaysLimit: 1e6,
+      stickyOrigins: ['localhost'],
+    },
   },
 ]
 
@@ -659,6 +681,113 @@ describe('V1 controller (acceptance)', () => {
     )
 
     // First request does  not count as sticky
+    expect(successStickyResponses).to.be.equal(4)
+  })
+
+  it('Fails sticky requests due to not being on whitelist', async () => {
+    const logSpy = sinon.spy(logger, 'log')
+
+    const relayRequest = '{"method":"eth_chainId","id":0,"jsonrpc":"2.0"}'
+    const mockPocket = new PocketMock()
+
+    // Reset default values
+    mockPocket.relayResponse = {}
+
+    // Sync/Chain check
+    mockPocket.relayResponse['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+    mockPocket.relayResponse['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+
+    mockPocket.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
+
+    const pocketClass = mockPocket.class()
+
+    ;({ app, client } = await setupApplication(pocketClass))
+
+    for (let i = 1; i <= 5; i++) {
+      const response = await client
+        .post('/v1/lb/d8ejd7834ht9d9sj345gfsoaao')
+        .send({ method: 'eth_chainId', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    }
+
+    // Counts the number of times the sticky relay succeeded
+    let successStickyResponses = 0
+
+    logSpy.getCalls().forEach(
+      (call) =>
+        (successStickyResponses = call.calledWith(
+          'info',
+          sinon.match.any,
+          sinon.match((log: object) => {
+            return log['sticky'] === 'SUCCESS'
+          })
+        )
+          ? ++successStickyResponses
+          : successStickyResponses)
+    )
+
+    expect(successStickyResponses).to.be.equal(0)
+  })
+
+  it('Pass sticky requests due to being on whitelist', async () => {
+    const logSpy = sinon.spy(logger, 'log')
+
+    const relayRequest = '{"method":"eth_chainId","id":0,"jsonrpc":"2.0"}'
+    const mockPocket = new PocketMock()
+
+    // Reset default values
+    mockPocket.relayResponse = {}
+
+    // Sync/Chain check
+    mockPocket.relayResponse['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+    mockPocket.relayResponse['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+
+    mockPocket.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
+
+    const pocketClass = mockPocket.class()
+
+    ;({ app, client } = await setupApplication(pocketClass))
+
+    for (let i = 1; i <= 5; i++) {
+      const response = await client
+        .post('/v1/lb/d8ejd7834ht9d9sj345gfsoaao')
+        .send({ method: 'eth_chainId', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    }
+
+    // Counts the number of times the sticky relay succeeded
+    let successStickyResponses = 0
+
+    logSpy.getCalls().forEach(
+      (call) =>
+        (successStickyResponses = call.calledWith(
+          'info',
+          sinon.match.any,
+          sinon.match((log: object) => {
+            return log['sticky'] === 'SUCCESS'
+          })
+        )
+          ? ++successStickyResponses
+          : successStickyResponses)
+    )
+
     expect(successStickyResponses).to.be.equal(4)
   })
 })

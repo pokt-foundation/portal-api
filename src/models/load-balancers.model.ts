@@ -1,5 +1,40 @@
 import { Entity, model, property } from '@loopback/repository'
 
+@model()
+export class StickinessOptions {
+  @property({
+    type: 'boolean',
+    required: true,
+  })
+  stickiness: boolean
+
+  @property({
+    type: 'number',
+    required: true,
+  })
+  duration: number
+
+  @property({
+    type: 'boolean',
+    required: false,
+    default: true,
+  })
+  useRPCID?: boolean
+
+  @property({
+    type: 'number',
+    required: false,
+  })
+  relaysLimit?: number
+
+  @property({
+    type: 'array',
+    itemType: 'string',
+    required: false,
+  })
+  stickyOrigins?: string[]
+}
+
 @model({ settings: { strict: false } })
 export class LoadBalancers extends Entity {
   @property({
@@ -49,7 +84,14 @@ export class LoadBalancers extends Entity {
     required: false,
     default: true,
   })
-  useRPCID?: boolean;
+  useRPCID?: boolean
+
+  @property({
+    type: 'object',
+    required: false,
+    defautl: {},
+  })
+  stickinessOptions?: StickinessOptions;
 
   // Define well-known properties here
 

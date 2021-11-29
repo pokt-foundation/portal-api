@@ -327,13 +327,13 @@ describe('Cherry picker service (unit)', () => {
     expect(cherryPicker).to.be.ok()
   })
 
-  it('sort logs based on success rate and average latency', () => {
+  it('sort logs based on average latency', () => {
     const unsortedLogs = [
       {
         id: '0',
         attempts: 5,
         successRate: 0.8,
-        averageSuccessLatency: 2,
+        averageSuccessLatency: 2.5,
         failure: true,
       },
       {
@@ -347,14 +347,14 @@ describe('Cherry picker service (unit)', () => {
         id: '2',
         attempts: 5,
         successRate: 0.9,
-        averageSuccessLatency: 3,
+        averageSuccessLatency: 2,
         failure: false,
       },
       {
         id: '6',
         attempts: 1,
         successRate: 0.9,
-        averageSuccessLatency: 1,
+        averageSuccessLatency: 1.5,
         failure: false,
       },
       {
@@ -378,21 +378,21 @@ describe('Cherry picker service (unit)', () => {
         id: '6',
         attempts: 1,
         successRate: 0.9,
-        averageSuccessLatency: 1,
+        averageSuccessLatency: 1.5,
         failure: false,
       },
       {
         id: '2',
         attempts: 5,
         successRate: 0.9,
-        averageSuccessLatency: 3,
+        averageSuccessLatency: 2,
         failure: false,
       },
       {
         id: '0',
         attempts: 5,
         successRate: 0.8,
-        averageSuccessLatency: 2,
+        averageSuccessLatency: 2.5,
         failure: true,
       },
       {
@@ -478,91 +478,5 @@ describe('Cherry picker service (unit)', () => {
     const isFailureNodeCached = await redis.get(blockchain + '-' + failureItem.id + '-failure')
 
     expect(isFailureNodeCached).to.be.equal('true')
-  })
-
-  describe('cherryPickApplication function', () => {
-    it('picks an application', async () => {
-      const appsIDs = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
-      const lbID = 'df89cxDaLoLROFLMAO'
-      const blockchain = '0027'
-
-      // Simulate several apps cached
-      await redis.set(
-        blockchain + '-' + appsIDs[0] + '-service',
-        JSON.stringify({
-          results: { '200': 1, '500': 2 },
-          averageSuccessLatency: '1.79778',
-        }),
-        'EX',
-        120
-      )
-      await redis.set(
-        blockchain + '-' + appsIDs[1] + '-service',
-        JSON.stringify({
-          results: { '200': 2, '500': 1 },
-          averageSuccessLatency: '0.57491',
-        }),
-        'EX',
-        120
-      )
-      await redis.set(
-        blockchain + '-' + appsIDs[2] + '-service',
-        JSON.stringify({
-          results: { '200': 1 },
-          averageSuccessLatency: '1.57491',
-        }),
-        'EX',
-        120
-      )
-      await redis.set(
-        blockchain + '-' + appsIDs[3] + '-service',
-        JSON.stringify({
-          results: { '500': 20 },
-          averageSuccessLatency: '1.57491',
-        }),
-        'EX',
-        120
-      )
-
-      const pickedApp = await cherryPicker.cherryPickApplication(lbID, appsIDs, blockchain, 'asfC9d')
-
-      expect(pickedApp).to.be.ok()
-      expect(pickedApp).to.be.String()
-
-      // App should continue flagged as failure
-      const failureNode = await redis.get(blockchain + '-' + appsIDs[3] + '-failure')
-
-      expect(failureNode).to.be.equal('true')
-    })
-
-    it('picks an application when all of them are failures', async () => {
-      const appsIDs = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
-      const lbID = 'df89cxDaLoLROFLMAO'
-      const blockchain = '0027'
-
-      for (const app of appsIDs) {
-        await redis.set(
-          blockchain + '-' + app + '-service',
-          JSON.stringify({
-            results: { '500': 20 },
-            averageSuccessLatency: '1',
-          }),
-          'EX',
-          120
-        )
-        await redis.set(blockchain + '-' + app + '-failure', 'true', 'EX', 120)
-      }
-      const pickedApp = await cherryPicker.cherryPickApplication(lbID, appsIDs, blockchain, 'asfC9d')
-
-      expect(pickedApp).to.be.ok()
-      expect(pickedApp).to.be.String()
-
-      // All apps should continue being failures
-      for (const app of appsIDs) {
-        const failureApp = await redis.get(blockchain + '-' + app + '-failure')
-
-        expect(failureApp).to.be.equal('true')
-      }
-    })
   })
 })

@@ -14,16 +14,23 @@ import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { PocketRelayer } from '../services/pocket-relayer'
 import { PocketSyncChecker } from '../services/sync-checker-new'
+import { checkWhitelist } from '../utils/enforcements'
 import { parseRPCID } from '../utils/parsing'
 import { loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
 const logger = require('../services/logger')
 
-const DEFAULT_STICKINESS_DURATION = 30 // Seconds
-const DEFAULT_STICKINESS_PARAMS = {
+const DEFAULT_STICKINESS_APP_PARAMS = {
   preferredApplicationID: '',
   preferredNodeAddress: '',
   rpcID: 0,
+}
+const DEFAULT_STICKINESS_PARAMS = {
+  stickiness: false,
+  duration: 30, // seconds
+  useRPCID: true,
+  relaysLimit: 0,
+  stickyOrigins: [],
 }
 
 export class V1Controller {
@@ -191,12 +198,13 @@ export class V1Controller {
       // There's two ways to handle them: rpcID or prefix (full sticky), on rpcID the stickiness works
       // with increasing rpcID relays to maintain consistency and with prefix all relays from a load
       // balancer go to the same app/node regardless the data.
-      const { stickiness = false, stickinessDuration = DEFAULT_STICKINESS_DURATION, useRPCID = true } = loadBalancer
+      const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =
+        loadBalancer?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
       const stickyKeyPrefix = stickiness && !useRPCID ? loadBalancer?.id : ''
 
       const { preferredApplicationID, preferredNodeAddress, rpcID } = stickiness
-        ? await this.checkClientStickiness(rawData, stickyKeyPrefix)
-        : DEFAULT_STICKINESS_PARAMS
+        ? await this.checkClientStickiness(rawData, stickyKeyPrefix, stickyOrigins, this.origin)
+        : DEFAULT_STICKINESS_APP_PARAMS
 
       const application = await this.fetchLoadBalancerApplication(
         loadBalancer.id,
@@ -221,9 +229,11 @@ export class V1Controller {
         stickinessOptions: {
           stickiness,
           preferredNodeAddress,
-          duration: stickinessDuration,
+          duration,
           keyPrefix: stickyKeyPrefix,
           rpcID,
+          relaysLimit,
+          stickyOrigins,
         },
       }
 
@@ -288,12 +298,13 @@ export class V1Controller {
       const application = await this.fetchApplication(id, filter)
 
       if (application?.id) {
-        const { stickiness = false, stickinessDuration = DEFAULT_STICKINESS_DURATION } = application
-        const stickyKeyPrefix = stickiness ? application?.id : ''
+        const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =
+          application?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
+        const stickyKeyPrefix = stickiness && !useRPCID ? application?.id : ''
 
         const { preferredNodeAddress, rpcID } = stickiness
-          ? await this.checkClientStickiness(rawData, stickyKeyPrefix)
-          : DEFAULT_STICKINESS_PARAMS
+          ? await this.checkClientStickiness(rawData, stickyKeyPrefix, stickyOrigins, this.origin)
+          : DEFAULT_STICKINESS_APP_PARAMS
 
         const sendRelayOptions: SendRelayOptions = {
           rawData,
@@ -304,9 +315,11 @@ export class V1Controller {
           stickinessOptions: {
             stickiness,
             preferredNodeAddress,
-            duration: stickinessDuration,
+            duration,
             keyPrefix: stickyKeyPrefix,
             rpcID,
+            relaysLimit,
+            stickyOrigins,
           },
         }
 
@@ -332,11 +345,19 @@ export class V1Controller {
 
   async checkClientStickiness(
     rawData: object,
-    prefix: string
+    prefix: string,
+    stickyOrigins: string[],
+    origin: string
   ): Promise<{ preferredApplicationID: string; preferredNodeAddress: string; rpcID: number }> {
     // Parse the raw data to determine the lowest RPC ID in the call
     const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
     const rpcID = parseRPCID(parsedRawData)
+
+    // Users/bots could fetch several origins from the same ip which not all allow stickiness,
+    // this is needed to not trigger stickiness on those other origins if is already saved.
+    if (!checkWhitelist(stickyOrigins, origin, 'substring')) {
+      return { preferredApplicationID: '', preferredNodeAddress: '', rpcID }
+    }
 
     if (prefix || rpcID > 0) {
       const { blockchainID } = await loadBlockchain(

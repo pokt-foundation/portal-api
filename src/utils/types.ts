@@ -29,6 +29,8 @@ export type StickinessOptions = {
   stickiness: boolean
   preferredNodeAddress: string
   duration: number
+  relaysLimit?: number
   keyPrefix?: string
   rpcID?: number
+  stickyOrigins?: string[]
 }
