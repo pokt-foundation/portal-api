@@ -33,7 +33,7 @@
 		"workingDirectory": null,
 		"dockerSecurityOptions": null,
 		"memory": null,
-		"memoryReservation": 8192,
+		"memoryReservation": 1938,
 		"volumesFrom": [],
 		"stopTimeout": null,
 		"image": "059424750518.dkr.ecr.ap-northeast-2.amazonaws.com/gateway-terraform:latest",
@@ -57,14 +57,14 @@
 	  }
 	],
 	"placementConstraints": [],
-	"memory": "8192",
+	"memory": "1938",
 	"taskRoleArn": null,
 	"family": "gateway",
 	"pidMode": null,
 	"requiresCompatibilities": [
-	  "FARGATE"
+	  "EC2"
 	],
-	"networkMode": "awsvpc",
+	"networkMode": "bridge",
 	"cpu": "1024",
 	"inferenceAccelerators": null,
 	"proxyConfiguration": null,
