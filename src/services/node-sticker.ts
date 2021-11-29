@@ -9,6 +9,8 @@ export type StickyResult = 'SUCCESS' | 'FAILURE' | 'NONE'
 
 const logger = require('./logger')
 
+const ERROR_COUNT_LIMIT = 5
+
 // Small utility class to contain several methods regarding node stickiness configuration.
 export class NodeSticker {
   stickiness: boolean
@@ -113,7 +115,7 @@ export class NodeSticker {
     // If node have exceeding errors, remove stickiness.
     const errorCount = await this.getErrorCount()
 
-    if (errorCount > 5) {
+    if (errorCount > ERROR_COUNT_LIMIT) {
       await this.remove('error limit exceeded')
       return undefined
     }
@@ -150,7 +152,7 @@ export class NodeSticker {
         const nextRPCID = NodeSticker.getNextRPCID(this.rpcID, this.data)
 
         // Some rpcID requests skips one number when sending them consecutively
-        const nextClientStickyKey = `${this.ipAddress}-${this.blockchainID}-${nextRPCID + 1}`
+        const nextClientStickyKey = `${nextRPCID + 1}-${this.ipAddress}-${this.blockchainID}`
 
         await this.redis.set(nextClientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', this.duration)
       }
@@ -177,7 +179,7 @@ export class NodeSticker {
   }
 
   async remove(reason?: string): Promise<void> {
-    logger.log('info', 'sticky node forcefully removed', {
+    logger.log('warn', 'sticky node forcefully removed', {
       reason,
       requestID: this.requestID,
       typeID: this.typeID,
