@@ -66,3 +66,19 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+        
+      - name: Fill in the new image ID / ap-northeast-2
+        id: task-def-ap-northeast-2
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: pocket-gateway/tasks/production/ecs-task-ap-northeast-2.json
+          container-name: gateway
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy / ap-northeast-2
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def-ap-northeast-2.outputs.task-definition }}
+          service: gateway-terraform
+          cluster: gateway-terraform
+          wait-for-service-stability: true
