@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
+import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
 import { JSONObject } from '@loopback/context'
 import { HttpErrors } from '@loopback/rest'
 import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
@@ -131,7 +132,7 @@ export class PocketRelayer {
     relayRetries,
     stickinessOptions,
     logLimitBlocks,
-  }: SendRelayOptions): Promise<string | Error> {
+  }: SendRelayOptions): Promise<string | ErrorObject> {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries
     }
@@ -178,7 +179,7 @@ export class PocketRelayer {
     const limitation = await this.enforceLimits(parsedRawData, blockchainID, logLimitBlocks)
     const data = JSON.stringify(parsedRawData)
 
-    if (limitation instanceof Error) {
+    if (limitation instanceof ErrorObject) {
       logger.log('error', `LIMITATION ERROR ${blockchainID} req: ${data}`, {
         blockchainID,
         requestID: requestID,
@@ -210,7 +211,12 @@ export class PocketRelayer {
               typeID: application.id,
               serviceNode: '',
             })
-            return new HttpErrors.GatewayTimeout('Overall Timeout exceeded: ' + overallTimeOut)
+            const errorResponse = jsonrpc.error(
+              1,
+              new jsonrpc.JsonRpcError(`Overall Timeout exceeded: ${overallTimeOut}`, -32000)
+            ) as ErrorObject
+
+            return errorResponse
           }
 
           // Send this relay attempt
@@ -453,7 +459,9 @@ export class PocketRelayer {
         })
       }
     }
-    return new HttpErrors.GatewayTimeout('Relay attempts exhausted')
+    const errorResponse = jsonrpc.error(1, new jsonrpc.JsonRpcError('Relay attempts exhausted', -32000)) as ErrorObject
+
+    return errorResponse
   }
 
   // Private function to allow relay retries
@@ -806,8 +814,8 @@ export class PocketRelayer {
     parsedRawData: Record<string, any>,
     blockchainID: string,
     logLimitBlocks: number
-  ): Promise<void | Error> {
-    let limiterResponse: Promise<void | Error>
+  ): Promise<void | ErrorObject> {
+    let limiterResponse: Promise<void | ErrorObject>
 
     if (blockchainID === '0021') {
       limiterResponse = enforceEVMLimits(parsedRawData, blockchainID, logLimitBlocks, this.altruists)

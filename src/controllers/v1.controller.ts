@@ -1,5 +1,6 @@
 import AWS from 'aws-sdk'
 import { Redis } from 'ioredis'
+import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
 import { FilterExcludingWhere, repository } from '@loopback/repository'
@@ -127,7 +128,7 @@ export class V1Controller {
       },
     })
     rawData: object
-  ): Promise<string | Error> {
+  ): Promise<string | ErrorObject> {
     for (const redirect of JSON.parse(this.redirects)) {
       if (this.pocketRelayer.host.toLowerCase().includes(redirect.domain, 0)) {
         // Modify the host using the stored blockchain name from .env
@@ -136,7 +137,9 @@ export class V1Controller {
         return this.loadBalancerRelay(redirect.loadBalancerID, rawData)
       }
     }
-    return new HttpErrors.InternalServerError('Invalid domain')
+    const errorResponse = jsonrpc.error(1, new jsonrpc.JsonRpcError('Invalid domain', -32000)) as ErrorObject
+
+    return errorResponse
   }
 
   /**
@@ -171,7 +174,7 @@ export class V1Controller {
     rawData: object,
     @param.filter(Applications, { exclude: 'where' })
     filter?: FilterExcludingWhere<Applications>
-  ): Promise<string | Error> {
+  ): Promise<string | ErrorObject> {
     // Take the relay path from the end of the endpoint URL
     if (id.match(/[0-9a-zA-Z]{24}~/g)) {
       this.relayPath = id.slice(24).replace(/~/gi, '/')
@@ -244,7 +247,9 @@ export class V1Controller {
         origin: this.origin,
       })
 
-      return new HttpErrors.InternalServerError(e.message)
+      const errorResponse = jsonrpc.error(1, new jsonrpc.JsonRpcError(e.message, -32000)) as ErrorObject
+
+      return errorResponse
     }
   }
 
@@ -280,7 +285,7 @@ export class V1Controller {
     rawData: object,
     @param.filter(Applications, { exclude: 'where' })
     filter?: FilterExcludingWhere<Applications>
-  ): Promise<string | Error> {
+  ): Promise<string | ErrorObject> {
     // Take the relay path from the end of the endpoint URL
     if (id.match(/[0-9a-zA-Z]{24}~/g)) {
       this.relayPath = id.slice(24).replace(/~/gi, '/')
@@ -325,7 +330,9 @@ export class V1Controller {
         typeID: id,
         serviceNode: '',
       })
-      return new HttpErrors.InternalServerError(e.message)
+      const errorResponse = jsonrpc.error(1, new jsonrpc.JsonRpcError(e.message, -32000)) as ErrorObject
+
+      return errorResponse
     }
     logger.log('error', 'Application not found', {
       requestID: this.requestID,
@@ -333,7 +340,9 @@ export class V1Controller {
       typeID: id,
       serviceNode: '',
     })
-    return new HttpErrors.InternalServerError('Application not found')
+    const errorResponse = jsonrpc.error(1, new jsonrpc.JsonRpcError('Application not found', -32000)) as ErrorObject
+
+    return errorResponse
   }
 
   async checkClientStickiness(
