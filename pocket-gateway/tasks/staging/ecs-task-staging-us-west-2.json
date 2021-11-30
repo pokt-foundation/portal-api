@@ -60,7 +60,11 @@
       "cpu": "1024",
       "resourceRequirements": null,
       "essential": true,
-      "portMappings": [],
+      "portMappings": [{
+        "hostPort": 8125,
+        "protocol": "tcp",
+        "containerPort": 8125
+      }],
       "environment": [],
       "environmentFiles": [],
       "secrets": null,
