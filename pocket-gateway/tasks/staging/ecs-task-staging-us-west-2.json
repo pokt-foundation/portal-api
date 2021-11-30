@@ -55,7 +55,7 @@
     },
     {
       "name": "datadog-agent",
-      "image": "datadog/agent:7-jmx",
+      "image": "datadog/agent:latest",
       "memoryReservation": "2048",
       "cpu": "1024",
       "resourceRequirements": null,
