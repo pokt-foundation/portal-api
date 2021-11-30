@@ -859,7 +859,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })
 
-      expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+      expect(relayResponse).to.be.instanceOf(ErrorObject)
 
       let removedNodes = await redis.smembers(sessionKey)
 
@@ -885,7 +885,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })
 
-      expect(secondRelayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+      expect(secondRelayResponse).to.be.instanceOf(ErrorObject)
 
       removedNodes = await redis.smembers(sessionKey)
 
