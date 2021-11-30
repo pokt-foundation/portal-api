@@ -58,7 +58,6 @@ jobs:
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envKey_LOG_TO_DATADOG: true
           envKey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
-          envKey_DD_AGENT_HOST: datadog-agent
           envKey_DD_RUNTIME_METRICS_ENABLED: true
           file_name: .env
 
