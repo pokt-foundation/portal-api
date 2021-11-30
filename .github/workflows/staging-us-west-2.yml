@@ -79,6 +79,8 @@ jobs:
           task-definition: pocket-gateway/tasks/staging/ecs-task-staging-us-west-2.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
+          environment-variables: |
+            DD_RUNTIME_METRICS_ENABLED=true
 
       - name: Fill in the new image ID / us-west-2 - datadog-agent
         id: task-def-us-west-2-datadog-agent
