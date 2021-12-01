@@ -21,7 +21,7 @@
       }],
       "command": null,
       "linuxParameters": null,
-      "cpu": 1024,
+      "cpu": 1014,
       "environment": [],
       "resourceRequirements": null,
       "ulimits": null,
@@ -31,7 +31,7 @@
       "secrets": null,
       "dockerSecurityOptions": null,
       "memory": null,
-      "memoryReservation": 2048,
+      "memoryReservation": 256,
       "volumesFrom": [],
       "stopTimeout": null,
       "image": "059424750518.dkr.ecr.us-west-2.amazonaws.com/gateway-staging:latest",
@@ -56,8 +56,8 @@
     {
       "name": "datadog-agent",
       "image": "datadog/agent:latest",
-      "memoryReservation": "2048",
-      "cpu": "1024",
+      "memoryReservation": 1792,
+      "cpu": 10,
       "resourceRequirements": null,
       "essential": true,
       "portMappings": [],
@@ -87,7 +87,7 @@
     }
   ],
   "placementConstraints": [],
-  "memory": "4096",
+  "memory": "2048",
   "taskRoleArn": "arn:aws:iam::059424750518:role/ecsTaskExecutionRole",
   "family": "gateway-staging",
   "pidMode": null,
@@ -95,7 +95,7 @@
     "FARGATE"
   ],
   "networkMode": "awsvpc",
-  "cpu": "2048",
+  "cpu": "1024",
   "inferenceAccelerators": null,
   "proxyConfiguration": null,
   "volumes": []

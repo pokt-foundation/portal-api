@@ -57,7 +57,6 @@ jobs:
           envkey_ARCHIVAL_CHAINS: '0022,0028,0010,000A,000B,000C'
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envKey_LOG_TO_DATADOG: true
-          envKey_DD_RUNTIME_METRICS_ENABLED: true
           envKey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           file_name: .env
 
@@ -79,6 +78,7 @@ jobs:
           task-definition: pocket-gateway/tasks/staging/ecs-task-staging-us-west-2.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
+          # Needs to be set at container level to be read by the dd agent
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
 
