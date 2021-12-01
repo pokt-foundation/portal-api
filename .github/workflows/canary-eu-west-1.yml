@@ -99,7 +99,7 @@ jobs:
       - name: Deploy / eu-west-1
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def-eu-west-1.outputs.task-definition }}
+          task-definition: ${{ steps.task-def-eu-west-1-datadog-agent.outputs.task-definition }}
           service: gateway-service
           cluster: gateway-canary
           wait-for-service-stability: true
