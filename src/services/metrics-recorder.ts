@@ -58,10 +58,10 @@ export class MetricsRecorder {
     relayStart,
     result,
     bytes,
-    delivered,
     fallback,
     method,
     error,
+    code,
     origin,
     data,
     pocketSession,
@@ -76,10 +76,10 @@ export class MetricsRecorder {
     relayStart: [number, number]
     result: number
     bytes: number
-    delivered: boolean
     fallback: boolean
     method: string | undefined
     error: string | undefined
+    code: string | undefined
     origin: string | undefined
     data: string | undefined
     pocketSession: Session | undefined
@@ -253,6 +253,7 @@ export class MetricsRecorder {
         bytes,
         method,
         error,
+        code,
       ]
 
       if (result !== 200) {
