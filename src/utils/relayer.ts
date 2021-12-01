@@ -1,5 +1,5 @@
 import { Redis } from 'ioredis'
-import { HttpErrors } from '@loopback/rest'
+import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
 import { Node } from '@pokt-network/pocket-js'
 
 import { BlockchainsRepository } from '../repositories'
@@ -54,7 +54,7 @@ export async function loadBlockchain(
   )
 
   if (!blockchainFilter) {
-    throw new HttpErrors.BadRequest(`Incorrect blockchain: ${host}`)
+    throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${host}`, -32000))
   }
 
   let blockchainEnforceResult = ''

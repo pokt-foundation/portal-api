@@ -3,7 +3,6 @@ import MockAdapter from 'axios-mock-adapter'
 import RedisMock from 'ioredis-mock'
 import { ErrorObject } from 'jsonrpc-lite'
 import { Encryptor } from 'strong-cryptor'
-import { HttpErrors } from '@loopback/rest'
 import { expect, sinon } from '@loopback/testlab'
 import { HTTPMethod, Configuration, Node, RpcError, Session } from '@pokt-network/pocket-js'
 import AatPlans from '../../src/config/aat-plans.json'
@@ -276,7 +275,7 @@ describe('Pocket relayer service (unit)', () => {
         pocketRelayer.blockchainsRepository,
         pocketRelayer.defaultLogLimitBlocks
       )
-    ).to.be.rejectedWith(Error)
+    ).to.be.rejectedWith(ErrorObject)
   })
 
   it('checks secret of application when set', () => {
@@ -1377,7 +1376,7 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     describe('security checks', () => {
-      it('returns forbbiden when secreKey does not match', async () => {
+      it('returns forbidden when secreKey does not match', async () => {
         const gatewaySettings = {
           secretKey: 'y1lhuxbpo7u3hvxzqvesbx7jcjdczw3j',
           secretKeyRequired: true,
@@ -1430,12 +1429,12 @@ describe('Pocket relayer service (unit)', () => {
             relayRetries: 0,
           })
         } catch (error) {
-          expect(error).to.be.instanceOf(HttpErrors.Forbidden)
-          expect(error.message).to.be.equal('SecretKey does not match')
+          expect(error).to.be.instanceOf(ErrorObject)
+          expect(error.error.message).to.be.equal('SecretKey does not match')
         }
       })
 
-      it('returns forbbiden when origins checks fail', async () => {
+      it('returns forbidden when origins checks fail', async () => {
         const gatewaySettings = {
           secretKey: 'y1lhuxbpo7u3hvxzqvesbx7jcjdczw3j',
           secretKeyRequired: false,
@@ -1490,12 +1489,12 @@ describe('Pocket relayer service (unit)', () => {
             relayRetries: 0,
           })
         } catch (error) {
-          expect(error).to.be.instanceOf(HttpErrors.Forbidden)
-          expect(error.message).to.be.equal('Whitelist Origin check failed: ' + invalidOrigin)
+          expect(error).to.be.instanceOf(ErrorObject)
+          expect(error.error.message).to.be.equal('Whitelist Origin check failed: ' + invalidOrigin)
         }
       })
 
-      it('returns forbbiden when user agent checks fail', async () => {
+      it('returns forbidden when user agent checks fail', async () => {
         const gatewaySettings = {
           secretKey: 'y1lhuxbpo7u3hvxzqvesbx7jcjdczw3j',
           secretKeyRequired: false,
@@ -1549,8 +1548,8 @@ describe('Pocket relayer service (unit)', () => {
             relayRetries: 0,
           })
         } catch (error) {
-          expect(error).to.be.instanceOf(HttpErrors.Forbidden)
-          expect(error.message).to.be.equal('Whitelist User Agent check failed: ' + invalidUserAgent)
+          expect(error).to.be.instanceOf(ErrorObject)
+          expect(error.error.message).to.be.equal(`Whitelist User Agent check failed: ${invalidUserAgent}`)
         }
       })
     })

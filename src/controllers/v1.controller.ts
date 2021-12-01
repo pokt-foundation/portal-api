@@ -4,7 +4,7 @@ import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
 import { FilterExcludingWhere, repository } from '@loopback/repository'
-import { HttpErrors, param, post, requestBody } from '@loopback/rest'
+import { param, post, requestBody } from '@loopback/rest'
 import { Configuration, HTTPMethod, Pocket } from '@pokt-network/pocket-js'
 import { WriteApi } from '@influxdata/influxdb-client'
 
@@ -185,7 +185,7 @@ export class V1Controller {
       const loadBalancer = await this.fetchLoadBalancer(id, filter)
 
       if (!loadBalancer?.id) {
-        throw new HttpErrors.InternalServerError('Load balancer not found')
+        throw new ErrorObject(1, new jsonrpc.JsonRpcError('Load balancer not found', -32000))
       }
 
       // Fetch applications contained in this Load Balancer. Verify they exist and choose
@@ -210,7 +210,7 @@ export class V1Controller {
       )
 
       if (!application?.id) {
-        throw new HttpErrors.InternalServerError('No application found in the load balancer')
+        throw new ErrorObject(1, new jsonrpc.JsonRpcError('No application found in the load balancer', -32000))
       }
 
       const options: SendRelayOptions = {
@@ -239,7 +239,9 @@ export class V1Controller {
 
       return await this.pocketRelayer.sendRelay(options)
     } catch (e) {
-      logger.log('error', e.message, {
+      const exception: ErrorObject = e
+
+      logger.log('error', exception.error.message, {
         requestID: this.requestID,
         relayType: 'LB',
         typeID: id,
@@ -247,9 +249,7 @@ export class V1Controller {
         origin: this.origin,
       })
 
-      const errorResponse = jsonrpc.error(1, new jsonrpc.JsonRpcError(e.message, -32000)) as ErrorObject
-
-      return errorResponse
+      return exception
     }
   }
 
@@ -295,54 +295,54 @@ export class V1Controller {
     try {
       const application = await this.fetchApplication(id, filter)
 
-      if (application?.id) {
-        const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =
-          application?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
-        const stickyKeyPrefix = stickiness && !useRPCID ? application?.id : ''
-
-        const { preferredNodeAddress, rpcID } = stickiness
-          ? await this.checkClientStickiness(rawData, stickyKeyPrefix, stickyOrigins, this.origin)
-          : DEFAULT_STICKINESS_APP_PARAMS
-
-        const sendRelayOptions: SendRelayOptions = {
-          rawData,
-          application,
-          relayPath: this.relayPath,
-          httpMethod: this.httpMethod,
+      if (!application?.id) {
+        logger.log('error', 'Application not found', {
           requestID: this.requestID,
-          stickinessOptions: {
-            stickiness,
-            preferredNodeAddress,
-            duration,
-            keyPrefix: stickyKeyPrefix,
-            rpcID,
-            relaysLimit,
-            stickyOrigins,
-          },
-        }
-
-        return await this.pocketRelayer.sendRelay(sendRelayOptions)
+          relayType: 'APP',
+          typeID: id,
+          serviceNode: '',
+        })
+        throw new ErrorObject(1, new jsonrpc.JsonRpcError('Application not found', -32000))
       }
+
+      const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =
+        application?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
+      const stickyKeyPrefix = stickiness && !useRPCID ? application?.id : ''
+
+      const { preferredNodeAddress, rpcID } = stickiness
+        ? await this.checkClientStickiness(rawData, stickyKeyPrefix, stickyOrigins, this.origin)
+        : DEFAULT_STICKINESS_APP_PARAMS
+
+      const sendRelayOptions: SendRelayOptions = {
+        rawData,
+        application,
+        relayPath: this.relayPath,
+        httpMethod: this.httpMethod,
+        requestID: this.requestID,
+        stickinessOptions: {
+          stickiness,
+          preferredNodeAddress,
+          duration,
+          keyPrefix: stickyKeyPrefix,
+          rpcID,
+          relaysLimit,
+          stickyOrigins,
+        },
+      }
+
+      return await this.pocketRelayer.sendRelay(sendRelayOptions)
     } catch (e) {
+      const exception: ErrorObject = e
+
       logger.log('error', e.message, {
         requestID: this.requestID,
         relayType: 'APP',
         typeID: id,
         serviceNode: '',
       })
-      const errorResponse = jsonrpc.error(1, new jsonrpc.JsonRpcError(e.message, -32000)) as ErrorObject
 
-      return errorResponse
+      return exception
     }
-    logger.log('error', 'Application not found', {
-      requestID: this.requestID,
-      relayType: 'APP',
-      typeID: id,
-      serviceNode: '',
-    })
-    const errorResponse = jsonrpc.error(1, new jsonrpc.JsonRpcError('Application not found', -32000)) as ErrorObject
-
-    return errorResponse
   }
 
   async checkClientStickiness(
@@ -371,7 +371,7 @@ export class V1Controller {
         logger.log('error', `Incorrect blockchain: ${this.host}`, {
           origin: this.origin,
         })
-        throw new HttpErrors.BadRequest(`Incorrect blockchain: ${this.host}`)
+        throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${this.host}`, -32000))
       })
 
       const keyPrefix = prefix ? prefix : rpcID
@@ -451,7 +451,7 @@ export class V1Controller {
 
     // Sanity check; make sure applications are configured for this LB
     if (verifiedIDs.length < 1) {
-      throw new HttpErrors.Forbidden('Load Balancer configuration invalid')
+      throw new ErrorObject(1, new jsonrpc.JsonRpcError('Load Balancer configuration invalid', -32000))
     }
     /*
     return this.fetchApplication(
