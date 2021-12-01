@@ -22,6 +22,7 @@
       "command": null,
       "linuxParameters": null,
       "cpu": 1014,
+      "memoryReservation": 1792,
       "environment": [],
       "resourceRequirements": null,
       "ulimits": null,
@@ -31,7 +32,6 @@
       "secrets": null,
       "dockerSecurityOptions": null,
       "memory": null,
-      "memoryReservation": 256,
       "volumesFrom": [],
       "stopTimeout": null,
       "image": "059424750518.dkr.ecr.us-west-2.amazonaws.com/gateway-staging:latest",
@@ -56,7 +56,7 @@
     {
       "name": "datadog-agent",
       "image": "datadog/agent:latest",
-      "memoryReservation": 1792,
+      "memoryReservation": 256,
       "cpu": 10,
       "resourceRequirements": null,
       "essential": true,
@@ -73,7 +73,7 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/gateway-staging",
+          "awslogs-group": "/ecs/datadog-agent",
           "awslogs-region": "us-west-2",
           "awslogs-stream-prefix": "ecs"
         }
