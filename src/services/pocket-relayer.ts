@@ -273,9 +273,6 @@ export class PocketRelayer {
             return relayResponse.payload
           } else if (relayResponse instanceof RelayError) {
             // Record failure metric, retry if possible or fallback
-            // If this is the last retry and fallback is available, mark the error not delivered
-            const errorDelivered = x === this.relayRetries && fallbackAvailable ? false : true
-
             // Increment error log
             await this.redis.incr(blockchainID + '-' + relayResponse.servicer_node + '-errors')
             await this.redis.expire(blockchainID + '-' + relayResponse.servicer_node + '-errors', 3600)
