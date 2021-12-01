@@ -73,7 +73,7 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/datadog-agent",
+          "awslogs-group": "/ecs/datadog-agent-staging",
           "awslogs-region": "us-west-2",
           "awslogs-stream-prefix": "ecs"
         }
