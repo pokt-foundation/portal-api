@@ -9,6 +9,8 @@ export type StickyResult = 'SUCCESS' | 'FAILURE' | 'NONE'
 
 const logger = require('./logger')
 
+const ERROR_COUNT_LIMIT = 5
+
 // Small utility class to contain several methods regarding node stickiness configuration.
 export class NodeSticker {
   stickiness: boolean
@@ -18,6 +20,7 @@ export class NodeSticker {
   rpcID?: number
   relaysLimit?: number
   stickyOrigins?: string[]
+  rpcIDThreshold: number
 
   redis: Redis
   blockchainID: string
@@ -26,12 +29,22 @@ export class NodeSticker {
   requestID?: string
   typeID?: string
 
+  nextRPCID?: number
   clientStickyKey: string
   clientErrorKey: string
   clientLimitKey: string
 
   constructor(
-    { stickiness, duration, keyPrefix, rpcID, relaysLimit, preferredNodeAddress, stickyOrigins }: StickinessOptions,
+    {
+      stickiness,
+      duration,
+      keyPrefix,
+      rpcID,
+      relaysLimit,
+      preferredNodeAddress,
+      stickyOrigins,
+      rpcIDThreshold,
+    }: StickinessOptions,
     blockchainID: string,
     ipAddress: string,
     redis: Redis,
@@ -46,6 +59,7 @@ export class NodeSticker {
     this.rpcID = rpcID
     this.relaysLimit = relaysLimit
     this.stickyOrigins = stickyOrigins
+    this.rpcIDThreshold = rpcIDThreshold
 
     this.blockchainID = blockchainID
     this.ipAddress = ipAddress
@@ -61,11 +75,11 @@ export class NodeSticker {
     // one will overwrite the other with its session node and the other will have an
     // invalid node to send relays to resulting in a cascade of failures.
     if (keyPrefix) {
-      this.clientStickyKey = `${this.keyPrefix}-${this.ipAddress}-${blockchainID}`
+      this.clientStickyKey = this.buildClientStickyKey(keyPrefix)
     } else if (rpcID > 0 && data) {
-      const nextRPCID = NodeSticker.getNextRPCID(this.rpcID, data)
+      this.nextRPCID = NodeSticker.getNextRPCID(this.rpcID, data)
 
-      this.clientStickyKey = `${nextRPCID}-${this.ipAddress}-${blockchainID}`
+      this.clientStickyKey = this.buildClientStickyKey(this.nextRPCID.toString())
     }
 
     this.clientErrorKey = `${this.clientStickyKey}-errors`
@@ -95,6 +109,10 @@ export class NodeSticker {
     return preferredNodeAddress === (await getAddressFromPublicKey(relayNodePublicKey)) ? 'SUCCESS' : 'FAILURE'
   }
 
+  buildClientStickyKey(prefix: string, suffix?: string): string {
+    return `${prefix}-${this.ipAddress}-${this.blockchainID}${suffix ? `-${suffix}` : ''}`
+  }
+
   async getStickyNode(nodes: Node[], exhaustedNodes: string[]): Promise<Node | undefined> {
     const preferredNodeIndex = nodes.findIndex(({ address }) => address === this.preferredNodeAddress)
 
@@ -113,7 +131,7 @@ export class NodeSticker {
     // If node have exceeding errors, remove stickiness.
     const errorCount = await this.getErrorCount()
 
-    if (errorCount > 5) {
+    if (errorCount > ERROR_COUNT_LIMIT) {
       await this.remove('error limit exceeded')
       return undefined
     }
@@ -143,21 +161,25 @@ export class NodeSticker {
       if (!nextRequest) {
         await this.redis.set(this.clientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', this.duration)
       }
+
+      if (relayLimiter && this.relaysLimit) {
+        await this.checkRelaysLimit()
+      }
     } else {
       if (this.rpcID > 0) {
-        await this.redis.set(this.clientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', this.duration)
+        const keySets = []
 
-        const nextRPCID = NodeSticker.getNextRPCID(this.rpcID, this.data)
+        // rpcID requests are not strictly consecutive and might happen at almost the same time
+        for (let i = 0; i < this.rpcIDThreshold; i++) {
+          const clientStickyKey = this.buildClientStickyKey((this.nextRPCID + i).toString())
 
-        // Some rpcID requests skips one number when sending them consecutively
-        const nextClientStickyKey = `${this.ipAddress}-${this.blockchainID}-${nextRPCID + 1}`
+          keySets.push(
+            this.redis.set(clientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', this.duration)
+          )
+        }
 
-        await this.redis.set(nextClientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', this.duration)
+        await Promise.allSettled(keySets)
       }
-    }
-
-    if (relayLimiter && this.relaysLimit) {
-      await this.checkRelaysLimit()
     }
   }
 
@@ -177,7 +199,7 @@ export class NodeSticker {
   }
 
   async remove(reason?: string): Promise<void> {
-    logger.log('info', 'sticky node forcefully removed', {
+    logger.log('warn', 'sticky node forcefully removed', {
       reason,
       requestID: this.requestID,
       typeID: this.typeID,

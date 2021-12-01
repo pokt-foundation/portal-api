@@ -331,20 +331,10 @@ export class CherryPicker {
         for (let x = 1; x <= weightFactor; x++) {
           rankedItems.push(sortedLog.id)
         }
-      } else if (sortedLog.successRate > 0.5 && !sortedLog.failure) {
-        // For all apps/nodes with reasonable success rate, weight their selection less
-        weightFactor = weightFactor - 2
-        if (weightFactor <= 0) {
-          weightFactor = 1
-        }
-
-        for (let x = 1; x <= weightFactor; x++) {
-          rankedItems.push(sortedLog.id)
-        }
-      } else if (sortedLog.successRate > 0) {
+      } else if (sortedLog.successRate > 0 && !sortedLog.failure) {
         // For all apps/nodes with limited success rate, do not weight
         rankedItems.push(sortedLog.id)
-      } else if (sortedLog.successRate === 0) {
+      } else {
         // If an app/node has a 0% success rate and < max failures, keep them in rotation
         if (sortedLog.attempts < maxFailuresPerPeriod) {
           rankedItems.push(sortedLog.id)
@@ -356,7 +346,7 @@ export class CherryPicker {
           // Once a node has performed well enough in a session, check to see if it is marked
           // If so, erase the scarlet letter
           if (!sortedLog.failure) {
-            await this.redis.set(blockchain + '-' + sortedLog.id + '-failure', 'true', 'EX', 3600)
+            await this.redis.set(blockchain + '-' + sortedLog.id + '-failure', 'true', 'EX', 300)
           }
         }
       }
@@ -443,12 +433,15 @@ export class CherryPicker {
       return 0
     })
 
+    /*
+    RE-ENABLE LOGS to examine cherry picker behaviour
     logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
       requestID: requestID,
       relayType: relayType,
       typeID: typeID,
       serviceNode: '',
     })
+    */
     return sortedLogs
   }
 }

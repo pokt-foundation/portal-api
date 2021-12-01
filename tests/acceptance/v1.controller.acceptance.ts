@@ -145,6 +145,7 @@ const LOAD_BALANCERS = [
       duration: 300,
       useRPCID: true,
       relaysLimit: 1e6,
+      rpcIDThreshold: 2,
     },
   },
   {
@@ -572,7 +573,8 @@ describe('V1 controller (acceptance)', () => {
     expect(response.body.message).to.be.equal('Invalid domain')
   })
 
-  it('Perfoms sticky requests on LBs that support it using rpcID', async () => {
+  // eslint-disable-next-line mocha/no-exclusive-tests
+  it.only('Perfoms sticky requests on LBs that support it using rpcID', async () => {
     const logSpy = sinon.spy(logger, 'log')
 
     const relayRequest = (id) => `{"method":"eth_chainId","id":${id},"jsonrpc":"2.0"}`
