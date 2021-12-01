@@ -16,6 +16,7 @@ const DEFAULT_STICKINESS_OPTIONS = {
   stickyOrigins: [],
   keyPrefix: 'prefix',
   preferredNodeAddress: NODES[0].address,
+  rpcIDThreshold: 5,
 }
 
 const BLOCKCHAIN_ID = '0001'
@@ -89,12 +90,11 @@ describe('Node sticker service (unit)', () => {
     })
 
     it('sets the stickiness key for a node using rpcID', async function () {
-      const rpcID = 1
-      const nextRPCID = NodeSticker.getNextRPCID(rpcID, DATA)
-      const afterNextRPCID = NodeSticker.getNextRPCID(nextRPCID, DATA)
+      let rpcID = 1
+      // const nextRPCID = NodeSticker.getNextRPCID(rpcID, DATA)
 
       nodeSticker = new NodeSticker(
-        { ...DEFAULT_STICKINESS_OPTIONS, keyPrefix: '', rpcID: 1 },
+        { ...DEFAULT_STICKINESS_OPTIONS, keyPrefix: '', rpcID },
         BLOCKCHAIN_ID,
         IP_ADDRESS,
         redis,
@@ -116,18 +116,24 @@ describe('Node sticker service (unit)', () => {
       // Is better to not test for the current sticky key as is may change in the future and better get an approximation
       const keys = await redis.keys('*')
 
-      expect(keys).to.have.length(2)
+      expect(keys).to.have.length(DEFAULT_STICKINESS_OPTIONS.rpcIDThreshold)
 
-      const nextStickyRequest = JSON.parse(await redis.get(keys[0]))
-      const afterNextStickyRequest = JSON.parse(await redis.get(keys[1]))
+      for (let i = 0; i < DEFAULT_STICKINESS_OPTIONS.rpcIDThreshold; i++) {
+        const rpcData = JSON.parse(await redis.get(keys[i]))
 
-      // This is likely prone to "break" if the key format changes
-      expect(keys[0]).to.startWith(nextRPCID.toString())
-      expect(nextStickyRequest).to.have.properties('applicationID', 'nodeAddress')
-      expect(keys[1]).to.startWith(afterNextRPCID.toString())
-      expect(afterNextStickyRequest).to.have.properties('applicationID', 'nodeAddress')
+        const nextRPCID = NodeSticker.getNextRPCID(rpcID, DATA)
 
-      expect(nextStickyRequest).to.be.deepEqual(afterNextStickyRequest)
+        rpcID = nextRPCID
+
+        expect(rpcData).to.have.properties('applicationID', 'nodeAddress')
+
+        // All the set data should be the same
+        if (i > 0) {
+          const previousrpcData = JSON.parse(await redis.get(keys[i - 1]))
+
+          expect(rpcData).to.be.deepEqual(previousrpcData)
+        }
+      }
     })
 
     it("doesn't set the stickiness key due to invalid origin", async function () {
