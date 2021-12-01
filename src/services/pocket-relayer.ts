@@ -17,6 +17,8 @@ import {
   checkEnforcementJSON,
   isRelayError,
   isUserError,
+  fetchUserErrorCode,
+  fetchUserErrorMessage,
   checkWhitelist,
   checkSecretKey,
   SecretKeyDetails,
@@ -231,6 +233,15 @@ export class PocketRelayer {
           })
 
           if (!(relayResponse instanceof Error)) {
+            // Check for user error to bubble these up to the API
+            let userErrorMessage = ''
+            let userErrorCode = ''
+
+            if (isUserError(relayResponse.payload)) {
+              userErrorMessage = fetchUserErrorMessage(relayResponse.payload)
+              userErrorCode = fetchUserErrorCode(relayResponse.payload)
+            }
+
             // Record success metric
             this.metricsRecorder
               .recordMetric({
@@ -244,8 +255,8 @@ export class PocketRelayer {
                 bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
                 fallback: false,
                 method: method,
-                error: undefined,
-                code: undefined,
+                error: userErrorMessage,
+                code: userErrorCode,
                 origin: this.origin,
                 data,
                 pocketSession: this.pocketSession,
