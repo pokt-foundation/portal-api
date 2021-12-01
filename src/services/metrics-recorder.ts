@@ -58,10 +58,10 @@ export class MetricsRecorder {
     relayStart,
     result,
     bytes,
-    delivered,
     fallback,
     method,
     error,
+    code,
     origin,
     data,
     pocketSession,
@@ -76,10 +76,10 @@ export class MetricsRecorder {
     relayStart: [number, number]
     result: number
     bytes: number
-    delivered: boolean
     fallback: boolean
     method: string | undefined
     error: string | undefined
+    code: string | undefined
     origin: string | undefined
     data: string | undefined
     pocketSession: Session | undefined
@@ -253,8 +253,10 @@ export class MetricsRecorder {
         bytes,
         method,
         error,
+        code,
       ]
 
+      // Increment node errors
       if (result !== 200) {
         // TODO: FIND Better way to check for valid service nodes (public key)
         if (serviceNode && serviceNode.length === 64 && error !== BLOCK_TIMING_ERROR) {
@@ -262,6 +264,10 @@ export class MetricsRecorder {
           await this.redis.incr(blockchainID + '-' + serviceNode + '-errors')
           await this.redis.expire(blockchainID + '-' + serviceNode + '-errors', 60)
         }
+      }
+
+      // Process error logs
+      if (result !== 200 || error !== '' || code !== '') {
         await this.processBulkErrors([errorValues], redisTimestamp, redisErrorKey, logger)
       }
     } catch (err) {

@@ -33,6 +33,12 @@ export class StickinessOptions {
     required: false,
   })
   stickyOrigins?: string[]
+
+  @property({
+    type: 'number',
+    required: false,
+  })
+  rpcIDThreshold?: number
 }
 
 @model({ settings: { strict: false } })
