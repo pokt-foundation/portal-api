@@ -210,12 +210,10 @@ export class PocketRelayer {
               typeID: application.id,
               serviceNode: '',
             })
-            const errorResponse = jsonrpc.error(
+            return jsonrpc.error(
               1,
               new jsonrpc.JsonRpcError(`Overall Timeout exceeded: ${overallTimeOut}`, -32000)
             ) as ErrorObject
-
-            return errorResponse
           }
 
           // Send this relay attempt
@@ -458,9 +456,7 @@ export class PocketRelayer {
         })
       }
     }
-    const errorResponse = jsonrpc.error(1, new jsonrpc.JsonRpcError('Relay attempts exhausted', -32000)) as ErrorObject
-
-    return errorResponse
+    return jsonrpc.error(1, new jsonrpc.JsonRpcError('Relay attempts exhausted', -32000)) as ErrorObject
   }
 
   // Private function to allow relay retries

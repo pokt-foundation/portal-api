@@ -137,9 +137,7 @@ export class V1Controller {
         return this.loadBalancerRelay(redirect.loadBalancerID, rawData)
       }
     }
-    const errorResponse = jsonrpc.error(1, new jsonrpc.JsonRpcError('Invalid domain', -32000)) as ErrorObject
-
-    return errorResponse
+    return jsonrpc.error(1, new jsonrpc.JsonRpcError('Invalid domain', -32000)) as ErrorObject
   }
 
   /**
