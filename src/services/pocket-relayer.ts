@@ -331,7 +331,7 @@ export class PocketRelayer {
         }
       }
     } catch (e) {
-      // Explicit Json RPC errors should be propagated so they can be sent as a response
+      // Explicit JSON-RPC errors should be propagated so they can be sent as a response
       if (e instanceof ErrorObject) {
         throw e
       }

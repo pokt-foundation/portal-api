@@ -1,6 +1,6 @@
 import AWS from 'aws-sdk'
 import { Redis } from 'ioredis'
-import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
+import jsonrpc, { ErrorObject, JsonRpcError } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
 import { FilterExcludingWhere, repository } from '@loopback/repository'
@@ -237,9 +237,19 @@ export class V1Controller {
 
       return await this.pocketRelayer.sendRelay(options)
     } catch (e) {
-      const exception: ErrorObject = e
+      if (e instanceof ErrorObject) {
+        logger.log('error', e.error.message, {
+          requestID: this.requestID,
+          relayType: 'LB',
+          typeID: id,
+          serviceNode: '',
+          origin: this.origin,
+        })
 
-      logger.log('error', exception.error.message, {
+        return e
+      }
+
+      logger.log('error', e.message, {
         requestID: this.requestID,
         relayType: 'LB',
         typeID: id,
@@ -247,7 +257,7 @@ export class V1Controller {
         origin: this.origin,
       })
 
-      return exception
+      return jsonrpc.error(1, new JsonRpcError(e.message, -32050))
     }
   }
 
@@ -330,16 +340,27 @@ export class V1Controller {
 
       return await this.pocketRelayer.sendRelay(sendRelayOptions)
     } catch (e) {
-      const exception: ErrorObject = e
+      if (e instanceof ErrorObject) {
+        logger.log('error', e.error.message, {
+          requestID: this.requestID,
+          relayType: 'LB',
+          typeID: id,
+          serviceNode: '',
+          origin: this.origin,
+        })
+
+        return e
+      }
 
       logger.log('error', e.message, {
         requestID: this.requestID,
-        relayType: 'APP',
+        relayType: 'LB',
         typeID: id,
         serviceNode: '',
+        origin: this.origin,
       })
 
-      return exception
+      return jsonrpc.error(1, new JsonRpcError(e.message, -32050))
     }
   }
 
