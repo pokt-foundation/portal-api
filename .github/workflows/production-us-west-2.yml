@@ -81,8 +81,8 @@ jobs:
           # Needs to be set at container level to be read by the dd agent
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
-            DD_SERVICE=/canary/us-west-2/ecs/gateway
-            DD_ENV=canary
+            DD_SERVICE=us-west-2/ecs/gateway
+            DD_ENV=production
 
       - name: Fill in the new image ID / us-west-2 - datadog-agent
         id: task-def-us-west-2-datadog-agent
