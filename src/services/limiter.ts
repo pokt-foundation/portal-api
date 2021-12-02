@@ -14,11 +14,11 @@ export async function enforceEVMLimits(
   logLimitBlocks: number,
   altruists: JSONObject
 ): Promise<void | ErrorObject> {
-  const rpcId = parseRPCID(parsedRawData)
+  const rpcID = parseRPCID(parsedRawData)
 
   if (WS_ONLY_METHODS.includes(parsedRawData.method)) {
     return jsonrpc.error(
-      rpcId,
+      rpcID,
       new jsonrpc.JsonRpcError(
         `${parsedRawData.method} method cannot be served over HTTPS. WebSockets are not supported at the moment.`,
         -32053
@@ -69,7 +69,7 @@ export async function enforceEVMLimits(
       } catch (e) {
         logger.log('error', `Failed trying to reach altruist (${altruistUrl}) to fetch block number.`)
         return jsonrpc.error(
-          rpcId,
+          rpcID,
           new jsonrpc.JsonRpcError('Try again with a explicit block number.', -32062)
         ) as ErrorObject
       }
@@ -77,14 +77,14 @@ export async function enforceEVMLimits(
       // We cannot move forward if there is no altruist available.
       if (!isToBlockHex || !isFromBlockHex) {
         return jsonrpc.error(
-          rpcId,
+          rpcID,
           new jsonrpc.JsonRpcError(`Please use an explicit block number instead of 'latest'.`, -32063)
         ) as ErrorObject
       }
     }
     if (toBlock - fromBlock > logLimitBlocks) {
       return jsonrpc.error(
-        rpcId,
+        rpcID,
         new jsonrpc.JsonRpcError(`You cannot query logs for more than ${logLimitBlocks} blocks at once.`, -32064)
       ) as ErrorObject
     }

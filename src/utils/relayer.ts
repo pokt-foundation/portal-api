@@ -33,7 +33,8 @@ export async function loadBlockchain(
   host: string,
   redis: Redis,
   blockchainsRepository: BlockchainsRepository,
-  defaultLogLimitBlocks: number
+  defaultLogLimitBlocks: number,
+  rpcID: number
 ): Promise<BlockchainDetails> {
   // Load the requested blockchain
   const cachedBlockchains = await redis.get('blockchains')
@@ -54,7 +55,7 @@ export async function loadBlockchain(
   )
 
   if (!blockchainFilter) {
-    throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${host}`, -32057))
+    throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${host}`, -32057))
   }
 
   let blockchainEnforceResult = ''
