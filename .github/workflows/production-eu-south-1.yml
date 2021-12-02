@@ -80,8 +80,8 @@ jobs:
           image: ${{ steps.build-image.outputs.image }}
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
-            DD_SERVICE=/canary/eu-south-1/ecs/gateway
-            DD_ENV=canary
+            DD_SERVICE=eu-south-1/ecs/gateway
+            DD_ENV=production
 
       - name: Fill in the new image ID / eu-south-1 - datadog-agent
         id: task-def-eu-south-1-datadog-agent
