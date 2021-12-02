@@ -55,7 +55,7 @@ export async function loadBlockchain(
   )
 
   if (!blockchainFilter) {
-    throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${host}`, -32057))
+    throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${host}`, -32057))
   }
 
   let blockchainEnforceResult = ''
