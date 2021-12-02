@@ -575,8 +575,7 @@ describe('V1 controller (acceptance)', () => {
     expect(response.body.error.message).to.be.equal('Invalid domain')
   })
 
-  // eslint-disable-next-line mocha/no-exclusive-tests
-  it.only('Perfoms sticky requests on LBs that support it using rpcID', async () => {
+  it('Perfoms sticky requests on LBs that support it using rpcID', async () => {
     const logSpy = sinon.spy(logger, 'log')
 
     const relayRequest = (id) => `{"method":"eth_chainId","id":${id},"jsonrpc":"2.0"}`
