@@ -16,7 +16,7 @@ import { MetricsRecorder } from '../services/metrics-recorder'
 import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
 import { checkWhitelist } from '../utils/enforcements'
-import { parseRPCID } from '../utils/parsing'
+import { parseRawData, parseRPCID } from '../utils/parsing'
 import { loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
 const logger = require('../services/logger')
@@ -130,6 +130,9 @@ export class V1Controller {
     })
     rawData: object
   ): Promise<string | ErrorObject> {
+    const parsedRawData = parseRawData(rawData)
+    const rpcId = parseRPCID(parsedRawData)
+
     for (const redirect of JSON.parse(this.redirects)) {
       if (this.pocketRelayer.host.toLowerCase().includes(redirect.domain, 0)) {
         // Modify the host using the stored blockchain name from .env
@@ -138,7 +141,8 @@ export class V1Controller {
         return this.loadBalancerRelay(redirect.loadBalancerID, rawData)
       }
     }
-    return jsonrpc.error(1, new jsonrpc.JsonRpcError('Invalid domain', -32052)) as ErrorObject
+
+    return jsonrpc.error(rpcId, new jsonrpc.JsonRpcError('Invalid domain', -32052)) as ErrorObject
   }
 
   /**
@@ -174,6 +178,9 @@ export class V1Controller {
     @param.filter(Applications, { exclude: 'where' })
     filter?: FilterExcludingWhere<Applications>
   ): Promise<string | ErrorObject> {
+    const parsedRawData = parseRawData(rawData)
+    const rpcId = parseRPCID(parsedRawData)
+
     // Take the relay path from the end of the endpoint URL
     if (id.match(/[0-9a-zA-Z]{24}~/g)) {
       this.relayPath = id.slice(24).replace(/~/gi, '/')
@@ -259,7 +266,7 @@ export class V1Controller {
         origin: this.origin,
       })
 
-      return jsonrpc.error(1, new JsonRpcError(e.message, -32050))
+      return jsonrpc.error(rpcId, new JsonRpcError(e.message, -32050))
     }
   }
 
@@ -296,6 +303,9 @@ export class V1Controller {
     @param.filter(Applications, { exclude: 'where' })
     filter?: FilterExcludingWhere<Applications>
   ): Promise<string | ErrorObject> {
+    const parsedRawData = parseRawData(rawData)
+    const rpcId = parseRPCID(parsedRawData)
+
     // Take the relay path from the end of the endpoint URL
     if (id.match(/[0-9a-zA-Z]{24}~/g)) {
       this.relayPath = id.slice(24).replace(/~/gi, '/')
@@ -362,7 +372,7 @@ export class V1Controller {
         origin: this.origin,
       })
 
-      return jsonrpc.error(1, new JsonRpcError(e.message, -32050))
+      return jsonrpc.error(rpcId, new JsonRpcError(e.message, -32050))
     }
   }
 
@@ -373,7 +383,7 @@ export class V1Controller {
     origin: string
   ): Promise<{ preferredApplicationID: string; preferredNodeAddress: string; rpcID: number }> {
     // Parse the raw data to determine the lowest RPC ID in the call
-    const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
+    const parsedRawData = parseRawData(rawData)
     const rpcID = parseRPCID(parsedRawData)
 
     // Users/bots could fetch several origins from the same ip which not all allow stickiness,
