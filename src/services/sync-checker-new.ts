@@ -204,13 +204,13 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
               relayStart,
               result: 500,
               bytes: Buffer.byteLength('OUT OF SYNC', 'utf8'),
-              delivered: false,
               fallback: false,
               method: 'synccheck',
               error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${topBlockheight} altruist block height: ${altruistBlockHeight} node height: ${blockHeight} sync allowance: ${allowance}`,
               origin: this.origin,
               data: undefined,
               pocketSession: pocketSession,
+              code: undefined,
             })
             .catch(function log(e) {
               logger.log('error', 'Error recording metrics: ' + e, {

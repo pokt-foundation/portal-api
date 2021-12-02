@@ -145,6 +145,7 @@ export class NodeCheckerWrapper {
           sessionHash,
           bytes: 0,
           pocketSession: pocketSession,
+          code: undefined,
         }
 
         switch (checkType) {
