@@ -137,6 +137,14 @@ export class PocketRelayer {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries
     }
+    // This converts the raw data into formatted JSON then back to a string for relaying.
+    // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
+    // extraneous characters like newlines and tabs from the rawData.
+    // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
+
+    const parsedRawData = parseRawData(rawData)
+    const rpcID = parseRPCID(parsedRawData)
+
     const {
       blockchainEnforceResult,
       blockchainSyncCheck,
@@ -144,14 +152,18 @@ export class PocketRelayer {
       blockchainID,
       blockchainChainID,
       blockchainLogLimitBlocks,
-    } = await loadBlockchain(this.host, this.redis, this.blockchainsRepository, this.defaultLogLimitBlocks).catch(
-      () => {
-        logger.log('error', `Incorrect blockchain: ${this.host}`, {
-          origin: this.origin,
-        })
-        throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${this.host}`, -32057))
-      }
-    )
+    } = await loadBlockchain(
+      this.host,
+      this.redis,
+      this.blockchainsRepository,
+      this.defaultLogLimitBlocks,
+      rpcID
+    ).catch((e) => {
+      logger.log('error', `Incorrect blockchain: ${this.host}`, {
+        origin: this.origin,
+      })
+      throw e
+    })
 
     const { preferredNodeAddress } = stickinessOptions
     const nodeSticker = new NodeSticker(
@@ -171,14 +183,8 @@ export class PocketRelayer {
       logLimitBlocks = blockchainLogLimitBlocks
     }
 
-    // This converts the raw data into formatted JSON then back to a string for relaying.
-    // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
-    // extraneous characters like newlines and tabs from the rawData.
-    // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
-
-    const parsedRawData = parseRawData(rawData)
-    const limitation = await this.enforceLimits(parsedRawData, blockchainID, logLimitBlocks)
     const data = JSON.stringify(parsedRawData)
+    const limitation = await this.enforceLimits(parsedRawData, blockchainID, logLimitBlocks)
 
     if (limitation instanceof ErrorObject) {
       logger.log('error', `LIMITATION ERROR ${blockchainID} req: ${data}`, {
@@ -193,7 +199,6 @@ export class PocketRelayer {
       return limitation
     }
     const method = parseMethod(parsedRawData)
-    const rpcId = parseRPCID(parsedRawData)
     const fallbackAvailable = this.altruists[blockchainID] !== undefined ? true : false
 
     try {
@@ -214,7 +219,7 @@ export class PocketRelayer {
               serviceNode: '',
             })
             return jsonrpc.error(
-              rpcId,
+              rpcID,
               new jsonrpc.JsonRpcError(`Overall Timeout exceeded: ${overallTimeOut}`, -32051)
             ) as ErrorObject
           }
@@ -465,7 +470,7 @@ export class PocketRelayer {
         })
       }
     }
-    return jsonrpc.error(rpcId, new jsonrpc.JsonRpcError('Relay attempts exhausted', -32050)) as ErrorObject
+    return jsonrpc.error(rpcID, new jsonrpc.JsonRpcError('Relay attempts exhausted', -32050)) as ErrorObject
   }
 
   // Private function to allow relay retries
@@ -503,19 +508,25 @@ export class PocketRelayer {
       databaseEncryptionKey: this.databaseEncryptionKey,
     }
 
+    const parsedRawData = parseRawData(data)
+    const rpcID = parseRPCID(parsedRawData)
+
     // Secret key check
     if (!checkSecretKey(application, secretKeyDetails)) {
-      throw new ErrorObject(1, new jsonrpc.JsonRpcError('SecretKey does not match', -32059))
+      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('SecretKey does not match', -32059))
     }
 
     // Whitelist: origins -- explicit matches
     if (!checkWhitelist(application.gatewaySettings.whitelistOrigins, this.origin, 'explicit')) {
-      throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Whitelist Origin check failed: ${this.origin}`, -32060))
+      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError(`Whitelist Origin check failed: ${this.origin}`, -32060))
     }
 
     // Whitelist: userAgent -- substring matches
     if (!checkWhitelist(application.gatewaySettings.whitelistUserAgents, this.userAgent, 'substring')) {
-      throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Whitelist User Agent check failed: ${this.userAgent}`, -32061))
+      throw new ErrorObject(
+        rpcID,
+        new jsonrpc.JsonRpcError(`Whitelist User Agent check failed: ${this.userAgent}`, -32061)
+      )
     }
 
     const aatParams: [string, string, string, string] =

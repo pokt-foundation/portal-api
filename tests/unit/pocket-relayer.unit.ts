@@ -241,7 +241,8 @@ describe('Pocket relayer service (unit)', () => {
       pocketRelayer.host,
       pocketRelayer.redis,
       pocketRelayer.blockchainsRepository,
-      pocketRelayer.defaultLogLimitBlocks
+      pocketRelayer.defaultLogLimitBlocks,
+      1
     )
 
     expect(blockchainResult).to.be.ok()
@@ -256,7 +257,8 @@ describe('Pocket relayer service (unit)', () => {
       pocketRelayer.host,
       pocketRelayer.redis,
       pocketRelayer.blockchainsRepository,
-      pocketRelayer.defaultLogLimitBlocks
+      pocketRelayer.defaultLogLimitBlocks,
+      1
     )
 
     expect(blockchainResult).to.be.ok()
@@ -273,7 +275,8 @@ describe('Pocket relayer service (unit)', () => {
         pocketRelayer.host,
         pocketRelayer.redis,
         pocketRelayer.blockchainsRepository,
-        pocketRelayer.defaultLogLimitBlocks
+        pocketRelayer.defaultLogLimitBlocks,
+        1
       )
     ).to.be.rejectedWith(ErrorObject)
   })

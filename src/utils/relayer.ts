@@ -33,7 +33,8 @@ export async function loadBlockchain(
   host: string,
   redis: Redis,
   blockchainsRepository: BlockchainsRepository,
-  defaultLogLimitBlocks: number
+  defaultLogLimitBlocks: number,
+  rpcID: number
 ): Promise<BlockchainDetails> {
   // Load the requested blockchain
   const cachedBlockchains = await redis.get('blockchains')

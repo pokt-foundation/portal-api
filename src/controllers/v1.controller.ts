@@ -131,7 +131,7 @@ export class V1Controller {
     rawData: object
   ): Promise<string | ErrorObject> {
     const parsedRawData = parseRawData(rawData)
-    const rpcId = parseRPCID(parsedRawData)
+    const rpcID = parseRPCID(parsedRawData)
 
     for (const redirect of JSON.parse(this.redirects)) {
       if (this.pocketRelayer.host.toLowerCase().includes(redirect.domain, 0)) {
@@ -142,7 +142,7 @@ export class V1Controller {
       }
     }
 
-    return jsonrpc.error(rpcId, new jsonrpc.JsonRpcError('Invalid domain', -32052)) as ErrorObject
+    return jsonrpc.error(rpcID, new jsonrpc.JsonRpcError('Invalid domain', -32052)) as ErrorObject
   }
 
   /**
@@ -179,7 +179,7 @@ export class V1Controller {
     filter?: FilterExcludingWhere<Applications>
   ): Promise<string | ErrorObject> {
     const parsedRawData = parseRawData(rawData)
-    const rpcId = parseRPCID(parsedRawData)
+    const reqRPCID = parseRPCID(parsedRawData)
 
     // Take the relay path from the end of the endpoint URL
     if (id.match(/[0-9a-zA-Z]{24}~/g)) {
@@ -191,7 +191,7 @@ export class V1Controller {
       const loadBalancer = await this.fetchLoadBalancer(id, filter)
 
       if (!loadBalancer?.id) {
-        throw new ErrorObject(1, new jsonrpc.JsonRpcError('Load balancer not found', -32054))
+        throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('Load balancer not found', -32054))
       }
 
       // Fetch applications contained in this Load Balancer. Verify they exist and choose
@@ -212,11 +212,12 @@ export class V1Controller {
         loadBalancer.id,
         loadBalancer.applicationIDs,
         preferredApplicationID,
-        filter
+        filter,
+        rpcID
       )
 
       if (!application?.id) {
-        throw new ErrorObject(1, new jsonrpc.JsonRpcError('No application found in the load balancer', -32055))
+        throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('No application found in the load balancer', -32055))
       }
 
       const options: SendRelayOptions = {
@@ -266,7 +267,7 @@ export class V1Controller {
         origin: this.origin,
       })
 
-      return jsonrpc.error(rpcId, new JsonRpcError(e.message, -32050))
+      return jsonrpc.error(reqRPCID, new JsonRpcError(e.message, -32050))
     }
   }
 
@@ -304,7 +305,7 @@ export class V1Controller {
     filter?: FilterExcludingWhere<Applications>
   ): Promise<string | ErrorObject> {
     const parsedRawData = parseRawData(rawData)
-    const rpcId = parseRPCID(parsedRawData)
+    const reqRPCID = parseRPCID(parsedRawData)
 
     // Take the relay path from the end of the endpoint URL
     if (id.match(/[0-9a-zA-Z]{24}~/g)) {
@@ -322,7 +323,7 @@ export class V1Controller {
           typeID: id,
           serviceNode: '',
         })
-        throw new ErrorObject(1, new jsonrpc.JsonRpcError('Application not found', -32056))
+        throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('Application not found', -32056))
       }
 
       const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =
@@ -372,7 +373,7 @@ export class V1Controller {
         origin: this.origin,
       })
 
-      return jsonrpc.error(rpcId, new JsonRpcError(e.message, -32050))
+      return jsonrpc.error(reqRPCID, new JsonRpcError(e.message, -32050))
     }
   }
 
@@ -397,12 +398,13 @@ export class V1Controller {
         this.host,
         this.redis,
         this.blockchainsRepository,
-        this.defaultLogLimitBlocks
-      ).catch(() => {
+        this.defaultLogLimitBlocks,
+        rpcID
+      ).catch((e) => {
         logger.log('error', `Incorrect blockchain: ${this.host}`, {
           origin: this.origin,
         })
-        throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${this.host}`, -32057))
+        throw e
       })
 
       const keyPrefix = prefix ? prefix : rpcID
@@ -461,7 +463,8 @@ export class V1Controller {
     id: string,
     applicationIDs: string[],
     preferredApplicationID: string | undefined,
-    filter: FilterExcludingWhere | undefined
+    filter: FilterExcludingWhere | undefined,
+    rpcID: number
   ): Promise<Applications | undefined> {
     let verifiedIDs: string[] = []
     const cachedLoadBalancerApplicationIDs = await this.redis.get('applicationIDs-' + id)
@@ -482,7 +485,7 @@ export class V1Controller {
 
     // Sanity check; make sure applications are configured for this LB
     if (verifiedIDs.length < 1) {
-      throw new ErrorObject(1, new jsonrpc.JsonRpcError('Load Balancer configuration invalid', -32058))
+      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('Load Balancer configuration invalid', -32058))
     }
     /*
     return this.fetchApplication(
