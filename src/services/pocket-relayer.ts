@@ -147,7 +147,7 @@ export class PocketRelayer {
         logger.log('error', `Incorrect blockchain: ${this.host}`, {
           origin: this.origin,
         })
-        throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${this.host}`, -32000))
+        throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${this.host}`, -32057))
       }
     )
 
@@ -212,7 +212,7 @@ export class PocketRelayer {
             })
             return jsonrpc.error(
               1,
-              new jsonrpc.JsonRpcError(`Overall Timeout exceeded: ${overallTimeOut}`, -32000)
+              new jsonrpc.JsonRpcError(`Overall Timeout exceeded: ${overallTimeOut}`, -32051)
             ) as ErrorObject
           }
 
@@ -456,7 +456,7 @@ export class PocketRelayer {
         })
       }
     }
-    return jsonrpc.error(1, new jsonrpc.JsonRpcError('Relay attempts exhausted', -32000)) as ErrorObject
+    return jsonrpc.error(1, new jsonrpc.JsonRpcError('Relay attempts exhausted', -32050)) as ErrorObject
   }
 
   // Private function to allow relay retries
@@ -496,17 +496,17 @@ export class PocketRelayer {
 
     // Secret key check
     if (!checkSecretKey(application, secretKeyDetails)) {
-      throw new ErrorObject(1, new jsonrpc.JsonRpcError('SecretKey does not match', -32000))
+      throw new ErrorObject(1, new jsonrpc.JsonRpcError('SecretKey does not match', -32059))
     }
 
     // Whitelist: origins -- explicit matches
     if (!checkWhitelist(application.gatewaySettings.whitelistOrigins, this.origin, 'explicit')) {
-      throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Whitelist Origin check failed: ${this.origin}`, -32000))
+      throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Whitelist Origin check failed: ${this.origin}`, -32060))
     }
 
     // Whitelist: userAgent -- substring matches
     if (!checkWhitelist(application.gatewaySettings.whitelistUserAgents, this.userAgent, 'substring')) {
-      throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Whitelist User Agent check failed: ${this.userAgent}`, -32000))
+      throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Whitelist User Agent check failed: ${this.userAgent}`, -32061))
     }
 
     const aatParams: [string, string, string, string] =

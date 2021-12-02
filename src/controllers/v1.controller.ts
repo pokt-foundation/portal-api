@@ -137,7 +137,7 @@ export class V1Controller {
         return this.loadBalancerRelay(redirect.loadBalancerID, rawData)
       }
     }
-    return jsonrpc.error(1, new jsonrpc.JsonRpcError('Invalid domain', -32000)) as ErrorObject
+    return jsonrpc.error(1, new jsonrpc.JsonRpcError('Invalid domain', -32052)) as ErrorObject
   }
 
   /**
@@ -183,7 +183,7 @@ export class V1Controller {
       const loadBalancer = await this.fetchLoadBalancer(id, filter)
 
       if (!loadBalancer?.id) {
-        throw new ErrorObject(1, new jsonrpc.JsonRpcError('Load balancer not found', -32000))
+        throw new ErrorObject(1, new jsonrpc.JsonRpcError('Load balancer not found', -32054))
       }
 
       // Fetch applications contained in this Load Balancer. Verify they exist and choose
@@ -208,7 +208,7 @@ export class V1Controller {
       )
 
       if (!application?.id) {
-        throw new ErrorObject(1, new jsonrpc.JsonRpcError('No application found in the load balancer', -32000))
+        throw new ErrorObject(1, new jsonrpc.JsonRpcError('No application found in the load balancer', -32055))
       }
 
       const options: SendRelayOptions = {
@@ -300,7 +300,7 @@ export class V1Controller {
           typeID: id,
           serviceNode: '',
         })
-        throw new ErrorObject(1, new jsonrpc.JsonRpcError('Application not found', -32000))
+        throw new ErrorObject(1, new jsonrpc.JsonRpcError('Application not found', -32056))
       }
 
       const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =
@@ -369,7 +369,7 @@ export class V1Controller {
         logger.log('error', `Incorrect blockchain: ${this.host}`, {
           origin: this.origin,
         })
-        throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${this.host}`, -32000))
+        throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${this.host}`, -32057))
       })
 
       const keyPrefix = prefix ? prefix : rpcID
@@ -449,7 +449,7 @@ export class V1Controller {
 
     // Sanity check; make sure applications are configured for this LB
     if (verifiedIDs.length < 1) {
-      throw new ErrorObject(1, new jsonrpc.JsonRpcError('Load Balancer configuration invalid', -32000))
+      throw new ErrorObject(1, new jsonrpc.JsonRpcError('Load Balancer configuration invalid', -32058))
     }
     /*
     return this.fetchApplication(
