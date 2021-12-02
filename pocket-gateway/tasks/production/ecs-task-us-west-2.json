@@ -38,7 +38,7 @@
 		"workingDirectory": null,
 		"dockerSecurityOptions": null,
 		"memory": null,
-		"cpu": 1024,
+		"cpu": 1014,
 		"memoryReservation": 1792,
 		"volumesFrom": [],
 		"stopTimeout": null,
