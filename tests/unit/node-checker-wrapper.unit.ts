@@ -6,9 +6,10 @@ import { Configuration, Session, RpcError } from '@pokt-network/pocket-js'
 import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
-import { ChainCheck, NodeChecker } from '../../src/services/node-checker'
+import { ChainCheck, NodeChecker, NodeCheckResponse } from '../../src/services/node-checker'
 import { NodeCheckerWrapper } from '../../src/services/node-checker-wrapper'
 import { MAX_RELAYS_ERROR } from '../../src/utils/constants'
+import { measuredPromise } from '../../src/utils/helpers'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
@@ -131,10 +132,10 @@ describe('Node checker wrapper (unit)', () => {
 
   describe('filterNodes function', () => {
     it('performs succesfull node filter', async () => {
-      const relayStart = process.hrtime()
-
       const nodeChainChecks = await Promise.allSettled(
-        DEFAULT_NODES.map((node) => nodeChecker.performChainCheck(node, CHAINCHECK_PAYLOAD, '0027', undefined, 100))
+        DEFAULT_NODES.map((node) =>
+          measuredPromise(nodeChecker.performChainCheck(node, CHAINCHECK_PAYLOAD, '0027', undefined, 100))
+        )
       )
 
       expect(nodeChainChecks).to.have.length(5)
@@ -143,11 +144,11 @@ describe('Node checker wrapper (unit)', () => {
       const filteredNodes = await nodeCheckerWrapper['filterNodes']<ChainCheck>({
         checkType: 'chain-check',
         nodes: DEFAULT_NODES,
-        checksResult: nodeChainChecks,
+        elapsedTimes: nodeChainChecks.map((res) => (res.status === 'fulfilled' ? res.value.time : 0)),
+        checksResult: nodeChainChecks.map((res) => (res.status === 'fulfilled' ? res.value.value : undefined)),
         blockchainID: '0027',
         pocketSession,
         requestID: '1234',
-        relayStart,
         applicationID: '5678',
         applicationPublicKey: 'abcd',
       })
@@ -157,7 +158,6 @@ describe('Node checker wrapper (unit)', () => {
 
     it('fails node due to invalid chain check', async () => {
       const invalidChain = '{"id":1,"jsonrpc":"2.0","result":"0xc8"}' // 200
-      const relayStart = process.hrtime()
 
       pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = [
         DEFAULT_CHAINCHECK_RESPONSE,
@@ -173,19 +173,34 @@ describe('Node checker wrapper (unit)', () => {
       nodeCheckerWrapper = new NodeCheckerWrapper(pocket, redis, metricsRecorder, ORIGIN)
 
       const nodeChainChecks = await Promise.allSettled(
-        DEFAULT_NODES.map((node) => nodeChecker.performChainCheck(node, CHAINCHECK_PAYLOAD, '0027', undefined, 100))
+        DEFAULT_NODES.map((node) =>
+          measuredPromise(nodeChecker.performChainCheck(node, CHAINCHECK_PAYLOAD, '0027', undefined, 100))
+        )
       )
 
       expect(nodeChainChecks).to.have.length(5)
 
+      const nodeChainChecksOutput: NodeCheckResponse<ChainCheck>[] = nodeChainChecks.map((check, idx) => {
+        if (check.status === 'fulfilled') {
+          return check.value.value
+        }
+
+        return {
+          node: DEFAULT_NODES[idx],
+          check: 'sync-check',
+          success: false,
+          response: check.reason,
+        } as NodeCheckResponse<ChainCheck>
+      })
+
       const filteredNodes = await nodeCheckerWrapper['filterNodes']<ChainCheck>({
         checkType: 'chain-check',
         nodes: DEFAULT_NODES,
-        checksResult: nodeChainChecks,
+        checksResult: nodeChainChecksOutput,
         blockchainID: '0027',
         pocketSession,
         requestID: '1234',
-        relayStart,
+        elapsedTimes: nodeChainChecks.map((res) => (res.status === 'fulfilled' ? res.value.time : 0)),
         applicationID: '5678',
         applicationPublicKey: 'abcd',
       })

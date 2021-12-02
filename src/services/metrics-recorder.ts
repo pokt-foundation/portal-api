@@ -67,13 +67,14 @@ export class MetricsRecorder {
     pocketSession,
     timeout,
     sticky,
+    elapsedTime = 0,
   }: {
     requestID: string
     applicationID: string
     applicationPublicKey: string
     blockchainID: string
     serviceNode: string | undefined
-    relayStart: [number, number]
+    relayStart?: [number, number]
     result: number
     bytes: number
     fallback: boolean
@@ -85,15 +86,17 @@ export class MetricsRecorder {
     pocketSession: Session | undefined
     timeout?: number
     sticky?: string
+    elapsedTime?: number
   }): Promise<void> {
     try {
       const { sessionNodes } = pocketSession || {}
       const sessionHash = hashBlockchainNodes(blockchainID, sessionNodes)
 
-      let elapsedTime = 0
-      const relayEnd = process.hrtime(relayStart)
+      if (!elapsedTime) {
+        const relayEnd = process.hrtime(relayStart)
 
-      elapsedTime = (relayEnd[0] * 1e9 + relayEnd[1]) / 1e9
+        elapsedTime = (relayEnd[0] * 1e9 + relayEnd[1]) / 1e9
+      }
 
       let fallbackTag = ''
 

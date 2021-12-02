@@ -1,8 +1,8 @@
 import { Redis } from 'ioredis'
 import { Configuration, Node, Pocket, PocketAAT, Session } from '@pokt-network/pocket-js'
-import { hashBlockchainNodes } from '../utils/helpers'
+import { hashBlockchainNodes, measuredPromise } from '../utils/helpers'
 import { MetricsRecorder } from './metrics-recorder'
-import { ChainCheck, NodeChecker } from './node-checker'
+import { ChainCheck, NodeChecker, NodeCheckResponse } from './node-checker'
 import { NodeCheckerWrapper } from './node-checker-wrapper'
 
 const logger = require('../services/logger')
@@ -52,10 +52,23 @@ export class PocketChainChecker extends NodeCheckerWrapper {
 
     const nodeChecker = new NodeChecker(this.pocket, pocketConfiguration || this.pocket.configuration)
 
-    const relayStart = process.hrtime()
     const nodeChainChecks = await Promise.allSettled(
-      nodes.map((node) => nodeChecker.performChainCheck(node, data, blockchainID, pocketAAT, chainID))
+      nodes.map((node) => measuredPromise(nodeChecker.performChainCheck(node, data, blockchainID, pocketAAT, chainID)))
     )
+
+    // Sending unhandled failures as handled for metrics
+    const nodeChainChecksData: NodeCheckResponse<ChainCheck>[] = nodeChainChecks.map((check, idx) => {
+      if (check.status === 'fulfilled') {
+        return check.value.value
+      }
+
+      return {
+        node: nodes[idx],
+        check: 'sync-check',
+        success: false,
+        response: check.reason,
+      } as NodeCheckResponse<ChainCheck>
+    })
 
     checkedNodes.push(
       ...(
@@ -64,11 +77,11 @@ export class PocketChainChecker extends NodeCheckerWrapper {
           blockchainID,
           pocketSession,
           requestID,
-          relayStart,
+          elapsedTimes: nodeChainChecks.map((res) => (res.status === 'fulfilled' ? res.value.time : 0)),
           applicationID,
           applicationPublicKey,
           checkType: 'chain-check',
-          checksResult: nodeChainChecks,
+          checksResult: nodeChainChecksData,
         })
       ).map(({ node }) => node)
     )

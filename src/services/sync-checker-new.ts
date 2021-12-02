@@ -2,7 +2,7 @@ import axios from 'axios'
 import { Redis } from 'ioredis'
 import { Configuration, Node, Pocket, PocketAAT, Session } from '@pokt-network/pocket-js'
 import { getNodeNetworkData } from '../utils/cache'
-import { hashBlockchainNodes } from '../utils/helpers'
+import { hashBlockchainNodes, measuredPromise } from '../utils/helpers'
 import { MetricsRecorder } from './metrics-recorder'
 import { NodeChecker, NodeCheckResponse, SyncCheck } from './node-checker'
 import { NodeCheckerWrapper } from './node-checker-wrapper'
@@ -47,9 +47,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     requestID,
   }: SyncCheckerParams): Promise<Node[]> {
     const sessionHash = hashBlockchainNodes(blockchainID, pocketSession.sessionNodes)
-
     const allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
-
     const syncedNodesKey = `sync-check-${sessionHash}`
 
     const syncedRelayNodes: NodeCheckResponse<SyncCheck>[] = []
@@ -61,24 +59,38 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     }
 
     const altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
-
     const nodeChecker = new NodeChecker(this.pocket, pocketConfiguration || this.pocket.configuration)
 
-    const relayStart = process.hrtime()
     const nodeSyncChecks = await Promise.allSettled(
       nodes.map((node) =>
-        nodeChecker.performSyncCheck(
-          node,
-          syncCheckOptions.body,
-          blockchainID,
-          pocketAAT,
-          syncCheckOptions.resultKey,
-          syncCheckOptions.path,
-          altruistBlockHeight,
-          allowance
+        measuredPromise(
+          nodeChecker.performSyncCheck(
+            node,
+            syncCheckOptions.body,
+            blockchainID,
+            pocketAAT,
+            syncCheckOptions.resultKey,
+            syncCheckOptions.path,
+            altruistBlockHeight,
+            allowance
+          )
         )
       )
     )
+
+    // Sending unhandled failures as handled for metrics
+    const nodeSyncChecksData: NodeCheckResponse<SyncCheck>[] = nodeSyncChecks.map((check, idx) => {
+      if (check.status === 'fulfilled') {
+        return check.value.value
+      }
+
+      return {
+        node: nodes[idx],
+        check: 'sync-check',
+        success: false,
+        response: check.reason,
+      } as NodeCheckResponse<SyncCheck>
+    })
 
     syncedRelayNodes.push(
       ...(
@@ -87,11 +99,11 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
           blockchainID,
           pocketSession,
           requestID,
-          relayStart,
+          elapsedTimes: nodeSyncChecks.map((res) => (res.status === 'fulfilled' ? res.value.time : 0)),
           applicationID,
           applicationPublicKey,
           checkType: 'sync-check',
-          checksResult: nodeSyncChecks,
+          checksResult: nodeSyncChecksData,
         })
       ).sort((a, b) => b.output.blockHeight - a.output.blockHeight)
     )
@@ -171,14 +183,18 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     // data if the check for some reason failed, that's why first is needed to check if the sync check response
     // of a node actually holds a valid response.
     await Promise.allSettled(
-      nodeSyncChecks.map(async (node, idx) => {
+      nodeSyncChecks.map(async (node) => {
         // Don't log failing nodes
-        if (node.status !== 'fulfilled' || node.value.response instanceof Error) {
+        if (node.status !== 'fulfilled' || node.value.value.response instanceof Error) {
           return
         }
 
-        const { publicKey } = node.value.node
-        const { blockHeight } = node.value.output
+        const {
+          node: { publicKey },
+        } = node.value.value
+        const {
+          output: { blockHeight },
+        } = node.value.value
 
         const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, publicKey, requestID)
         const syncedNode = syncSuccess.find(({ node: { publicKey: nodePublicKey } }) => nodePublicKey === publicKey)
@@ -201,7 +217,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
               applicationPublicKey: applicationPublicKey,
               blockchainID,
               serviceNode: publicKey,
-              relayStart,
+              elapsedTime: node.value.time,
               result: 500,
               bytes: Buffer.byteLength('OUT OF SYNC', 'utf8'),
               fallback: false,

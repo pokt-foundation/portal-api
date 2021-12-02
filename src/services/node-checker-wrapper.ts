@@ -81,13 +81,13 @@ export class NodeCheckerWrapper {
     requestID,
     applicationID,
     applicationPublicKey,
-    relayStart,
+    elapsedTimes,
   }: FilterParams<T>): Promise<NodeCheckResponse<T>[]> {
     const filteredNodes: NodeCheckResponse<T>[] = []
     const { sessionNodes } = pocketSession
     const sessionHash = hashBlockchainNodes(blockchainID, sessionNodes)
 
-    for (const [idx, nodeCheckPromise] of checksResult.entries()) {
+    for (const [idx, check] of checksResult.entries()) {
       const node = nodes[idx]
 
       const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
@@ -95,20 +95,12 @@ export class NodeCheckerWrapper {
       // helps debugging
       const formattedType = checkType.replace('-', ' ').toUpperCase()
 
-      const rejected = nodeCheckPromise.status === 'rejected'
-      const failed = rejected || nodeCheckPromise.value.response instanceof Error
+      const failed = check.response instanceof Error
 
       if (failed) {
-        let error: string | Error
-        let errorMsg: string
-
-        if (rejected) {
-          error = errorMsg = nodeCheckPromise.reason
-        } else {
-          error = nodeCheckPromise.value.response as Error
-          // Converting to stream will get string representation of most errors
-          errorMsg = error.message || (error as unknown as string)
-        }
+        const error: string | Error = check.response as Error
+        // Converting to stream will get string representation of most errors
+        let errorMsg: string = error.message || (error as unknown as string)
 
         logger.log('error', `${formattedType} ERROR: ${error || errorMsg}`, {
           requestID: requestID,
@@ -134,12 +126,12 @@ export class NodeCheckerWrapper {
           applicationPublicKey: applicationPublicKey,
           blockchainID,
           serviceNode: node.publicKey,
-          relayStart,
+          elapsedTime: elapsedTimes[idx],
           result: 500,
           delivered: false,
           fallback: false,
           method: checkType,
-          error: (error as string) || errorMsg,
+          error: typeof error === 'string' ? error : errorMsg,
           origin: this.origin,
           data: undefined,
           sessionHash,
@@ -172,9 +164,7 @@ export class NodeCheckerWrapper {
       }
 
       // Valid response
-      const {
-        value: { output, success },
-      } = nodeCheckPromise
+      const { output, success } = check
 
       let resultMsg = ''
       let successMsg = ''
@@ -232,7 +222,7 @@ export class NodeCheckerWrapper {
       }
 
       // Successful node: add to nodes list
-      filteredNodes.push(nodeCheckPromise.value)
+      filteredNodes.push(check)
     }
 
     return filteredNodes
@@ -274,11 +264,11 @@ export class NodeCheckerWrapper {
 export type FilterParams<T> = {
   checkType: Check
   nodes: Node[]
-  checksResult: PromiseSettledResult<NodeCheckResponse<T>>[]
+  checksResult: NodeCheckResponse<T>[]
   blockchainID: string
   pocketSession: Session
   requestID: string
   applicationID: string
   applicationPublicKey: string
-  relayStart: [number, number]
+  elapsedTimes: number[]
 }

@@ -1,8 +1,8 @@
 import { Redis } from 'ioredis'
 import { Configuration, Node, Pocket, PocketAAT, Session } from '@pokt-network/pocket-js'
-import { hashBlockchainNodes } from '../utils/helpers'
+import { hashBlockchainNodes, measuredPromise } from '../utils/helpers'
 import { MetricsRecorder } from './metrics-recorder'
-import { ArchivalCheck, NodeChecker } from './node-checker'
+import { ArchivalCheck, NodeChecker, NodeCheckResponse } from './node-checker'
 import { NodeCheckerWrapper } from './node-checker-wrapper'
 
 const logger = require('../services/logger')
@@ -58,12 +58,27 @@ export class ArchivalChecker extends NodeCheckerWrapper {
 
     const nodeChecker = new NodeChecker(this.pocket, pocketConfiguration || this.pocket.configuration)
 
-    const relayStart = process.hrtime()
     const nodeArchivalChecks = await Promise.allSettled(
       nodes.map((node) =>
-        nodeChecker.performArchivalCheck(node, body, blockchainID, pocketAAT, resultKey, comparator, path, true)
+        measuredPromise(
+          nodeChecker.performArchivalCheck(node, body, blockchainID, pocketAAT, resultKey, comparator, path, true)
+        )
       )
     )
+
+    // Sending unhandled failures as handled for metrics
+    const nodeArchivalChecksData: NodeCheckResponse<ArchivalCheck>[] = nodeArchivalChecks.map((check, idx) => {
+      if (check.status === 'fulfilled') {
+        return check.value.value
+      }
+
+      return {
+        node: nodes[idx],
+        check: 'archival-check',
+        success: false,
+        response: check.reason,
+      } as NodeCheckResponse<ArchivalCheck>
+    })
 
     archivalNodes.push(
       ...(
@@ -72,11 +87,11 @@ export class ArchivalChecker extends NodeCheckerWrapper {
           blockchainID,
           pocketSession,
           requestID,
-          relayStart,
+          elapsedTimes: nodeArchivalChecks.map((res) => (res.status === 'fulfilled' ? res.value.time : 0)),
           applicationID,
           applicationPublicKey,
           checkType: 'archival-check',
-          checksResult: nodeArchivalChecks,
+          checksResult: nodeArchivalChecksData,
         })
       ).map(({ node }) => node)
     )
