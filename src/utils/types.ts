@@ -33,4 +33,5 @@ export type StickinessOptions = {
   keyPrefix?: string
   rpcID?: number
   stickyOrigins?: string[]
+  rpcIDThreshold?: number
 }

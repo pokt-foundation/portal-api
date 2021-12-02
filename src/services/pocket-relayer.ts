@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
+import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
 import { JSONObject } from '@loopback/context'
-import { HttpErrors } from '@loopback/rest'
 import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
@@ -15,6 +15,8 @@ import {
   checkEnforcementJSON,
   isRelayError,
   isUserError,
+  fetchUserErrorCode,
+  fetchUserErrorMessage,
   checkWhitelist,
   checkSecretKey,
   SecretKeyDetails,
@@ -131,7 +133,7 @@ export class PocketRelayer {
     relayRetries,
     stickinessOptions,
     logLimitBlocks,
-  }: SendRelayOptions): Promise<string | Error> {
+  }: SendRelayOptions): Promise<string | ErrorObject> {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries
     }
@@ -147,7 +149,7 @@ export class PocketRelayer {
         logger.log('error', `Incorrect blockchain: ${this.host}`, {
           origin: this.origin,
         })
-        throw new HttpErrors.BadRequest(`Incorrect blockchain: ${this.host}`)
+        throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${this.host}`, -32057))
       }
     )
 
@@ -178,7 +180,7 @@ export class PocketRelayer {
     const limitation = await this.enforceLimits(parsedRawData, blockchainID, logLimitBlocks)
     const data = JSON.stringify(parsedRawData)
 
-    if (limitation instanceof Error) {
+    if (limitation instanceof ErrorObject) {
       logger.log('error', `LIMITATION ERROR ${blockchainID} req: ${data}`, {
         blockchainID,
         requestID: requestID,
@@ -210,7 +212,10 @@ export class PocketRelayer {
               typeID: application.id,
               serviceNode: '',
             })
-            return new HttpErrors.GatewayTimeout('Overall Timeout exceeded: ' + overallTimeOut)
+            return jsonrpc.error(
+              1,
+              new jsonrpc.JsonRpcError(`Overall Timeout exceeded: ${overallTimeOut}`, -32051)
+            ) as ErrorObject
           }
 
           // Send this relay attempt
@@ -231,6 +236,15 @@ export class PocketRelayer {
           })
 
           if (!(relayResponse instanceof Error)) {
+            // Check for user error to bubble these up to the API
+            let userErrorMessage = ''
+            let userErrorCode = ''
+
+            if (isUserError(relayResponse.payload)) {
+              userErrorMessage = fetchUserErrorMessage(relayResponse.payload)
+              userErrorCode = fetchUserErrorCode(relayResponse.payload)
+            }
+
             // Record success metric
             this.metricsRecorder
               .recordMetric({
@@ -242,10 +256,10 @@ export class PocketRelayer {
                 relayStart,
                 result: 200,
                 bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
-                delivered: false,
                 fallback: false,
                 method: method,
-                error: undefined,
+                error: userErrorMessage,
+                code: userErrorCode,
                 origin: this.origin,
                 data,
                 pocketSession: this.pocketSession,
@@ -273,9 +287,6 @@ export class PocketRelayer {
             return relayResponse.payload
           } else if (relayResponse instanceof RelayError) {
             // Record failure metric, retry if possible or fallback
-            // If this is the last retry and fallback is available, mark the error not delivered
-            const errorDelivered = x === this.relayRetries && fallbackAvailable ? false : true
-
             // Increment error log
             await this.redis.incr(blockchainID + '-' + relayResponse.servicer_node + '-errors')
             await this.redis.expire(blockchainID + '-' + relayResponse.servicer_node + '-errors', 3600)
@@ -307,10 +318,10 @@ export class PocketRelayer {
                 relayStart,
                 result: 500,
                 bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
-                delivered: errorDelivered,
                 fallback: false,
                 method,
                 error,
+                code: String(relayResponse.code),
                 origin: this.origin,
                 data,
                 pocketSession: this.pocketSession,
@@ -328,8 +339,8 @@ export class PocketRelayer {
         }
       }
     } catch (e) {
-      // Explicit Http errors should be propagated so they can be sent as a response
-      if (HttpErrors.isHttpError(e)) {
+      // Explicit JSON-RPC errors should be propagated so they can be sent as a response
+      if (e instanceof ErrorObject) {
         throw e
       }
 
@@ -404,10 +415,10 @@ export class PocketRelayer {
               relayStart,
               result: 200,
               bytes: Buffer.byteLength(responseParsed, 'utf8'),
-              delivered: false,
               fallback: true,
               method: method,
               error: undefined,
+              code: undefined,
               origin: this.origin,
               data,
               pocketSession: this.pocketSession,
@@ -453,7 +464,7 @@ export class PocketRelayer {
         })
       }
     }
-    return new HttpErrors.GatewayTimeout('Relay attempts exhausted')
+    return jsonrpc.error(1, new jsonrpc.JsonRpcError('Relay attempts exhausted', -32050)) as ErrorObject
   }
 
   // Private function to allow relay retries
@@ -493,17 +504,17 @@ export class PocketRelayer {
 
     // Secret key check
     if (!checkSecretKey(application, secretKeyDetails)) {
-      throw new HttpErrors.Forbidden('SecretKey does not match')
+      throw new ErrorObject(1, new jsonrpc.JsonRpcError('SecretKey does not match', -32059))
     }
 
     // Whitelist: origins -- explicit matches
     if (!checkWhitelist(application.gatewaySettings.whitelistOrigins, this.origin, 'explicit')) {
-      throw new HttpErrors.Forbidden('Whitelist Origin check failed: ' + this.origin)
+      throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Whitelist Origin check failed: ${this.origin}`, -32060))
     }
 
     // Whitelist: userAgent -- substring matches
     if (!checkWhitelist(application.gatewaySettings.whitelistUserAgents, this.userAgent, 'substring')) {
-      throw new HttpErrors.Forbidden('Whitelist User Agent check failed: ' + this.userAgent)
+      throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Whitelist User Agent check failed: ${this.userAgent}`, -32061))
     }
 
     const aatParams: [string, string, string, string] =
@@ -631,10 +642,10 @@ export class PocketRelayer {
             relayStart,
             result: 500,
             bytes: Buffer.byteLength(error, 'utf8'),
-            delivered: false,
             fallback: false,
             method,
             error,
+            code: undefined,
             origin: this.origin,
             data,
             pocketSession,
@@ -669,10 +680,10 @@ export class PocketRelayer {
             relayStart,
             result: 500,
             bytes: Buffer.byteLength(error, 'utf8'),
-            delivered: false,
             fallback: false,
             method,
             error,
+            code: undefined,
             origin: this.origin,
             data,
             pocketSession,
@@ -800,8 +811,8 @@ export class PocketRelayer {
     parsedRawData: Record<string, any>,
     blockchainID: string,
     logLimitBlocks: number
-  ): Promise<void | Error> {
-    let limiterResponse: Promise<void | Error>
+  ): Promise<void | ErrorObject> {
+    let limiterResponse: Promise<void | ErrorObject>
 
     if (blockchainID === '0021') {
       limiterResponse = enforceEVMLimits(parsedRawData, blockchainID, logLimitBlocks, this.altruists)

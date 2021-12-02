@@ -3,7 +3,6 @@ import extractDomain from 'extract-domain'
 import { Redis } from 'ioredis'
 import { getAddressFromPublicKey } from 'pocket-tools'
 import { Node } from '@pokt-network/pocket-js'
-import { getSecondsForNextHour } from './date'
 import { hashBlockchainNodes } from './helpers'
 
 const logger = require('../services/logger')
@@ -34,8 +33,7 @@ export async function removeNodeFromSession(
   const nodesToRemoveTTL = await redis.ttl(sessionKey)
 
   if (nodesToRemoveTTL < 0) {
-    // Add a 2 minutes delay in case the session stays slightly more than an hour.
-    await redis.expire(sessionKey, getSecondsForNextHour() + 60 * 2)
+    await redis.expire(sessionKey, 3600) // 1 hour
   }
 }
 /**

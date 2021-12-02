@@ -1,9 +1,10 @@
 import AWS from 'aws-sdk'
 import { Redis } from 'ioredis'
+import jsonrpc, { ErrorObject, JsonRpcError } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
 import { FilterExcludingWhere, repository } from '@loopback/repository'
-import { HttpErrors, param, post, requestBody } from '@loopback/rest'
+import { param, post, requestBody } from '@loopback/rest'
 import { Configuration, HTTPMethod, Pocket } from '@pokt-network/pocket-js'
 import { WriteApi } from '@influxdata/influxdb-client'
 
@@ -31,6 +32,7 @@ const DEFAULT_STICKINESS_PARAMS = {
   useRPCID: true,
   relaysLimit: 0,
   stickyOrigins: [],
+  rpcIDThreshold: 2,
 }
 
 export class V1Controller {
@@ -134,7 +136,7 @@ export class V1Controller {
       },
     })
     rawData: object
-  ): Promise<string | Error> {
+  ): Promise<string | ErrorObject> {
     for (const redirect of JSON.parse(this.redirects)) {
       if (this.pocketRelayer.host.toLowerCase().includes(redirect.domain, 0)) {
         // Modify the host using the stored blockchain name from .env
@@ -143,7 +145,7 @@ export class V1Controller {
         return this.loadBalancerRelay(redirect.loadBalancerID, rawData)
       }
     }
-    return new HttpErrors.InternalServerError('Invalid domain')
+    return jsonrpc.error(1, new jsonrpc.JsonRpcError('Invalid domain', -32052)) as ErrorObject
   }
 
   /**
@@ -178,7 +180,7 @@ export class V1Controller {
     rawData: object,
     @param.filter(Applications, { exclude: 'where' })
     filter?: FilterExcludingWhere<Applications>
-  ): Promise<string | Error> {
+  ): Promise<string | ErrorObject> {
     // Take the relay path from the end of the endpoint URL
     if (id.match(/[0-9a-zA-Z]{24}~/g)) {
       this.relayPath = id.slice(24).replace(/~/gi, '/')
@@ -189,7 +191,7 @@ export class V1Controller {
       const loadBalancer = await this.fetchLoadBalancer(id, filter)
 
       if (!loadBalancer?.id) {
-        throw new HttpErrors.InternalServerError('Load balancer not found')
+        throw new ErrorObject(1, new jsonrpc.JsonRpcError('Load balancer not found', -32054))
       }
 
       // Fetch applications contained in this Load Balancer. Verify they exist and choose
@@ -198,7 +200,7 @@ export class V1Controller {
       // There's two ways to handle them: rpcID or prefix (full sticky), on rpcID the stickiness works
       // with increasing rpcID relays to maintain consistency and with prefix all relays from a load
       // balancer go to the same app/node regardless the data.
-      const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =
+      const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins, rpcIDThreshold } =
         loadBalancer?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
       const stickyKeyPrefix = stickiness && !useRPCID ? loadBalancer?.id : ''
 
@@ -214,7 +216,7 @@ export class V1Controller {
       )
 
       if (!application?.id) {
-        throw new HttpErrors.InternalServerError('No application found in the load balancer')
+        throw new ErrorObject(1, new jsonrpc.JsonRpcError('No application found in the load balancer', -32055))
       }
 
       const options: SendRelayOptions = {
@@ -234,6 +236,7 @@ export class V1Controller {
           rpcID,
           relaysLimit,
           stickyOrigins,
+          rpcIDThreshold,
         },
       }
 
@@ -243,6 +246,18 @@ export class V1Controller {
 
       return await this.pocketRelayer.sendRelay(options)
     } catch (e) {
+      if (e instanceof ErrorObject) {
+        logger.log('error', e.error.message, {
+          requestID: this.requestID,
+          relayType: 'LB',
+          typeID: id,
+          serviceNode: '',
+          origin: this.origin,
+        })
+
+        return e
+      }
+
       logger.log('error', e.message, {
         requestID: this.requestID,
         relayType: 'LB',
@@ -251,7 +266,7 @@ export class V1Controller {
         origin: this.origin,
       })
 
-      return new HttpErrors.InternalServerError(e.message)
+      return jsonrpc.error(1, new JsonRpcError(e.message, -32050))
     }
   }
 
@@ -287,7 +302,7 @@ export class V1Controller {
     rawData: object,
     @param.filter(Applications, { exclude: 'where' })
     filter?: FilterExcludingWhere<Applications>
-  ): Promise<string | Error> {
+  ): Promise<string | ErrorObject> {
     // Take the relay path from the end of the endpoint URL
     if (id.match(/[0-9a-zA-Z]{24}~/g)) {
       this.relayPath = id.slice(24).replace(/~/gi, '/')
@@ -297,50 +312,65 @@ export class V1Controller {
     try {
       const application = await this.fetchApplication(id, filter)
 
-      if (application?.id) {
-        const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =
-          application?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
-        const stickyKeyPrefix = stickiness && !useRPCID ? application?.id : ''
-
-        const { preferredNodeAddress, rpcID } = stickiness
-          ? await this.checkClientStickiness(rawData, stickyKeyPrefix, stickyOrigins, this.origin)
-          : DEFAULT_STICKINESS_APP_PARAMS
-
-        const sendRelayOptions: SendRelayOptions = {
-          rawData,
-          application,
-          relayPath: this.relayPath,
-          httpMethod: this.httpMethod,
+      if (!application?.id) {
+        logger.log('error', 'Application not found', {
           requestID: this.requestID,
-          stickinessOptions: {
-            stickiness,
-            preferredNodeAddress,
-            duration,
-            keyPrefix: stickyKeyPrefix,
-            rpcID,
-            relaysLimit,
-            stickyOrigins,
-          },
-        }
-
-        return await this.pocketRelayer.sendRelay(sendRelayOptions)
+          relayType: 'APP',
+          typeID: id,
+          serviceNode: '',
+        })
+        throw new ErrorObject(1, new jsonrpc.JsonRpcError('Application not found', -32056))
       }
+
+      const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =
+        application?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
+      const stickyKeyPrefix = stickiness && !useRPCID ? application?.id : ''
+
+      const { preferredNodeAddress, rpcID } = stickiness
+        ? await this.checkClientStickiness(rawData, stickyKeyPrefix, stickyOrigins, this.origin)
+        : DEFAULT_STICKINESS_APP_PARAMS
+
+      const sendRelayOptions: SendRelayOptions = {
+        rawData,
+        application,
+        relayPath: this.relayPath,
+        httpMethod: this.httpMethod,
+        requestID: this.requestID,
+        stickinessOptions: {
+          stickiness,
+          preferredNodeAddress,
+          duration,
+          keyPrefix: stickyKeyPrefix,
+          rpcID,
+          relaysLimit,
+          stickyOrigins,
+        },
+      }
+
+      return await this.pocketRelayer.sendRelay(sendRelayOptions)
     } catch (e) {
+      if (e instanceof ErrorObject) {
+        logger.log('error', e.error.message, {
+          requestID: this.requestID,
+          relayType: 'LB',
+          typeID: id,
+          serviceNode: '',
+          origin: this.origin,
+        })
+
+        return e
+      }
+
       logger.log('error', e.message, {
         requestID: this.requestID,
-        relayType: 'APP',
+        relayType: 'LB',
         typeID: id,
         serviceNode: '',
+        origin: this.origin,
       })
-      return new HttpErrors.InternalServerError(e.message)
+
+      return jsonrpc.error(1, new JsonRpcError(e.message, -32050))
     }
-    logger.log('error', 'Application not found', {
-      requestID: this.requestID,
-      relayType: 'APP',
-      typeID: id,
-      serviceNode: '',
-    })
-    return new HttpErrors.InternalServerError('Application not found')
   }
 
   async checkClientStickiness(
@@ -369,7 +399,7 @@ export class V1Controller {
         logger.log('error', `Incorrect blockchain: ${this.host}`, {
           origin: this.origin,
         })
-        throw new HttpErrors.BadRequest(`Incorrect blockchain: ${this.host}`)
+        throw new ErrorObject(1, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${this.host}`, -32057))
       })
 
       const keyPrefix = prefix ? prefix : rpcID
@@ -449,7 +479,7 @@ export class V1Controller {
 
     // Sanity check; make sure applications are configured for this LB
     if (verifiedIDs.length < 1) {
-      throw new HttpErrors.Forbidden('Load Balancer configuration invalid')
+      throw new ErrorObject(1, new jsonrpc.JsonRpcError('Load Balancer configuration invalid', -32058))
     }
     /*
     return this.fetchApplication(

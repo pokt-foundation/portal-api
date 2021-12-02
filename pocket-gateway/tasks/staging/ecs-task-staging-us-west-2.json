@@ -1,8 +1,7 @@
 {
   "ipcMode": null,
   "executionRoleArn": "arn:aws:iam::059424750518:role/ecsTaskExecutionRole",
-  "containerDefinitions": [
-    {
+  "containerDefinitions": [{
       "dnsSearchDomains": null,
       "environmentFiles": null,
       "logConfiguration": {
@@ -15,16 +14,15 @@
         }
       },
       "entryPoint": null,
-      "portMappings": [
-        {
-          "hostPort": 3000,
-          "protocol": "tcp",
-          "containerPort": 3000
-        }
-      ],
+      "portMappings": [{
+        "hostPort": 3000,
+        "protocol": "tcp",
+        "containerPort": 3000
+      }],
       "command": null,
       "linuxParameters": null,
-      "cpu": 1024,
+      "cpu": 1014,
+      "memoryReservation": 1792,
       "environment": [],
       "resourceRequirements": null,
       "ulimits": null,
@@ -34,7 +32,6 @@
       "secrets": null,
       "dockerSecurityOptions": null,
       "memory": null,
-      "memoryReservation": 2048,
       "volumesFrom": [],
       "stopTimeout": null,
       "image": "059424750518.dkr.ecr.us-west-2.amazonaws.com/gateway-staging:latest",
@@ -55,6 +52,38 @@
       "systemControls": null,
       "privileged": null,
       "name": "gateway"
+    },
+    {
+      "name": "datadog-agent",
+      "image": "datadog/agent:latest",
+      "memoryReservation": 256,
+      "cpu": 10,
+      "resourceRequirements": null,
+      "essential": true,
+      "portMappings": [],
+      "environment": [],
+      "environmentFiles": [],
+      "secrets": null,
+      "mountPoints": null,
+      "volumesFrom": null,
+      "hostname": null,
+      "user": null,
+      "workingDirectory": null,
+      "extraHosts": null,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/datadog-agent-staging",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "ulimits": null,
+      "dockerLabels": null,
+      "dependsOn": null,
+      "repositoryCredentials": {
+        "credentialsParameter": ""
+      }
     }
   ],
   "placementConstraints": [],
