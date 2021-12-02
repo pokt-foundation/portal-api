@@ -189,7 +189,7 @@ export class NodeCheckerWrapper {
           {
             const { blockHeight } = output as unknown as SyncCheck
 
-            resultMsg = `'SYNC-CHECK RESULT: ${JSON.stringify({ node, blockchainID, blockHeight })}`
+            resultMsg = `SYNC-CHECK RESULT: ${JSON.stringify({ node, blockchainID, blockHeight })}`
           }
           break
       }
