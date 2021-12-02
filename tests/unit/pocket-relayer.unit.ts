@@ -1,13 +1,12 @@
 import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
 import RedisMock from 'ioredis-mock'
+import { ErrorObject } from 'jsonrpc-lite'
 import { Encryptor } from 'strong-cryptor'
-import { HttpErrors } from '@loopback/rest'
 import { expect, sinon } from '@loopback/testlab'
 import { HTTPMethod, Configuration, Node, RpcError, Session } from '@pokt-network/pocket-js'
 import AatPlans from '../../src/config/aat-plans.json'
 import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
-import { LimitError } from '../../src/errors/types'
 import { Applications } from '../../src/models/applications.model'
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
 import { ChainChecker, ChainIDFilterOptions } from '../../src/services/chain-checker'
@@ -276,7 +275,7 @@ describe('Pocket relayer service (unit)', () => {
         pocketRelayer.blockchainsRepository,
         pocketRelayer.defaultLogLimitBlocks
       )
-    ).to.be.rejectedWith(Error)
+    ).to.be.rejectedWith(ErrorObject)
   })
 
   it('checks secret of application when set', () => {
@@ -560,7 +559,7 @@ describe('Pocket relayer service (unit)', () => {
       expect(relayResponse).to.be.deepEqual(expected)
     })
 
-    it('sends successful relay response as string', async () => {
+    it('fails when relay response returns a string', async () => {
       const mock = new PocketMock()
 
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
@@ -606,9 +605,8 @@ describe('Pocket relayer service (unit)', () => {
         },
         relayRetries: 0,
       })
-      const expected = mock.relayResponse[rawData]
 
-      expect(relayResponse).to.be.deepEqual(expected)
+      expect(relayResponse).to.be.instanceOf(ErrorObject)
     })
 
     it('throws an error when provided timeout is exceeded', async () => {
@@ -656,7 +654,7 @@ describe('Pocket relayer service (unit)', () => {
         },
       })
 
-      expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+      expect(relayResponse).to.be.instanceOf(ErrorObject)
     })
 
     it('returns relay error on successful relay response that returns error', async () => {
@@ -704,7 +702,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })
 
-      expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+      expect(relayResponse).to.be.instanceOf(ErrorObject)
     })
 
     it('Fails relay due to all nodes in session running out of relays, subsequent relays should not attempt to perform checks', async () => {
@@ -767,7 +765,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })
 
-      expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+      expect(relayResponse).to.be.instanceOf(ErrorObject)
 
       let removedNodes = await redis.smembers(sessionKey)
 
@@ -793,7 +791,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })
 
-      expect(secondRelayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+      expect(secondRelayResponse).to.be.instanceOf(ErrorObject)
 
       removedNodes = await redis.smembers(sessionKey)
 
@@ -859,7 +857,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })
 
-      expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+      expect(relayResponse).to.be.instanceOf(ErrorObject)
 
       let removedNodes = await redis.smembers(sessionKey)
 
@@ -885,7 +883,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })
 
-      expect(secondRelayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+      expect(secondRelayResponse).to.be.instanceOf(ErrorObject)
 
       removedNodes = await redis.smembers(sessionKey)
 
@@ -995,7 +993,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })
 
-      expect(relayResponse).to.be.instanceOf(Error)
+      expect(relayResponse).to.be.instanceOf(ErrorObject)
 
       expect(mockChainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
@@ -1047,7 +1045,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })
 
-      expect(relayResponse).to.be.instanceOf(Error)
+      expect(relayResponse).to.be.instanceOf(ErrorObject)
 
       expect(mockChainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
@@ -1099,10 +1097,9 @@ describe('Pocket relayer service (unit)', () => {
           preferredNodeAddress: '',
         },
         relayRetries: 0,
-      })) as Error
+      })) as ErrorObject
 
-      expect(relayResponse).to.be.instanceOf(LimitError)
-      expect(relayResponse.message).to.match(/You cannot query logs for more than/)
+      expect(relayResponse.error.message).to.match(/You cannot query logs for more than/)
     })
 
     it('should return an error if `eth_getLogs` call uses "latest" on block params (no altruist)', async () => {
@@ -1151,10 +1148,9 @@ describe('Pocket relayer service (unit)', () => {
           preferredNodeAddress: '',
         },
         relayRetries: 0,
-      })) as Error
+      })) as ErrorObject
 
-      expect(relayResponse).to.be.instanceOf(LimitError)
-      expect(relayResponse.message).to.be.equal(`Please use an explicit block number instead of 'latest'.`)
+      expect(relayResponse.error.message).to.match(/Please use an explicit block number instead of/)
     })
 
     it('should succeed if `eth_getLogs` call is within permitted blocks range (no altruist)', async () => {
@@ -1379,7 +1375,7 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     describe('security checks', () => {
-      it('returns forbbiden when secreKey does not match', async () => {
+      it('returns forbidden when secreKey does not match', async () => {
         const gatewaySettings = {
           secretKey: 'y1lhuxbpo7u3hvxzqvesbx7jcjdczw3j',
           secretKeyRequired: true,
@@ -1432,12 +1428,12 @@ describe('Pocket relayer service (unit)', () => {
             relayRetries: 0,
           })
         } catch (error) {
-          expect(error).to.be.instanceOf(HttpErrors.Forbidden)
-          expect(error.message).to.be.equal('SecretKey does not match')
+          expect(error).to.be.instanceOf(ErrorObject)
+          expect(error.error.message).to.be.equal('SecretKey does not match')
         }
       })
 
-      it('returns forbbiden when origins checks fail', async () => {
+      it('returns forbidden when origins checks fail', async () => {
         const gatewaySettings = {
           secretKey: 'y1lhuxbpo7u3hvxzqvesbx7jcjdczw3j',
           secretKeyRequired: false,
@@ -1492,12 +1488,12 @@ describe('Pocket relayer service (unit)', () => {
             relayRetries: 0,
           })
         } catch (error) {
-          expect(error).to.be.instanceOf(HttpErrors.Forbidden)
-          expect(error.message).to.be.equal('Whitelist Origin check failed: ' + invalidOrigin)
+          expect(error).to.be.instanceOf(ErrorObject)
+          expect(error.error.message).to.be.equal('Whitelist Origin check failed: ' + invalidOrigin)
         }
       })
 
-      it('returns forbbiden when user agent checks fail', async () => {
+      it('returns forbidden when user agent checks fail', async () => {
         const gatewaySettings = {
           secretKey: 'y1lhuxbpo7u3hvxzqvesbx7jcjdczw3j',
           secretKeyRequired: false,
@@ -1551,8 +1547,8 @@ describe('Pocket relayer service (unit)', () => {
             relayRetries: 0,
           })
         } catch (error) {
-          expect(error).to.be.instanceOf(HttpErrors.Forbidden)
-          expect(error.message).to.be.equal('Whitelist User Agent check failed: ' + invalidUserAgent)
+          expect(error).to.be.instanceOf(ErrorObject)
+          expect(error.error.message).to.be.equal(`Whitelist User Agent check failed: ${invalidUserAgent}`)
         }
       })
     })
@@ -1702,7 +1698,7 @@ describe('Pocket relayer service (unit)', () => {
           relayRetries: 0,
         })
 
-        expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+        expect(relayResponse).to.be.instanceOf(ErrorObject)
       })
 
       it('should return an error if exceeded eth_getLogs max blocks range (using latest)', async () => {
@@ -1733,10 +1729,9 @@ describe('Pocket relayer service (unit)', () => {
             preferredNodeAddress: '',
           },
           relayRetries: 0,
-        })) as Error
+        })) as ErrorObject
 
-        expect(relayResponse).to.be.instanceOf(LimitError)
-        expect(relayResponse.message).to.match(/You cannot query logs for more than/)
+        expect(relayResponse.error.message).to.match(/You cannot query logs for more than/)
       })
 
       it('should succeed if `eth_getLogs` call is within permitted blocks range (using latest)', async () => {
@@ -1867,10 +1862,9 @@ describe('Pocket relayer service (unit)', () => {
             preferredNodeAddress: '',
           },
           relayRetries: 0,
-        })) as Error
+        })) as ErrorObject
 
-        expect(relayResponse).to.be.instanceOf(HttpErrors.BadRequest)
-        expect(relayResponse.message).to.match(/We cannot serve/)
+        expect(relayResponse.error.message).to.match(/method cannot be served over HTTPS/)
       })
     })
   })
