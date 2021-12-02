@@ -264,8 +264,8 @@ describe('V1 controller (acceptance)', () => {
       .set('host', 'eth-mainnet')
       .expect(200)
 
-    expect(res.body).to.have.property('message')
-    expect(res.body.message).to.startWith('Application not found')
+    expect(res.body).to.have.property('error')
+    expect(res.body.error.message).to.startWith('Application not found')
   })
 
   it('returns 404 when the specified blockchain is not found', async () => {
@@ -282,8 +282,10 @@ describe('V1 controller (acceptance)', () => {
       .set('host', 'eth-mainnet')
       .expect(200)
 
-    expect(res.body).to.have.property('message')
-    expect(res.body.message).to.startWith('Incorrect blockchain')
+    console.log('Bodi', res.body)
+
+    expect(res.body).to.have.property('error')
+    expect(res.body.error.message).to.startWith('Incorrect blockchain')
   })
 
   it('internally performs successful sync check/chain check', async () => {
@@ -338,8 +340,8 @@ describe('V1 controller (acceptance)', () => {
       .expect(200)
 
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
-    expect(response.body).to.have.property('message')
-    expect(response.body.message).to.be.equal('SecretKey does not match')
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('SecretKey does not match')
   })
 
   it('fails on request with invalid origin', async () => {
@@ -369,8 +371,8 @@ describe('V1 controller (acceptance)', () => {
       .expect(200)
 
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
-    expect(response.body).to.have.property('message')
-    expect(response.body.message).to.startWith('Whitelist Origin check failed')
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.startWith('Whitelist Origin check failed')
   })
 
   it('success relay with correct secret key, origin and userAgent security', async () => {
@@ -423,8 +425,8 @@ describe('V1 controller (acceptance)', () => {
       .set('host', 'eth-mainnet')
       .expect(200)
 
-    expect(response.body).to.have.property('message')
-    expect(response.body.message).to.be.equal('Relay attempts exhausted')
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('Relay attempts exhausted')
   })
 
   it('returns error on chain check failure', async () => {
@@ -442,8 +444,8 @@ describe('V1 controller (acceptance)', () => {
       .set('host', 'eth-mainnet')
       .expect(200)
 
-    expect(response.body).to.have.property('message')
-    expect(response.body.message).to.be.equal('Relay attempts exhausted')
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('Relay attempts exhausted')
   })
 
   it('succesfully relays a loadbalancer application', async () => {
@@ -502,8 +504,8 @@ describe('V1 controller (acceptance)', () => {
       .set('host', 'eth-mainnet')
       .expect(200)
 
-    expect(response.body).to.have.property('message')
-    expect(response.body.message).to.be.equal('Load balancer not found')
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('Load balancer not found')
   })
 
   it('returns error on load balancer relay failure', async () => {
@@ -519,8 +521,8 @@ describe('V1 controller (acceptance)', () => {
       .set('host', 'eth-mainnet')
       .expect(200)
 
-    expect(response.body).to.have.property('message')
-    expect(response.body.message).to.be.equal('Relay attempts exhausted')
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('Relay attempts exhausted')
   })
 
   it('redirects empty path with specific load balancer', async () => {
@@ -569,12 +571,11 @@ describe('V1 controller (acceptance)', () => {
       .expect(200)
 
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
-    expect(response.body).to.have.property('message')
-    expect(response.body.message).to.be.equal('Invalid domain')
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('Invalid domain')
   })
 
-  // eslint-disable-next-line mocha/no-exclusive-tests
-  it.only('Perfoms sticky requests on LBs that support it using rpcID', async () => {
+  it('Perfoms sticky requests on LBs that support it using rpcID', async () => {
     const logSpy = sinon.spy(logger, 'log')
 
     const relayRequest = (id) => `{"method":"eth_chainId","id":${id},"jsonrpc":"2.0"}`

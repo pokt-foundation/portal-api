@@ -1,9 +1,10 @@
 import AWS from 'aws-sdk'
 import { Redis } from 'ioredis'
+import jsonrpc, { ErrorObject, JsonRpcError } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
 import { FilterExcludingWhere, repository } from '@loopback/repository'
-import { HttpErrors, param, post, requestBody } from '@loopback/rest'
+import { param, post, requestBody } from '@loopback/rest'
 import { Configuration, HTTPMethod, Pocket } from '@pokt-network/pocket-js'
 import { WriteApi } from '@influxdata/influxdb-client'
 
@@ -15,7 +16,7 @@ import { MetricsRecorder } from '../services/metrics-recorder'
 import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
 import { checkWhitelist } from '../utils/enforcements'
-import { parseRPCID } from '../utils/parsing'
+import { parseRawData, parseRPCID } from '../utils/parsing'
 import { loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
 const logger = require('../services/logger')
@@ -128,7 +129,10 @@ export class V1Controller {
       },
     })
     rawData: object
-  ): Promise<string | Error> {
+  ): Promise<string | ErrorObject> {
+    const parsedRawData = parseRawData(rawData)
+    const rpcID = parseRPCID(parsedRawData)
+
     for (const redirect of JSON.parse(this.redirects)) {
       if (this.pocketRelayer.host.toLowerCase().includes(redirect.domain, 0)) {
         // Modify the host using the stored blockchain name from .env
@@ -137,7 +141,8 @@ export class V1Controller {
         return this.loadBalancerRelay(redirect.loadBalancerID, rawData)
       }
     }
-    return new HttpErrors.InternalServerError('Invalid domain')
+
+    return jsonrpc.error(rpcID, new jsonrpc.JsonRpcError('Invalid domain', -32052)) as ErrorObject
   }
 
   /**
@@ -172,7 +177,10 @@ export class V1Controller {
     rawData: object,
     @param.filter(Applications, { exclude: 'where' })
     filter?: FilterExcludingWhere<Applications>
-  ): Promise<string | Error> {
+  ): Promise<string | ErrorObject> {
+    const parsedRawData = parseRawData(rawData)
+    const reqRPCID = parseRPCID(parsedRawData)
+
     // Take the relay path from the end of the endpoint URL
     if (id.match(/[0-9a-zA-Z]{24}~/g)) {
       this.relayPath = id.slice(24).replace(/~/gi, '/')
@@ -183,7 +191,7 @@ export class V1Controller {
       const loadBalancer = await this.fetchLoadBalancer(id, filter)
 
       if (!loadBalancer?.id) {
-        throw new HttpErrors.InternalServerError('Load balancer not found')
+        throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('Load balancer not found', -32054))
       }
 
       // Fetch applications contained in this Load Balancer. Verify they exist and choose
@@ -204,11 +212,12 @@ export class V1Controller {
         loadBalancer.id,
         loadBalancer.applicationIDs,
         preferredApplicationID,
-        filter
+        filter,
+        rpcID
       )
 
       if (!application?.id) {
-        throw new HttpErrors.InternalServerError('No application found in the load balancer')
+        throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('No application found in the load balancer', -32055))
       }
 
       const options: SendRelayOptions = {
@@ -238,6 +247,18 @@ export class V1Controller {
 
       return await this.pocketRelayer.sendRelay(options)
     } catch (e) {
+      if (e instanceof ErrorObject) {
+        logger.log('error', e.error.message, {
+          requestID: this.requestID,
+          relayType: 'LB',
+          typeID: id,
+          serviceNode: '',
+          origin: this.origin,
+        })
+
+        return e
+      }
+
       logger.log('error', e.message, {
         requestID: this.requestID,
         relayType: 'LB',
@@ -246,7 +267,7 @@ export class V1Controller {
         origin: this.origin,
       })
 
-      return new HttpErrors.InternalServerError(e.message)
+      return jsonrpc.error(reqRPCID, new JsonRpcError(e.message, -32050))
     }
   }
 
@@ -282,7 +303,10 @@ export class V1Controller {
     rawData: object,
     @param.filter(Applications, { exclude: 'where' })
     filter?: FilterExcludingWhere<Applications>
-  ): Promise<string | Error> {
+  ): Promise<string | ErrorObject> {
+    const parsedRawData = parseRawData(rawData)
+    const reqRPCID = parseRPCID(parsedRawData)
+
     // Take the relay path from the end of the endpoint URL
     if (id.match(/[0-9a-zA-Z]{24}~/g)) {
       this.relayPath = id.slice(24).replace(/~/gi, '/')
@@ -292,50 +316,65 @@ export class V1Controller {
     try {
       const application = await this.fetchApplication(id, filter)
 
-      if (application?.id) {
-        const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =
-          application?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
-        const stickyKeyPrefix = stickiness && !useRPCID ? application?.id : ''
-
-        const { preferredNodeAddress, rpcID } = stickiness
-          ? await this.checkClientStickiness(rawData, stickyKeyPrefix, stickyOrigins, this.origin)
-          : DEFAULT_STICKINESS_APP_PARAMS
-
-        const sendRelayOptions: SendRelayOptions = {
-          rawData,
-          application,
-          relayPath: this.relayPath,
-          httpMethod: this.httpMethod,
+      if (!application?.id) {
+        logger.log('error', 'Application not found', {
           requestID: this.requestID,
-          stickinessOptions: {
-            stickiness,
-            preferredNodeAddress,
-            duration,
-            keyPrefix: stickyKeyPrefix,
-            rpcID,
-            relaysLimit,
-            stickyOrigins,
-          },
-        }
-
-        return await this.pocketRelayer.sendRelay(sendRelayOptions)
+          relayType: 'APP',
+          typeID: id,
+          serviceNode: '',
+        })
+        throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('Application not found', -32056))
       }
+
+      const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =
+        application?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
+      const stickyKeyPrefix = stickiness && !useRPCID ? application?.id : ''
+
+      const { preferredNodeAddress, rpcID } = stickiness
+        ? await this.checkClientStickiness(rawData, stickyKeyPrefix, stickyOrigins, this.origin)
+        : DEFAULT_STICKINESS_APP_PARAMS
+
+      const sendRelayOptions: SendRelayOptions = {
+        rawData,
+        application,
+        relayPath: this.relayPath,
+        httpMethod: this.httpMethod,
+        requestID: this.requestID,
+        stickinessOptions: {
+          stickiness,
+          preferredNodeAddress,
+          duration,
+          keyPrefix: stickyKeyPrefix,
+          rpcID,
+          relaysLimit,
+          stickyOrigins,
+        },
+      }
+
+      return await this.pocketRelayer.sendRelay(sendRelayOptions)
     } catch (e) {
+      if (e instanceof ErrorObject) {
+        logger.log('error', e.error.message, {
+          requestID: this.requestID,
+          relayType: 'LB',
+          typeID: id,
+          serviceNode: '',
+          origin: this.origin,
+        })
+
+        return e
+      }
+
       logger.log('error', e.message, {
         requestID: this.requestID,
-        relayType: 'APP',
+        relayType: 'LB',
         typeID: id,
         serviceNode: '',
+        origin: this.origin,
       })
-      return new HttpErrors.InternalServerError(e.message)
+
+      return jsonrpc.error(reqRPCID, new JsonRpcError(e.message, -32050))
     }
-    logger.log('error', 'Application not found', {
-      requestID: this.requestID,
-      relayType: 'APP',
-      typeID: id,
-      serviceNode: '',
-    })
-    return new HttpErrors.InternalServerError('Application not found')
   }
 
   async checkClientStickiness(
@@ -345,7 +384,7 @@ export class V1Controller {
     origin: string
   ): Promise<{ preferredApplicationID: string; preferredNodeAddress: string; rpcID: number }> {
     // Parse the raw data to determine the lowest RPC ID in the call
-    const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
+    const parsedRawData = parseRawData(rawData)
     const rpcID = parseRPCID(parsedRawData)
 
     // Users/bots could fetch several origins from the same ip which not all allow stickiness,
@@ -359,12 +398,13 @@ export class V1Controller {
         this.host,
         this.redis,
         this.blockchainsRepository,
-        this.defaultLogLimitBlocks
-      ).catch(() => {
+        this.defaultLogLimitBlocks,
+        rpcID
+      ).catch((e) => {
         logger.log('error', `Incorrect blockchain: ${this.host}`, {
           origin: this.origin,
         })
-        throw new HttpErrors.BadRequest(`Incorrect blockchain: ${this.host}`)
+        throw e
       })
 
       const keyPrefix = prefix ? prefix : rpcID
@@ -423,7 +463,8 @@ export class V1Controller {
     id: string,
     applicationIDs: string[],
     preferredApplicationID: string | undefined,
-    filter: FilterExcludingWhere | undefined
+    filter: FilterExcludingWhere | undefined,
+    rpcID: number
   ): Promise<Applications | undefined> {
     let verifiedIDs: string[] = []
     const cachedLoadBalancerApplicationIDs = await this.redis.get('applicationIDs-' + id)
@@ -444,7 +485,7 @@ export class V1Controller {
 
     // Sanity check; make sure applications are configured for this LB
     if (verifiedIDs.length < 1) {
-      throw new HttpErrors.Forbidden('Load Balancer configuration invalid')
+      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('Load Balancer configuration invalid', -32058))
     }
     /*
     return this.fetchApplication(

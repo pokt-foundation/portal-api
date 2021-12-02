@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
+import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
 import { JSONObject } from '@loopback/context'
-import { HttpErrors } from '@loopback/rest'
 import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
@@ -24,7 +24,7 @@ import {
   SecretKeyDetails,
 } from '../utils/enforcements'
 import { hashBlockchainNodes } from '../utils/helpers'
-import { parseMethod } from '../utils/parsing'
+import { parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
 import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
@@ -133,10 +133,18 @@ export class PocketRelayer {
     relayRetries,
     stickinessOptions,
     logLimitBlocks,
-  }: SendRelayOptions): Promise<string | Error> {
+  }: SendRelayOptions): Promise<string | ErrorObject> {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries
     }
+    // This converts the raw data into formatted JSON then back to a string for relaying.
+    // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
+    // extraneous characters like newlines and tabs from the rawData.
+    // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
+
+    const parsedRawData = parseRawData(rawData)
+    const rpcID = parseRPCID(parsedRawData)
+
     const {
       blockchainEnforceResult,
       blockchainSyncCheck,
@@ -144,14 +152,18 @@ export class PocketRelayer {
       blockchainID,
       blockchainChainID,
       blockchainLogLimitBlocks,
-    } = await loadBlockchain(this.host, this.redis, this.blockchainsRepository, this.defaultLogLimitBlocks).catch(
-      () => {
-        logger.log('error', `Incorrect blockchain: ${this.host}`, {
-          origin: this.origin,
-        })
-        throw new HttpErrors.BadRequest(`Incorrect blockchain: ${this.host}`)
-      }
-    )
+    } = await loadBlockchain(
+      this.host,
+      this.redis,
+      this.blockchainsRepository,
+      this.defaultLogLimitBlocks,
+      rpcID
+    ).catch((e) => {
+      logger.log('error', `Incorrect blockchain: ${this.host}`, {
+        origin: this.origin,
+      })
+      throw e
+    })
 
     const { preferredNodeAddress } = stickinessOptions
     const nodeSticker = new NodeSticker(
@@ -171,16 +183,10 @@ export class PocketRelayer {
       logLimitBlocks = blockchainLogLimitBlocks
     }
 
-    // This converts the raw data into formatted JSON then back to a string for relaying.
-    // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
-    // extraneous characters like newlines and tabs from the rawData.
-    // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
-
-    const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
-    const limitation = await this.enforceLimits(parsedRawData, blockchainID, logLimitBlocks)
     const data = JSON.stringify(parsedRawData)
+    const limitation = await this.enforceLimits(parsedRawData, blockchainID, logLimitBlocks)
 
-    if (limitation instanceof Error) {
+    if (limitation instanceof ErrorObject) {
       logger.log('error', `LIMITATION ERROR ${blockchainID} req: ${data}`, {
         blockchainID,
         requestID: requestID,
@@ -212,7 +218,10 @@ export class PocketRelayer {
               typeID: application.id,
               serviceNode: '',
             })
-            return new HttpErrors.GatewayTimeout('Overall Timeout exceeded: ' + overallTimeOut)
+            return jsonrpc.error(
+              rpcID,
+              new jsonrpc.JsonRpcError(`Overall Timeout exceeded: ${overallTimeOut}`, -32051)
+            ) as ErrorObject
           }
 
           // Send this relay attempt
@@ -336,8 +345,8 @@ export class PocketRelayer {
         }
       }
     } catch (e) {
-      // Explicit Http errors should be propagated so they can be sent as a response
-      if (HttpErrors.isHttpError(e)) {
+      // Explicit JSON-RPC errors should be propagated so they can be sent as a response
+      if (e instanceof ErrorObject) {
         throw e
       }
 
@@ -461,7 +470,7 @@ export class PocketRelayer {
         })
       }
     }
-    return new HttpErrors.GatewayTimeout('Relay attempts exhausted')
+    return jsonrpc.error(rpcID, new jsonrpc.JsonRpcError('Relay attempts exhausted', -32050)) as ErrorObject
   }
 
   // Private function to allow relay retries
@@ -499,19 +508,25 @@ export class PocketRelayer {
       databaseEncryptionKey: this.databaseEncryptionKey,
     }
 
+    const parsedRawData = parseRawData(data)
+    const rpcID = parseRPCID(parsedRawData)
+
     // Secret key check
     if (!checkSecretKey(application, secretKeyDetails)) {
-      throw new HttpErrors.Forbidden('SecretKey does not match')
+      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('SecretKey does not match', -32059))
     }
 
     // Whitelist: origins -- explicit matches
     if (!checkWhitelist(application.gatewaySettings.whitelistOrigins, this.origin, 'explicit')) {
-      throw new HttpErrors.Forbidden('Whitelist Origin check failed: ' + this.origin)
+      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError(`Whitelist Origin check failed: ${this.origin}`, -32060))
     }
 
     // Whitelist: userAgent -- substring matches
     if (!checkWhitelist(application.gatewaySettings.whitelistUserAgents, this.userAgent, 'substring')) {
-      throw new HttpErrors.Forbidden('Whitelist User Agent check failed: ' + this.userAgent)
+      throw new ErrorObject(
+        rpcID,
+        new jsonrpc.JsonRpcError(`Whitelist User Agent check failed: ${this.userAgent}`, -32061)
+      )
     }
 
     const aatParams: [string, string, string, string] =
@@ -814,8 +829,8 @@ export class PocketRelayer {
     parsedRawData: Record<string, any>,
     blockchainID: string,
     logLimitBlocks: number
-  ): Promise<void | Error> {
-    let limiterResponse: Promise<void | Error>
+  ): Promise<void | ErrorObject> {
+    let limiterResponse: Promise<void | ErrorObject>
 
     if (blockchainID === '0021') {
       limiterResponse = enforceEVMLimits(parsedRawData, blockchainID, logLimitBlocks, this.altruists)
