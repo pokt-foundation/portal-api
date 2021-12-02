@@ -559,7 +559,7 @@ describe('Pocket relayer service (unit)', () => {
       expect(relayResponse).to.be.deepEqual(expected)
     })
 
-    it('sends successful relay response as string', async () => {
+    it('fails when relay response returns a string', async () => {
       const mock = new PocketMock()
 
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
@@ -605,9 +605,8 @@ describe('Pocket relayer service (unit)', () => {
         },
         relayRetries: 0,
       })
-      const expected = mock.relayResponse[rawData]
 
-      expect(relayResponse).to.be.deepEqual(expected)
+      expect(relayResponse).to.be.instanceOf(ErrorObject)
     })
 
     it('throws an error when provided timeout is exceeded', async () => {
