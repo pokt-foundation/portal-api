@@ -24,7 +24,7 @@ import {
   SecretKeyDetails,
 } from '../utils/enforcements'
 import { hashBlockchainNodes } from '../utils/helpers'
-import { parseMethod } from '../utils/parsing'
+import { parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
 import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
@@ -176,7 +176,7 @@ export class PocketRelayer {
     // extraneous characters like newlines and tabs from the rawData.
     // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
 
-    const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
+    const parsedRawData = parseRawData(rawData)
     const limitation = await this.enforceLimits(parsedRawData, blockchainID, logLimitBlocks)
     const data = JSON.stringify(parsedRawData)
 
@@ -193,6 +193,7 @@ export class PocketRelayer {
       return limitation
     }
     const method = parseMethod(parsedRawData)
+    const rpcId = parseRPCID(parsedRawData)
     const fallbackAvailable = this.altruists[blockchainID] !== undefined ? true : false
 
     try {
@@ -213,7 +214,7 @@ export class PocketRelayer {
               serviceNode: '',
             })
             return jsonrpc.error(
-              1,
+              rpcId,
               new jsonrpc.JsonRpcError(`Overall Timeout exceeded: ${overallTimeOut}`, -32051)
             ) as ErrorObject
           }
@@ -464,7 +465,7 @@ export class PocketRelayer {
         })
       }
     }
-    return jsonrpc.error(1, new jsonrpc.JsonRpcError('Relay attempts exhausted', -32050)) as ErrorObject
+    return jsonrpc.error(rpcId, new jsonrpc.JsonRpcError('Relay attempts exhausted', -32050)) as ErrorObject
   }
 
   // Private function to allow relay retries
