@@ -71,18 +71,38 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
-      - name: Fill in the new image ID / eu-west-1
-        id: task-def-eu-west-1
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
+      - name: Fill in the new image ID / eu-west-1 - gateway
+        id: task-def-eu-west-1-gateway
+        uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
           task-definition: pocket-gateway/tasks/production/ecs-task-eu-west-1.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
+          # Needs to be set at container level to be read by the dd agent
+          environment-variables: |
+            DD_RUNTIME_METRICS_ENABLED=true
+            DD_SERVICE=eu-west-1/ecs/gateway
+            DD_ENV=production
+
+      - name: Fill in the new image ID / eu-west-1 - datadog-agent
+        id: task-def-eu-west-1-datadog-agent
+        uses: aws-actions/amazon-ecs-render-task-definition@master
+        with:
+          task-definition: ${{ steps.task-def-eu-west-1-gateway.outputs.task-definition }}
+          container-name: datadog-agent
+          image: datadog/agent:latest
+          environment-variables: |
+            DD_API_KEY=${{ secrets.DATADOG_API_KEY }}
+            DD_SITE=datadoghq.eu
+            DD_LOGS_ENABLED=false
+            DD_APM_ENABLED=true
+            DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
+            ECS_FARGATE=true
 
       - name: Deploy / eu-west-1
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def-eu-west-1.outputs.task-definition }}
+          task-definition: ${{ steps.task-def-eu-west-1-datadog-agent.outputs.task-definition }}
           service: gateway-service
           cluster: gateway
           wait-for-service-stability: true

@@ -17,6 +17,8 @@ import {
   checkEnforcementJSON,
   isRelayError,
   isUserError,
+  fetchUserErrorCode,
+  fetchUserErrorMessage,
   checkWhitelist,
   checkSecretKey,
   SecretKeyDetails,
@@ -234,6 +236,15 @@ export class PocketRelayer {
           })
 
           if (!(relayResponse instanceof Error)) {
+            // Check for user error to bubble these up to the API
+            let userErrorMessage = ''
+            let userErrorCode = ''
+
+            if (isUserError(relayResponse.payload)) {
+              userErrorMessage = fetchUserErrorMessage(relayResponse.payload)
+              userErrorCode = fetchUserErrorCode(relayResponse.payload)
+            }
+
             // Record success metric
             this.metricsRecorder
               .recordMetric({
@@ -245,10 +256,10 @@ export class PocketRelayer {
                 relayStart,
                 result: 200,
                 bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
-                delivered: false,
                 fallback: false,
                 method: method,
-                error: undefined,
+                error: userErrorMessage,
+                code: userErrorCode,
                 origin: this.origin,
                 data,
                 pocketSession: this.pocketSession,
@@ -276,9 +287,6 @@ export class PocketRelayer {
             return relayResponse.payload
           } else if (relayResponse instanceof RelayError) {
             // Record failure metric, retry if possible or fallback
-            // If this is the last retry and fallback is available, mark the error not delivered
-            const errorDelivered = x === this.relayRetries && fallbackAvailable ? false : true
-
             // Increment error log
             await this.redis.incr(blockchainID + '-' + relayResponse.servicer_node + '-errors')
             await this.redis.expire(blockchainID + '-' + relayResponse.servicer_node + '-errors', 3600)
@@ -310,10 +318,10 @@ export class PocketRelayer {
                 relayStart,
                 result: 500,
                 bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
-                delivered: errorDelivered,
                 fallback: false,
                 method,
                 error,
+                code: String(relayResponse.code),
                 origin: this.origin,
                 data,
                 pocketSession: this.pocketSession,
@@ -407,10 +415,10 @@ export class PocketRelayer {
               relayStart,
               result: 200,
               bytes: Buffer.byteLength(responseParsed, 'utf8'),
-              delivered: false,
               fallback: true,
               method: method,
               error: undefined,
+              code: undefined,
               origin: this.origin,
               data,
               pocketSession: this.pocketSession,
@@ -640,10 +648,10 @@ export class PocketRelayer {
             relayStart,
             result: 500,
             bytes: Buffer.byteLength(error, 'utf8'),
-            delivered: false,
             fallback: false,
             method,
             error,
+            code: undefined,
             origin: this.origin,
             data,
             pocketSession,
@@ -678,10 +686,10 @@ export class PocketRelayer {
             relayStart,
             result: 500,
             bytes: Buffer.byteLength(error, 'utf8'),
-            delivered: false,
             fallback: false,
             method,
             error,
+            code: undefined,
             origin: this.origin,
             data,
             pocketSession,
