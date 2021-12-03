@@ -9,11 +9,11 @@ import AatPlans from '../../src/config/aat-plans.json'
 import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
 import { Applications } from '../../src/models/applications.model'
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
-import { ChainChecker, ChainIDFilterOptions } from '../../src/services/chain-checker'
+import { PocketChainChecker } from '../../src/services/chain-checker-new'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { PocketRelayer } from '../../src/services/pocket-relayer'
-import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../../src/services/sync-checker'
+import { PocketSyncChecker, SyncCheckOptions } from '../../src/services/sync-checker-new'
 import { MAX_RELAYS_ERROR } from '../../src/utils/constants'
 import { checkWhitelist, checkSecretKey } from '../../src/utils/enforcements'
 import { hashBlockchainNodes } from '../../src/utils/helpers'
@@ -135,8 +135,8 @@ const APPLICATION = {
 
 describe('Pocket relayer service (unit)', () => {
   let cherryPicker: CherryPicker
-  let chainChecker: ChainChecker
-  let syncChecker: SyncChecker
+  let chainChecker: PocketChainChecker
+  let syncChecker: PocketSyncChecker
   let metricsRecorder: MetricsRecorder
   let blockchainRepository: BlockchainsRepository
   let redis: RedisMock
@@ -152,8 +152,6 @@ describe('Pocket relayer service (unit)', () => {
     redis = new RedisMock(0, '')
     cherryPicker = new CherryPicker({ redis, checkDebug: false })
     metricsRecorder = metricsRecorderMock(redis, cherryPicker)
-    chainChecker = new ChainChecker(redis, metricsRecorder, origin)
-    syncChecker = new SyncChecker(redis, metricsRecorder, 5, origin)
     blockchainRepository = new BlockchainsRepository(gatewayTestDB)
 
     pocketConfiguration = getPocketConfigOrDefault()
@@ -161,6 +159,9 @@ describe('Pocket relayer service (unit)', () => {
     pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
 
     const pocket = pocketMock.object()
+
+    chainChecker = new PocketChainChecker(pocket, redis, metricsRecorder, origin)
+    syncChecker = new PocketSyncChecker({ pocket, redis, metricsRecorder, origin, defaultSyncAllowance: 5 })
 
     pocketRelayer = new PocketRelayer({
       host: DEFAULT_HOST,
@@ -401,8 +402,8 @@ describe('Pocket relayer service (unit)', () => {
       chainCheckNodes: SessionNodeAmount,
       syncCheckNodes: SessionNodeAmount
     ): {
-      chainChecker: ChainChecker
-      syncChecker: SyncChecker
+      chainChecker: PocketChainChecker
+      syncChecker: PocketSyncChecker
     } => {
       const mockChainChecker = chainChecker
       const mockSyncChecker = syncChecker
@@ -410,38 +411,38 @@ describe('Pocket relayer service (unit)', () => {
 
       sinon.replace(
         mockChainChecker,
-        'chainIDFilter',
-        ({
+        'check',
+        (
           nodes,
-          requestID,
-          chainCheck,
+          data,
           chainID,
           blockchainID,
-          pocket,
+          pocketAAT,
+          configuration,
+          session,
           applicationID,
           applicationPublicKey,
-          pocketAAT,
-          pocketConfiguration: pocketConfig,
-        }: ChainIDFilterOptions): Promise<Node[]> => {
+          requestID
+        ): Promise<Node[]> => {
           return Promise.resolve(DEFAULT_NODES.slice(maxAmountOfNodes - chainCheckNodes))
         }
       )
 
       sinon.replace(
         mockSyncChecker,
-        'consensusFilter',
+        'check',
         ({
           nodes,
-          requestID,
           syncCheckOptions,
           blockchainID,
+          pocketAAT,
+          pocketConfiguration: configuration,
+          pocketSession: session,
           blockchainSyncBackup,
           applicationID,
           applicationPublicKey,
-          pocket,
-          pocketAAT,
-          pocketConfiguration: pocketConfig,
-        }: ConsensusFilterOptions): Promise<Node[]> => {
+          requestID,
+        }): Promise<Node[]> => {
           return Promise.resolve(DEFAULT_NODES.slice(maxAmountOfNodes - syncCheckNodes))
         }
       )
@@ -718,9 +719,6 @@ describe('Pocket relayer service (unit)', () => {
       mock.relayResponse[BLOCKCHAINS[1].syncCheckOptions.body] = Array(5).fill(maxRelaysError)
       mock.relayResponse[rawData] = '{"error": "a relay error"}'
 
-      const chainCheckerSpy = sinon.spy(chainChecker, 'chainIDFilter')
-      const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
-
       const pocket = mock.object()
       const { sessionNodes } = (await pocket.sessionManager.getCurrentSession(
         undefined,
@@ -729,6 +727,12 @@ describe('Pocket relayer service (unit)', () => {
         undefined
       )) as Session
       const sessionKey = `session-${hashBlockchainNodes(blockchainID, sessionNodes)}`
+
+      chainChecker = new PocketChainChecker(pocket, redis, metricsRecorder, '')
+      syncChecker = new PocketSyncChecker({ pocket, redis, metricsRecorder, origin: '', defaultSyncAllowance: 5 })
+
+      const chainCheckerSpy = sinon.spy(chainChecker, 'check')
+      const syncCherckerSpy = sinon.spy(syncChecker, 'check')
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -811,8 +815,8 @@ describe('Pocket relayer service (unit)', () => {
       mock.relayResponse[rawData] = new RpcError('90', MAX_RELAYS_ERROR)
 
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
-      const chainCheckerSpy = sinon.spy(chainChecker, 'chainIDFilter')
-      const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
+      const chainCheckerSpy = sinon.spy(chainChecker, 'check')
+      const syncCherckerSpy = sinon.spy(syncChecker, 'check')
       const pocket = mock.object()
       const { sessionNodes } = (await pocket.sessionManager.getCurrentSession(
         undefined,
@@ -899,9 +903,9 @@ describe('Pocket relayer service (unit)', () => {
     it('chainIDCheck / syncCheck succeeds', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
 
-      const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
+      const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'check')
 
-      const syncCherckerSpy = sinon.spy(mockSyncChecker, 'consensusFilter')
+      const syncCherckerSpy = sinon.spy(mockSyncChecker, 'check')
 
       const pocket = pocketMock.object()
 
@@ -952,9 +956,9 @@ describe('Pocket relayer service (unit)', () => {
     it('chainIDCheck fails (no nodes returned)', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(0, 5)
 
-      const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
+      const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'check')
 
-      const syncCherckerSpy = sinon.spy(mockSyncChecker, 'consensusFilter')
+      const syncCherckerSpy = sinon.spy(mockSyncChecker, 'check')
 
       const pocket = pocketMock.object()
 
@@ -1005,8 +1009,8 @@ describe('Pocket relayer service (unit)', () => {
     it('syncCheck fails (no nodes returned)', async () => {
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 0)
 
-      const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
-      const syncCherckerSpy = sinon.spy(mockSyncChecker, 'consensusFilter')
+      const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'check')
+      const syncCherckerSpy = sinon.spy(mockSyncChecker, 'check')
 
       const pocket = pocketMock.object()
 
