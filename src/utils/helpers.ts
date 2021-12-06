@@ -13,3 +13,21 @@ export function hashBlockchainNodes(blockchainID: string, nodes: Node[] = []): s
     )
     .digest('hex')}`
 }
+
+interface MeasuredPromise<T> {
+  time: number
+  value: T
+}
+
+export async function measuredPromise<T>(promise: T | PromiseLike<T>): Promise<MeasuredPromise<T>> {
+  const start = process.hrtime()
+
+  const value = await promise
+
+  const elapsedTime = process.hrtime(start)
+
+  return {
+    value,
+    time: (elapsedTime[0] * 1e9 + elapsedTime[1]) / 1e9,
+  }
+}
