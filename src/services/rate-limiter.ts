@@ -1,8 +1,8 @@
 import { Redis } from 'ioredis'
 
-const LIMIT = 7 // relays per second
-const RATE = 5 // seconds
-const RATE_LIMIT = RATE * LIMIT
+const RELAYS_LIMIT = 7 // relays per second
+const THRESHOLD = 5 // seconds
+const RATE_LIMIT = THRESHOLD * RELAYS_LIMIT
 
 const logger = require('./logger')
 
@@ -10,18 +10,23 @@ export class RateLimiter {
   redis: Redis
   externalRedis: Redis[]
   key: string
+  limiter: number
+  threshold: number
 
-  constructor(key: string, redis: Redis, externalRedis: Redis[]) {
+  constructor(key: string, redis: Redis, externalRedis: Redis[], limit?: number, threshold?: number) {
     this.key = key
     this.redis = redis
     this.externalRedis = externalRedis
+
+    this.limiter = limit || RELAYS_LIMIT
+    this.threshold = threshold || THRESHOLD
   }
 
   async increase(rate?: number): Promise<number> {
     const count = await this.redis.incr(this.key)
 
     if (count === 1) {
-      await this.redis.expire(this.key, rate || RATE)
+      await this.redis.expire(this.key, rate || THRESHOLD)
     }
 
     return count
