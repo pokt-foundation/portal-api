@@ -1,7 +1,6 @@
 import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
 import { Encryptor } from 'strong-cryptor'
-import { HttpErrors } from '@loopback/rest'
 import { Client, sinon, expect } from '@loopback/testlab'
 import { PocketGatewayApplication } from '../..'
 import { ApplicationsRepository } from '../../src/repositories/applications.repository'
@@ -11,7 +10,9 @@ import { gatewayTestDB } from '../fixtures/test.datasource'
 import { MockRelayResponse, PocketMock } from '../mocks/pocketjs'
 import { setupApplication } from './test-helper'
 
-// Must be the same one from the test environment
+const logger = require('../../src/services/logger')
+
+// Must be the same one from the test environment on ./test-helper.ts
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
 
 // Might not actually reflect real-world values
@@ -118,21 +119,63 @@ const APPLICATION = {
   },
 }
 
+const APPLICATIONS = [
+  APPLICATION,
+  { ...APPLICATION, id: 'fg5fdj31d714kdif9g9fe68foth' },
+  { ...APPLICATION, id: 'cienuohoddigue4w232s9rjafgx' },
+]
+
 const LOAD_BALANCERS = [
   {
     id: 'gt4a1s9rfrebaf8g31bsdc04',
     user: 'test@test.com',
     name: 'test load balancer',
     requestTimeout: 5000,
-    applicationIDs: Array(10).fill(APPLICATION.id),
+    applicationIDs: APPLICATIONS.map((app) => app.id),
   },
   {
     id: 'gt4a1s9rfrebaf8g31bsdc05',
     user: 'test@test.com',
-    name: 'test load balancer',
+    name: 'test load balancer sticky rpc',
     requestTimeout: 5000,
-    applicationIDs: Array(10).fill(APPLICATION.id),
+    applicationIDs: APPLICATIONS.map((app) => app.id),
     logLimitBlocks: 25000,
+    stickinessOptions: {
+      stickiness: true,
+      duration: 300,
+      useRPCID: true,
+      relaysLimit: 1e6,
+      rpcIDThreshold: 2,
+    },
+  },
+  {
+    id: 'df9gjsjg43db9fsajfjg93fk',
+    user: 'test@test.com',
+    name: 'test load balancer sticky prefix',
+    requestTimeout: 5000,
+    applicationIDs: APPLICATIONS.map((app) => app.id),
+    logLimitBlocks: 25000,
+    stickinessOptions: {
+      stickiness: true,
+      duration: 300,
+      useRPCID: false,
+      relaysLimit: 1e6,
+    },
+  },
+  {
+    id: 'd8ejd7834ht9d9sj345gfsoaao',
+    user: 'test@test.com',
+    name: 'test load balancer sticky prefix with whitelist',
+    requestTimeout: 5000,
+    applicationIDs: APPLICATIONS.map((app) => app.id),
+    logLimitBlocks: 25000,
+    stickinessOptions: {
+      stickiness: true,
+      duration: 300,
+      useRPCID: false,
+      relaysLimit: 1e6,
+      stickyOrigins: ['localhost'],
+    },
   },
 ]
 
@@ -173,7 +216,7 @@ describe('V1 controller (acceptance)', () => {
 
     await loadBalancersRepository.createAll(LOAD_BALANCERS)
     await blockchainsRepository.createAll(BLOCKCHAINS)
-    await applicationsRepository.create(APPLICATION)
+    await applicationsRepository.createAll(APPLICATIONS)
   })
 
   afterEach(async () => {
@@ -193,10 +236,6 @@ describe('V1 controller (acceptance)', () => {
 
     relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
       '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
-
-    axiosMock
-      .onPost('https://user:pass@backups.example.org:18082')
-      .reply(200, { id: 1, jsonrpc: '2.0', result: '0x1083d57' })
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
@@ -225,8 +264,8 @@ describe('V1 controller (acceptance)', () => {
       .set('host', 'eth-mainnet')
       .expect(200)
 
-    expect(res.body).to.have.property('message')
-    expect(res.body.message).to.startWith('Application not found')
+    expect(res.body).to.have.property('error')
+    expect(res.body.error.message).to.startWith('Application not found')
   })
 
   it('returns 404 when the specified blockchain is not found', async () => {
@@ -243,8 +282,10 @@ describe('V1 controller (acceptance)', () => {
       .set('host', 'eth-mainnet')
       .expect(200)
 
-    expect(res.body).to.have.property('message')
-    expect(res.body.message).to.startWith('Incorrect blockchain')
+    console.log('Bodi', res.body)
+
+    expect(res.body).to.have.property('error')
+    expect(res.body.error.message).to.startWith('Incorrect blockchain')
   })
 
   it('internally performs successful sync check/chain check', async () => {
@@ -299,8 +340,8 @@ describe('V1 controller (acceptance)', () => {
       .expect(200)
 
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
-    expect(response.body).to.have.property('message')
-    expect(response.body.message).to.be.equal('SecretKey does not match')
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('SecretKey does not match')
   })
 
   it('fails on request with invalid origin', async () => {
@@ -330,8 +371,8 @@ describe('V1 controller (acceptance)', () => {
       .expect(200)
 
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
-    expect(response.body).to.have.property('message')
-    expect(response.body.message).to.startWith('Whitelist Origin check failed')
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.startWith('Whitelist Origin check failed')
   })
 
   it('success relay with correct secret key, origin and userAgent security', async () => {
@@ -384,8 +425,8 @@ describe('V1 controller (acceptance)', () => {
       .set('host', 'eth-mainnet')
       .expect(200)
 
-    expect(response.body).to.have.property('message')
-    expect(response.body.message).to.be.equal('Relay attempts exhausted')
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('Relay attempts exhausted')
   })
 
   it('returns error on chain check failure', async () => {
@@ -403,8 +444,8 @@ describe('V1 controller (acceptance)', () => {
       .set('host', 'eth-mainnet')
       .expect(200)
 
-    expect(response.body).to.have.property('message')
-    expect(response.body.message).to.be.equal('Relay attempts exhausted')
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('Relay attempts exhausted')
   })
 
   it('succesfully relays a loadbalancer application', async () => {
@@ -463,8 +504,8 @@ describe('V1 controller (acceptance)', () => {
       .set('host', 'eth-mainnet')
       .expect(200)
 
-    expect(response.body).to.have.property('message')
-    expect(response.body.message).to.be.equal('Load balancer not found')
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('Load balancer not found')
   })
 
   it('returns error on load balancer relay failure', async () => {
@@ -480,8 +521,8 @@ describe('V1 controller (acceptance)', () => {
       .set('host', 'eth-mainnet')
       .expect(200)
 
-    expect(response.body).to.have.property('message')
-    expect(response.body.message).to.be.equal('Relay attempts exhausted')
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('Relay attempts exhausted')
   })
 
   it('redirects empty path with specific load balancer', async () => {
@@ -511,7 +552,7 @@ describe('V1 controller (acceptance)', () => {
       setupApplication(pocket, {
         REDIRECTS: '',
       })
-    ).to.rejectedWith(HttpErrors.InternalServerError)
+    ).to.rejectedWith(Error)
   })
 
   it('fails on invalid redirect load balancer', async () => {
@@ -530,7 +571,226 @@ describe('V1 controller (acceptance)', () => {
       .expect(200)
 
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
-    expect(response.body).to.have.property('message')
-    expect(response.body.message).to.be.equal('Invalid domain')
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('Invalid domain')
+  })
+
+  it('Perfoms sticky requests on LBs that support it using rpcID', async () => {
+    const logSpy = sinon.spy(logger, 'log')
+
+    const relayRequest = (id) => `{"method":"eth_chainId","id":${id},"jsonrpc":"2.0"}`
+    const relayResponseData = (id) => `{"id":${id},"jsonrpc":"2.0","result":"0x64"}`
+    const mockPocket = new PocketMock()
+
+    // Reset default values
+    mockPocket.relayResponse = {}
+
+    // Sync/Chain check
+    mockPocket.relayResponse['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+    mockPocket.relayResponse['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+
+    // Add some default relay requests
+    for (let i = 0; i < 10; i++) {
+      mockPocket.relayResponse[relayRequest(i)] = relayResponseData(i)
+    }
+
+    const pocketClass = mockPocket.class()
+
+    ;({ app, client } = await setupApplication(pocketClass))
+
+    for (let i = 1; i <= 5; i++) {
+      const response = await client
+        .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc05')
+        .send({ method: 'eth_chainId', id: i, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    }
+
+    // Counts the number of times the sticky relay succeeded
+    let successStickyResponses = 0
+
+    logSpy.getCalls().forEach(
+      (call) =>
+        (successStickyResponses = call.calledWith(
+          'info',
+          sinon.match.any,
+          sinon.match((log: object) => {
+            return log['sticky'] === 'SUCCESS'
+          })
+        )
+          ? ++successStickyResponses
+          : successStickyResponses)
+    )
+
+    // First request does  not count as sticky
+    expect(successStickyResponses).to.be.equal(4)
+  })
+
+  it('Perfoms sticky requests on LBs that support it using prefix', async () => {
+    const logSpy = sinon.spy(logger, 'log')
+
+    const relayRequest = '{"method":"eth_chainId","id":0,"jsonrpc":"2.0"}'
+    const mockPocket = new PocketMock()
+
+    // Reset default values
+    mockPocket.relayResponse = {}
+
+    // Sync/Chain check
+    mockPocket.relayResponse['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+    mockPocket.relayResponse['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+
+    mockPocket.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
+
+    const pocketClass = mockPocket.class()
+
+    ;({ app, client } = await setupApplication(pocketClass))
+
+    for (let i = 1; i <= 5; i++) {
+      const response = await client
+        .post('/v1/lb/df9gjsjg43db9fsajfjg93fk')
+        .send({ method: 'eth_chainId', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    }
+
+    // Counts the number of times the sticky relay succeeded
+    let successStickyResponses = 0
+
+    logSpy.getCalls().forEach(
+      (call) =>
+        (successStickyResponses = call.calledWith(
+          'info',
+          sinon.match.any,
+          sinon.match((log: object) => {
+            return log['sticky'] === 'SUCCESS'
+          })
+        )
+          ? ++successStickyResponses
+          : successStickyResponses)
+    )
+
+    // First request does  not count as sticky
+    expect(successStickyResponses).to.be.equal(4)
+  })
+
+  it('Fails sticky requests due to not being on whitelist', async () => {
+    const logSpy = sinon.spy(logger, 'log')
+
+    const relayRequest = '{"method":"eth_chainId","id":0,"jsonrpc":"2.0"}'
+    const mockPocket = new PocketMock()
+
+    // Reset default values
+    mockPocket.relayResponse = {}
+
+    // Sync/Chain check
+    mockPocket.relayResponse['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+    mockPocket.relayResponse['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+
+    mockPocket.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
+
+    const pocketClass = mockPocket.class()
+
+    ;({ app, client } = await setupApplication(pocketClass))
+
+    for (let i = 1; i <= 5; i++) {
+      const response = await client
+        .post('/v1/lb/d8ejd7834ht9d9sj345gfsoaao')
+        .send({ method: 'eth_chainId', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    }
+
+    // Counts the number of times the sticky relay succeeded
+    let successStickyResponses = 0
+
+    logSpy.getCalls().forEach(
+      (call) =>
+        (successStickyResponses = call.calledWith(
+          'info',
+          sinon.match.any,
+          sinon.match((log: object) => {
+            return log['sticky'] === 'SUCCESS'
+          })
+        )
+          ? ++successStickyResponses
+          : successStickyResponses)
+    )
+
+    expect(successStickyResponses).to.be.equal(0)
+  })
+
+  it('Pass sticky requests due to being on whitelist', async () => {
+    const logSpy = sinon.spy(logger, 'log')
+
+    const relayRequest = '{"method":"eth_chainId","id":0,"jsonrpc":"2.0"}'
+    const mockPocket = new PocketMock()
+
+    // Reset default values
+    mockPocket.relayResponse = {}
+
+    // Sync/Chain check
+    mockPocket.relayResponse['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+    mockPocket.relayResponse['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+
+    mockPocket.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
+
+    const pocketClass = mockPocket.class()
+
+    ;({ app, client } = await setupApplication(pocketClass))
+
+    for (let i = 1; i <= 5; i++) {
+      const response = await client
+        .post('/v1/lb/d8ejd7834ht9d9sj345gfsoaao')
+        .send({ method: 'eth_chainId', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    }
+
+    // Counts the number of times the sticky relay succeeded
+    let successStickyResponses = 0
+
+    logSpy.getCalls().forEach(
+      (call) =>
+        (successStickyResponses = call.calledWith(
+          'info',
+          sinon.match.any,
+          sinon.match((log: object) => {
+            return log['sticky'] === 'SUCCESS'
+          })
+        )
+          ? ++successStickyResponses
+          : successStickyResponses)
+    )
+
+    expect(successStickyResponses).to.be.equal(4)
   })
 })

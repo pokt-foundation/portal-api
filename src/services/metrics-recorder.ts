@@ -9,6 +9,7 @@ import { Session } from '@pokt-network/pocket-js'
 import { Point, WriteApi } from '@influxdata/influxdb-client'
 
 import { getNodeNetworkData } from '../utils/cache'
+import { BLOCK_TIMING_ERROR } from '../utils/constants'
 import { hashBlockchainNodes } from '../utils/helpers'
 import { CherryPicker } from './cherry-picker'
 const os = require('os')
@@ -57,14 +58,15 @@ export class MetricsRecorder {
     relayStart,
     result,
     bytes,
-    delivered,
     fallback,
     method,
     error,
+    code,
     origin,
     data,
     pocketSession,
     timeout,
+    sticky,
   }: {
     requestID: string
     applicationID: string
@@ -74,14 +76,15 @@ export class MetricsRecorder {
     relayStart: [number, number]
     result: number
     bytes: number
-    delivered: boolean
     fallback: boolean
     method: string | undefined
     error: string | undefined
+    code: string | undefined
     origin: string | undefined
     data: string | undefined
     pocketSession: Session | undefined
     timeout?: number
+    sticky?: string
   }): Promise<void> {
     try {
       const { sessionNodes } = pocketSession || {}
@@ -121,6 +124,7 @@ export class MetricsRecorder {
           origin,
           blockchainID,
           sessionHash,
+          sticky,
         })
       } else if (result === 500) {
         logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -135,6 +139,7 @@ export class MetricsRecorder {
           origin,
           blockchainID,
           sessionHash,
+          sticky,
         })
       } else if (result === 503) {
         logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -149,6 +154,7 @@ export class MetricsRecorder {
           origin,
           blockchainID,
           sessionHash,
+          sticky,
         })
       }
 
@@ -247,9 +253,21 @@ export class MetricsRecorder {
         bytes,
         method,
         error,
+        code,
       ]
 
+      // Increment node errors
       if (result !== 200) {
+        // TODO: FIND Better way to check for valid service nodes (public key)
+        if (serviceNode && serviceNode.length === 64 && error !== BLOCK_TIMING_ERROR) {
+          // Increment error log
+          await this.redis.incr(blockchainID + '-' + serviceNode + '-errors')
+          await this.redis.expire(blockchainID + '-' + serviceNode + '-errors', 60)
+        }
+      }
+
+      // Process error logs
+      if (result !== 200 || error !== '' || code !== '') {
         await this.processBulkErrors([errorValues], redisTimestamp, redisErrorKey, logger)
       }
     } catch (err) {

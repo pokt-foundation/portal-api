@@ -1,13 +1,12 @@
 import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
 import RedisMock from 'ioredis-mock'
+import { ErrorObject } from 'jsonrpc-lite'
 import { Encryptor } from 'strong-cryptor'
-import { HttpErrors } from '@loopback/rest'
 import { expect, sinon } from '@loopback/testlab'
 import { HTTPMethod, Configuration, Node, RpcError, Session } from '@pokt-network/pocket-js'
 import AatPlans from '../../src/config/aat-plans.json'
 import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
-import { LimitError } from '../../src/errors/types'
 import { Applications } from '../../src/models/applications.model'
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
 import { ChainChecker, ChainIDFilterOptions } from '../../src/services/chain-checker'
@@ -25,10 +24,10 @@ import { gatewayTestDB } from '../fixtures/test.datasource'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
+const logger = require('../../src/services/logger')
+
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
-
 const DEFAULT_LOG_LIMIT = 10000
-
 const DEFAULT_HOST = 'eth-mainnet-x'
 
 // Properties below might not reflect real-world values
@@ -145,6 +144,7 @@ describe('Pocket relayer service (unit)', () => {
   let pocketMock: PocketMock
   let pocketRelayer: PocketRelayer
   let axiosMock: MockAdapter
+  let logSpy: sinon.SinonSpy
 
   const origin = 'unit-test'
 
@@ -166,6 +166,7 @@ describe('Pocket relayer service (unit)', () => {
       host: DEFAULT_HOST,
       origin: '',
       userAgent: '',
+      ipAddress: '',
       pocket,
       pocketConfiguration,
       cherryPicker,
@@ -193,13 +194,11 @@ describe('Pocket relayer service (unit)', () => {
     sinon.restore()
   })
 
-  const clean = async () => {
+  beforeEach(async () => {
     await blockchainRepository.deleteAll()
     await redis.flushall()
     sinon.restore()
-  }
-
-  beforeEach(clean)
+  })
 
   it('should be defined', async () => {
     expect(pocketRelayer).to.be.ok()
@@ -242,7 +241,8 @@ describe('Pocket relayer service (unit)', () => {
       pocketRelayer.host,
       pocketRelayer.redis,
       pocketRelayer.blockchainsRepository,
-      pocketRelayer.defaultLogLimitBlocks
+      pocketRelayer.defaultLogLimitBlocks,
+      1
     )
 
     expect(blockchainResult).to.be.ok()
@@ -257,7 +257,8 @@ describe('Pocket relayer service (unit)', () => {
       pocketRelayer.host,
       pocketRelayer.redis,
       pocketRelayer.blockchainsRepository,
-      pocketRelayer.defaultLogLimitBlocks
+      pocketRelayer.defaultLogLimitBlocks,
+      1
     )
 
     expect(blockchainResult).to.be.ok()
@@ -274,9 +275,10 @@ describe('Pocket relayer service (unit)', () => {
         pocketRelayer.host,
         pocketRelayer.redis,
         pocketRelayer.blockchainsRepository,
-        pocketRelayer.defaultLogLimitBlocks
+        pocketRelayer.defaultLogLimitBlocks,
+        1
       )
-    ).to.be.rejectedWith(Error)
+    ).to.be.rejectedWith(ErrorObject)
   })
 
   it('checks secret of application when set', () => {
@@ -290,6 +292,7 @@ describe('Pocket relayer service (unit)', () => {
       host: DEFAULT_HOST,
       origin: '',
       userAgent: '',
+      ipAddress: '',
       pocket,
       pocketConfiguration,
       cherryPicker,
@@ -329,6 +332,7 @@ describe('Pocket relayer service (unit)', () => {
       host: DEFAULT_HOST,
       origin: '',
       userAgent: '',
+      ipAddress: '',
       pocket,
       pocketConfiguration,
       cherryPicker,
@@ -466,6 +470,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -491,6 +496,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
       const expected = JSON.parse(mock.relayResponse[rawData] as string)
@@ -514,6 +524,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -539,6 +550,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
       const expected = JSON.parse(mock.relayResponse[rawData] as string)
@@ -546,7 +562,7 @@ describe('Pocket relayer service (unit)', () => {
       expect(relayResponse).to.be.deepEqual(expected)
     })
 
-    it('sends successful relay response as string', async () => {
+    it('fails when relay response returns a string', async () => {
       const mock = new PocketMock()
 
       const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
@@ -559,6 +575,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet-string',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -584,11 +601,15 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
-      const expected = mock.relayResponse[rawData]
 
-      expect(relayResponse).to.be.deepEqual(expected)
+      expect(relayResponse).to.be.instanceOf(ErrorObject)
     })
 
     it('throws an error when provided timeout is exceeded', async () => {
@@ -602,6 +623,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -628,9 +650,14 @@ describe('Pocket relayer service (unit)', () => {
         requestTimeOut: 0,
         overallTimeOut: 1,
         relayRetries: 1,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
       })
 
-      expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+      expect(relayResponse).to.be.instanceOf(ErrorObject)
     })
 
     it('returns relay error on successful relay response that returns error', async () => {
@@ -644,6 +671,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet-x',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -669,10 +697,15 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
-      expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+      expect(relayResponse).to.be.instanceOf(ErrorObject)
     })
 
     it('Fails relay due to all nodes in session running out of relays, subsequent relays should not attempt to perform checks', async () => {
@@ -701,6 +734,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -726,10 +760,15 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
-      expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+      expect(relayResponse).to.be.instanceOf(ErrorObject)
 
       let removedNodes = await redis.smembers(sessionKey)
 
@@ -747,10 +786,15 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
-      expect(secondRelayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+      expect(secondRelayResponse).to.be.instanceOf(ErrorObject)
 
       removedNodes = await redis.smembers(sessionKey)
 
@@ -782,6 +826,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -807,10 +852,15 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
-      expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+      expect(relayResponse).to.be.instanceOf(ErrorObject)
 
       let removedNodes = await redis.smembers(sessionKey)
 
@@ -828,10 +878,15 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
-      expect(secondRelayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+      expect(secondRelayResponse).to.be.instanceOf(ErrorObject)
 
       removedNodes = await redis.smembers(sessionKey)
 
@@ -854,6 +909,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -879,6 +935,11 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
@@ -901,6 +962,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -926,10 +988,15 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
-      expect(relayResponse).to.be.instanceOf(Error)
+      expect(relayResponse).to.be.instanceOf(ErrorObject)
 
       expect(mockChainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
@@ -947,6 +1014,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -972,10 +1040,15 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
-      expect(relayResponse).to.be.instanceOf(Error)
+      expect(relayResponse).to.be.instanceOf(ErrorObject)
 
       expect(mockChainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
@@ -992,6 +1065,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -1020,11 +1094,15 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
-      })) as Error
+      })) as ErrorObject
 
-      expect(relayResponse).to.be.instanceOf(LimitError)
-      expect(relayResponse.message).to.match(/You cannot query logs for more than/)
+      expect(relayResponse.error.message).to.match(/You cannot query logs for more than/)
     })
 
     it('should return an error if `eth_getLogs` call uses "latest" on block params (no altruist)', async () => {
@@ -1038,6 +1116,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -1066,11 +1145,15 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
-      })) as Error
+      })) as ErrorObject
 
-      expect(relayResponse).to.be.instanceOf(LimitError)
-      expect(relayResponse.message).to.be.equal(`Please use an explicit block number instead of 'latest'.`)
+      expect(relayResponse.error.message).to.match(/Please use an explicit block number instead of/)
     })
 
     it('should succeed if `eth_getLogs` call is within permitted blocks range (no altruist)', async () => {
@@ -1090,6 +1173,7 @@ describe('Pocket relayer service (unit)', () => {
         host: 'eth-mainnet',
         origin: '',
         userAgent: '',
+        ipAddress: '',
         pocket,
         pocketConfiguration,
         cherryPicker,
@@ -1115,14 +1199,186 @@ describe('Pocket relayer service (unit)', () => {
         requestID: '1234',
         requestTimeOut: undefined,
         overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
         relayRetries: 0,
       })
 
       expect(relayResponse).to.be.deepEqual(JSON.parse(mock.relayResponse[rawData] as string))
     })
 
+    it('relay requesting a preferred node should use that one if available with rpcID', async () => {
+      logSpy = sinon.spy(logger, 'log')
+
+      const { address: preferredNodeAddress } = DEFAULT_NODES[0]
+
+      const mock = new PocketMock()
+
+      const relayRequest = (id) => `{"method":"eth_chainId","id":${id},"jsonrpc":"2.0"}`
+      const relayResponseData = (id) => `{"id":${id},"jsonrpc":"2.0","result":"0x64"}`
+
+      // Reset default values
+      mock.relayResponse = {}
+
+      // Add some default relay requests
+      for (let i = 0; i < 10; i++) {
+        mock.relayResponse[relayRequest(i)] = relayResponseData(i)
+      }
+
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+
+      const pocket = mock.object()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        ipAddress: '127.0.0.1',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: false,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+      })
+
+      for (let i = 0; i <= 5; i++) {
+        const relayResponse = await poktRelayer.sendRelay({
+          rawData: relayRequest(i),
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          stickinessOptions: {
+            stickiness: true,
+            preferredNodeAddress,
+            rpcID: i,
+            duration: 300,
+          },
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          relayRetries: 0,
+        })
+        const expected = JSON.parse(mock.relayResponse[relayRequest(i)] as string)
+
+        expect(relayResponse).to.be.deepEqual(expected)
+      }
+
+      // Counts the number of times the sticky relay succeeded
+      let successStickyResponses = 0
+
+      logSpy.getCalls().forEach(
+        (call) =>
+          (successStickyResponses = call.calledWith(
+            'info',
+            sinon.match.any,
+            sinon.match((log: object) => {
+              return log['sticky'] === 'SUCCESS'
+            })
+          )
+            ? ++successStickyResponses
+            : successStickyResponses)
+      )
+
+      expect(successStickyResponses).to.be.equal(5)
+    })
+
+    it('relay requesting a preferred node should use that one if available with prefix', async () => {
+      logSpy = sinon.spy(logger, 'log')
+
+      const { address: preferredNodeAddress } = DEFAULT_NODES[0]
+
+      const mock = new PocketMock()
+
+      // Reset default values
+      mock.relayResponse = {}
+
+      const relayRequest = '{"method":"eth_chainId","id":0,"jsonrpc":"2.0"}'
+
+      mock.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
+
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+
+      const pocket = mock.object()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        ipAddress: '127.0.0.1',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: false,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+      })
+
+      for (let i = 0; i <= 5; i++) {
+        const relayResponse = await poktRelayer.sendRelay({
+          rawData: relayRequest,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          stickinessOptions: {
+            stickiness: true,
+            preferredNodeAddress,
+            rpcID: 0,
+            duration: 300,
+            keyPrefix: 'myPrefix',
+          },
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          relayRetries: 0,
+        })
+        const expected = JSON.parse(mock.relayResponse[relayRequest] as string)
+
+        expect(relayResponse).to.be.deepEqual(expected)
+      }
+
+      // Counts the number of times the sticky relay succeeded
+      let successStickyResponses = 0
+
+      logSpy.getCalls().forEach(
+        (call) =>
+          (successStickyResponses = call.calledWith(
+            'info',
+            sinon.match.any,
+            sinon.match((log: object) => {
+              return log['sticky'] === 'SUCCESS'
+            })
+          )
+            ? ++successStickyResponses
+            : successStickyResponses)
+      )
+
+      expect(successStickyResponses).to.be.equal(5)
+    })
+
     describe('security checks', () => {
-      it('returns forbbiden when secreKey does not match', async () => {
+      it('returns forbidden when secreKey does not match', async () => {
         const gatewaySettings = {
           secretKey: 'y1lhuxbpo7u3hvxzqvesbx7jcjdczw3j',
           secretKeyRequired: true,
@@ -1140,6 +1396,7 @@ describe('Pocket relayer service (unit)', () => {
           host: 'eth-mainnet-x',
           origin: '',
           userAgent: '',
+          ipAddress: '',
           pocket,
           pocketConfiguration,
           cherryPicker,
@@ -1166,15 +1423,20 @@ describe('Pocket relayer service (unit)', () => {
             requestID: '1234',
             requestTimeOut: undefined,
             overallTimeOut: undefined,
+            stickinessOptions: {
+              stickiness: false,
+              duration: 0,
+              preferredNodeAddress: '',
+            },
             relayRetries: 0,
           })
         } catch (error) {
-          expect(error).to.be.instanceOf(HttpErrors.Forbidden)
-          expect(error.message).to.be.equal('SecretKey does not match')
+          expect(error).to.be.instanceOf(ErrorObject)
+          expect(error.error.message).to.be.equal('SecretKey does not match')
         }
       })
 
-      it('returns forbbiden when origins checks fail', async () => {
+      it('returns forbidden when origins checks fail', async () => {
         const gatewaySettings = {
           secretKey: 'y1lhuxbpo7u3hvxzqvesbx7jcjdczw3j',
           secretKeyRequired: false,
@@ -1194,6 +1456,7 @@ describe('Pocket relayer service (unit)', () => {
           host: 'eth-mainnet-x',
           origin: invalidOrigin,
           userAgent: '',
+          ipAddress: '',
           pocket,
           pocketConfiguration,
           cherryPicker,
@@ -1220,15 +1483,20 @@ describe('Pocket relayer service (unit)', () => {
             requestID: '1234',
             requestTimeOut: undefined,
             overallTimeOut: undefined,
+            stickinessOptions: {
+              stickiness: false,
+              duration: 0,
+              preferredNodeAddress: '',
+            },
             relayRetries: 0,
           })
         } catch (error) {
-          expect(error).to.be.instanceOf(HttpErrors.Forbidden)
-          expect(error.message).to.be.equal('Whitelist Origin check failed: ' + invalidOrigin)
+          expect(error).to.be.instanceOf(ErrorObject)
+          expect(error.error.message).to.be.equal('Whitelist Origin check failed: ' + invalidOrigin)
         }
       })
 
-      it('returns forbbiden when user agent checks fail', async () => {
+      it('returns forbidden when user agent checks fail', async () => {
         const gatewaySettings = {
           secretKey: 'y1lhuxbpo7u3hvxzqvesbx7jcjdczw3j',
           secretKeyRequired: false,
@@ -1247,6 +1515,7 @@ describe('Pocket relayer service (unit)', () => {
           host: 'eth-mainnet-x',
           origin: '',
           userAgent: invalidUserAgent,
+          ipAddress: '',
           pocket,
           pocketConfiguration,
           cherryPicker,
@@ -1273,11 +1542,16 @@ describe('Pocket relayer service (unit)', () => {
             requestID: '1234',
             requestTimeOut: undefined,
             overallTimeOut: undefined,
+            stickinessOptions: {
+              stickiness: false,
+              duration: 0,
+              preferredNodeAddress: '',
+            },
             relayRetries: 0,
           })
         } catch (error) {
-          expect(error).to.be.instanceOf(HttpErrors.Forbidden)
-          expect(error.message).to.be.equal('Whitelist User Agent check failed: ' + invalidUserAgent)
+          expect(error).to.be.instanceOf(ErrorObject)
+          expect(error.error.message).to.be.equal(`Whitelist User Agent check failed: ${invalidUserAgent}`)
         }
       })
     })
@@ -1306,6 +1580,7 @@ describe('Pocket relayer service (unit)', () => {
           host: 'eth-mainnet',
           origin: '',
           userAgent: '',
+          ipAddress: '',
           pocket,
           pocketConfiguration,
           cherryPicker,
@@ -1341,6 +1616,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })
 
@@ -1362,6 +1642,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })
 
@@ -1383,6 +1668,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
 
           relayRetries: 0,
         })
@@ -1403,10 +1693,15 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })
 
-        expect(relayResponse).to.be.instanceOf(HttpErrors.GatewayTimeout)
+        expect(relayResponse).to.be.instanceOf(ErrorObject)
       })
 
       it('should return an error if exceeded eth_getLogs max blocks range (using latest)', async () => {
@@ -1431,11 +1726,15 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
-        })) as Error
+        })) as ErrorObject
 
-        expect(relayResponse).to.be.instanceOf(LimitError)
-        expect(relayResponse.message).to.match(/You cannot query logs for more than/)
+        expect(relayResponse.error.message).to.match(/You cannot query logs for more than/)
       })
 
       it('should succeed if `eth_getLogs` call is within permitted blocks range (using latest)', async () => {
@@ -1464,6 +1763,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })
 
@@ -1496,6 +1800,7 @@ describe('Pocket relayer service (unit)', () => {
           host: 'eth-mainnet-string',
           origin: '',
           userAgent: '',
+          ipAddress: '',
           pocket,
           pocketConfiguration,
           cherryPicker,
@@ -1521,6 +1826,11 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
         })
 
@@ -1549,11 +1859,15 @@ describe('Pocket relayer service (unit)', () => {
           requestID: '1234',
           requestTimeOut: undefined,
           overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
           relayRetries: 0,
-        })) as Error
+        })) as ErrorObject
 
-        expect(relayResponse).to.be.instanceOf(HttpErrors.BadRequest)
-        expect(relayResponse.message).to.match(/We cannot serve/)
+        expect(relayResponse.error.message).to.match(/method cannot be served over HTTPS/)
       })
     })
   })

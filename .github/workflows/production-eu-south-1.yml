@@ -50,12 +50,14 @@ jobs:
           envkey_INFLUX_ORG: 'pocket'
           envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
           envkey_PSQL_CONNECTION: ${{ secrets.PSQL_CONNECTION }}
-          envkey_LOG_TO_CLOUDWATCH: true
+          envkey_LOG_TO_CLOUDWATCH: false
           envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           envkey_COMMIT_HASH: ${{ github.sha }}
           envkey_ARCHIVAL_CHAINS: '0022,0028,0010,000A,000B,000C'
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
+          envKey_LOG_TO_DATADOG: true
+          envKey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
@@ -69,18 +71,37 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
-      - name: Fill in the new image ID / eu-south-1
-        id: task-def-eu-south-1
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
+      - name: Fill in the new image ID / eu-south-1 - gateway
+        id: task-def-eu-south-1-gateway
+        uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
           task-definition: pocket-gateway/tasks/production/ecs-task-eu-south-1.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
+          environment-variables: |
+            DD_RUNTIME_METRICS_ENABLED=true
+            DD_SERVICE=eu-south-1/ecs/gateway
+            DD_ENV=production
+
+      - name: Fill in the new image ID / eu-south-1 - datadog-agent
+        id: task-def-eu-south-1-datadog-agent
+        uses: aws-actions/amazon-ecs-render-task-definition@master
+        with:
+          task-definition: ${{ steps.task-def-eu-south-1-gateway.outputs.task-definition }}
+          container-name: datadog-agent
+          image: datadog/agent:latest
+          environment-variables: |
+            DD_API_KEY=${{ secrets.DATADOG_API_KEY }}
+            DD_SITE=datadoghq.eu
+            DD_LOGS_ENABLED=false
+            DD_APM_ENABLED=true
+            DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
+            ECS_FARGATE=true
 
       - name: Deploy / eu-south-1
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def-eu-south-1.outputs.task-definition }}
+          task-definition: ${{ steps.task-def-eu-south-1-datadog-agent.outputs.task-definition }}
           service: gateway-service
           cluster: gateway
           wait-for-service-stability: true

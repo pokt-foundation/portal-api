@@ -5,6 +5,8 @@ import {
   LifeCycleObserver, // The interface
 } from '@loopback/core'
 
+const ENV = process.env['NODE_ENV']
+
 /**
  * This class will be bound to the application as a `LifeCycleObserver` during
  * `boot`
@@ -31,18 +33,19 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'DEFAULT_SYNC_ALLOWANCE',
     'DEFAULT_LOG_LIMIT_BLOCKS',
     'AAT_PLAN',
-    'WATCH',
     'REDIRECTS',
     'INFLUX_URL',
     'INFLUX_TOKEN',
     'INFLUX_ORG',
+    'ARCHIVAL_CHAINS',
+    // Not required in code, but must be present in .env
     'AWS_ACCESS_KEY_ID',
     'AWS_SECRET_ACCESS_KEY',
-    'AWS_REGION',
-    'ARCHIVAL_CHAINS',
   ]
 
-  private static optionalEnvVars: string[] = ['COMMIT_HASH', 'ALWAYS_REDIRECT_TO_ALTRUISTS']
+  private static requiredEnvVarsOnlyInProd = ['COMMIT_HASH']
+
+  private static optionalEnvVars: string[] = ['DISABLE_TIMESTREAM', 'ALWAYS_REDIRECT_TO_ALTRUISTS']
 
   /*
   constructor(
@@ -63,13 +66,19 @@ export class EnvironmentObserver implements LifeCycleObserver {
       return
     }
 
-    const environmentVariables = EnvironmentObserver.requiredEnvVars.concat(EnvironmentObserver.optionalEnvVars)
+    const environmentVariables = EnvironmentObserver.requiredEnvVars.concat(
+      EnvironmentObserver.optionalEnvVars,
+      EnvironmentObserver.requiredEnvVarsOnlyInProd
+    )
 
     environmentVariables.forEach((name: string) => {
       const variable = process.env[name]
 
-      if (!variable && !(EnvironmentObserver.optionalEnvVars.indexOf(name) >= 0)) {
-        throw new Error(`Required variable ${name} not found`)
+      if (!variable && EnvironmentObserver.optionalEnvVars.indexOf(name) < 0) {
+        if (ENV !== 'production' && EnvironmentObserver.requiredEnvVarsOnlyInProd.indexOf(name) >= 0) {
+          return
+        }
+        throw new Error(`${name} required in ENV`)
       }
 
       configValues[name] = variable
