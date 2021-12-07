@@ -117,7 +117,7 @@ export class NodeSticker {
   }
 
   buildClientStickyKey(prefix: string, suffix?: string): string {
-    return `${prefix}-${this.ipAddress}-${this.blockchainID}${suffix ? `-${suffix}` : ''}`
+    return `sticky-${prefix}-${this.ipAddress}-${this.blockchainID}${suffix ? `-${suffix}` : ''}`
   }
 
   async getStickyNode(nodes: Node[], exhaustedNodes: string[]): Promise<Node | undefined> {

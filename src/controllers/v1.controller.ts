@@ -416,7 +416,7 @@ export class V1Controller {
 
       const keyPrefix = prefix ? prefix : rpcID
 
-      const clientStickyKey = `${keyPrefix}-${this.ipAddress}-${blockchainID}`
+      const clientStickyKey = `sticky-${keyPrefix}-${this.ipAddress}-${blockchainID}`
       const clientStickyAppNodeRaw = await this.redis.get(clientStickyKey)
       const clientStickyAppNode = JSON.parse(clientStickyAppNodeRaw)
 
