@@ -1,8 +1,7 @@
 import { Redis } from 'ioredis'
 
-const RELAYS_LIMIT = 7 // relays per second
-const THRESHOLD = 5 // seconds
-const RATE_LIMIT = THRESHOLD * RELAYS_LIMIT
+const DEFAULT_RELAYS_LIMIT = 7 // relays per second
+const DEFAULT_DURATION = 5 // seconds
 
 const logger = require('./logger')
 
@@ -11,51 +10,53 @@ export class RateLimiter {
   externalRedis: Redis[]
   key: string
   limiter: number
-  threshold: number
+  duration: number
 
-  constructor(key: string, redis: Redis, externalRedis: Redis[], limit?: number, threshold?: number) {
+  constructor(key: string, redis: Redis, externalRedis: Redis[], limit?: number, duration?: number) {
     this.key = key
     this.redis = redis
     this.externalRedis = externalRedis
 
-    this.limiter = limit || RELAYS_LIMIT
-    this.threshold = threshold || THRESHOLD
+    this.limiter = limit || DEFAULT_RELAYS_LIMIT
+    this.duration = duration || DEFAULT_DURATION
   }
 
-  async increase(rate?: number): Promise<number> {
+  async increase(): Promise<number> {
     const count = await this.redis.incr(this.key)
 
     if (count === 1) {
-      await this.redis.expire(this.key, rate || THRESHOLD)
+      await this.redis.expire(this.key, this.duration)
     }
 
     return count
   }
 
-  async limit(removeFromCache = true): Promise<boolean> {
-    let count = Number.parseInt(await this.redis.get(this.key))
+  async limit(increase = false): Promise<boolean> {
+    let count = increase ? await this.increase() : Number.parseInt(await this.redis.get(this.key))
 
     for (const instance of this.externalRedis) {
       count += Number.parseInt(await instance.get(this.key))
     }
 
-    const remove = count > RATE_LIMIT
-
-    if (removeFromCache) {
-      await this.redis.del(this.key)
-
-      const operations = []
-
-      for (const instance of this.externalRedis) {
-        operations.push(instance.del(this.key))
-      }
-
-      // Don't need to explicitly need for the other instances to update
-      Promise.allSettled(operations).catch((error) =>
-        logger.log('error', 'Error saving rate limit across regions', { error })
-      )
-    }
+    const remove = count > this.limiter
 
     return remove
+  }
+
+  async remove(externalRedis: boolean, ...additionalKeys: string[]): Promise<void> {
+    await this.redis.del(this.key, ...additionalKeys)
+
+    const operations = []
+
+    if (externalRedis) {
+      for (const instance of this.externalRedis) {
+        operations.push(instance.del(this.key, ...additionalKeys))
+      }
+    }
+
+    // Don't need to explicitly wait for the other instances to update
+    Promise.allSettled(operations).catch((error) =>
+      logger.log('error', 'Error saving rate limit across regions', { error })
+    )
   }
 }

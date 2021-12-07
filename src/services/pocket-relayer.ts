@@ -640,7 +640,7 @@ export class PocketRelayer {
       if (isCheckPromiseResolved(chainCheckResult)) {
         chainCheckedNodes = (chainCheckResult as PromiseFulfilledResult<Node[]>).value
       } else {
-        const error = 'ChainID check failure: '
+        const error = 'ChainID check failure'
 
         const method = 'checks'
 
