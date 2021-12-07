@@ -7,8 +7,10 @@ import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
 import { Applications } from '../models'
 import { BlockchainsRepository } from '../repositories'
+import { ChainChecker, ChainIDFilterOptions } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
+import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { removeNodeFromSession } from '../utils/cache'
 import { MAX_RELAYS_ERROR } from '../utils/constants'
 import {
@@ -26,10 +28,8 @@ import { parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
 import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
-import { PocketChainChecker } from './chain-checker-new'
 import { enforceEVMLimits } from './limiter'
 import { NodeSticker } from './node-sticker'
-import { PocketSyncChecker, SyncCheckOptions } from './sync-checker-new'
 const logger = require('../services/logger')
 
 export class PocketRelayer {
@@ -41,8 +41,8 @@ export class PocketRelayer {
   pocketConfiguration: Configuration
   cherryPicker: CherryPicker
   metricsRecorder: MetricsRecorder
-  syncChecker: PocketSyncChecker
-  chainChecker: PocketChainChecker
+  syncChecker: SyncChecker
+  chainChecker: ChainChecker
   redis: Redis
   databaseEncryptionKey: string
   secretKey: string
@@ -85,8 +85,8 @@ export class PocketRelayer {
     pocketConfiguration: Configuration
     cherryPicker: CherryPicker
     metricsRecorder: MetricsRecorder
-    syncChecker: PocketSyncChecker
-    chainChecker: PocketChainChecker
+    syncChecker: SyncChecker
+    chainChecker: ChainChecker
     redis: Redis
     databaseEncryptionKey: string
     secretKey: string
@@ -602,34 +602,40 @@ export class PocketRelayer {
 
     if (blockchainIDCheck) {
       // Check Chain ID
-      chainCheckPromise = this.chainChecker.check(
+      const chainIDOptions: ChainIDFilterOptions = {
         nodes,
-        blockchainIDCheck,
-        parseInt(blockchainChainID),
+        requestID,
         blockchainID,
         pocketAAT,
-        this.pocketConfiguration,
+        applicationID: application.id,
+        applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+        chainCheck: blockchainIDCheck,
+        chainID: parseInt(blockchainChainID),
+        pocket: this.pocket,
+        pocketConfiguration: this.pocketConfiguration,
         pocketSession,
-        application.id,
-        application.gatewayAAT.applicationPublicKey,
-        requestID
-      )
+      }
+
+      chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
     }
 
     if (blockchainSyncCheck) {
       // Check Sync
-      syncCheckPromise = this.syncChecker.check({
+      const consensusFilterOptions: ConsensusFilterOptions = {
         nodes,
-        blockchainID,
-        pocketAAT,
-        pocketSession,
-        blockchainSyncBackup,
         requestID,
         syncCheckOptions: blockchainSyncCheck,
-        pocketConfiguration: this.pocketConfiguration,
+        blockchainID,
+        blockchainSyncBackup,
         applicationID: application.id,
         applicationPublicKey: application.gatewayAAT.applicationPublicKey,
-      })
+        pocket: this.pocket,
+        pocketAAT,
+        pocketConfiguration: this.pocketConfiguration,
+        pocketSession,
+      }
+
+      syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
     }
 
     const checkersPromise = Promise.allSettled([chainCheckPromise, syncCheckPromise])
