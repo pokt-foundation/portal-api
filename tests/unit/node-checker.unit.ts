@@ -243,7 +243,6 @@ describe('Node checker (unit)', () => {
 
     expect(successArchivalCheck.success).to.be.true()
 
-    console.log('LLEGAMO AQUI')
     const successArchivalCheckArray = await nodeChecker.performArchivalCheck(
       DEFAULT_NODES[0],
       ARCHIVALCHECK_PAYLOAD.bodyArray,

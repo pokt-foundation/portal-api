@@ -1,6 +1,6 @@
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
-import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
+import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
 import { JSONObject } from '@loopback/context'
 import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
 import AatPlans from '../config/aat-plans.json'
@@ -17,14 +17,12 @@ import {
   checkEnforcementJSON,
   isRelayError,
   isUserError,
-  fetchUserErrorCode,
-  fetchUserErrorMessage,
   checkWhitelist,
   checkSecretKey,
   SecretKeyDetails,
 } from '../utils/enforcements'
 import { hashBlockchainNodes } from '../utils/helpers'
-import { parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
+import { parseJSONRPCError, parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
 import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
@@ -242,13 +240,23 @@ export class PocketRelayer {
           })
 
           if (!(relayResponse instanceof Error)) {
+            const parsedRelayResponse = jsonrpc.parse(relayResponse.payload as string) as IParsedObject
+
+            if (parsedRelayResponse.type === 'invalid' && parsedRelayResponse.payload.message === 'Parse error') {
+              throw new ErrorObject(
+                rpcID,
+                new jsonrpc.JsonRpcError('Service Node returned an invalid response', -32065)
+              )
+            }
             // Check for user error to bubble these up to the API
             let userErrorMessage = ''
             let userErrorCode = ''
 
             if (isUserError(relayResponse.payload)) {
-              userErrorMessage = fetchUserErrorMessage(relayResponse.payload)
-              userErrorCode = fetchUserErrorCode(relayResponse.payload)
+              const userError = parseJSONRPCError(relayResponse.payload)
+
+              userErrorMessage = userError.message
+              userErrorCode = userError.code !== 0 ? String(userError.code) : ''
             }
 
             // Record success metric
