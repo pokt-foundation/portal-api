@@ -29,6 +29,7 @@ import { SendRelayOptions } from '../utils/types'
 import { PocketChainChecker } from './chain-checker-new'
 import { enforceEVMLimits } from './limiter'
 import { NodeSticker } from './node-sticker'
+import { RateLimiter } from './rate-limiter'
 import { PocketSyncChecker, SyncCheckOptions } from './sync-checker-new'
 const logger = require('../services/logger')
 
@@ -738,6 +739,14 @@ export class PocketRelayer {
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
     }
 
+    const rateLimitResult = await this.rateLimitNodes(node, nodes, requestID)
+
+    if (rateLimitResult instanceof Error) {
+      return rateLimitResult
+    }
+    node = rateLimitResult.node
+    const { rateLimiter } = rateLimitResult
+
     if (this.checkDebug) {
       logger.log('debug', JSON.stringify(pocketSession), {
         requestID: requestID,
@@ -783,6 +792,8 @@ export class PocketRelayer {
       })
     }
 
+    await rateLimiter.increase()
+
     // Success
     if (relayResponse instanceof RelayResponse) {
       // First, check for the format of the result; Pocket Nodes will return relays that include
@@ -816,6 +827,46 @@ export class PocketRelayer {
       // TODO: ConsensusNode is a possible return
       return new Error('relayResponse is undefined')
     }
+  }
+
+  // Checks all the nodes and confirms whether they're overloaded, starting for the
+  // one chosen by the cherry picker, if all nodes are overloaded, send to altruists
+  async rateLimitNodes(
+    cherryPickedNode: Node,
+    nodes: Node[],
+    requestID: string
+  ): Promise<{ node: Node; rateLimiter: RateLimiter } | Error> {
+    // Randomize nodes after the cherry picked to avoid overloading them sequentially
+    nodes = [
+      cherryPickedNode,
+      ...nodes.filter((node) => node.publicKey !== cherryPickedNode.publicKey).sort(() => Math.random() - 0.5),
+    ]
+
+    let rateLimiter: RateLimiter
+    let node: Node
+    let allOverloaded = true
+
+    for (node of nodes) {
+      rateLimiter = new RateLimiter(`rate-${node.publicKey}`, this.redis, [])
+      const limitExceeded = await rateLimiter.checkLimit(false)
+
+      if (!limitExceeded) {
+        allOverloaded = false
+        break
+      }
+    }
+
+    if (allOverloaded) {
+      const msg = 'All nodes overloaded, falling back to altruists'
+
+      logger.log('warn', msg, {
+        requestID,
+      })
+
+      return new Error(msg)
+    }
+
+    return { node, rateLimiter }
   }
 
   async enforceLimits(

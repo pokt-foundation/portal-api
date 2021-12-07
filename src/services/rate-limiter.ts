@@ -1,6 +1,6 @@
 import { Redis } from 'ioredis'
 
-const DEFAULT_RELAYS_LIMIT = 7 // relays per second
+const DEFAULT_RELAYS_LIMIT = 35 // relays per second
 const DEFAULT_DURATION = 5 // seconds
 
 const logger = require('./logger')
@@ -12,7 +12,7 @@ export class RateLimiter {
   limiter: number
   duration: number
 
-  constructor(key: string, redis: Redis, externalRedis: Redis[], limit?: number, duration?: number) {
+  constructor(key: string, redis: Redis, externalRedis: Redis[] = [], limit?: number, duration?: number) {
     this.key = key
     this.redis = redis
     this.externalRedis = externalRedis
@@ -31,7 +31,7 @@ export class RateLimiter {
     return count
   }
 
-  async limit(increase = false): Promise<boolean> {
+  async checkLimit(increase = false): Promise<boolean> {
     let count = increase ? await this.increase() : Number.parseInt(await this.redis.get(this.key))
 
     for (const instance of this.externalRedis) {
