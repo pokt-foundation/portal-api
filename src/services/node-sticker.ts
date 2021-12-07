@@ -4,6 +4,7 @@ import { getAddressFromPublicKey } from 'pocket-tools'
 import { Node } from '@pokt-network/pocket-js'
 import { checkWhitelist } from '../utils/enforcements'
 import { StickinessOptions } from '../utils/types'
+import { RateLimiter } from './rate-limiter'
 
 export type StickyResult = 'SUCCESS' | 'FAILURE' | 'NONE'
 
@@ -11,7 +12,7 @@ const logger = require('./logger')
 
 const ERROR_COUNT_LIMIT = 5
 
-// Small utility class to contain several methods regarding node stickiness configuration.
+// Utility class to contain several methods regarding node stickiness configuration.
 export class NodeSticker {
   stickiness: boolean
   duration: number
@@ -28,6 +29,8 @@ export class NodeSticker {
   data?: string | object
   requestID?: string
   typeID?: string
+  relaysLimiter: RateLimiter
+  errorsLimiter: RateLimiter
 
   nextRPCID?: number
   clientStickyKey: string
@@ -84,6 +87,10 @@ export class NodeSticker {
 
     this.clientErrorKey = `${this.clientStickyKey}-errors`
     this.clientLimitKey = `${this.clientStickyKey}-limit`
+
+    // Limit for rpcID stickiness is of one request at most as the id is not static
+    this.relaysLimiter = new RateLimiter(this.clientLimitKey, redis, [], relaysLimit || 1, this.duration)
+    this.errorsLimiter = new RateLimiter(this.clientErrorKey, redis, [], ERROR_COUNT_LIMIT, this.duration)
   }
 
   static getNextRPCID(rpcID: number, rawData: string | object): number {
@@ -187,14 +194,10 @@ export class NodeSticker {
   // await is not used here as the value does not need to be exact, a small
   // overflow is allowed.
   async checkRelaysLimit(): Promise<void> {
-    const relaysDone = Number.parseInt((await this.redis.get(this.clientLimitKey)) || '0')
+    const exceeded = await this.relaysLimiter.limit(true)
 
-    this.redis.incr(this.clientLimitKey)
-
-    if (!relaysDone) {
-      this.redis.expire(this.clientLimitKey, this.duration)
-    } else if (relaysDone >= this.relaysLimit) {
-      await this.remove('relays limit exceeded')
+    if (exceeded) {
+      this.remove('relays limit exceeded')
     }
   }
 
@@ -207,14 +210,11 @@ export class NodeSticker {
       serviceNode: this.preferredNodeAddress,
     })
 
-    await this.redis.del(this.clientStickyKey, this.clientErrorKey, this.clientLimitKey)
+    await this.relaysLimiter.remove(false, this.clientStickyKey, this.clientErrorKey, this.clientLimitKey)
   }
 
   async increaseErrorCount(): Promise<number> {
-    const count = await this.redis.incr(this.clientErrorKey)
-
-    await this.redis.expire(this.clientErrorKey, this.duration)
-    return count
+    return this.errorsLimiter.increase()
   }
 
   async getErrorCount(): Promise<number> {
