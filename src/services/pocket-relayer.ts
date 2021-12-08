@@ -838,24 +838,28 @@ export class PocketRelayer {
     let rateLimiter: RateLimiter
     let node = cherryPickedNode
     let allOverloaded = true
-    let nodeCount = 0
+    let cherryPickCount = 0
 
     for (node of nodes) {
       rateLimiter = new RateLimiter(`rate-${node.publicKey}`, this.redis, [])
       const { remove: overloaded, count } = await rateLimiter.checkLimit()
 
+      // Save cherry picked node count for testing purposes
+      if (cherryPickedNode.address === node.address) {
+        cherryPickCount = count
+      }
+
       if (!overloaded) {
-        nodeCount = count
         allOverloaded = false
         break
       }
     }
 
-    if (node.publicKey !== cherryPickedNode.publicKey) {
+    if (node.address !== cherryPickedNode.address) {
       logger.log('warn', 'Node rate limit exceeded', {
         requestID,
         serviceNode: node.publicKey,
-        count: nodeCount,
+        count: cherryPickCount,
       })
     }
 
