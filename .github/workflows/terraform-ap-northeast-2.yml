@@ -98,19 +98,19 @@ jobs:
             DD_LOGS_ENABLED=false
             DD_APM_ENABLED=true
             DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
+        
+      - name: Deploy datadog-agent / ap-northeast-2
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def-ap-northeast-2-datadog-agent.outputs.task-definition }}
+          service: datadog-agent-service
+          cluster: gateway-terraform
+          wait-for-service-stability: true
 
       - name: Deploy gateway / ap-northeast-2
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def-ap-northeast-2-gateway.outputs.task-definition }}
           service: gateway-terraform
-          cluster: gateway-terraform
-          wait-for-service-stability: true
-      
-      - name: Deploy datadog-agent / ap-northeast-2
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: ${{ steps.task-def-ap-northeast-2-datadog-agent.outputs.task-definition }}
-          service: datadog-agent-service
           cluster: gateway-terraform
           wait-for-service-stability: true
