@@ -26,8 +26,16 @@ export class RateLimiter {
 
     if (count === 1) {
       await this.redis.expire(this.key, this.duration)
-    }
 
+      // There's a small chance on a race condition when the result returned is
+      // over one, this ensures that a node is always drained in case of expiration not set
+    } else if (count > this.limiter) {
+      const ttl = await this.redis.ttl(this.key)
+
+      if (ttl < 0) {
+        await this.redis.expire(this.key, this.duration)
+      }
+    }
     return count
   }
 
@@ -38,7 +46,7 @@ export class RateLimiter {
       count += Number.parseInt(await instance.get(this.key))
     }
 
-    const remove = count >= this.limiter
+    const remove = count > this.limiter
 
     return remove
   }

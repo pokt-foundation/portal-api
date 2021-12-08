@@ -739,13 +739,12 @@ export class PocketRelayer {
       node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
     }
 
-    const rateLimitResult = await this.rateLimitNodes(node, nodes, requestID)
+    const rateLimitedNode = await this.rateLimitNodes(node, nodes, requestID)
 
-    if (rateLimitResult instanceof Error) {
-      return rateLimitResult
+    if (rateLimitedNode instanceof Error) {
+      return rateLimitedNode
     }
-    node = rateLimitResult.node
-    const { rateLimiter } = rateLimitResult
+    node = rateLimitedNode
 
     if (this.checkDebug) {
       logger.log('debug', JSON.stringify(pocketSession), {
@@ -792,8 +791,6 @@ export class PocketRelayer {
       })
     }
 
-    await rateLimiter.increase()
-
     // Success
     if (relayResponse instanceof RelayResponse) {
       // First, check for the format of the result; Pocket Nodes will return relays that include
@@ -831,14 +828,10 @@ export class PocketRelayer {
 
   // Checks all the nodes and confirms whether they're overloaded, starting for the
   // one chosen by the cherry picker, if all nodes are overloaded, send to altruists
-  async rateLimitNodes(
-    cherryPickedNode: Node,
-    nodes: Node[],
-    requestID: string
-  ): Promise<{ node: Node; rateLimiter: RateLimiter } | Error> {
-    // Randomize nodes after the cherry picked to avoid overloading them sequentially
+  async rateLimitNodes(cherryPickedNode: Node, nodes: Node[], requestID: string): Promise<Node | Error> {
     nodes = [
       cherryPickedNode,
+      // Randomize nodes after the cherry picked to avoid overloading them sequentially
       ...nodes.filter((node) => node.publicKey !== cherryPickedNode.publicKey).sort(() => Math.random() - 0.5),
     ]
 
@@ -848,9 +841,9 @@ export class PocketRelayer {
 
     for (node of nodes) {
       rateLimiter = new RateLimiter(`rate-${node.publicKey}`, this.redis, [])
-      const limitExceeded = await rateLimiter.checkLimit(false)
+      const overloaded = await rateLimiter.checkLimit(true)
 
-      if (!limitExceeded) {
+      if (!overloaded) {
         allOverloaded = false
         break
       }
@@ -866,7 +859,7 @@ export class PocketRelayer {
       return new Error(msg)
     }
 
-    return { node, rateLimiter }
+    return node
   }
 
   async enforceLimits(
