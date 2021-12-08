@@ -91,6 +91,7 @@ jobs:
         with:
           task-definition: pocket-gateway/tasks/production/datadog-agent.json
           image: public.ecr.aws/datadog/agent:latest
+          container-name: datadog-agent
           environment-variables: |
             DD_API_KEY=${{ secrets.DATADOG_API_KEY }}
             DD_SITE=datadoghq.eu
