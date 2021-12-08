@@ -54,6 +54,10 @@ jobs:
           envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           envkey_COMMIT_HASH: ${{ github.sha }}
+          envkey_ARCHIVAL_CHAINS: '0022,0028,0010,000A,000B,000C'
+          envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
+          envKey_LOG_TO_DATADOG: true
+          envKey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
@@ -63,22 +67,49 @@ jobs:
           ECR_REPOSITORY: gateway-terraform
           IMAGE_TAG: latest
         run: |
-          docker build --platform linux/arm64/v8 -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
         
-      - name: Fill in the new image ID / ap-northeast-2
-        id: task-def-ap-northeast-2
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
+      - name: Fill in the new image ID / ap-northeast-2 - gateway
+        id: task-def-ap-northeast-2-gateway
+        uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
           task-definition: pocket-gateway/tasks/production/ecs-task-ap-northeast-2.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
+          # Needs to be set at container level to be read by the dd agent
+          environment-variables: |
+            DD_RUNTIME_METRICS_ENABLED=true
+            DD_SERVICE=ap-northeast-2/ecs/gateway
+            DD_AGENT_HOST=datadog-agent
+            DD_ENV=production
+      
+      - name: Supply env variables / ap-northeast-2 - datadog-agent
+        id: task-def-ap-northeast-2-datadog-agent
+        uses: aws-actions/amazon-ecs-render-task-definition@master
+        with:
+          task-definition: pocket-gateway/tasks/production/datadog-agent.json
+          image: public.ecr.aws/datadog/agent:latest
+          environment-variables: |
+            DD_API_KEY=${{ secrets.DATADOG_API_KEY }}
+            DD_SITE=datadoghq.eu
+            DD_LOGS_ENABLED=false
+            DD_APM_ENABLED=true
+            DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
 
-      - name: Deploy / ap-northeast-2
+      - name: Deploy gateway / ap-northeast-2
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def-ap-northeast-2.outputs.task-definition }}
+          task-definition: ${{ steps.task-def-ap-northeast-2-gateway.outputs.task-definition }}
           service: gateway-terraform
+          cluster: gateway-terraform
+          wait-for-service-stability: true
+      
+      - name: Deploy datadog-agent / ap-northeast-2
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def-ap-northeast-2-datadog-agent.outputs.task-definition }}
+          service: datadog-agent-service
           cluster: gateway-terraform
           wait-for-service-stability: true

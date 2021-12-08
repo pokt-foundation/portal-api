@@ -14,9 +14,8 @@
 			"hostPort": 3000,
 			"protocol": "tcp",
 			"containerPort": 3000
-		  }
-    ],
-    "environment": [],
+		}],
+        "environment": [],
 		"command": [],
 		"linuxParameters": null,
 		"cpu": 1024,
@@ -33,7 +32,7 @@
 		"workingDirectory": null,
 		"dockerSecurityOptions": null,
 		"memory": null,
-		"memoryReservation": 1938,
+		"memoryReservation": 2047,
 		"volumesFrom": [],
 		"stopTimeout": null,
 		"image": "059424750518.dkr.ecr.ap-northeast-2.amazonaws.com/gateway-terraform:latest",
@@ -57,7 +56,7 @@
 	  }
 	],
 	"placementConstraints": [],
-	"memory": "1938",
+	"memory": "2048",
 	"taskRoleArn": null,
 	"family": "gateway",
 	"pidMode": null,
