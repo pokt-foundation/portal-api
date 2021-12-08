@@ -58,7 +58,7 @@
 	"placementConstraints": [],
 	"memory": "2048",
 	"taskRoleArn": null,
-	"family": "gateway",
+	"family": "gateway-terraform",
 	"pidMode": null,
 	"requiresCompatibilities": [
 	  "EC2"

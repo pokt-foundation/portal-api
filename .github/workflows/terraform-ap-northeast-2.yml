@@ -103,7 +103,7 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def-ap-northeast-2-datadog-agent.outputs.task-definition }}
-          service: datadog_agent_service
+          service: datadog-agent-service
           cluster: gateway-terraform
           wait-for-service-stability: true
 
