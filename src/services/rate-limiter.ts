@@ -38,7 +38,7 @@ export class RateLimiter {
       count += Number.parseInt(await instance.get(this.key))
     }
 
-    const remove = count > this.limiter
+    const remove = count >= this.limiter
 
     return remove
   }

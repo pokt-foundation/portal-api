@@ -1560,6 +1560,108 @@ describe('Pocket relayer service (unit)', () => {
       })
     })
 
+    it('rate limits burst relays', async () => {
+      logSpy = sinon.spy(logger, 'log')
+
+      const { address: preferredNodeAddress } = DEFAULT_NODES[0]
+
+      const mock = new PocketMock()
+
+      // Reset default values
+      mock.relayResponse = {}
+
+      const relayRequest = '{"method":"eth_chainId","id":0,"jsonrpc":"2.0"}'
+
+      mock.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
+
+      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+
+      const pocket = mock.object()
+
+      const poktRelayer = new PocketRelayer({
+        host: 'eth-mainnet',
+        origin: '',
+        userAgent: '',
+        ipAddress: '127.0.0.1',
+        pocket,
+        pocketConfiguration,
+        cherryPicker,
+        metricsRecorder,
+        syncChecker: mockSyncChecker,
+        chainChecker: mockChainChecker,
+        redis,
+        databaseEncryptionKey: DB_ENCRYPTION_KEY,
+        secretKey: '',
+        relayRetries: 0,
+        blockchainsRepository: blockchainRepository,
+        checkDebug: false,
+        altruists: '{}',
+        aatPlan: AatPlans.FREEMIUM,
+        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+      })
+
+      // Loop should run for 36 iterations and only find one error, but for some
+      // reason the sinon spy is not finding the last log of the test run so one
+      // relay needs to be done so it can find the second to last as the actual
+      // log and assert that is not using the sticky relay due to rate limiting
+      for (let i = 0; i < 37; i++) {
+        const relayResponse = await poktRelayer.sendRelay({
+          rawData: relayRequest,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          stickinessOptions: {
+            stickiness: true,
+            preferredNodeAddress,
+            rpcID: 0,
+            duration: 300,
+            keyPrefix: 'myPrefix',
+          },
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          relayRetries: 0,
+        })
+        const expected = JSON.parse(mock.relayResponse[relayRequest] as string)
+
+        expect(relayResponse).to.be.deepEqual(expected)
+      }
+
+      // Counts the number of times the sticky relay succeeded
+      let successStickyResponses = 0
+
+      logSpy.getCalls().forEach(
+        (call) =>
+          (successStickyResponses = call.calledWith(
+            'info',
+            sinon.match.any,
+            sinon.match((log: object) => {
+              return log['sticky'] === 'SUCCESS'
+            })
+          )
+            ? ++successStickyResponses
+            : successStickyResponses)
+      )
+
+      let failureStickyResponse = 0
+
+      logSpy.getCalls().forEach(
+        (call) =>
+          (failureStickyResponse = call.calledWith(
+            'info',
+            sinon.match.any,
+            sinon.match((log: object) => {
+              return log['sticky'] === 'FAILURE'
+            })
+          )
+            ? ++failureStickyResponse
+            : failureStickyResponse)
+      )
+
+      expect(successStickyResponses).to.be.equal(35)
+      expect(failureStickyResponse).to.be.equal(1)
+    })
+
     describe('sendRelay function (with altruists)', () => {
       const blockNumberData = { jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] }
 

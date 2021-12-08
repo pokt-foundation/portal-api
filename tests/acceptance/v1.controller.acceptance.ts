@@ -282,8 +282,6 @@ describe('V1 controller (acceptance)', () => {
       .set('host', 'eth-mainnet')
       .expect(200)
 
-    console.log('Bodi', res.body)
-
     expect(res.body).to.have.property('error')
     expect(res.body.error.message).to.startWith('Incorrect blockchain')
   })
@@ -792,5 +790,74 @@ describe('V1 controller (acceptance)', () => {
     )
 
     expect(successStickyResponses).to.be.equal(4)
+  })
+
+  it('Rate limits sticky request', async () => {
+    const logSpy = sinon.spy(logger, 'log')
+
+    const relayRequest = '{"method":"eth_chainId","id":0,"jsonrpc":"2.0"}'
+    const mockPocket = new PocketMock()
+
+    // Reset default values
+    mockPocket.relayResponse = {}
+
+    // Sync/Chain check
+    mockPocket.relayResponse['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+    mockPocket.relayResponse['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+
+    mockPocket.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
+
+    const pocketClass = mockPocket.class()
+
+    ;({ app, client } = await setupApplication(pocketClass))
+
+    for (let i = 1; i <= 36; i++) {
+      const response = await client
+        .post('/v1/lb/df9gjsjg43db9fsajfjg93fk')
+        .send({ method: 'eth_chainId', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    }
+
+    // Counts the number of times the sticky relay succeeded
+    let successStickyResponses = 0
+
+    logSpy.getCalls().forEach(
+      (call) =>
+        (successStickyResponses = call.calledWith(
+          'info',
+          sinon.match.any,
+          sinon.match((log: object) => {
+            return log['sticky'] === 'SUCCESS'
+          })
+        )
+          ? ++successStickyResponses
+          : successStickyResponses)
+    )
+
+    let failureStickyResponse = 0
+
+    logSpy.getCalls().forEach(
+      (call) =>
+        (failureStickyResponse = call.calledWith(
+          'info',
+          sinon.match.any,
+          sinon.match((log: object) => {
+            return log['sticky'] === 'FAILURE'
+          })
+        )
+          ? ++failureStickyResponse
+          : failureStickyResponse)
+    )
+
+    expect(successStickyResponses).to.be.equal(34)
+    expect(failureStickyResponse).to.be.equal(1)
   })
 })

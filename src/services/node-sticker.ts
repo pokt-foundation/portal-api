@@ -190,9 +190,7 @@ export class NodeSticker {
     }
   }
 
-  // Limit needs to be set for some apps as they can overflow session nodes
-  // await is not used here as the value does not need to be exact, a small
-  // overflow is allowed.
+  // Limit needs to be set for some apps as they can overflow session nodes.
   async checkRelaysLimit(): Promise<void> {
     const exceeded = await this.relaysLimiter.checkLimit(true)
 
