@@ -192,9 +192,9 @@ export class NodeSticker {
 
   // Limit needs to be set for some apps as they can overflow session nodes.
   async checkRelaysLimit(): Promise<void> {
-    const exceeded = await this.relaysLimiter.checkLimit(true)
+    const { remove } = await this.relaysLimiter.checkLimit()
 
-    if (exceeded) {
+    if (remove) {
       this.remove('relays limit exceeded')
     }
   }

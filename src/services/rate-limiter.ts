@@ -39,7 +39,7 @@ export class RateLimiter {
     return count
   }
 
-  async checkLimit(increase = false): Promise<boolean> {
+  async checkLimit(increase = true): Promise<{ remove: boolean; count: number }> {
     let count = increase ? await this.increase() : Number.parseInt(await this.redis.get(this.key))
 
     for (const instance of this.externalRedis) {
@@ -48,7 +48,7 @@ export class RateLimiter {
 
     const remove = count > this.limiter
 
-    return remove
+    return { remove, count }
   }
 
   async remove(externalRedis: boolean, ...additionalKeys: string[]): Promise<void> {
