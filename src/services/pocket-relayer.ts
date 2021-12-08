@@ -836,7 +836,7 @@ export class PocketRelayer {
     ]
 
     let rateLimiter: RateLimiter
-    let node: Node
+    let node = cherryPickedNode
     let allOverloaded = true
     let nodeCount = 0
 
