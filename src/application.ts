@@ -3,7 +3,7 @@ import os from 'os'
 import path from 'path'
 import process from 'process'
 import AWS from 'aws-sdk'
-import Redis from 'ioredis'
+import Redis, { ClusterNode } from 'ioredis'
 import pg from 'pg'
 import { BootMixin } from '@loopback/boot'
 import { ApplicationConfig } from '@loopback/core'
@@ -150,8 +150,16 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const redisEndpoint: string = REDIS_ENDPOINT || ''
     const redisPort: string = REDIS_PORT || ''
 
-    const redis = new Redis(parseInt(redisPort), redisEndpoint, {
-      keyPrefix: `${commitHash}-`,
+    const awsCluster = {
+      host: redisEndpoint,
+      port: parseInt(redisPort),
+    } as ClusterNode
+
+    const redis = new Redis.Cluster([awsCluster], {
+      scaleReads: 'slave',
+      redisOptions: {
+        keyPrefix: `${commitHash}-`,
+      },
     })
 
     this.bind('redisInstance').to(redis)
