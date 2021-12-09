@@ -835,13 +835,12 @@ export class PocketRelayer {
       ...nodes.filter((node) => node.publicKey !== cherryPickedNode.publicKey).sort(() => Math.random() - 0.5),
     ]
 
-    let rateLimiter: RateLimiter
     let node = cherryPickedNode
     let allOverloaded = true
     let cherryPickCount = 0
 
     for (node of nodes) {
-      rateLimiter = new RateLimiter(`rate-${node.publicKey}`, this.redis, [])
+      const rateLimiter = new RateLimiter(`rate-${node.publicKey}`, this.redis, [])
       const { remove: overloaded, count } = await rateLimiter.checkLimit()
 
       // Save cherry picked node count for testing purposes
@@ -855,14 +854,6 @@ export class PocketRelayer {
       }
     }
 
-    if (node.address !== cherryPickedNode.address) {
-      logger.log('warn', 'Node rate limit exceeded', {
-        requestID,
-        serviceNode: node.publicKey,
-        count: cherryPickCount,
-      })
-    }
-
     if (allOverloaded) {
       const msg = 'All nodes overloaded, falling back to altruists'
 
@@ -871,6 +862,12 @@ export class PocketRelayer {
       })
 
       return new Error(msg)
+    } else if (node.address !== cherryPickedNode.address) {
+      logger.log('warn', 'Node rate limit exceeded', {
+        requestID,
+        serviceNode: node.publicKey,
+        count: cherryPickCount,
+      })
     }
 
     return node
