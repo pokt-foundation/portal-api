@@ -82,6 +82,7 @@ jobs:
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
             DD_SERVICE=ap-southeast-1/ecs/gateway
+            DD_VERSION=${{ github.sha }}
             DD_ENV=production
 
       - name: Fill in the new image ID / ap-southeast-1 - datadog-agent
