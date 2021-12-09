@@ -6,9 +6,11 @@
         "dnsSearchDomains": null,
         "environmentFiles": null,
         "logConfiguration": {
-          "logDriver": "none",
-          "secretOptions": null,
-          "options": null
+          "logDriver": "json-file",
+          "options": {
+          "max-size": "10m",
+          "max-file": "3"
+          }
         },
         "entryPoint": [],
         "portMappings": [
@@ -57,7 +59,7 @@
         "secrets": null,
         "dockerSecurityOptions": null,
         "memory": null,
-        "memoryReservation": 512,
+        "memoryReservation": 511,
         "volumesFrom": [],
         "stopTimeout": null,
         "image": "public.ecr.aws/datadog/agent:latest",
@@ -81,7 +83,7 @@
       }
     ],
     "placementConstraints": [],
-    "memory": null,
+    "memory": "512",
     "taskRoleArn": "arn:aws:iam::059424750518:role/ecsTaskExecutionRole",
     "compatibilities": [
       "EC2"
