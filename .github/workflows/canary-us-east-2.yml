@@ -57,6 +57,7 @@ jobs:
           envkey_ARCHIVAL_CHAINS: '0022,0028,0010,000A,000B,000C'
           envKey_LOG_TO_DATADOG: true
           envKey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          envKey_SILENT_LOGGING: true
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
