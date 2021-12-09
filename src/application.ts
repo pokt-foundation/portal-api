@@ -156,7 +156,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     } as ClusterNode
 
     const redis = new Redis.Cluster([awsCluster], {
-      scaleReads: 'slave',
       redisOptions: {
         keyPrefix: `${commitHash}-`,
       },
