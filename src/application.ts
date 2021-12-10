@@ -166,23 +166,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     this.bind('pgPool').to(pgPool)
 
-    // Timestream
-    const timestreamAgent = new https.Agent({
-      maxSockets: 5000,
-    })
-
-    // Always US-East-2
-    const timestreamClient = new AWS.TimestreamWrite({
-      maxRetries: 10,
-      httpOptions: {
-        timeout: 20000,
-        agent: timestreamAgent,
-      },
-      region: 'us-east-2',
-    })
-
-    this.bind('timestreamClient').to(timestreamClient)
-
     // Influx DB
     const influxBucket = environment === 'production' ? 'mainnetRelay' : 'mainnetRelayStaging'
     const influxClient = new InfluxDB({ url: influxURL, token: influxToken })
