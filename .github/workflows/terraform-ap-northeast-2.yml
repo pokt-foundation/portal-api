@@ -81,9 +81,11 @@ jobs:
           # Needs to be set at container level to be read by the dd agent
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
-            DD_SERVICE=ap-northeast-2/ecs/gateway
+            DD_SERVICE=/ap-northeast-2/ecs/gateway/
             DD_AGENT_HOST=datadog-agent
             DD_ENV=production
+            DD_VERSION=${{ github.sha }}
+
       
       - name: Supply env variables / ap-northeast-2 - datadog-agent
         id: task-def-ap-northeast-2-datadog-agent
@@ -95,9 +97,9 @@ jobs:
           environment-variables: |
             DD_API_KEY=${{ secrets.DATADOG_API_KEY }}
             DD_SITE=datadoghq.eu
-            DD_LOGS_ENABLED=false
-            DD_APM_ENABLED=true
+            DD_APM_NON_LOCAL_TRAFFIC=false
             DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
+            DD_APM_ENABLED=true
         
       - name: Deploy datadog-agent / ap-northeast-2
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
