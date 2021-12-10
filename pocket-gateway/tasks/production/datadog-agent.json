@@ -62,7 +62,7 @@
         "memoryReservation": 511,
         "volumesFrom": [],
         "stopTimeout": null,
-        "image": "public.ecr.aws/datadog/agent:latest",
+        "image": "gcr.io/datadoghq/agent:latest",
         "startTimeout": null,
         "firelensConfiguration": null,
         "dependsOn": null,
