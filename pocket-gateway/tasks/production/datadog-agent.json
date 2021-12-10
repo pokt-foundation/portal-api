@@ -68,10 +68,16 @@
         "dependsOn": null,
         "disableNetworking": null,
         "interactive": null,
-        "healthCheck": null,
+        "healthCheck":  {
+          "retries": 3,
+          "command": ["CMD-SHELL","agent health"],
+          "timeout": 5,
+          "interval": 30,
+          "startPeriod": 15
+        },
         "essential": true,
         "links": [],
-        "hostname": null,
+        "hostname": "datadog-agent",
         "extraHosts": null,
         "pseudoTerminal": null,
         "user": null,
