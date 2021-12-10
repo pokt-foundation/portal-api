@@ -58,6 +58,7 @@ jobs:
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envKey_LOG_TO_DATADOG: true
           envKey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          envKey_SILENT_LOGGING: true
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
@@ -82,6 +83,7 @@ jobs:
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
             DD_SERVICE=us-east-2/ecs/gateway
+            DD_VERSION=${{ github.sha }}
             DD_ENV=production
 
       - name: Fill in the new image ID / us-east-2 - datadog-agent
