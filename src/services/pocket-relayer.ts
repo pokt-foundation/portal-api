@@ -182,12 +182,12 @@ export class PocketRelayer {
     }
 
     const data = JSON.stringify(parsedRawData)
-    const limitation = await this.enforceLimits(parsedRawData, blockchainID, logLimitBlocks)
+    const limitation = await this.enforceLimits(parsedRawData, blockchainID, requestID, logLimitBlocks)
 
     if (limitation instanceof ErrorObject) {
       logger.log('error', `LIMITATION ERROR ${blockchainID} req: ${data}`, {
         blockchainID,
-        requestID: requestID,
+        requestID,
         relayType: 'APP',
         error: `${parsedRawData.method} method limitations exceeded.`,
         typeID: application.id,
@@ -358,7 +358,8 @@ export class PocketRelayer {
         throw e
       }
 
-      logger.log('error', 'ERROR relaying through node: ' + e, {
+      // Any other error (f.g parsing errors) that should not be propagated as response
+      logger.log('error', 'INTERNAL ERROR: ' + e, {
         requestID,
         relayType: 'APP',
         typeID: application.id,
@@ -836,12 +837,13 @@ export class PocketRelayer {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     parsedRawData: Record<string, any>,
     blockchainID: string,
+    requestID: string,
     logLimitBlocks: number
   ): Promise<void | ErrorObject> {
     let limiterResponse: Promise<void | ErrorObject>
 
     if (blockchainID === '0021') {
-      limiterResponse = enforceEVMLimits(parsedRawData, blockchainID, logLimitBlocks, this.altruists)
+      limiterResponse = enforceEVMLimits(parsedRawData, blockchainID, requestID, logLimitBlocks, this.altruists)
     }
 
     return limiterResponse
