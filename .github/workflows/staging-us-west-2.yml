@@ -58,7 +58,6 @@ jobs:
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envKey_LOG_TO_DATADOG: true
           envKey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
-          envKey_SILENT_LOGGING: true
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
