@@ -35,6 +35,7 @@ const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || ''
 const region = process.env.REGION || ''
 const logToDataDog = process.env.LOG_TO_DATADOG === 'true'
 const ddApiKey = process.env.DATADOG_API_KEY || ''
+const silent = process.env.SILENT_LOGGING === 'true'
 
 const timestampUTC = () => {
   const timestamp = new Date()
@@ -83,6 +84,7 @@ const options = {
     handleExceptions: true,
     colorize: true,
     format: logFormat,
+    silent,
   },
   aws: {
     name: 'cloudwatch-log',

@@ -27,9 +27,9 @@
     "eslint": "lb-eslint --report-unused-disable-directives .",
     "eslint:fix": "npm run eslint -- --fix",
     "pretest": "npm run clean && npm run build",
-    "test": "lb-tsc && DISABLE_TIMESTREAM=true MONGO_ENDPOINT=test ALTRUISTS='{\"0001\": \"https://user:pass@backups.example.org:18081\"}' mocha --exit --recursive dist/tests",
-    "test:parallel": "lb-tsc && DISABLE_TIMESTREAM=true MONGO_ENDPOINT=test ALTRUISTS='{\"0001\": \"https://user:pass@backups.example.org:18081\"}' mocha -p --exit --recursive dist/tests",
-    "test:cover": "lb-tsc && DISABLE_TIMESTREAM=true MONGO_ENDPOINT=test ALTRUISTS='{\"0001\": \"https://user:pass@backups.example.org:18081\"}' nyc mocha --exit --recursive dist/tests",
+    "test": "lb-tsc && SILENT_LOGGING=true MONGO_ENDPOINT=test ALTRUISTS='{\"0001\": \"https://user:pass@backups.example.org:18081\"}' mocha --exit --recursive dist/tests",
+    "test:parallel": "lb-tsc && SILENT_LOGGING=true MONGO_ENDPOINT=test ALTRUISTS='{\"0001\": \"https://user:pass@backups.example.org:18081\"}' mocha -p --exit --recursive dist/tests",
+    "test:cover": "lb-tsc && SILENT_LOGGING=true MONGO_ENDPOINT=test ALTRUISTS='{\"0001\": \"https://user:pass@backups.example.org:18081\"}' nyc mocha --exit --recursive dist/tests",
     "test:dev": "lb-mocha --allow-console-logs dist/tests/**/*.js && npm run posttest",
     "docker:build": "docker build -t pocket-gateway .",
     "docker:run": "docker run -p 3000:3000 -d pocket-gateway",
@@ -84,6 +84,7 @@
     "extract-domain": "^2.3.4",
     "got": "^11.1.4",
     "ioredis": "^4.16.3",
+    "lodash.get": "^4.4.2",
     "jsonrpc-lite": "^2.2.0",
     "log-timestamp": "^0.3.0",
     "loopback-connector-mongodb": "^6.0.0",
@@ -123,7 +124,7 @@
     "rewiremock": "^3.14.3",
     "source-map-support": "^0.5.19",
     "tsnodemon": "^1.2.2",
-    "typescript": "~4.3.2"
+    "typescript": "~4.4.4"
   },
   "husky": {
     "hooks": {
