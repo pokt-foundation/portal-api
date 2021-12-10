@@ -282,8 +282,6 @@ describe('V1 controller (acceptance)', () => {
       .set('host', 'eth-mainnet')
       .expect(200)
 
-    console.log('Bodi', res.body)
-
     expect(res.body).to.have.property('error')
     expect(res.body.error.message).to.startWith('Incorrect blockchain')
   })
