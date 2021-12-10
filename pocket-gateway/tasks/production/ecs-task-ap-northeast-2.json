@@ -136,9 +136,6 @@
 			"startPeriod": 15
 		},
 		"essential": true,
-		"links": [
-			"gateway"
-		],
 		"hostname": null,
 		"extraHosts": null,
 		"pseudoTerminal": null,
