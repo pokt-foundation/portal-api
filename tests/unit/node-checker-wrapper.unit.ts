@@ -140,7 +140,6 @@ describe('Node checker wrapper (unit)', () => {
 
       expect(nodeChainChecks).to.have.length(5)
 
-      console.log(nodeChainChecks)
       const filteredNodes = await nodeCheckerWrapper['filterNodes']<ChainCheck>({
         checkType: 'chain-check',
         nodes: DEFAULT_NODES,

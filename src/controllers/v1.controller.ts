@@ -56,7 +56,6 @@ export class V1Controller {
     @inject('pocketConfiguration') private pocketConfiguration: Configuration,
     @inject('redisInstance') private redis: Redis,
     @inject('pgPool') private pgPool: PGPool,
-    @inject('timestreamClient') private timestreamClient: AWS.TimestreamWrite,
     @inject('databaseEncryptionKey') private databaseEncryptionKey: string,
     @inject('processUID') private processUID: string,
     @inject('altruists') private altruists: string,
@@ -84,7 +83,6 @@ export class V1Controller {
       redis: this.redis,
       influxWriteAPI: this.influxWriteAPI,
       pgPool: this.pgPool,
-      timestreamClient: this.timestreamClient,
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
     })
