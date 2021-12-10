@@ -45,7 +45,7 @@ export class EnvironmentObserver implements LifeCycleObserver {
 
   private static requiredEnvVarsOnlyInProd = ['COMMIT_HASH']
 
-  private static optionalEnvVars: string[] = ['DISABLE_TIMESTREAM', 'ALWAYS_REDIRECT_TO_ALTRUISTS']
+  private static optionalEnvVars: string[] = ['ALWAYS_REDIRECT_TO_ALTRUISTS']
 
   /*
   constructor(
