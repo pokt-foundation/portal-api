@@ -240,7 +240,7 @@ export class PocketRelayer {
           })
 
           if (!(relayResponse instanceof Error)) {
-            // Even if we relay is successful, we could get an invalid response from servide node.
+            // Even if the relay is successful, we could get an invalid response from servide node.
             // We attempt to parse the service node response using jsonrpc-lite lib.
             const parsedRelayResponse = jsonrpc.parse(relayResponse.payload as string) as IParsedObject
 
