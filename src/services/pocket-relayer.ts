@@ -362,7 +362,7 @@ export class PocketRelayer {
         throw e
       }
 
-      // Any other error (f.g parsing errors) that should not be propagated as response
+      // Any other error (e.g parsing errors) that should not be propagated as response
       logger.log('error', 'INTERNAL ERROR: ' + e, {
         requestID,
         relayType: 'APP',
