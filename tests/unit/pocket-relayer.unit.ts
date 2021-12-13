@@ -593,23 +593,26 @@ describe('Pocket relayer service (unit)', () => {
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       })
 
-      const relayResponse = await poktRelayer.sendRelay({
-        rawData,
-        relayPath: '',
-        httpMethod: HTTPMethod.POST,
-        application: APPLICATION as unknown as Applications,
-        requestID: '1234',
-        requestTimeOut: undefined,
-        overallTimeOut: undefined,
-        stickinessOptions: {
-          stickiness: false,
-          duration: 0,
-          preferredNodeAddress: '',
-        },
-        relayRetries: 0,
-      })
-
-      expect(relayResponse).to.be.instanceOf(ErrorObject)
+      try {
+        await poktRelayer.sendRelay({
+          rawData,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
+          relayRetries: 0,
+        })
+      } catch (error) {
+        expect(error).to.be.instanceOf(ErrorObject)
+        expect(error.error.message).to.be.equal('Service Node returned an invalid response')
+      }
     })
 
     it('throws an error when provided timeout is exceeded', async () => {
