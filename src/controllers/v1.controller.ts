@@ -369,7 +369,7 @@ export class V1Controller {
       }
 
       if (e instanceof SyntaxError && e.message.includes('JSON')) {
-        return jsonrpc.error(reqRPCID, new JsonRpcError('Your request body is not proper JSON.', -32066))
+        return jsonrpc.error(reqRPCID, new JsonRpcError('The request body is not proper JSON.', -32066))
       }
 
       logger.log('error', 'INTERNAL ERROR: ' + e, {

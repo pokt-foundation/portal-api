@@ -70,7 +70,7 @@ If you ever get an error from the API, it will be in JSON-RPC format. This is ou
 | -32063 | Please use an explicit block number instead of 'latest' | eth_getLogs Limit Error | non-standard |
 | -32064 | You cannot query logs for more than X amount of blocks | eth_getLogs Limit Error | non-standard |
 | -32065 | Node returned an invalid response | The node serving your request returned an invalid response | non-standard |
-| -32066 | Your request body is not proper JSON | We couldn't parse your request body | non-standard |
+| -32066 | The request body is not proper JSON | Request bould couldn't be parsed | non-standard |
 
 ## Support & Contact
 
