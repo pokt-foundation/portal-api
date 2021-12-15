@@ -1,0 +1,116 @@
+{
+  "shared_envs": [
+    {
+      "key": "GATEWAY_CLIENT_PRIVATE_KEY",
+      "value": "${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PRIVATE_KEY }}"
+    },
+    {
+      "key": "GATEWAY_CLIENT_PASSPHRASE",
+      "value": "${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PASSPHRASE }}"
+    },
+    {
+      "key": "MONGO_ENDPOINT",
+      "value": "${{ secrets.MONGO_PRODUCTION_ENDPOINT }}"
+    },
+    {
+      "key": "DATABASE_ENCRYPTION_KEY",
+      "value": "${{ secrets.DATABASE_PRODUCTION_ENCRYPTION_KEY }}"
+    },
+    {
+      "key": "DISPATCH_URL",
+      "value": "https://dispatch-1.nodes.pokt.network:4201,https://dispatch-2.nodes.pokt.network:4202,https://dispatch-3.nodes.pokt.network:4203,https://dispatch-4.nodes.pokt.network:4204,https://dispatch-5.nodes.pokt.network:4205,https://dispatch-6.nodes.pokt.network:4206,https://dispatch-7.nodes.pokt.network:4207,https://dispatch-8.nodes.pokt.network:4208,https://dispatch-9.nodes.pokt.network:4209,https://dispatch-10.nodes.pokt.network:4210,https://dispatch-11.nodes.pokt.network:4211,https://dispatch-12.nodes.pokt.network:4212,https://dispatch-13.nodes.pokt.network:4213,https://dispatch-14.nodes.pokt.network:4214,https://dispatch-15.nodes.pokt.network:4215,https://dispatch-16.nodes.pokt.network:4216,https://dispatch-17.nodes.pokt.network:4217,https://dispatch-18.nodes.pokt.network:4218,https://dispatch-19.nodes.pokt.network:4219,https://dispatch-20.nodes.pokt.network:4220"
+    },
+    {
+      "key": "ALTRUISTS",
+      "value": "${{ secrets.POCKET_NETWORK_PRODUCTION_ALTRUISTS }}"
+    },
+    {
+      "key": "REDIRECTS",
+      "value": "${{ secrets.POCKET_NETWORK_PRODUCTION_REDIRECTS }}"
+    },
+    {
+      "key": "REDIS_PORT",
+      "value": 6379
+    },
+    {
+      "key": "POCKET_SESSION_BLOCK_FREQUENCY",
+      "value": 4
+    },
+    {
+      "key": "POCKET_BLOCK_TIME",
+      "value": 1038000
+    },
+    {
+      "key": "POCKET_RELAY_RETRIES",
+      "value": 0
+    },
+    {
+      "key": "DEFAULT_SYNC_ALLOWANCE",
+      "value": 5
+    },
+    {
+      "key": "DEFAULT_LOG_LIMIT_BLOCKS",
+      "value": 10000
+    },
+    {
+      "key": "NODE_TLS_REJECT_UNAUTHORIZED",
+      "value": 0
+    },
+    {
+      "key": "AAT_PLAN",
+      "value": "premium"
+    },
+    {
+      "key": "NODE_ENV",
+      "value": "production"
+    },
+    {
+      "key": "INFLUX_URL",
+      "value": "https://influx.portal.pokt.network:8086"
+    },
+    {
+      "key": "INFLUX_ORG",
+      "value": "pocket"
+    },
+    {
+      "key": "INFLUX_TOKEN",
+      "value": "${{ secrets.INFLUX_TOKEN }}"
+    },
+    {
+      "key": "PSQL_CONNECTION",
+      "value": "${{ secrets.PSQL_CONNECTION }}"
+    },
+    {
+      "key": "LOG_TO_CLOUDWATCH",
+      "value": false
+    },
+    {
+      "key": "AWS_ACCESS_KEY_ID",
+      "value": "${{ secrets.AWS_ACCESS_KEY_ID }}"
+    },
+    {
+      "key": "AWS_SECRET_ACCESS_KEY",
+      "value": "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+    },
+    {
+      "key": "COMMIT_HASH",
+      "value": "${{ github.sha }}"
+    },
+    {
+      "key": "ARCHIVAL_CHAINS",
+      "value": "0022,0028,0010,000A,000B,000C"
+    },
+    {
+      "key": "LOG_TO_DATADOG",
+      "value": true
+    },
+    {
+      "key": "DATADOG_API_KEY",
+      "value": "${{ secrets.DATADOG_API_KEY }}"
+    },
+    {
+      "key": "SILENT_LOGGING",
+      "value": true
+    }
+  ]
+}

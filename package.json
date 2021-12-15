@@ -44,7 +44,8 @@
     "services:all:down": "docker-compose -f stacks/local.yml down",
     "tasks:db:download-production-data": "docker-compose -f stacks/tasks.yml up download-production-data",
     "tasks:db:import-production-data": "docker-compose -f stacks/tasks.yml up import-production-data",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "tasks:deploy:render-artifacts": "./scripts/render_deployment_artifacts.sh"
   },
   "repository": {
     "type": "git"
@@ -84,8 +85,8 @@
     "extract-domain": "^2.3.4",
     "got": "^11.1.4",
     "ioredis": "^4.16.3",
-    "lodash.get": "^4.4.2",
     "jsonrpc-lite": "^2.2.0",
+    "lodash.get": "^4.4.2",
     "log-timestamp": "^0.3.0",
     "loopback-connector-mongodb": "^6.0.0",
     "p-queue": "^6.6.2",
@@ -121,6 +122,7 @@
     "ioredis-mock": "^5.6.0",
     "lint-staged": "^11.0.0",
     "moq.ts": "^7.4.1",
+    "mustache": "^4.2.0",
     "rewiremock": "^3.14.3",
     "source-map-support": "^0.5.19",
     "tsnodemon": "^1.2.2",
@@ -135,6 +137,7 @@
     "*.(t|j)s": [
       "eslint --fix",
       "prettier --write ."
-    ]
+    ],
+    "**/*shared-envs.json": ["npm run tasks:deploy:render-artifacts"]
   }
 }
