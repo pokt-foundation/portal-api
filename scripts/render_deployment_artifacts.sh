@@ -11,16 +11,15 @@ patterns=("canary*.yml" "production*.yml" "staging*.yml")
 
 for pattern in "${patterns[@]}" 
   do
-  patternFiles=$(find $template_path  -name $pattern)
-  for file in $patternFiles
+  files=$(find $template_path  -name $pattern)
+  for file in $files
   do
-    echo $file
     name=$(basename $file)
-    destination_path=$github_path/$name
+    destination=$github_path/$name
 
     mustache $template_path/$shared_data $file \
-    > $destination_path
+    > $destination
 
-    git add $destination_path
+    git add $destination
   done
 done
