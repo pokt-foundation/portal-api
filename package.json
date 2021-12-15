@@ -132,12 +132,5 @@
     "hooks": {
       "pre-commit": "lint-staged"
     }
-  },
-  "lint-staged": {
-    "*.(t|j)s": [
-      "eslint --fix",
-      "prettier --write ."
-    ],
-    "**/*shared-envs.json": ["npm run tasks:deploy:render-artifacts"]
   }
 }
