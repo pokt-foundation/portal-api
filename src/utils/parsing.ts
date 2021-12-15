@@ -1,3 +1,5 @@
+import jsonrpc, { IParsedObjectError, JsonRpcError } from 'jsonrpc-lite'
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function parseMethod(parsedRawData: Record<string, any>): string {
   // Method recording for metrics
@@ -40,4 +42,19 @@ export function parseRPCID(parsedRawData: Record<string, any>): number {
     rpcID = parsedRawData.id
   }
   return rpcID
+}
+
+export function parseJSONRPCError(response: string): JsonRpcError {
+  const parsedResponse = jsonrpc.parse(response) as IParsedObjectError
+  const isJSONRpcError = isJSONRPCError(parsedResponse)
+
+  if (isJSONRpcError) {
+    return parsedResponse.payload.error
+  }
+
+  return { code: 0, message: '' }
+}
+
+export function isJSONRPCError(object: unknown): object is IParsedObjectError {
+  return Object.prototype.hasOwnProperty.call(object, 'type') || Object.prototype.hasOwnProperty.call(object, 'payload')
 }
