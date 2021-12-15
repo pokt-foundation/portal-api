@@ -1,7 +1,7 @@
 {
   "shared_envs": [
     {
-      "key": "GATEWAY_CLIENT_PRIVATE_KEY_TEST_WAWAWA",
+      "key": "GATEWAY_CLIENT_PRIVATE_KEY_TEST",
       "value": "${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PRIVATE_KEY }}"
     },
     {

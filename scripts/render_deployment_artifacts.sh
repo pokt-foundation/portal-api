@@ -7,13 +7,14 @@ github_path=".github/workflows"
 template_path="pocket-gateway/tasks"
 shared_data="shared-envs.json"
 
-patterns=("canary*.yml" "production*.yml", "staging*.yml")
+patterns=("canary*.yml" "production*.yml" "staging*.yml")
 
 for pattern in "${patterns[@]}" 
   do
   patternFiles=$(find $template_path  -name $pattern)
   for file in $patternFiles
   do
+    echo $file
     name=$(basename $file)
     destination_path=$github_path/$name
 

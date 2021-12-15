@@ -1,10 +1,10 @@
 {{! Template used to generate workflow file with shared-enviroments }}
 {{=[[ ]]=}}
-name: Canary Deployment eu-west-1
+name: Production Deployment eu-west-1
 
-on: 
+on:
   push:
-    branches: [canary]
+    branches: [master]
 
 jobs:
   deploy:
@@ -32,16 +32,16 @@ jobs:
           [[#shared_envs]]
           envkey_[[key]]: [[&value]]
           [[/shared_envs]]
-          envkey_REDIS_ENDPOINT: gateway-canary.dj2dgc.ng.0001.euw1.cache.amazonaws.com:6379
-          envkey_REGION_NAME: '/canary/eu-west-1'
+          envkey_REDIS_ENDPOINT: gateway.dj2dgc.ng.0001.euw1.cache.amazonaws.com:6379
           envkey_REGION: 'eu-west-1'
+          envkey_REGION_NAME: 'eu-west-1'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: gateway-canary
+          ECR_REPOSITORY: gateway
           IMAGE_TAG: latest
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
@@ -52,15 +52,15 @@ jobs:
         id: task-def-eu-west-1-gateway
         uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
-          task-definition: pocket-gateway/tasks/canary/eu-west-1/ecs-task-eu-west-1.json
-          container-name: gateway-canary
+          task-definition: pocket-gateway/tasks/production/eu-west-1/ecs-task-eu-west-1.json
+          container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
           # Needs to be set at container level to be read by the dd agent
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
-            DD_SERVICE=/canary/eu-west-1/ecs/gateway
+            DD_SERVICE=eu-west-1/ecs/gateway
             DD_VERSION=${{ github.sha }}
-            DD_ENV=canary
+            DD_ENV=production
 
       - name: Fill in the new image ID / eu-west-1 - datadog-agent
         id: task-def-eu-west-1-datadog-agent
@@ -82,5 +82,5 @@ jobs:
         with:
           task-definition: ${{ steps.task-def-eu-west-1-datadog-agent.outputs.task-definition }}
           service: gateway-service
-          cluster: gateway-canary
+          cluster: gateway
           wait-for-service-stability: true

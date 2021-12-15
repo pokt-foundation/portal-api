@@ -1,10 +1,10 @@
 {{! Template used to generate workflow file with shared-enviroments }}
 {{=[[ ]]=}}
-name: Canary Deployment eu-west-1
+name: Production Deployment ap-southeast-1
 
-on: 
+on:
   push:
-    branches: [canary]
+    branches: [master]
 
 jobs:
   deploy:
@@ -20,53 +20,53 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-1
+          aws-region: ap-southeast-1
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Make envfile eu-west-1
+      - name: Make envfile ap-southeast-1
         uses: SpicyPizza/create-envfile@v1
         with:
           [[#shared_envs]]
           envkey_[[key]]: [[&value]]
           [[/shared_envs]]
-          envkey_REDIS_ENDPOINT: gateway-canary.dj2dgc.ng.0001.euw1.cache.amazonaws.com:6379
-          envkey_REGION_NAME: '/canary/eu-west-1'
-          envkey_REGION: 'eu-west-1'
+          envkey_REDIS_ENDPOINT: dashboard.y2p8qe.ng.0001.apse1.cache.amazonaws.com:6379
+          envkey_REGION: 'ap-southeast-1'
+          envkey_REGION_NAME: 'ap-southeast-1'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: gateway-canary
+          ECR_REPOSITORY: gateway
           IMAGE_TAG: latest
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
-      - name: Fill in the new image ID / eu-west-1 - gateway
-        id: task-def-eu-west-1-gateway
+      - name: Fill in the new image ID / ap-southeast-1 -gateway
+        id: task-def-ap-southeast-1-gateway
         uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
-          task-definition: pocket-gateway/tasks/canary/eu-west-1/ecs-task-eu-west-1.json
-          container-name: gateway-canary
+          task-definition: pocket-gateway/tasks/production/ap-southeast-1/ecs-task-ap-southeast-1.json
+          container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
           # Needs to be set at container level to be read by the dd agent
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
-            DD_SERVICE=/canary/eu-west-1/ecs/gateway
+            DD_SERVICE=ap-southeast-1/ecs/gateway
             DD_VERSION=${{ github.sha }}
-            DD_ENV=canary
+            DD_ENV=production
 
-      - name: Fill in the new image ID / eu-west-1 - datadog-agent
-        id: task-def-eu-west-1-datadog-agent
+      - name: Fill in the new image ID / ap-southeast-1 - datadog-agent
+        id: task-def-ap-southeast-1-datadog-agent
         uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
-          task-definition: ${{ steps.task-def-eu-west-1-gateway.outputs.task-definition }}
+          task-definition: ${{ steps.task-def-ap-southeast-1-gateway.outputs.task-definition }}
           container-name: datadog-agent
           image: datadog/agent:latest
           environment-variables: |
@@ -77,10 +77,10 @@ jobs:
             DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
             ECS_FARGATE=true
 
-      - name: Deploy / eu-west-1
+      - name: Deploy / ap-southeast-1
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def-eu-west-1-datadog-agent.outputs.task-definition }}
+          task-definition: ${{ steps.task-def-ap-southeast-1-datadog-agent.outputs.task-definition }}
           service: gateway-service
-          cluster: gateway-canary
+          cluster: gateway
           wait-for-service-stability: true
