@@ -1,6 +1,6 @@
 name: Canary Deployment eu-west-1
 
-on: 
+on:
   push:
     branches: [canary]
 
