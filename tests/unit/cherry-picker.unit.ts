@@ -66,7 +66,7 @@ describe('Cherry picker service (unit)', () => {
         blockchain + '-' + nodes[0].publicKey + '-service',
         JSON.stringify({
           results: { '200': 1, '500': 2 },
-          averageSuccessLatency: '1.79778',
+          weightedSuccessLatency: '1.79778',
         }),
         'EX',
         120
@@ -75,7 +75,7 @@ describe('Cherry picker service (unit)', () => {
         blockchain + '-' + nodes[1].publicKey + '-service',
         JSON.stringify({
           results: { '200': 4 },
-          averageSuccessLatency: '0.57491',
+          weightedSuccessLatency: '0.57491',
         }),
         'EX',
         120
@@ -84,7 +84,7 @@ describe('Cherry picker service (unit)', () => {
         blockchain + '-' + nodes[2].publicKey + '-service',
         JSON.stringify({
           results: { '500': 6 },
-          averageSuccessLatency: '2.57491',
+          weightedSuccessLatency: '2.57491',
         }),
         'EX',
         120
@@ -150,7 +150,7 @@ describe('Cherry picker service (unit)', () => {
           blockchain + '-' + node.publicKey + '-service',
           JSON.stringify({
             results: { '500': 4 },
-            averageSuccessLatency: '1',
+            weightedSuccessLatency: '1',
           }),
           'EX',
           120
@@ -179,7 +179,7 @@ describe('Cherry picker service (unit)', () => {
         id: 'fd4f41fe0f04a20226',
         attempts: 0,
         successRate: 1,
-        averageSuccessLatency: 0,
+        weightedSuccessLatency: 0,
         failure: false,
       }
 
@@ -189,13 +189,13 @@ describe('Cherry picker service (unit)', () => {
     })
 
     it('creates an unsorted log for an used node', async () => {
-      const rawLog = '{"results":{"200":1},"averageSuccessLatency":"0.30820"}'
+      const rawLog = '{"results":{"200":1},"weightedSuccessLatency":"0.30820"}'
 
       const expectedServiceLog = {
         id: 'fd4f41fe0f04a20226',
         attempts: 1,
         successRate: 1,
-        averageSuccessLatency: 0.3082,
+        weightedSuccessLatency: 0.3082,
         failure: false,
       }
 
@@ -205,7 +205,7 @@ describe('Cherry picker service (unit)', () => {
     })
 
     it('removes the failure status from a previously marked node', async () => {
-      const rawLog = '{"results":{"200":1},"averageSuccessLatency":"0.30820"}'
+      const rawLog = '{"results":{"200":1},"weightedSuccessLatency":"0.30820"}'
       const id = 'fd4f41fe0f04a20226'
       const blockchain = '0027'
       let failureNode: string
@@ -214,7 +214,7 @@ describe('Cherry picker service (unit)', () => {
         id: 'fd4f41fe0f04a20226',
         attempts: 1,
         successRate: 1,
-        averageSuccessLatency: 0.3082,
+        weightedSuccessLatency: 0.3082,
         failure: false,
       }
 
@@ -239,7 +239,7 @@ describe('Cherry picker service (unit)', () => {
       const elapseTime = 0.22333
       const result = 500
       const expectedLogs = JSON.stringify({
-        averageSuccessLatency: '0.00000',
+        weightedSuccessLatency: '0.00000',
         results: {
           [result]: 1,
         },
@@ -262,7 +262,7 @@ describe('Cherry picker service (unit)', () => {
       const elapseTime = 0.22333 // logs are set to be up to 5 decimal points
       const result = 200
       const expectedLogs = JSON.stringify({
-        averageSuccessLatency: '1.40417', // average after calculation from fn
+        weightedSuccessLatency: '0.33450', // average after calculation from fn
         results: {
           '200': 2,
           '500': 2,
@@ -271,7 +271,7 @@ describe('Cherry picker service (unit)', () => {
 
       await redis.set(
         blockchain + '-' + id + '-service',
-        '{"results":{"200":1,"500":2},"averageSuccessLatency":"1.79778"}',
+        '{"results":{"200":1,"500":2},"weightedSuccessLatency":"1.79778"}',
         'EX',
         60
       )
@@ -333,35 +333,35 @@ describe('Cherry picker service (unit)', () => {
         id: '0',
         attempts: 5,
         successRate: 0.8,
-        averageSuccessLatency: 2.5,
+        weightedSuccessLatency: 2.5,
         failure: true,
       },
       {
         id: '7',
         attempts: 1,
         successRate: 0.9,
-        averageSuccessLatency: 1,
+        weightedSuccessLatency: 1,
         failure: false,
       },
       {
         id: '2',
         attempts: 5,
         successRate: 0.9,
-        averageSuccessLatency: 2,
+        weightedSuccessLatency: 2,
         failure: false,
       },
       {
         id: '6',
         attempts: 1,
         successRate: 0.9,
-        averageSuccessLatency: 1.5,
+        weightedSuccessLatency: 1.5,
         failure: false,
       },
       {
         id: '4',
         attempts: 5,
         successRate: 0.8,
-        averageSuccessLatency: 3,
+        weightedSuccessLatency: 3,
         failure: true,
       },
     ]
@@ -371,35 +371,35 @@ describe('Cherry picker service (unit)', () => {
         id: '7',
         attempts: 1,
         successRate: 0.9,
-        averageSuccessLatency: 1,
+        weightedSuccessLatency: 1,
         failure: false,
       },
       {
         id: '6',
         attempts: 1,
         successRate: 0.9,
-        averageSuccessLatency: 1.5,
+        weightedSuccessLatency: 1.5,
         failure: false,
       },
       {
         id: '2',
         attempts: 5,
         successRate: 0.9,
-        averageSuccessLatency: 2,
+        weightedSuccessLatency: 2,
         failure: false,
       },
       {
         id: '0',
         attempts: 5,
         successRate: 0.8,
-        averageSuccessLatency: 2.5,
+        weightedSuccessLatency: 2.5,
         failure: true,
       },
       {
         id: '4',
         attempts: 5,
         successRate: 0.8,
-        averageSuccessLatency: 3,
+        weightedSuccessLatency: 3,
         failure: true,
       },
     ]
@@ -416,35 +416,35 @@ describe('Cherry picker service (unit)', () => {
         id: '1000',
         attempts: 1,
         successRate: 0.99,
-        averageSuccessLatency: 1.43452,
+        weightedSuccessLatency: 1.43452,
         failure: false,
       },
       {
         id: '2000',
         attempts: 3,
         successRate: 0.96,
-        averageSuccessLatency: 2.1963,
+        weightedSuccessLatency: 2.1963,
         failure: false,
       },
       {
         id: '3000',
         attempts: 5,
         successRate: 0.7,
-        averageSuccessLatency: 3.54721,
+        weightedSuccessLatency: 3.54721,
         failure: false,
       },
       {
         id: '4000',
         attempts: 2,
         successRate: 0,
-        averageSuccessLatency: 4.6789,
+        weightedSuccessLatency: 4.6789,
         failure: false,
       },
       {
         id: '5000',
         attempts: 6,
         successRate: 0,
-        averageSuccessLatency: 6.7865,
+        weightedSuccessLatency: 6.7865,
         failure: false,
       },
     ]
