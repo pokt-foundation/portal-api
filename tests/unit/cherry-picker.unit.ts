@@ -270,14 +270,14 @@ describe('Cherry picker service (unit)', () => {
         medianSuccessLatency: '0.22300',
         weightedSuccessLatency: '0.33450', // average after calculation from fn
         results: {
-          '200': 2,
+          '200': 25,
           '500': 2,
         },
       })
 
       await redis.set(
         blockchain + '-' + id + '-service',
-        '{"results":{"200":1,"500":2},"medianSuccessLatency":"0.145","weightedSuccessLatency":"1.79778"}',
+        '{"results":{"200":24,"500":2},"medianSuccessLatency":"0.145","weightedSuccessLatency":"1.79778"}',
         'EX',
         60
       )
