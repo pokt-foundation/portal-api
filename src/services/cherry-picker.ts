@@ -34,13 +34,7 @@ export class CherryPicker {
     blockchain: string,
     requestID: string
   ): Promise<string> {
-    let sortedLogs = [] as {
-      id: string
-      attempts: number
-      successRate: number
-      weightedSuccessLatency: number
-      failure: boolean
-    }[]
+    let sortedLogs = [] as ServiceLog[]
 
     for (const application of applications) {
       const rawServiceLog = await this.fetchRawServiceLog(blockchain, application)
@@ -93,13 +87,7 @@ export class CherryPicker {
   async cherryPickNode(application: Applications, nodes: Node[], blockchain: string, requestID: string): Promise<Node> {
     const rawNodes = {} as { [nodePublicKey: string]: Node }
     const rawNodeIDs = [] as string[]
-    let sortedLogs = [] as {
-      id: string
-      attempts: number
-      successRate: number
-      weightedSuccessLatency: number
-      failure: boolean
-    }[]
+    let sortedLogs = [] as ServiceLog[]
 
     for (const node of nodes) {
       rawNodes[node.publicKey] = node
@@ -391,8 +379,11 @@ export class CherryPicker {
   }
 
   async createUnsortedLog(id: string, blockchain: string, rawServiceLog: string): Promise<ServiceLog> {
+    // Default values mean that an App/Node hasn't had a relay in the past hour gets a
+    // Success rate of 1; this boosts it into the primary group so it gets tested
     let attempts = 0
-    let successRate = 0
+    let successRate = 1
+    let medianSuccessLatency = 0
     let weightedSuccessLatency = 0
     let failure = false
 
@@ -409,12 +400,7 @@ export class CherryPicker {
 
     failure = failureLog === 'true' || parseInt(errorLog) > 50
 
-    if (!rawServiceLog) {
-      // App/Node hasn't had a relay in the past hour
-      // Success rate of 1 boosts this node into the primary group so it gets tested
-      successRate = 1
-      weightedSuccessLatency = 0
-    } else {
+    if (rawServiceLog) {
       const parsedLog = JSON.parse(rawServiceLog)
 
       // Count total relay atttempts with any result
@@ -430,6 +416,7 @@ export class CherryPicker {
           await this.redis.set(blockchain + '-' + id + '-failure', 'false', 'EX', 60 * 60 * 24 * 30)
         }
         successRate = parsedLog.results['200'] / attempts
+        medianSuccessLatency = parseFloat(parseFloat(parsedLog.medianSuccessLatency).toFixed(5))
         weightedSuccessLatency = parseFloat(parseFloat(parsedLog.weightedSuccessLatency).toFixed(5))
       }
     }
@@ -438,6 +425,7 @@ export class CherryPicker {
       id,
       attempts,
       successRate,
+      medianSuccessLatency,
       weightedSuccessLatency,
       failure,
     }
@@ -471,6 +459,7 @@ type ServiceLog = {
   id: string
   attempts: number
   successRate: number
+  medianSuccessLatency: number
   weightedSuccessLatency: number
   failure: boolean
 }
