@@ -77,7 +77,7 @@ jobs:
         id: task-def-eu-central-1-gateway
         uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
-          task-definition: pocket-gateway/tasks/terraform/eu-central-1/ecs-task-eu-central-1.json
+          task-definition: pocket-gateway/tasks/terraform/ecs-task-definition.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
           # Needs to be set at container level to be read by the dd agent
@@ -94,7 +94,7 @@ jobs:
         with:
           task-definition: ${{ steps.task-def-eu-central-1-gateway.outputs.task-definition }}
           container-name: datadog-agent
-          image: datadog/agent:latest
+          image: gcr.io/datadoghq/agent:latest
           environment-variables: |
             DD_API_KEY=${{ secrets.DATADOG_API_KEY }}
             DD_SITE=datadoghq.eu
