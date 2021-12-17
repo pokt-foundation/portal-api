@@ -188,7 +188,7 @@ export class CherryPicker {
     const serviceLog = await this.fetchRawServiceLog(blockchainID, id)
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let serviceQuality: { results: any; weightedSuccessLatency: string }
+    let serviceQuality: { results: any; medianSuccessLatency: string; weightedSuccessLatency: string }
 
     // Update service quality log for this time period
     if (serviceLog) {
@@ -210,6 +210,7 @@ export class CherryPicker {
       }
       // Success; recompute the weighted latency
       if (result === 200) {
+        serviceQuality.medianSuccessLatency = sortedServiceQuality.median.toFixed(5)
         // Weighted latency is the median elapsed time + 50% (p90 elapsed time)
         // This weights the nodes better than a simple average
         serviceQuality.weightedSuccessLatency = (sortedServiceQuality.median + 0.5 * sortedServiceQuality.p90).toFixed(
@@ -228,6 +229,7 @@ export class CherryPicker {
       }
       serviceQuality = {
         results: results,
+        medianSuccessLatency: elapsedTime.toFixed(5),
         weightedSuccessLatency: elapsedTime.toFixed(5),
       }
 

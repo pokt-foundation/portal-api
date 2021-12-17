@@ -242,6 +242,7 @@ describe('Cherry picker service (unit)', () => {
       const elapseTime = 0.22333
       const result = 500
       const expectedLogs = JSON.stringify({
+        medianSuccessLatency: '0.00000',
         weightedSuccessLatency: '0.00000',
         results: {
           [result]: 1,
@@ -266,7 +267,7 @@ describe('Cherry picker service (unit)', () => {
       const elapseTime = 0.22333 // logs are set to be up to 5 decimal points
       const result = 200
       const expectedLogs = JSON.stringify({
-        medianSuccessLatency: '0.145',
+        medianSuccessLatency: '0.22300',
         weightedSuccessLatency: '0.33450', // average after calculation from fn
         results: {
           '200': 2,
