@@ -435,13 +435,14 @@ export class CherryPicker {
 
     /*
     RE-ENABLE LOGS to examine cherry picker behaviour
+    */
     logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
       requestID: requestID,
       relayType: relayType,
       typeID: typeID,
       serviceNode: '',
     })
-    */
+    /* */
     return sortedLogs
   }
 }
