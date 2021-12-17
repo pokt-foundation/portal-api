@@ -177,7 +177,7 @@ export class CherryPicker {
   ): Promise<void> {
     // Update relay timing log
     if (result === 200) {
-      await this.redis.lpush(blockchainID + '-' + id + '-relayTiming', elapsedTime.toFixed(3))
+      await this.redis.lpush(blockchainID + '-' + id + '-relayTiming', elapsedTime.toFixed(3), 'EX', 300)
     }
 
     // Fetch and sort the raw relay timing log
