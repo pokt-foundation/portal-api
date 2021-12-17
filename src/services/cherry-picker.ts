@@ -211,11 +211,16 @@ export class CherryPicker {
       // Success; recompute the weighted latency
       if (result === 200) {
         serviceQuality.medianSuccessLatency = sortedServiceQuality.median.toFixed(5)
+        serviceQuality.weightedSuccessLatency = serviceQuality.medianSuccessLatency
         // Weighted latency is the median elapsed time + 50% (p90 elapsed time)
         // This weights the nodes better than a simple average
-        serviceQuality.weightedSuccessLatency = (sortedServiceQuality.median + 0.5 * sortedServiceQuality.p90).toFixed(
-          5
-        )
+        // Don't use weighting until there have been at least 10 requests
+        if (totalResults > 20) {
+          serviceQuality.weightedSuccessLatency = (
+            sortedServiceQuality.median +
+            0.5 * sortedServiceQuality.p90
+          ).toFixed(5)
+        }
       } else {
         await this.updateBadNodeTimeoutQuality(blockchainID, id, elapsedTime, timeout, pocketSession)
       }
