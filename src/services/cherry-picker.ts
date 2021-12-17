@@ -192,15 +192,11 @@ export class CherryPicker {
       await this.redis.lpush(blockchainID + '-' + id + '-relayTiming', elapsedTime.toFixed(3))
     }
 
+    // Fetch and sort the raw relay timing log
     const relayTimingLog = await this.redis.lrange(blockchainID + '-' + id + '-relayTiming', 0, -1)
-
-    console.log('RELAY TIMING LOG')
-    console.log(relayTimingLog)
-
     const sortedServiceQuality = this.sortAndBucketArray(relayTimingLog)
 
-    console.log(sortedServiceQuality)
-
+    // Pull the full service log including weighted latency and success rate
     const serviceLog = await this.fetchRawServiceLog(blockchainID, id)
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
