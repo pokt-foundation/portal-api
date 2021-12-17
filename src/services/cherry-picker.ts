@@ -177,7 +177,7 @@ export class CherryPicker {
   ): Promise<void> {
     // Update relay timing log
     if (result === 200) {
-      await this.redis.lpush(blockchainID + '-' + id + '-relayTiming', elapsedTime.toFixed(3), 'EX', 300)
+      await this.redis.lpush(blockchainID + '-' + id + '-relayTiming', elapsedTime.toFixed(3))
     }
 
     // Fetch and sort the raw relay timing log
@@ -219,7 +219,7 @@ export class CherryPicker {
         await this.updateBadNodeTimeoutQuality(blockchainID, id, elapsedTime, timeout, pocketSession)
       }
     } else {
-      // No current logs found for this hour
+      // No current logs found for this period
       const results = { [result]: 1 }
 
       if (result !== 200) {
@@ -230,6 +230,9 @@ export class CherryPicker {
         results: results,
         weightedSuccessLatency: elapsedTime.toFixed(5),
       }
+
+      // Set expiry on relayTiming log
+      await this.redis.expire(blockchainID + '-' + id + '-relayTiming', 300)
     }
 
     await this.redis.set(blockchainID + '-' + id + '-service', JSON.stringify(serviceQuality), 'EX', ttl)
