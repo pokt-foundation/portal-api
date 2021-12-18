@@ -111,11 +111,8 @@ export class CherryPicker {
     */
     logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
       requestID: requestID,
-      relayType: '',
-      typeID: '',
-      serviceNode: '',
       blockchainID: blockchain,
-      sessionCacheKey,
+      sessionHash: sessionCacheKey,
     })
     /* */
 
