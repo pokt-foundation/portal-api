@@ -28,7 +28,8 @@ export async function removeNodeFromSession(
   const sessionKey = `session-${hash}`
 
   await redis.sadd(sessionKey, nodePubKey)
-  await redis.del(`sync-check-${hash}`, `chain-check-${hash}`)
+  await redis.del(`sync-check-${hash}`)
+  await redis.del(`chain-check-${hash}`)
 
   const nodesToRemoveTTL = await redis.ttl(sessionKey)
 
