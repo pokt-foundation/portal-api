@@ -84,7 +84,13 @@ export class CherryPicker {
   // Record the latency and success rate of each node, 1 hour TTL
   // When selecting a node, pull the stats for each node in the session
   // Rank and weight them for node choice
-  async cherryPickNode(application: Applications, nodes: Node[], blockchain: string, requestID: string): Promise<Node> {
+  async cherryPickNode(
+    application: Applications,
+    nodes: Node[],
+    blockchain: string,
+    requestID: string,
+    sessionCacheKey: string
+  ): Promise<Node> {
     const rawNodes = {} as { [nodePublicKey: string]: Node }
     const rawNodeIDs = [] as string[]
     let sortedLogs = [] as ServiceLog[]
@@ -99,6 +105,16 @@ export class CherryPicker {
 
     // Sort node logs by highest success rate, then by lowest latency
     sortedLogs = this.sortLogs(sortedLogs, requestID, 'APP', application.id)
+
+    /*
+    RE-ENABLE LOGS to examine cherry picker behaviour
+    */
+    logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
+      requestID: requestID,
+      blockchainID: blockchain,
+      sessionHash: sessionCacheKey,
+    })
+    /* */
 
     // Iterate through sorted logs and form in to a weighted list
     let rankedItems = await this.rankItems(blockchain, sortedLogs, 50)
@@ -451,16 +467,6 @@ export class CherryPicker {
       return 0
     })
 
-    /*
-    RE-ENABLE LOGS to examine cherry picker behaviour
-    */
-    logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
-      requestID: requestID,
-      relayType: relayType,
-      typeID: typeID,
-      serviceNode: '',
-    })
-    /* */
     return sortedLogs
   }
 }
