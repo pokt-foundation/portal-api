@@ -278,7 +278,9 @@ export class CherryPicker {
   }
 
   reduceArray(raw: number[]): number[] {
-    // Remove every 2nd member of array
+    // Drop half of the array entries if it is over 500 elements.
+    // 500 is enough to get a good picture of the node's responses without making
+    // excessively long cache keys or arrays to sort.
     if (raw.length > 500) {
       const reducedArray = raw.filter(function (_, i) {
         return (i + 1) % 2
