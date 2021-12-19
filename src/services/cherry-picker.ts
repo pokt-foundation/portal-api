@@ -373,20 +373,16 @@ export class CherryPicker {
     // be 10 times more likely to be selected than a node that has had failures.
     let weightFactor = 10
     let previousNodeLatency = 0
-    let latencyDifference = 0
 
     // This multiplier is tested to produce a curve that adequately punishes slow nodes
     const weightMultiplier = 15
 
     for (const sortedLog of sortedLogs) {
-      // Set the benchmark from the previous node and measure the delta
-      if (!previousNodeLatency) {
-        previousNodeLatency = sortedLog.weightedSuccessLatency
-      } else {
-        // Only count the latency difference if this node is slower than the expected success latency
-        if (sortedLog.medianSuccessLatency > EXPECTED_SUCCESS_LATENCY) {
-          latencyDifference = sortedLog.weightedSuccessLatency - previousNodeLatency
-        }
+      let latencyDifference = 0
+
+      // Only count the latency difference if this node is slower than the expected success latency
+      if (sortedLog.medianSuccessLatency > EXPECTED_SUCCESS_LATENCY) {
+        latencyDifference = sortedLog.weightedSuccessLatency - previousNodeLatency
       }
 
       // The amount you subtract here from the weight factor should be variable based on how
@@ -425,6 +421,9 @@ export class CherryPicker {
           }
         }
       }
+
+      // Set the benchmark for the next node
+      previousNodeLatency = sortedLog.weightedSuccessLatency
     }
     return rankedItems
   }
