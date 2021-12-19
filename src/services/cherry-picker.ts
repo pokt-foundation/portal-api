@@ -210,6 +210,7 @@ export class CherryPicker {
 
     if (result === 200) {
       // Add our new elapsed time to the relay timing log, sort it, and reduce it if necessary
+      relayTimingLog.push(elapsedTime)
       relayTimingLog = this.reduceArray(relayTimingLog.sort((a, b) => a - b))
 
       await this.redis.set(blockchainID + '-' + id + '-relayTimingLog', JSON.stringify(relayTimingLog), 'KEEPTTL')
