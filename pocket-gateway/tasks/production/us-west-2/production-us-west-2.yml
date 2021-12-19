@@ -34,7 +34,7 @@ jobs:
           [[#shared_envs]]
           envkey_[[key]]: [[&value]]
           [[/shared_envs]]
-          envkey_REDIS_ENDPOINT: dashboard.js6zbp.ng.0001.usw2.cache.amazonaws.com
+          envkey_REDIS_ENDPOINT: gateway.js6zbp.ng.0001.usw2.cache.amazonaws.com
           envkey_REGION: 'us-west-2'
           envkey_REGION_NAME: 'us-west-2'
           file_name: .env
