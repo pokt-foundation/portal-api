@@ -14,6 +14,11 @@ const TIMEOUT_LIMIT = 20
 // wont be exact
 const TIMEOUT_VARIANCE = 2
 
+// The maximum median latency for a node to be considered as providing optimal service.
+// This is temporarily a constant for MVP and will be moved to the database to be
+// variable per chain. Measured in seconds.
+const EXPECTED_SUCCESS_LATENCY = 0.1
+
 export class CherryPicker {
   checkDebug: boolean
   redis: Redis
@@ -178,7 +183,8 @@ export class CherryPicker {
     timeout?: number,
     pocketSession?: Session
   ): Promise<void> {
-    await this._updateServiceQuality(blockchainID, applicationID, elapsedTime, result, 300, timeout, pocketSession)
+    // Removed while load balancer cherry picking is off
+    // await this._updateServiceQuality(blockchainID, applicationID, elapsedTime, result, 300, timeout, pocketSession)
     await this._updateServiceQuality(blockchainID, serviceNode, elapsedTime, result, 300, timeout, pocketSession)
   }
 
@@ -191,14 +197,26 @@ export class CherryPicker {
     timeout?: number,
     pocketSession?: Session
   ): Promise<void> {
-    // Update relay timing log
-    if (result === 200) {
-      await this.redis.lpush(blockchainID + '-' + id + '-relayTiming', elapsedTime.toFixed(3))
+    // Fetch and update the relay timing log; the raw list of elapsed relay times
+    let relayTimingLog = []
+    const rawRelayTimingLog = await this.redis.get(blockchainID + '-' + id + '-relayTimingLog')
+
+    // If no timing log is found, set a blank one to guarantee 5 minute expiry
+    if (!rawRelayTimingLog) {
+      await this.redis.set(blockchainID + '-' + id + '-relayTimingLog', '[]', 'EX', 300)
+    } else {
+      relayTimingLog = JSON.parse(rawRelayTimingLog)
     }
 
-    // Fetch and sort the raw relay timing log
-    const relayTimingLog = await this.redis.lrange(blockchainID + '-' + id + '-relayTiming', 0, -1)
-    const sortedServiceQuality = this.sortAndBucketArray(relayTimingLog)
+    if (result === 200) {
+      // Add our new elapsed time to the relay timing log, sort it, and reduce it if necessary
+      relayTimingLog = this.reduceArray(relayTimingLog.sort((a, b) => a - b))
+
+      await this.redis.set(blockchainID + '-' + id + '-relayTimingLog', JSON.stringify(relayTimingLog), 'KEEPTTL')
+    }
+
+    // Bucket the relay timing log into quantiles
+    const bucketedServiceQuality = this.bucketArray(relayTimingLog)
 
     // Pull the full service log including weighted latency and success rate
     const serviceLog = await this.fetchRawServiceLog(blockchainID, id)
@@ -226,15 +244,15 @@ export class CherryPicker {
       }
       // Success; recompute the weighted latency
       if (result === 200) {
-        serviceQuality.medianSuccessLatency = sortedServiceQuality.median.toFixed(5)
+        serviceQuality.medianSuccessLatency = bucketedServiceQuality.median.toFixed(5)
         serviceQuality.weightedSuccessLatency = serviceQuality.medianSuccessLatency
         // Weighted latency is the median elapsed time + 50% (p90 elapsed time)
         // This weights the nodes better than a simple average
-        // Don't use weighting until there have been at least 10 requests
+        // Don't use weighting until there have been at least 20 requests
         if (totalResults > 20) {
           serviceQuality.weightedSuccessLatency = (
-            sortedServiceQuality.median +
-            0.5 * sortedServiceQuality.p90
+            bucketedServiceQuality.median +
+            0.5 * bucketedServiceQuality.p90
           ).toFixed(5)
         }
       } else {
@@ -253,23 +271,26 @@ export class CherryPicker {
         medianSuccessLatency: elapsedTime.toFixed(5),
         weightedSuccessLatency: elapsedTime.toFixed(5),
       }
-
-      // Set expiry on relayTiming log
-      await this.redis.expire(blockchainID + '-' + id + '-relayTiming', 300)
     }
 
     await this.redis.set(blockchainID + '-' + id + '-service', JSON.stringify(serviceQuality), 'EX', ttl)
   }
 
-  sortAndBucketArray(raw: string[]): SortedServiceQuality {
-    // Convert redis items into floats
-    const convertedRaw = raw.map(function (x) {
-      return parseFloat(x)
-    })
-    const sorted = convertedRaw.sort((a, b) => a - b)
+  reduceArray(raw: number[]): number[] {
+    // Remove every 2nd member of array
+    if (raw.length > 500) {
+      const reducedArray = raw.filter(function (_, i) {
+        return (i + 1) % 2
+      })
 
-    const median = this.quantile(sorted, 0.5)
-    const p90 = this.quantile(sorted, 0.9)
+      return reducedArray
+    }
+    return raw
+  }
+
+  bucketArray(raw: number[]): SortedServiceQuality {
+    const median = this.quantile(raw, 0.5)
+    const p90 = this.quantile(raw, 0.9)
 
     return { median, p90 } as SortedServiceQuality
   }
@@ -361,7 +382,10 @@ export class CherryPicker {
       if (!previousNodeLatency) {
         previousNodeLatency = sortedLog.weightedSuccessLatency
       } else {
-        latencyDifference = sortedLog.weightedSuccessLatency - previousNodeLatency
+        // Only count the latency difference if this node is slower than the expected success latency
+        if (sortedLog.medianSuccessLatency > EXPECTED_SUCCESS_LATENCY) {
+          latencyDifference = sortedLog.weightedSuccessLatency - previousNodeLatency
+        }
       }
 
       // The amount you subtract here from the weight factor should be variable based on how
