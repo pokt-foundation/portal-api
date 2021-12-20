@@ -14,6 +14,11 @@ const TIMEOUT_LIMIT = 20
 // wont be exact
 const TIMEOUT_VARIANCE = 2
 
+// The maximum median latency for a node to be considered as providing optimal service.
+// This is temporarily a constant for MVP and will be moved to the database to be
+// variable per chain. Measured in seconds.
+const EXPECTED_SUCCESS_LATENCY = 0.1
+
 export class CherryPicker {
   checkDebug: boolean
   redis: Redis
@@ -34,13 +39,7 @@ export class CherryPicker {
     blockchain: string,
     requestID: string
   ): Promise<string> {
-    let sortedLogs = [] as {
-      id: string
-      attempts: number
-      successRate: number
-      averageSuccessLatency: number
-      failure: boolean
-    }[]
+    let sortedLogs = [] as ServiceLog[]
 
     for (const application of applications) {
       const rawServiceLog = await this.fetchRawServiceLog(blockchain, application)
@@ -90,16 +89,16 @@ export class CherryPicker {
   // Record the latency and success rate of each node, 1 hour TTL
   // When selecting a node, pull the stats for each node in the session
   // Rank and weight them for node choice
-  async cherryPickNode(application: Applications, nodes: Node[], blockchain: string, requestID: string): Promise<Node> {
+  async cherryPickNode(
+    application: Applications,
+    nodes: Node[],
+    blockchain: string,
+    requestID: string,
+    sessionCacheKey: string
+  ): Promise<Node> {
     const rawNodes = {} as { [nodePublicKey: string]: Node }
     const rawNodeIDs = [] as string[]
-    let sortedLogs = [] as {
-      id: string
-      attempts: number
-      successRate: number
-      averageSuccessLatency: number
-      failure: boolean
-    }[]
+    let sortedLogs = [] as ServiceLog[]
 
     for (const node of nodes) {
       rawNodes[node.publicKey] = node
@@ -111,6 +110,16 @@ export class CherryPicker {
 
     // Sort node logs by highest success rate, then by lowest latency
     sortedLogs = this.sortLogs(sortedLogs, requestID, 'APP', application.id)
+
+    /*
+    RE-ENABLE LOGS to examine cherry picker behaviour
+    */
+    logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
+      requestID: requestID,
+      blockchainID: blockchain,
+      sessionHash: sessionCacheKey,
+    })
+    /* */
 
     // Iterate through sorted logs and form in to a weighted list
     let rankedItems = await this.rankItems(blockchain, sortedLogs, 50)
@@ -164,7 +173,7 @@ export class CherryPicker {
   }
 
   // Record app & node service quality in redis for future selection weight
-  // { id: { results: { 200: x, 500: y, ... }, averageSuccessLatency: z }
+  // { id: { results: { 200: x, 500: y, ... }, weightedSuccessLatency: z }
   async updateServiceQuality(
     blockchainID: string,
     applicationID: string,
@@ -174,7 +183,8 @@ export class CherryPicker {
     timeout?: number,
     pocketSession?: Session
   ): Promise<void> {
-    await this._updateServiceQuality(blockchainID, applicationID, elapsedTime, result, 300, timeout, pocketSession)
+    // Removed while load balancer cherry picking is off
+    // await this._updateServiceQuality(blockchainID, applicationID, elapsedTime, result, 300, timeout, pocketSession)
     await this._updateServiceQuality(blockchainID, serviceNode, elapsedTime, result, 300, timeout, pocketSession)
   }
 
@@ -187,9 +197,33 @@ export class CherryPicker {
     timeout?: number,
     pocketSession?: Session
   ): Promise<void> {
+    // Fetch and update the relay timing log; the raw list of elapsed relay times
+    let relayTimingLog = []
+    const rawRelayTimingLog = await this.redis.get(blockchainID + '-' + id + '-relayTimingLog')
+
+    // If no timing log is found, set a blank one to guarantee 5 minute expiry
+    if (!rawRelayTimingLog) {
+      await this.redis.set(blockchainID + '-' + id + '-relayTimingLog', '[]', 'EX', 300)
+    } else {
+      relayTimingLog = JSON.parse(rawRelayTimingLog)
+    }
+
+    if (result === 200) {
+      // Add our new elapsed time to the relay timing log, sort it, and reduce it if necessary
+      relayTimingLog.push(elapsedTime)
+      relayTimingLog = this.reduceArray(relayTimingLog.sort((a, b) => a - b))
+
+      await this.redis.set(blockchainID + '-' + id + '-relayTimingLog', JSON.stringify(relayTimingLog), 'KEEPTTL')
+    }
+
+    // Bucket the relay timing log into quantiles
+    const bucketedServiceQuality = this.bucketArray(relayTimingLog)
+
+    // Pull the full service log including weighted latency and success rate
     const serviceLog = await this.fetchRawServiceLog(blockchainID, id)
 
-    let serviceQuality
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let serviceQuality: { results: any; medianSuccessLatency: string; weightedSuccessLatency: string }
 
     // Update service quality log for this time period
     if (serviceLog) {
@@ -209,18 +243,24 @@ export class CherryPicker {
         totalResults++
         serviceQuality.results[result] = 1
       }
-      // Success; add this result's latency to the average latency of all success requests
+      // Success; recompute the weighted latency
       if (result === 200) {
-        serviceQuality.averageSuccessLatency = (
-          ((totalResults - 1) * serviceQuality.averageSuccessLatency + elapsedTime) / // All previous results plus current
-          totalResults
-        ) // divided by total results
-          .toFixed(5) // to 5 decimal points
+        serviceQuality.medianSuccessLatency = bucketedServiceQuality.median.toFixed(5)
+        serviceQuality.weightedSuccessLatency = serviceQuality.medianSuccessLatency
+        // Weighted latency is the median elapsed time + 50% (p90 elapsed time)
+        // This weights the nodes better than a simple average
+        // Don't use weighting until there have been at least 20 requests
+        if (totalResults > 20) {
+          serviceQuality.weightedSuccessLatency = (
+            bucketedServiceQuality.median +
+            0.5 * bucketedServiceQuality.p90
+          ).toFixed(5)
+        }
       } else {
         await this.updateBadNodeTimeoutQuality(blockchainID, id, elapsedTime, timeout, pocketSession)
       }
     } else {
-      // No current logs found for this hour
+      // No current logs found for this period
       const results = { [result]: 1 }
 
       if (result !== 200) {
@@ -229,11 +269,45 @@ export class CherryPicker {
       }
       serviceQuality = {
         results: results,
-        averageSuccessLatency: elapsedTime.toFixed(5),
+        medianSuccessLatency: elapsedTime.toFixed(5),
+        weightedSuccessLatency: elapsedTime.toFixed(5),
       }
     }
 
     await this.redis.set(blockchainID + '-' + id + '-service', JSON.stringify(serviceQuality), 'EX', ttl)
+  }
+
+  reduceArray(raw: number[]): number[] {
+    // Drop half of the array entries if it is over 500 elements.
+    // 500 is enough to get a good picture of the node's responses without making
+    // excessively long cache keys or arrays to sort.
+    if (raw.length > 500) {
+      const reducedArray = raw.filter(function (_, i) {
+        return (i + 1) % 2
+      })
+
+      return reducedArray
+    }
+    return raw
+  }
+
+  bucketArray(raw: number[]): SortedServiceQuality {
+    const median = this.quantile(raw, 0.5)
+    const p90 = this.quantile(raw, 0.9)
+
+    return { median, p90 } as SortedServiceQuality
+  }
+
+  quantile = (arr: number[], q: number): number => {
+    const pos = (arr.length - 1) * q
+    const base = Math.floor(pos)
+    const rest = pos - base
+
+    if (arr[base + 1] !== undefined) {
+      return arr[base] + rest * (arr[base + 1] - arr[base])
+    } else {
+      return arr[base]
+    }
   }
 
   /**
@@ -301,17 +375,16 @@ export class CherryPicker {
     // be 10 times more likely to be selected than a node that has had failures.
     let weightFactor = 10
     let previousNodeLatency = 0
-    let latencyDifference = 0
 
     // This multiplier is tested to produce a curve that adequately punishes slow nodes
     const weightMultiplier = 15
 
     for (const sortedLog of sortedLogs) {
-      // Set the benchmark from the previous node and measure the delta
-      if (!previousNodeLatency) {
-        previousNodeLatency = sortedLog.averageSuccessLatency
-      } else {
-        latencyDifference = sortedLog.averageSuccessLatency - previousNodeLatency
+      let latencyDifference = 0
+
+      // Only count the latency difference if this node is slower than the expected success latency
+      if (sortedLog.medianSuccessLatency > EXPECTED_SUCCESS_LATENCY) {
+        latencyDifference = sortedLog.weightedSuccessLatency - previousNodeLatency
       }
 
       // The amount you subtract here from the weight factor should be variable based on how
@@ -350,31 +423,21 @@ export class CherryPicker {
           }
         }
       }
+
+      // Set the benchmark for the next node
+      previousNodeLatency = sortedLog.weightedSuccessLatency
     }
     return rankedItems
   }
 
   async createUnsortedLog(id: string, blockchain: string, rawServiceLog: string): Promise<ServiceLog> {
+    // Default values mean that an App/Node hasn't had a relay in the past hour gets a
+    // Success rate of 1; this boosts it into the primary group so it gets tested
     let attempts = 0
-    let successRate = 0
-    let averageSuccessLatency = 0
+    let successRate = 1
+    let medianSuccessLatency = 0
+    let weightedSuccessLatency = 0
     let failure = false
-
-    /*
-    Client Type filtering: 
-    
-    let clientType = '';
-
-    // Pull client type for any necessary filtering
-    const clientTypeLog = await this.fetchClientTypeLog(blockchain, id);
-
-    Sample Filter:
-    if (clientTypeLog && clientTypeLog.includes('OpenEthereum')) {
-        logger.log('info', 'OPENETHEREUM MARKED', {requestID: '', relayType: '', typeID: '', serviceNode: id});
-        clientType = 'OpenEthereum';
-    }
-    Before the return, mark this client with 0 success rate and 100 attempts so it is excluded completely.
-    */
 
     // Check here to see if it was shelved the last time it was in a session
     // If so, mark it in the service log
@@ -389,12 +452,7 @@ export class CherryPicker {
 
     failure = failureLog === 'true' || parseInt(errorLog) > 50
 
-    if (!rawServiceLog) {
-      // App/Node hasn't had a relay in the past hour
-      // Success rate of 1 boosts this node into the primary group so it gets tested
-      successRate = 1
-      averageSuccessLatency = 0
-    } else {
+    if (rawServiceLog) {
       const parsedLog = JSON.parse(rawServiceLog)
 
       // Count total relay atttempts with any result
@@ -410,38 +468,31 @@ export class CherryPicker {
           await this.redis.set(blockchain + '-' + id + '-failure', 'false', 'EX', 60 * 60 * 24 * 30)
         }
         successRate = parsedLog.results['200'] / attempts
-        averageSuccessLatency = parseFloat(parseFloat(parsedLog.averageSuccessLatency).toFixed(5))
+        medianSuccessLatency = parseFloat(parseFloat(parsedLog.medianSuccessLatency).toFixed(5))
+        weightedSuccessLatency = parseFloat(parseFloat(parsedLog.weightedSuccessLatency).toFixed(5))
       }
     }
 
     return {
-      id: id,
-      attempts: attempts,
-      successRate: successRate,
-      averageSuccessLatency: averageSuccessLatency,
-      failure: failure,
+      id,
+      attempts,
+      successRate,
+      medianSuccessLatency,
+      weightedSuccessLatency,
+      failure,
     }
   }
 
   sortLogs(array: ServiceLog[], requestID: string, relayType: string, typeID: string): ServiceLog[] {
     const sortedLogs = array.sort((a: ServiceLog, b: ServiceLog) => {
-      if (a.averageSuccessLatency > b.averageSuccessLatency) {
+      if (a.weightedSuccessLatency > b.weightedSuccessLatency) {
         return 1
-      } else if (a.averageSuccessLatency < b.averageSuccessLatency) {
+      } else if (a.weightedSuccessLatency < b.weightedSuccessLatency) {
         return -1
       }
       return 0
     })
 
-    /*
-    RE-ENABLE LOGS to examine cherry picker behaviour
-    logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
-      requestID: requestID,
-      relayType: relayType,
-      typeID: typeID,
-      serviceNode: '',
-    })
-    */
     return sortedLogs
   }
 }
@@ -450,6 +501,12 @@ type ServiceLog = {
   id: string
   attempts: number
   successRate: number
-  averageSuccessLatency: number
+  medianSuccessLatency: number
+  weightedSuccessLatency: number
   failure: boolean
+}
+
+type SortedServiceQuality = {
+  median: number
+  p90: number
 }

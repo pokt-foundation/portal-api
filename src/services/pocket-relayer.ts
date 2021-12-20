@@ -1,6 +1,6 @@
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
-import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
+import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
 import { JSONObject } from '@loopback/context'
 import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
 import AatPlans from '../config/aat-plans.json'
@@ -17,14 +17,12 @@ import {
   checkEnforcementJSON,
   isRelayError,
   isUserError,
-  fetchUserErrorCode,
-  fetchUserErrorMessage,
   checkWhitelist,
   checkSecretKey,
   SecretKeyDetails,
 } from '../utils/enforcements'
 import { hashBlockchainNodes } from '../utils/helpers'
-import { parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
+import { parseJSONRPCError, parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
 import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
@@ -184,12 +182,12 @@ export class PocketRelayer {
     }
 
     const data = JSON.stringify(parsedRawData)
-    const limitation = await this.enforceLimits(parsedRawData, blockchainID, logLimitBlocks)
+    const limitation = await this.enforceLimits(parsedRawData, blockchainID, requestID, logLimitBlocks)
 
     if (limitation instanceof ErrorObject) {
       logger.log('error', `LIMITATION ERROR ${blockchainID} req: ${data}`, {
         blockchainID,
-        requestID: requestID,
+        requestID,
         relayType: 'APP',
         error: `${parsedRawData.method} method limitations exceeded.`,
         typeID: application.id,
@@ -242,13 +240,27 @@ export class PocketRelayer {
           })
 
           if (!(relayResponse instanceof Error)) {
+            // Even if the relay is successful, we could get an invalid response from servide node.
+            // We attempt to parse the service node response using jsonrpc-lite lib.
+            const parsedRelayResponse = jsonrpc.parse(relayResponse.payload as string) as IParsedObject
+
+            // If the parsing goes wrong, we get a response with 'invalid' type and the following message.
+            // We could get 'invalid' and not a parse error, hence we check both.
+            if (parsedRelayResponse.type === 'invalid' && parsedRelayResponse.payload.message === 'Parse error') {
+              throw new ErrorObject(
+                rpcID,
+                new jsonrpc.JsonRpcError('Service Node returned an invalid response', -32065)
+              )
+            }
             // Check for user error to bubble these up to the API
             let userErrorMessage = ''
             let userErrorCode = ''
 
             if (isUserError(relayResponse.payload)) {
-              userErrorMessage = fetchUserErrorMessage(relayResponse.payload)
-              userErrorCode = fetchUserErrorCode(relayResponse.payload)
+              const userError = parseJSONRPCError(relayResponse.payload)
+
+              userErrorMessage = userError.message
+              userErrorCode = userError.code !== 0 ? String(userError.code) : ''
             }
 
             // Record success metric
@@ -350,7 +362,8 @@ export class PocketRelayer {
         throw e
       }
 
-      logger.log('error', 'ERROR relaying through node: ' + e, {
+      // Any other error (e.g parsing errors) that should not be propagated as response
+      logger.log('error', 'INTERNAL ERROR: ' + e, {
         requestID,
         relayType: 'APP',
         typeID: application.id,
@@ -741,7 +754,7 @@ export class PocketRelayer {
     }
 
     if (!node) {
-      node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
+      node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID, sessionCacheKey)
     }
 
     if (this.checkDebug) {
@@ -828,12 +841,13 @@ export class PocketRelayer {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     parsedRawData: Record<string, any>,
     blockchainID: string,
+    requestID: string,
     logLimitBlocks: number
   ): Promise<void | ErrorObject> {
     let limiterResponse: Promise<void | ErrorObject>
 
     if (blockchainID === '0021') {
-      limiterResponse = enforceEVMLimits(parsedRawData, blockchainID, logLimitBlocks, this.altruists)
+      limiterResponse = enforceEVMLimits(parsedRawData, blockchainID, requestID, logLimitBlocks, this.altruists)
     }
 
     return limiterResponse

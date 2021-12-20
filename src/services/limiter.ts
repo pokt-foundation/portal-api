@@ -11,6 +11,7 @@ export async function enforceEVMLimits(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   parsedRawData: Record<string, any>,
   blockchainID: string,
+  requestID: string,
   logLimitBlocks: number,
   altruists: JSONObject
 ): Promise<void | ErrorObject> {
@@ -67,7 +68,10 @@ export async function enforceEVMLimits(
           fromBlock = latestBlock
         }
       } catch (e) {
-        logger.log('error', `Failed trying to reach altruist (${altruistUrl}) to fetch block number.`)
+        logger.log('error', `Failed trying to reach altruist (${altruistUrl}) to fetch block number.`, {
+          blockchainID,
+          requestID,
+        })
         return jsonrpc.error(
           rpcID,
           new jsonrpc.JsonRpcError('Try again with a explicit block number.', -32062)

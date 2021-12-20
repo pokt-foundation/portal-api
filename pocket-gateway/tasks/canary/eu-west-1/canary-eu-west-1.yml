@@ -1,5 +1,7 @@
 # .github/workflows: DO NOT MODIFY HERE BUT RATHER REFER TO THEIR CORRESPONDING
 # TEMPLATE IN THE POCKET-GATEWWAY FOLDER OTHERWISE YOUR CHANGES WILL BE OVERWRITTEN
+{{! Template used to generate workflow file with shared-enviroments }}
+{{=[[ ]]=}}
 name: Canary Deployment eu-west-1
 
 on:
@@ -29,34 +31,9 @@ jobs:
       - name: Make envfile eu-west-1
         uses: SpicyPizza/create-envfile@v1
         with:
-          envkey_GATEWAY_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PRIVATE_KEY }}
-          envkey_GATEWAY_CLIENT_PASSPHRASE: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PASSPHRASE }}
-          envkey_MONGO_ENDPOINT: ${{ secrets.MONGO_PRODUCTION_ENDPOINT }}
-          envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_PRODUCTION_ENCRYPTION_KEY }}
-          envkey_DISPATCH_URL: https://dispatch-1.nodes.pokt.network:4201,https://dispatch-2.nodes.pokt.network:4202,https://dispatch-3.nodes.pokt.network:4203,https://dispatch-4.nodes.pokt.network:4204,https://dispatch-5.nodes.pokt.network:4205,https://dispatch-6.nodes.pokt.network:4206,https://dispatch-7.nodes.pokt.network:4207,https://dispatch-8.nodes.pokt.network:4208,https://dispatch-9.nodes.pokt.network:4209,https://dispatch-10.nodes.pokt.network:4210,https://dispatch-11.nodes.pokt.network:4211,https://dispatch-12.nodes.pokt.network:4212,https://dispatch-13.nodes.pokt.network:4213,https://dispatch-14.nodes.pokt.network:4214,https://dispatch-15.nodes.pokt.network:4215,https://dispatch-16.nodes.pokt.network:4216,https://dispatch-17.nodes.pokt.network:4217,https://dispatch-18.nodes.pokt.network:4218,https://dispatch-19.nodes.pokt.network:4219,https://dispatch-20.nodes.pokt.network:4220
-          envkey_ALTRUISTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_ALTRUISTS }}
-          envkey_REDIRECTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_REDIRECTS }}
-          envkey_REDIS_PORT: 6379
-          envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
-          envkey_POCKET_BLOCK_TIME: 1038000
-          envkey_POCKET_RELAY_RETRIES: 0
-          envkey_DEFAULT_SYNC_ALLOWANCE: 5
-          envkey_DEFAULT_LOG_LIMIT_BLOCKS: 10000
-          envkey_NODE_TLS_REJECT_UNAUTHORIZED: 0
-          envkey_AAT_PLAN: premium
-          envkey_NODE_ENV: production
-          envkey_INFLUX_URL: https://influx.portal.pokt.network:8086
-          envkey_INFLUX_ORG: pocket
-          envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
-          envkey_PSQL_CONNECTION: ${{ secrets.PSQL_CONNECTION }}
-          envkey_LOG_TO_CLOUDWATCH: false
-          envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          envkey_COMMIT_HASH: ${{ github.sha }}
-          envkey_ARCHIVAL_CHAINS: 0022,0028,0010,000A,000B,000C
-          envkey_LOG_TO_DATADOG: true
-          envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
-          envkey_SILENT_LOGGING: true
+          [[#shared_envs]]
+          envkey_[[key]]: [[&value]]
+          [[/shared_envs]]
           envkey_REDIS_ENDPOINT: gateway-canary.dj2dgc.ng.0001.euw1.cache.amazonaws.com:6379
           envkey_REGION_NAME: '/canary/eu-west-1'
           envkey_REGION: 'eu-west-1'
