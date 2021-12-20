@@ -59,7 +59,7 @@ jobs:
           image: ${{ steps.build-image.outputs.image }}
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
-            DD_SERVICE=eu-south-1/ecs/gateway
+            DD_SERVICE=/eu-south-1/ecs/gateway
             DD_VERSION=${{ github.sha }}
             DD_ENV=production
 
