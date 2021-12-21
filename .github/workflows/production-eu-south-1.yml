@@ -56,6 +56,7 @@ jobs:
           envkey_ARCHIVAL_CHAINS: 0022,0028,0010,000A,000B,000C
           envkey_LOG_TO_DATADOG: true
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
           envkey_REDIS_ENDPOINT: gateway.thcgg8.ng.0001.eus1.cache.amazonaws.com:6379
           envkey_REGION: 'eu-south-1'
@@ -82,7 +83,7 @@ jobs:
           image: ${{ steps.build-image.outputs.image }}
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
-            DD_SERVICE=eu-south-1/ecs/gateway
+            DD_SERVICE=/eu-south-1/ecs/gateway
             DD_VERSION=${{ github.sha }}
             DD_ENV=production
 

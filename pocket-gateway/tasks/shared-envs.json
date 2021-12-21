@@ -108,6 +108,11 @@
       "key": "DATADOG_API_KEY",
       "value": "${{ secrets.DATADOG_API_KEY }}"
     },
+
+    {
+      "key": "ALWAYS_REDIRECT_TO_ALTRUISTS",
+      "value": "${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}"
+    },
     {
       "key": "SILENT_LOGGING",
       "value": true
