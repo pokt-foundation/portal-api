@@ -1,4 +1,3 @@
-import AWS from 'aws-sdk'
 import { Redis } from 'ioredis'
 import jsonrpc, { ErrorObject, JsonRpcError } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
@@ -323,6 +322,7 @@ export class V1Controller {
           relayType: 'APP',
           typeID: id,
           serviceNode: '',
+          origin: this.origin,
         })
         throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('Application not found', -32056))
       }
