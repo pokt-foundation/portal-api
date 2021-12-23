@@ -34,7 +34,7 @@ jobs:
           [[#shared_envs]]
           envkey_[[key]]: [[&value]]
           [[/shared_envs]]
-          envkey_REDIS_ENDPOINT: gateway-redis-terraform.jmonrz.clustercfg.apn2.cache.amazonaws.com
+          envkey_REDIS_ENDPOINT: gateway-prod-redis.jmonrz.clustercfg.apn2.cache.amazonaws.com
           envkey_REGION: 'ap-northeast-2'
           envkey_REGION_NAME: 'ap-northeast-2'
           file_name: .env
@@ -43,7 +43,7 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: gateway-terraform
+          ECR_REPOSITORY: gateway-prod
           IMAGE_TAG: latest
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
@@ -84,6 +84,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def-ap-northeast-2-datadog-agent.outputs.task-definition }}
-          service: gateway-terraform
-          cluster: gateway-terraform
+          service: gateway-prod
+          cluster: gateway-prod
           wait-for-service-stability: true
