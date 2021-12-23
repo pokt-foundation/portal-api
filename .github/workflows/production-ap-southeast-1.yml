@@ -56,6 +56,7 @@ jobs:
           envkey_ARCHIVAL_CHAINS: 0022,0028,0010,000A,000B,000C
           envkey_LOG_TO_DATADOG: true
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
           envkey_REDIS_ENDPOINT: dashboard.y2p8qe.ng.0001.apse1.cache.amazonaws.com:6379
           envkey_REGION: 'ap-southeast-1'
@@ -83,7 +84,7 @@ jobs:
           # Needs to be set at container level to be read by the dd agent
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
-            DD_SERVICE=ap-southeast-1/ecs/gateway
+            DD_SERVICE=/ap-southeast-1/ecs/gateway
             DD_VERSION=${{ github.sha }}
             DD_ENV=production
 

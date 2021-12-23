@@ -603,6 +603,8 @@ export class PocketRelayer {
         relayType: 'APP',
         typeID: application.id,
         serviceNode: '',
+        blockchainID,
+        origin: this.origin,
       })
       return new Error("session doesn't have any available nodes")
     }
