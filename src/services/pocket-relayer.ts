@@ -25,7 +25,7 @@ import { hashBlockchainNodes } from '../utils/helpers'
 import { parseJSONRPCError, parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
 import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
-import { SendRelayOptions } from '../utils/types'
+import { CheckResult, SendRelayOptions } from '../utils/types'
 import { enforceEVMLimits } from './limiter'
 import { NodeSticker } from './node-sticker'
 const logger = require('../services/logger')
@@ -609,10 +609,10 @@ export class PocketRelayer {
       return new Error("session doesn't have any available nodes")
     }
 
-    let syncCheckPromise: Promise<Node[]>
+    let syncCheckPromise: Promise<CheckResult>
     let syncCheckedNodes: Node[]
 
-    let chainCheckPromise: Promise<Node[]>
+    let chainCheckPromise: Promise<CheckResult>
     let chainCheckedNodes: Node[]
 
     if (blockchainIDCheck) {
@@ -659,7 +659,7 @@ export class PocketRelayer {
 
     if (blockchainIDCheck) {
       if (isCheckPromiseResolved(chainCheckResult)) {
-        chainCheckedNodes = (chainCheckResult as PromiseFulfilledResult<Node[]>).value
+        chainCheckedNodes = (chainCheckResult as PromiseFulfilledResult<CheckResult>).value.nodes
       } else {
         const error = 'ChainID check failure: '
 
@@ -698,7 +698,7 @@ export class PocketRelayer {
 
     if (blockchainSyncCheck) {
       if (isCheckPromiseResolved(syncCheckResult)) {
-        syncCheckedNodes = (syncCheckResult as PromiseFulfilledResult<Node[]>).value
+        syncCheckedNodes = (syncCheckResult as PromiseFulfilledResult<CheckResult>).value.nodes
       } else {
         const error = 'Sync check failure'
         const method = 'checks'

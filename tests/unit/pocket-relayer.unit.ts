@@ -20,6 +20,7 @@ import { hashBlockchainNodes } from '../../src/utils/helpers'
 import { parseMethod } from '../../src/utils/parsing'
 import { updateConfiguration } from '../../src/utils/pocket'
 import { loadBlockchain } from '../../src/utils/relayer'
+import { CheckResult } from '../../src/utils/types'
 import { gatewayTestDB } from '../fixtures/test.datasource'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
@@ -422,8 +423,8 @@ describe('Pocket relayer service (unit)', () => {
           applicationPublicKey,
           pocketAAT,
           pocketConfiguration: pocketConfig,
-        }: ChainIDFilterOptions): Promise<Node[]> => {
-          return Promise.resolve(DEFAULT_NODES.slice(maxAmountOfNodes - chainCheckNodes))
+        }: ChainIDFilterOptions): Promise<CheckResult> => {
+          return Promise.resolve({ nodes: DEFAULT_NODES.slice(maxAmountOfNodes - chainCheckNodes), cached: false })
         }
       )
 
@@ -441,8 +442,8 @@ describe('Pocket relayer service (unit)', () => {
           pocket,
           pocketAAT,
           pocketConfiguration: pocketConfig,
-        }: ConsensusFilterOptions): Promise<Node[]> => {
-          return Promise.resolve(DEFAULT_NODES.slice(maxAmountOfNodes - syncCheckNodes))
+        }: ConsensusFilterOptions): Promise<CheckResult> => {
+          return Promise.resolve({ nodes: DEFAULT_NODES.slice(maxAmountOfNodes - chainCheckNodes), cached: false })
         }
       )
 
