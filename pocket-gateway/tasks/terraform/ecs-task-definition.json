@@ -40,7 +40,7 @@
 			"memoryReservation": 2048,
 			"volumesFrom": [],
 			"stopTimeout": null,
-			"image": "059424750518.dkr.ecr.ap-northeast-2.amazonaws.com/gateway-terraform:latest",
+			"image": null,
 			"startTimeout": null,
 			"firelensConfiguration": null,
 			"dependsOn": [
@@ -156,7 +156,7 @@
 	"placementConstraints": [],
 	"memory": "3883",
 	"taskRoleArn": null,
-	"family": "gateway-terraform",
+	"family": "gateway-prod",
 	"pidMode": null,
 	"requiresCompatibilities": [
 		"EC2"
