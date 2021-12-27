@@ -2,7 +2,6 @@ import crypto from 'crypto'
 import os from 'os'
 import path from 'path'
 import process from 'process'
-import AWS from 'aws-sdk'
 import Redis from 'ioredis'
 import pg from 'pg'
 import { BootMixin } from '@loopback/boot'
@@ -17,7 +16,6 @@ import { InfluxDB } from '@influxdata/influxdb-client'
 import AatPlans from './config/aat-plans.json'
 import { DEFAULT_POCKET_CONFIG } from './config/pocket-config'
 import { GatewaySequence } from './sequence'
-const https = require('https')
 const logger = require('./services/logger')
 
 require('log-timestamp')

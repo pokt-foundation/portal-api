@@ -4,7 +4,7 @@ import RedisMock from 'ioredis-mock'
 import { ErrorObject } from 'jsonrpc-lite'
 import { Encryptor } from 'strong-cryptor'
 import { expect, sinon } from '@loopback/testlab'
-import { HTTPMethod, Configuration, Node, RpcError, Session } from '@pokt-network/pocket-js'
+import { HTTPMethod, Configuration, RpcError, Session } from '@pokt-network/pocket-js'
 import AatPlans from '../../src/config/aat-plans.json'
 import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
 import { Applications } from '../../src/models/applications.model'
@@ -443,7 +443,7 @@ describe('Pocket relayer service (unit)', () => {
           pocketAAT,
           pocketConfiguration: pocketConfig,
         }: ConsensusFilterOptions): Promise<CheckResult> => {
-          return Promise.resolve({ nodes: DEFAULT_NODES.slice(maxAmountOfNodes - chainCheckNodes), cached: false })
+          return Promise.resolve({ nodes: DEFAULT_NODES.slice(maxAmountOfNodes - syncCheckNodes), cached: false })
         }
       )
 
