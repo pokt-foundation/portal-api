@@ -791,4 +791,21 @@ describe('V1 controller (acceptance)', () => {
 
     expect(successStickyResponses).to.be.equal(4)
   })
+
+  it('Returns error on get request to app/lb', async () => {
+    ;({ app, client } = await setupApplication())
+
+    const appResponse = await client.get('/v1/abc1234').expect(200)
+    const lbResponse = await client.get('/v1/abc1234').expect(200)
+
+    console.log(appResponse.body)
+
+    const message = 'GET requests are not supported. Use POST instead'
+
+    expect(appResponse.body).to.have.properties('error', 'id', 'jsonrpc')
+    expect(appResponse.body.error.message).to.be.equal(message)
+
+    expect(lbResponse.body).to.have.properties('error', 'id', 'jsonrpc')
+    expect(lbResponse.body.error.message).to.be.equal(message)
+  })
 })
