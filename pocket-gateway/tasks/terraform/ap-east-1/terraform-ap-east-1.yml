@@ -2,7 +2,7 @@
 # TEMPLATE IN THE POCKET-GATEWWAY FOLDER OTHERWISE YOUR CHANGES WILL BE OVERWRITTEN
 {{! Template used to generate workflow file with shared-enviroments }}
 {{=[[ ]]=}}
-name: Terraform Production Deployment ap-northeast-2
+name: Terraform Production Deployment ap-east-1
 
 on:
   push:
@@ -22,21 +22,21 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-northeast-2
+          aws-region: ap-east-1
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Make envfile ap-northeast-2
+      - name: Make envfile ap-east-1
         uses: SpicyPizza/create-envfile@v1
         with:
           [[#shared_envs]]
           envkey_[[key]]: [[&value]]
           [[/shared_envs]]
-          envkey_REDIS_ENDPOINT: gateway-prod-redis.jmonrz.clustercfg.apn2.cache.amazonaws.com
-          envkey_REGION: 'ap-northeast-2'
-          envkey_REGION_NAME: 'ap-northeast-2'
+          envkey_REDIS_ENDPOINT: gateway-prod-redis.hmerc8.clustercfg.ape1.cache.amazonaws.com
+          envkey_REGION: 'ap-east-1'
+          envkey_REGION_NAME: 'ap-east-1'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
@@ -50,8 +50,8 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
-      - name: Fill in the new image ID / ap-northeast-2 - gateway
-        id: task-def-ap-northeast-2-gateway
+      - name: Fill in the new image ID / ap-east-1 - gateway
+        id: task-def-ap-east-1-gateway
         uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
           task-definition: pocket-gateway/tasks/terraform/ecs-task-definition.json
@@ -60,16 +60,16 @@ jobs:
           # Needs to be set at container level to be read by the dd agent
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
-            DD_SERVICE=/ap-northeast-2/ecs/gateway/
+            DD_SERVICE=/ap-east-1/ecs/gateway/
             DD_VERSION=${{ github.sha }}
             DD_ENV=production
             DD_AGENT_HOST=datadog-agent
 
-      - name: Fill in the new image ID / ap-northeast-2 - datadog-agent
-        id: task-def-ap-northeast-2-datadog-agent
+      - name: Fill in the new image ID / ap-east-1 - datadog-agent
+        id: task-def-ap-east-1-datadog-agent
         uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
-          task-definition: ${{ steps.task-def-ap-northeast-2-gateway.outputs.task-definition }}
+          task-definition: ${{ steps.task-def-ap-east-1-gateway.outputs.task-definition }}
           container-name: datadog-agent
           image: gcr.io/datadoghq/agent:latest
           environment-variables: |
@@ -80,10 +80,10 @@ jobs:
             DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
             ECS_FARGATE=true
 
-      - name: Deploy / ap-northeast-2
+      - name: Deploy / ap-east-1
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def-ap-northeast-2-datadog-agent.outputs.task-definition }}
+          task-definition: ${{ steps.task-def-ap-east-1-datadog-agent.outputs.task-definition }}
           service: gateway-prod
           cluster: gateway-prod
           wait-for-service-stability: true
