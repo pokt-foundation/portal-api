@@ -36,7 +36,7 @@ jobs:
           [[/shared_envs]]
           envkey_REDIS_ENDPOINT: gateway-prod-redis.y2p8qe.clustercfg.apse1.cache.amazonaws.com
           envkey_REGION: 'ap-southeast-1'
-          envkey_REGION_NAME: 'ap-southeast-1/terraform'
+          envkey_REGION_NAME: 'ap-southeast-1'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
@@ -60,7 +60,7 @@ jobs:
           # Needs to be set at container level to be read by the dd agent
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
-            DD_SERVICE=/ap-southeast-1/ecs/gateway/
+            DD_SERVICE=/ap-southeast-1/ecs/gateway
             DD_VERSION=${{ github.sha }}
             DD_ENV=production
             DD_AGENT_HOST=datadog-agent
