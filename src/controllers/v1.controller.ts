@@ -322,6 +322,7 @@ export class V1Controller {
           relayType: 'APP',
           typeID: id,
           serviceNode: '',
+          origin: this.origin,
         })
         throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('Application not found', -32056))
       }
