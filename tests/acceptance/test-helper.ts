@@ -45,7 +45,14 @@ const DUMMY_ENV = {
   DEFAULT_SYNC_ALLOWANCE: 5,
   DEFAULT_LOG_LIMIT_BLOCKS: 10000,
   AAT_PLAN: 'freemium',
-  REDIRECTS: [{ domain: 'ethereum.example.com', blockchain: 'ethereum-mainnet', loadBalancerID: '1234567890' }],
+  REDIRECTS: [
+    {
+      domain: 'ethereum.example.com',
+      blockchain: 'ethereum-mainnet',
+      blockchainAliases: ['ethereum-mainnet'],
+      loadBalancerID: '1234567890',
+    },
+  ],
   COMMIT_HASH: '1234',
   ARCHIVAL_CHAINS: '1234,4567',
   AWS_ACCESS_KEY_ID: 'test',
