@@ -1,10 +1,9 @@
-import AWS from 'aws-sdk'
 import { Redis } from 'ioredis'
 import jsonrpc, { ErrorObject, JsonRpcError } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
 import { FilterExcludingWhere, repository } from '@loopback/repository'
-import { param, post, requestBody } from '@loopback/rest'
+import { get, param, post, requestBody } from '@loopback/rest'
 import { Configuration, HTTPMethod, Pocket } from '@pokt-network/pocket-js'
 import { WriteApi } from '@influxdata/influxdb-client'
 
@@ -323,6 +322,7 @@ export class V1Controller {
           relayType: 'APP',
           typeID: id,
           serviceNode: '',
+          origin: this.origin,
         })
         throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('Application not found', -32056))
       }
@@ -380,6 +380,67 @@ export class V1Controller {
 
       return jsonrpc.error(reqRPCID, new JsonRpcError('Relay attempts exhausted', -32050))
     }
+  }
+
+  /**
+   * Load Balancers cannot be relayed through a GET request. Returns message to
+   * use POST method instead
+   * @param id Load Balancer ID
+   * @param rawData
+   * @param filter
+   * @returns
+   */
+  @get('/v1/lb/{id}')
+  async invalidLoadBalancerRelay(
+    @requestBody({
+      description: 'Relay Request',
+      required: true,
+      content: {
+        'application/json': {
+          // Skip body parsing
+          'x-parser': 'raw',
+        },
+      },
+    })
+    rawData: object
+  ): Promise<ErrorObject> {
+    return V1Controller.getInvalidRequestResponse(rawData || '')
+  }
+
+  /**
+   * Load Balancers cannot be relayed through a GET request. Returns message to
+   * use POST method instead
+   * @param id Load Balancer ID
+   * @param rawData
+   * @param filter
+   * @returns
+   */
+  @get('/v1/{id}')
+  async invalidApplicationRelay(
+    @requestBody({
+      description: 'Relay Request',
+      required: true,
+      content: {
+        'application/json': {
+          // Skip body parsing
+          'x-parser': 'raw',
+        },
+      },
+    })
+    rawData: object
+  ): Promise<ErrorObject> {
+    return V1Controller.getInvalidRequestResponse(rawData || '')
+  }
+
+  static getInvalidRequestResponse(rawData: object | string): ErrorObject {
+    const parsedRawData = parseRawData(rawData)
+
+    const reqRPCID = parseRPCID(parsedRawData)
+
+    return new ErrorObject(
+      reqRPCID,
+      new jsonrpc.JsonRpcError('GET requests are not supported. Use POST instead', -32067)
+    )
   }
 
   async checkClientStickiness(
