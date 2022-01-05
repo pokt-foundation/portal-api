@@ -41,11 +41,18 @@ const DUMMY_ENV = {
   }`,
   POCKET_SESSION_BLOCK_FREQUENCY: 4,
   POCKET_BLOCK_TIME: 1038000,
-  POCKET_RELAY_RETRIES: 1,
+  POCKET_RELAY_RETRIES: '0',
   DEFAULT_SYNC_ALLOWANCE: 5,
   DEFAULT_LOG_LIMIT_BLOCKS: 10000,
   AAT_PLAN: 'freemium',
-  REDIRECTS: [{ domain: 'ethereum.example.com', blockchain: 'ethereum-mainnet', loadBalancerID: '1234567890' }],
+  REDIRECTS: [
+    {
+      domain: 'ethereum.example.com',
+      blockchain: 'ethereum-mainnet',
+      blockchainAliases: ['ethereum-mainnet'],
+      loadBalancerID: '1234567890',
+    },
+  ],
   COMMIT_HASH: '1234',
   ARCHIVAL_CHAINS: '1234,4567',
   AWS_ACCESS_KEY_ID: 'test',
@@ -61,11 +68,17 @@ export async function setupApplication(pocket?: typeof Pocket, envs?: object): P
     ...(pocket && { '@pokt-network/pocket-js': { Pocket: pocket, Configuration, HttpRpcProvider } }),
   })
 
+  const appEnvs = envs ? { ...DUMMY_ENV, ...envs } : { ...DUMMY_ENV }
+
+  // Add all envs to the process.env so they fail if they're not properly set by the environment observer check
+  for (const [name, value] of Object.entries(appEnvs)) {
+    process.env[name] = value as string
+  }
+
   const app = new appWithMock.PocketGatewayApplication({
     rest: restConfig,
     env: {
-      load: false,
-      values: envs ? { ...DUMMY_ENV, ...envs } : DUMMY_ENV,
+      load: true,
     },
   })
 

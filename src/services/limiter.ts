@@ -1,9 +1,9 @@
 import axios, { AxiosRequestConfig } from 'axios'
+import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
 import { JSONObject } from '@loopback/context'
-import { HttpErrors } from '@loopback/rest'
-import { LimitError } from '../errors/types'
 import { blockHexToDecimal } from '../utils/block'
 import { WS_ONLY_METHODS } from '../utils/constants'
+import { parseRPCID } from '../utils/parsing'
 
 const logger = require('../services/logger')
 
@@ -11,13 +11,20 @@ export async function enforceEVMLimits(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   parsedRawData: Record<string, any>,
   blockchainID: string,
+  requestID: string,
   logLimitBlocks: number,
   altruists: JSONObject
-): Promise<void | Error> {
+): Promise<void | ErrorObject> {
+  const rpcID = parseRPCID(parsedRawData)
+
   if (WS_ONLY_METHODS.includes(parsedRawData.method)) {
-    return new HttpErrors.BadRequest(
-      `We cannot serve the ${parsedRawData.method} method over HTTPS. At the moment, we do not support WebSockets.`
-    )
+    return jsonrpc.error(
+      rpcID,
+      new jsonrpc.JsonRpcError(
+        `${parsedRawData.method} method cannot be served over HTTPS. WebSockets are not supported at the moment.`,
+        -32053
+      )
+    ) as ErrorObject
   } else if (parsedRawData.method === 'eth_getLogs') {
     let toBlock: number
     let fromBlock: number
@@ -61,20 +68,29 @@ export async function enforceEVMLimits(
           fromBlock = latestBlock
         }
       } catch (e) {
-        logger.log('error', `Failed trying to reach altruist (${altruistUrl}) to fetch block number.`)
-        return new HttpErrors.InternalServerError('Internal error. Try again with a explicit block number.')
+        logger.log('error', `Failed trying to reach altruist (${altruistUrl}) to fetch block number.`, {
+          blockchainID,
+          requestID,
+        })
+        return jsonrpc.error(
+          rpcID,
+          new jsonrpc.JsonRpcError('Try again with a explicit block number.', -32062)
+        ) as ErrorObject
       }
     } else {
       // We cannot move forward if there is no altruist available.
       if (!isToBlockHex || !isFromBlockHex) {
-        return new LimitError(`Please use an explicit block number instead of 'latest'.`, parsedRawData.method)
+        return jsonrpc.error(
+          rpcID,
+          new jsonrpc.JsonRpcError(`Please use an explicit block number instead of 'latest'.`, -32063)
+        ) as ErrorObject
       }
     }
     if (toBlock - fromBlock > logLimitBlocks) {
-      return new LimitError(
-        `You cannot query logs for more than ${logLimitBlocks} blocks at once.`,
-        parsedRawData.method
-      )
+      return jsonrpc.error(
+        rpcID,
+        new jsonrpc.JsonRpcError(`You cannot query logs for more than ${logLimitBlocks} blocks at once.`, -32064)
+      ) as ErrorObject
     }
   }
 }

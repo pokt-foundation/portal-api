@@ -49,6 +49,30 @@ Only the steps 1 and 2 are required, steps 3 and 4 are only needed if you want t
 
 **Hint**: If you still got issues about compiling when running the project after following at least the steps 1 and 2, run the command `npm run clean` and then `npm run services:all:up` again.
 
+## Custom Error List
+
+If you ever get an error from the API, it will be in JSON-RPC format. This is our list of custom errors for context.
+| Code | Message | Meaning | Category |
+|---|---|---|---|
+| -32050 | Relay attempts exhausted | Request failed to be served | non-standard |
+| -32051 | Overall timeout exceeded | Request took too long | non-standard |
+| -32052 | Invalid domain | Invalid blockchain domain | non-standard |
+| -32053 | Method cannot be served over HTTPS | We do not support WebSockets yet | non-standard |
+| -32054 | Loader balancer not found | Not found in database | non-standard |
+| -32055 | No application found in load balancer | Not found in database | non-standard |
+| -32056 | Application not found | Not found in database | non-standard |
+| -32057 | Incorrect blockchain | Not found in database | non-standard |
+| -32058 | Load Balancer configuration invalid | Load balancer misconfigured in database | non-standard |
+| -32059 | Secret key does not match | Application's secret key doesn't match | non-standard |
+| -32060 | Whitelist origin check failed | Application configuration doesn't allow specified origin | non-standard |
+| -32061 | Whitelist user agent failed | Application configuration doesn't allow specified user-agent | non-standard |
+| -32062 | Try again with a explicit block number | eth_getLogs Limit Error | non-standard |
+| -32063 | Please use an explicit block number instead of 'latest' | eth_getLogs Limit Error | non-standard |
+| -32064 | You cannot query logs for more than X amount of blocks | eth_getLogs Limit Error | non-standard |
+| -32065 | Node returned an invalid response | The node serving your request returned an invalid response | non-standard |
+| -32066 | The request body is not proper JSON | The request body couldn't be parsed | non-standard |
+| -32067 | GET requests are not supported. Use POST instead | Attempt to send a relay through a GET request | non-standard |
+
 ## Support & Contact
 
 If you come across an issue with the Portal, do a search in the [Issues](https://github.com/pokt-foundation/portal/issues) tab of this repo to make sure it hasn't been reported before. Follow these steps to help us prevent duplicate issues and unnecessary notifications going to the many people watching this repo:

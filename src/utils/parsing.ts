@@ -1,3 +1,5 @@
+import jsonrpc, { IParsedObjectError, JsonRpcError } from 'jsonrpc-lite'
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function parseMethod(parsedRawData: Record<string, any>): string {
   // Method recording for metrics
@@ -17,4 +19,42 @@ export function parseMethod(parsedRawData: Record<string, any>): string {
     method = parsedRawData.method
   }
   return method
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function parseRawData(rawData: string | object): Record<string, any> {
+  return Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function parseRPCID(parsedRawData: Record<string, any>): number {
+  // RPC ID for client-node stickiness
+  let rpcID = 0
+
+  if (parsedRawData instanceof Array) {
+    // Locate the lowest RPC ID
+    for (const key in parsedRawData) {
+      if (parsedRawData[key].id && (!rpcID || parsedRawData[key].id < rpcID)) {
+        rpcID = parsedRawData[key].id
+      }
+    }
+  } else if (parsedRawData.id) {
+    rpcID = parsedRawData.id
+  }
+  return rpcID
+}
+
+export function parseJSONRPCError(response: string): JsonRpcError {
+  const parsedResponse = jsonrpc.parse(response) as IParsedObjectError
+  const isJSONRpcError = isJSONRPCError(parsedResponse)
+
+  if (isJSONRpcError) {
+    return parsedResponse.payload.error
+  }
+
+  return { code: 0, message: '' }
+}
+
+export function isJSONRPCError(object: unknown): object is IParsedObjectError {
+  return Object.prototype.hasOwnProperty.call(object, 'type') || Object.prototype.hasOwnProperty.call(object, 'payload')
 }

@@ -69,9 +69,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       INFLUX_URL,
       INFLUX_TOKEN,
       INFLUX_ORG,
-      AWS_ACCESS_KEY_ID,
-      AWS_SECRET_ACCESS_KEY,
-      AWS_REGION,
       ARCHIVAL_CHAINS,
       ALWAYS_REDIRECT_TO_ALTRUISTS,
     } = await this.get('configuration.environment.values')
@@ -96,58 +93,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const archivalChains: string[] = (ARCHIVAL_CHAINS || '').replace(' ', '').split(',')
     const alwaysRedirectToAltruists: boolean = ALWAYS_REDIRECT_TO_ALTRUISTS === 'true'
 
-    if (!dispatchURL) {
-      throw new HttpErrors.InternalServerError('DISPATCH_URL required in ENV')
-    }
-    if (!altruists) {
-      throw new HttpErrors.InternalServerError('ALTRUISTS required in ENV')
-    }
-    if (!clientPrivateKey) {
-      throw new HttpErrors.InternalServerError('GATEWAY_CLIENT_PRIVATE_KEY required in ENV')
-    }
-    if (!clientPassphrase) {
-      throw new HttpErrors.InternalServerError('GATEWAY_CLIENT_PASSPHRASE required in ENV')
-    }
-    if (!pocketSessionBlockFrequency || pocketSessionBlockFrequency === '') {
-      throw new HttpErrors.InternalServerError('POCKET_SESSION_BLOCK_FREQUENCY required in ENV')
-    }
-    if (!pocketBlockTime || pocketBlockTime === '') {
-      throw new HttpErrors.InternalServerError('POCKET_BLOCK_TIME required in ENV')
-    }
-    if (!databaseEncryptionKey) {
-      throw new HttpErrors.InternalServerError('DATABASE_ENCRYPTION_KEY required in ENV')
-    }
-    if (defaultSyncAllowance < 0) {
-      throw new HttpErrors.InternalServerError('DEFAULT_SYNC_ALLOWANCE required in ENV')
-    }
-    if (defaultLogLimitBlocks < 0) {
-      throw new HttpErrors.InternalServerError('DEFAULT_LOG_LIMIT_BLOCKS required in ENV')
-    }
     if (aatPlan !== AatPlans.PREMIUM && !AatPlans.values.includes(aatPlan)) {
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
-    }
-    if (!redirects) {
-      throw new HttpErrors.InternalServerError('REDIRECTS required in ENV')
-    }
-    if (!influxURL) {
-      throw new HttpErrors.InternalServerError('INFLUX_URL required in ENV')
-    }
-    if (!influxToken) {
-      throw new HttpErrors.InternalServerError('INFLUX_TOKEN required in ENV')
-    }
-    if (!influxOrg) {
-      throw new HttpErrors.InternalServerError('INFLUX_ORG required in ENV')
-    }
-
-    // Not required in code, but must be present in .env
-    if (!AWS_ACCESS_KEY_ID) {
-      throw new HttpErrors.InternalServerError('AWS_ACCESS_KEY_ID required in ENV')
-    }
-    if (!AWS_SECRET_ACCESS_KEY) {
-      throw new HttpErrors.InternalServerError('AWS_SECRET_ACCESS_KEY required in ENV')
-    }
-    if (!AWS_REGION) {
-      throw new HttpErrors.InternalServerError('AWS_REGION required in ENV')
     }
 
     const dispatchers = []
@@ -203,12 +150,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const redisEndpoint: string = REDIS_ENDPOINT || ''
     const redisPort: string = REDIS_PORT || ''
 
-    if (!redisEndpoint) {
-      throw new HttpErrors.InternalServerError('REDIS_ENDPOINT required in ENV')
-    }
-    if (!redisPort) {
-      throw new HttpErrors.InternalServerError('REDIS_PORT required in ENV')
-    }
     const redis = new Redis(parseInt(redisPort), redisEndpoint, {
       keyPrefix: `${commitHash}-`,
     })
@@ -218,33 +159,12 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     // New metrics postgres for error recording
     const psqlConnection: string = PSQL_CONNECTION || ''
 
-    if (!psqlConnection) {
-      throw new HttpErrors.InternalServerError('PSQL_CONNECTION required in ENV')
-    }
-
     const pgPool = new pg.Pool({
       connectionString: psqlConnection,
       ssl: environment === 'production' || environment === 'staging' ? true : false,
     })
 
     this.bind('pgPool').to(pgPool)
-
-    // Timestream
-    const timestreamAgent = new https.Agent({
-      maxSockets: 5000,
-    })
-
-    // Always US-East-2
-    const timestreamClient = new AWS.TimestreamWrite({
-      maxRetries: 10,
-      httpOptions: {
-        timeout: 20000,
-        agent: timestreamAgent,
-      },
-      region: 'us-east-2',
-    })
-
-    this.bind('timestreamClient').to(timestreamClient)
 
     // Influx DB
     const influxBucket = environment === 'production' ? 'mainnetRelay' : 'mainnetRelayStaging'

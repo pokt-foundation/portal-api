@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
+import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
 import { JSONObject } from '@loopback/context'
-import { HttpErrors } from '@loopback/rest'
 import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
@@ -22,17 +22,19 @@ import {
   SecretKeyDetails,
 } from '../utils/enforcements'
 import { hashBlockchainNodes } from '../utils/helpers'
-import { parseMethod } from '../utils/parsing'
+import { parseJSONRPCError, parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
 import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
 import { enforceEVMLimits } from './limiter'
+import { NodeSticker } from './node-sticker'
 const logger = require('../services/logger')
 
 export class PocketRelayer {
   host: string
   origin: string
   userAgent: string
+  ipAddress: string
   pocket: Pocket
   pocketConfiguration: Configuration
   cherryPicker: CherryPicker
@@ -55,6 +57,7 @@ export class PocketRelayer {
     host,
     origin,
     userAgent,
+    ipAddress,
     pocket,
     pocketConfiguration,
     cherryPicker,
@@ -75,6 +78,7 @@ export class PocketRelayer {
     host: string
     origin: string
     userAgent: string
+    ipAddress: string
     pocket: Pocket
     pocketConfiguration: Configuration
     cherryPicker: CherryPicker
@@ -95,6 +99,7 @@ export class PocketRelayer {
     this.host = host
     this.origin = origin
     this.userAgent = userAgent
+    this.ipAddress = ipAddress
     this.pocket = pocket
     this.pocketConfiguration = pocketConfiguration
     this.cherryPicker = cherryPicker
@@ -124,27 +129,51 @@ export class PocketRelayer {
     requestTimeOut,
     overallTimeOut,
     relayRetries,
+    stickinessOptions,
     logLimitBlocks,
-  }: SendRelayOptions): Promise<string | Error> {
+  }: SendRelayOptions): Promise<string | ErrorObject> {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries
     }
+    // This converts the raw data into formatted JSON then back to a string for relaying.
+    // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
+    // extraneous characters like newlines and tabs from the rawData.
+    // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
+
+    const parsedRawData = parseRawData(rawData)
+    const rpcID = parseRPCID(parsedRawData)
+
     const {
-      blockchain,
       blockchainEnforceResult,
       blockchainSyncCheck,
       blockchainIDCheck,
       blockchainID,
       blockchainChainID,
       blockchainLogLimitBlocks,
-    } = await loadBlockchain(this.host, this.redis, this.blockchainsRepository, this.defaultLogLimitBlocks).catch(
-      () => {
-        logger.log('error', `Incorrect blockchain: ${this.host}`, {
-          origin: this.origin,
-        })
-        throw new HttpErrors.BadRequest(`Incorrect blockchain: ${this.host}`)
-      }
+    } = await loadBlockchain(
+      this.host,
+      this.redis,
+      this.blockchainsRepository,
+      this.defaultLogLimitBlocks,
+      rpcID
+    ).catch((e) => {
+      logger.log('error', `Incorrect blockchain: ${this.host}`, {
+        origin: this.origin,
+      })
+      throw e
+    })
+
+    const { preferredNodeAddress } = stickinessOptions
+    const nodeSticker = new NodeSticker(
+      stickinessOptions,
+      blockchainID,
+      this.ipAddress,
+      this.redis,
+      rawData,
+      requestID,
+      application.id
     )
+
     const overallStart = process.hrtime()
 
     // Check for lb-specific log limits
@@ -152,19 +181,13 @@ export class PocketRelayer {
       logLimitBlocks = blockchainLogLimitBlocks
     }
 
-    // This converts the raw data into formatted JSON then back to a string for relaying.
-    // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
-    // extraneous characters like newlines and tabs from the rawData.
-    // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
-
-    const parsedRawData = Object.keys(rawData).length > 0 ? JSON.parse(rawData.toString()) : JSON.stringify(rawData)
-    const limitation = await this.enforceLimits(parsedRawData, blockchainID, logLimitBlocks)
     const data = JSON.stringify(parsedRawData)
+    const limitation = await this.enforceLimits(parsedRawData, blockchainID, requestID, logLimitBlocks)
 
-    if (limitation instanceof Error) {
+    if (limitation instanceof ErrorObject) {
       logger.log('error', `LIMITATION ERROR ${blockchainID} req: ${data}`, {
         blockchainID,
-        requestID: requestID,
+        requestID,
         relayType: 'APP',
         error: `${parsedRawData.method} method limitations exceeded.`,
         typeID: application.id,
@@ -193,7 +216,10 @@ export class PocketRelayer {
               typeID: application.id,
               serviceNode: '',
             })
-            return new HttpErrors.GatewayTimeout('Overall Timeout exceeded: ' + overallTimeOut)
+            return jsonrpc.error(
+              rpcID,
+              new jsonrpc.JsonRpcError(`Overall Timeout exceeded: ${overallTimeOut}`, -32051)
+            ) as ErrorObject
           }
 
           // Send this relay attempt
@@ -204,16 +230,39 @@ export class PocketRelayer {
             requestID,
             application,
             requestTimeOut,
-            blockchain,
             blockchainID,
             blockchainEnforceResult,
             blockchainSyncCheck,
             blockchainIDCheck,
             blockchainChainID,
+            nodeSticker,
             blockchainSyncBackup: String(this.altruists[blockchainID]),
           })
 
           if (!(relayResponse instanceof Error)) {
+            // Even if the relay is successful, we could get an invalid response from servide node.
+            // We attempt to parse the service node response using jsonrpc-lite lib.
+            const parsedRelayResponse = jsonrpc.parse(relayResponse.payload as string) as IParsedObject
+
+            // If the parsing goes wrong, we get a response with 'invalid' type and the following message.
+            // We could get 'invalid' and not a parse error, hence we check both.
+            if (parsedRelayResponse.type === 'invalid' && parsedRelayResponse.payload.message === 'Parse error') {
+              throw new ErrorObject(
+                rpcID,
+                new jsonrpc.JsonRpcError('Service Node returned an invalid response', -32065)
+              )
+            }
+            // Check for user error to bubble these up to the API
+            let userErrorMessage = ''
+            let userErrorCode = ''
+
+            if (isUserError(relayResponse.payload)) {
+              const userError = parseJSONRPCError(relayResponse.payload)
+
+              userErrorMessage = userError.message
+              userErrorCode = userError.code !== 0 ? String(userError.code) : ''
+            }
+
             // Record success metric
             this.metricsRecorder
               .recordMetric({
@@ -225,13 +274,14 @@ export class PocketRelayer {
                 relayStart,
                 result: 200,
                 bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
-                delivered: false,
                 fallback: false,
                 method: method,
-                error: undefined,
+                error: userErrorMessage,
+                code: userErrorCode,
                 origin: this.origin,
                 data,
                 pocketSession: this.pocketSession,
+                sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relayResponse.proof.servicerPubKey),
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -255,9 +305,6 @@ export class PocketRelayer {
             return relayResponse.payload
           } else if (relayResponse instanceof RelayError) {
             // Record failure metric, retry if possible or fallback
-            // If this is the last retry and fallback is available, mark the error not delivered
-            const errorDelivered = x === this.relayRetries && fallbackAvailable ? false : true
-
             // Increment error log
             await this.redis.incr(blockchainID + '-' + relayResponse.servicer_node + '-errors')
             await this.redis.expire(blockchainID + '-' + relayResponse.servicer_node + '-errors', 3600)
@@ -266,6 +313,17 @@ export class PocketRelayer {
 
             if (typeof relayResponse.message === 'object') {
               error = JSON.stringify(relayResponse.message)
+            }
+
+            // If sticky and is over error threshold, remove stickiness
+            const sticky = await NodeSticker.stickyRelayResult(preferredNodeAddress, relayResponse.servicer_node)
+
+            if (sticky === 'SUCCESS') {
+              const errorCount = await nodeSticker.increaseErrorCount()
+
+              if (errorCount > 5) {
+                await nodeSticker.remove('error limit exceeded')
+              }
             }
 
             this.metricsRecorder
@@ -278,13 +336,14 @@ export class PocketRelayer {
                 relayStart,
                 result: 500,
                 bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
-                delivered: errorDelivered,
                 fallback: false,
                 method,
                 error,
+                code: String(relayResponse.code),
                 origin: this.origin,
                 data,
                 pocketSession: this.pocketSession,
+                sticky,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -298,12 +357,13 @@ export class PocketRelayer {
         }
       }
     } catch (e) {
-      // Explicit Http errors should be propagated so they can be sent as a response
-      if (HttpErrors.isHttpError(e)) {
+      // Explicit JSON-RPC errors should be propagated so they can be sent as a response
+      if (e instanceof ErrorObject) {
         throw e
       }
 
-      logger.log('error', 'ERROR relaying through node: ' + e, {
+      // Any other error (e.g parsing errors) that should not be propagated as response
+      logger.log('error', 'INTERNAL ERROR: ' + e, {
         requestID,
         relayType: 'APP',
         typeID: application.id,
@@ -374,10 +434,10 @@ export class PocketRelayer {
               relayStart,
               result: 200,
               bytes: Buffer.byteLength(responseParsed, 'utf8'),
-              delivered: false,
               fallback: true,
               method: method,
               error: undefined,
+              code: undefined,
               origin: this.origin,
               data,
               pocketSession: this.pocketSession,
@@ -423,7 +483,7 @@ export class PocketRelayer {
         })
       }
     }
-    return new HttpErrors.GatewayTimeout('Relay attempts exhausted')
+    return jsonrpc.error(rpcID, new jsonrpc.JsonRpcError('Relay attempts exhausted', -32050)) as ErrorObject
   }
 
   // Private function to allow relay retries
@@ -434,13 +494,13 @@ export class PocketRelayer {
     requestID,
     application,
     requestTimeOut,
-    blockchain,
     blockchainEnforceResult,
     blockchainSyncCheck,
     blockchainSyncBackup,
     blockchainIDCheck,
     blockchainID,
     blockchainChainID,
+    nodeSticker,
   }: {
     data: string
     relayPath: string
@@ -448,32 +508,38 @@ export class PocketRelayer {
     requestID: string
     application: Applications
     requestTimeOut: number | undefined
-    blockchain: string
     blockchainEnforceResult: string
     blockchainSyncCheck: SyncCheckOptions
     blockchainSyncBackup: string
     blockchainIDCheck: string
     blockchainID: string
     blockchainChainID: string
+    nodeSticker: NodeSticker
   }): Promise<RelayResponse | Error> {
     const secretKeyDetails: SecretKeyDetails = {
       secretKey: this.secretKey,
       databaseEncryptionKey: this.databaseEncryptionKey,
     }
 
+    const parsedRawData = parseRawData(data)
+    const rpcID = parseRPCID(parsedRawData)
+
     // Secret key check
     if (!checkSecretKey(application, secretKeyDetails)) {
-      throw new HttpErrors.Forbidden('SecretKey does not match')
+      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('SecretKey does not match', -32059))
     }
 
     // Whitelist: origins -- explicit matches
     if (!checkWhitelist(application.gatewaySettings.whitelistOrigins, this.origin, 'explicit')) {
-      throw new HttpErrors.Forbidden('Whitelist Origin check failed: ' + this.origin)
+      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError(`Whitelist Origin check failed: ${this.origin}`, -32060))
     }
 
     // Whitelist: userAgent -- substring matches
     if (!checkWhitelist(application.gatewaySettings.whitelistUserAgents, this.userAgent, 'substring')) {
-      throw new HttpErrors.Forbidden('Whitelist User Agent check failed: ' + this.userAgent)
+      throw new ErrorObject(
+        rpcID,
+        new jsonrpc.JsonRpcError(`Whitelist User Agent check failed: ${this.userAgent}`, -32061)
+      )
     }
 
     const aatParams: [string, string, string, string] =
@@ -525,10 +591,10 @@ export class PocketRelayer {
     this.pocketSession = pocketSession
     const sessionCacheKey = `session-${sessionKey}`
 
-    const nodesToRemove = await this.redis.smembers(sessionCacheKey)
+    const exhaustedNodes = await this.redis.smembers(sessionCacheKey)
 
-    if (nodesToRemove.length > 0) {
-      nodes = nodes.filter((n) => !nodesToRemove.includes(n.publicKey))
+    if (exhaustedNodes.length > 0) {
+      nodes = nodes.filter(({ publicKey }) => !exhaustedNodes.includes(publicKey))
     }
 
     if (nodes.length === 0) {
@@ -537,6 +603,8 @@ export class PocketRelayer {
         relayType: 'APP',
         typeID: application.id,
         serviceNode: '',
+        blockchainID,
+        origin: this.origin,
       })
       return new Error("session doesn't have any available nodes")
     }
@@ -593,7 +661,8 @@ export class PocketRelayer {
       if (isCheckPromiseResolved(chainCheckResult)) {
         chainCheckedNodes = (chainCheckResult as PromiseFulfilledResult<Node[]>).value
       } else {
-        const error = 'ChainID check failure'
+        const error = 'ChainID check failure: '
+
         const method = 'checks'
 
         this.metricsRecorder
@@ -606,10 +675,10 @@ export class PocketRelayer {
             relayStart,
             result: 500,
             bytes: Buffer.byteLength(error, 'utf8'),
-            delivered: false,
             fallback: false,
             method,
             error,
+            code: undefined,
             origin: this.origin,
             data,
             pocketSession,
@@ -644,10 +713,10 @@ export class PocketRelayer {
             relayStart,
             result: 500,
             bytes: Buffer.byteLength(error, 'utf8'),
-            delivered: false,
             fallback: false,
             method,
             error,
+            code: undefined,
             origin: this.origin,
             data,
             pocketSession,
@@ -680,7 +749,15 @@ export class PocketRelayer {
       }
     }
 
-    const node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID)
+    let node: Node
+
+    if (nodeSticker.preferredNodeAddress) {
+      node = await nodeSticker.getStickyNode(nodes, exhaustedNodes)
+    }
+
+    if (!node) {
+      node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID, sessionCacheKey)
+    }
 
     if (this.checkDebug) {
       logger.log('debug', JSON.stringify(pocketSession), {
@@ -743,6 +820,8 @@ export class PocketRelayer {
         // then this result is invalid
         return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey)
       } else {
+        await nodeSticker.setStickinessKey(application.id, node.address, this.origin)
+
         // Success
         return relayResponse
       }
@@ -752,7 +831,6 @@ export class PocketRelayer {
       if (relayResponse.message === MAX_RELAYS_ERROR) {
         await removeNodeFromSession(this.redis, blockchainID, (pocketSession as Session).sessionNodes, node.publicKey)
       }
-
       return new RelayError(relayResponse.message, 500, node?.publicKey)
       // ConsensusNode
     } else {
@@ -765,12 +843,13 @@ export class PocketRelayer {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     parsedRawData: Record<string, any>,
     blockchainID: string,
+    requestID: string,
     logLimitBlocks: number
-  ): Promise<void | Error> {
-    let limiterResponse: Promise<void | Error>
+  ): Promise<void | ErrorObject> {
+    let limiterResponse: Promise<void | ErrorObject>
 
     if (blockchainID === '0021') {
-      limiterResponse = enforceEVMLimits(parsedRawData, blockchainID, logLimitBlocks, this.altruists)
+      limiterResponse = enforceEVMLimits(parsedRawData, blockchainID, requestID, logLimitBlocks, this.altruists)
     }
 
     return limiterResponse

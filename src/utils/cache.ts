@@ -3,7 +3,6 @@ import extractDomain from 'extract-domain'
 import { Redis } from 'ioredis'
 import { getAddressFromPublicKey } from 'pocket-tools'
 import { Node } from '@pokt-network/pocket-js'
-import { getSecondsForNextHour } from './date'
 import { hashBlockchainNodes } from './helpers'
 
 const logger = require('../services/logger')
@@ -29,13 +28,13 @@ export async function removeNodeFromSession(
   const sessionKey = `session-${hash}`
 
   await redis.sadd(sessionKey, nodePubKey)
-  await redis.del(`sync-check-${hash}`, `chain-check-${hash}`)
+  await redis.del(`sync-check-${hash}`)
+  await redis.del(`chain-check-${hash}`)
 
   const nodesToRemoveTTL = await redis.ttl(sessionKey)
 
   if (nodesToRemoveTTL < 0) {
-    // Add a 2 minutes delay in case the session stays slightly more than an hour.
-    await redis.expire(sessionKey, getSecondsForNextHour() + 60 * 2)
+    await redis.expire(sessionKey, 3600) // 1 hour
   }
 }
 /**
@@ -49,7 +48,8 @@ export async function getNodeNetworkData(redis: Redis, publicKey: string, reques
   let nodeUrl: NodeURLInfo = { serviceURL: '', serviceDomain: '' }
 
   // Might come empty or undefined on relay failure
-  if (!publicKey) {
+  // TODO: FIND Better way to check for valid service nodes (public key)
+  if (!publicKey || publicKey.length !== 64) {
     return nodeUrl
   }
 

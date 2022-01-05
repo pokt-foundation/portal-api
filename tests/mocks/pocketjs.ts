@@ -75,26 +75,15 @@ export const DEFAULT_NODES = [
 // Default values to use for request/response objects
 const DEFAULT_MOCK_VALUES = {
   DISPATCHERS: [
-    new URL('https://node1.mainnet.pokt.network'),
-    new URL('https://node2.mainnet.pokt.network'),
-    new URL('https://node3.mainnet.pokt.network'),
-    new URL('https://node4.mainnet.pokt.network'),
-    new URL('https://node5.mainnet.pokt.network'),
-    new URL('https://node6.mainnet.pokt.network'),
-    new URL('https://node7.mainnet.pokt.network'),
-    new URL('https://node8.mainnet.pokt.network'),
-    new URL('https://node9.mainnet.pokt.network'),
-    new URL('https://node10.mainnet.pokt.network'),
-    new URL('https://node11.mainnet.pokt.network'),
-    new URL('https://node12.mainnet.pokt.network'),
-    new URL('https://node13.mainnet.pokt.network'),
-    new URL('https://node14.mainnet.pokt.network'),
-    new URL('https://node15.mainnet.pokt.network'),
-    new URL('https://node16.mainnet.pokt.network'),
-    new URL('https://node17.mainnet.pokt.network'),
-    new URL('https://node18.mainnet.pokt.network'),
-    new URL('https://node19.mainnet.pokt.network'),
-    new URL('https://node20.mainnet.pokt.network'),
+    new URL('https://node1.dispatcher.pokt.network'),
+    new URL('https://node2.dispatcher.pokt.network'),
+    new URL('https://node3.dispatcher.pokt.network'),
+    new URL('https://node4.dispatcher.pokt.network'),
+    new URL('https://node5.dispatcher.pokt.network'),
+    new URL('https://node6.dispatcher.pokt.network'),
+    new URL('https://node7.dispatcher.pokt.network'),
+    new URL('https://node8.dispatcher.pokt.network'),
+    new URL('https://node9.dispatcher.pokt.network'),
   ],
   CONFIGURATION: new Configuration(
     DEFAULT_POCKET_CONFIG.maxDispatchers,
@@ -187,7 +176,9 @@ export class PocketMock {
           It.IsAny()
         )
       )
-      .callback(({ args: [data] }) => Promise.resolve(this._sendRelay(data)))
+      .callback(({ args: [data, blockchain, pocketAAT, configuration, headers, method, path, node] }) =>
+        Promise.resolve(this._sendRelay(data, node))
+      )
 
     return repoMock.object()
   }
@@ -237,7 +228,9 @@ export class PocketMock {
    * @param data relay request payload
    * @returns response payload of request
    */
-  _sendRelay(data: string): RelayResponse | RpcError {
+  _sendRelay(data: string, node?: Node): RelayResponse | RpcError {
+    const nodePublicKey = node ? node.publicKey : '142e2b65610a798b0e4e3f45927ae0b986a71852039c28a625dcf11d2fc48637'
+
     let relayResponse
 
     const _relayResponse = this._getRelayResponse(data)
@@ -258,7 +251,7 @@ export class PocketMock {
         new RelayProofResponse(
           BigInt(17386131212264644),
           BigInt(32889),
-          '142e2b65610a798b0e4e3f45927ae0b986a71852039c28a625dcf11d2fc48637',
+          nodePublicKey,
           '0027',
           poktAAT,
           'c57e5076153450855e7018ab5b8de37034f04d4884f33020f339fc634228951ff1ecb69f39ab31bc6544f869f6ce10dd4cbc186fceb496d02b443a9420d09b03',
@@ -270,7 +263,7 @@ export class PocketMock {
           new RelayProof(
             BigInt(17386131212264644),
             BigInt(32889),
-            '142e2b65610a798b0e4e3f45927ae0b986a71852039c28a625dcf11d2fc48637',
+            nodePublicKey,
             '0027',
             poktAAT,
             'c57e5076153450855e7018ab5b8de37034f04d4884f33020f339fc634228951ff1ecb69f39ab31bc6544f869f6ce10dd4cbc186fceb496d02b443a9420d09b03',

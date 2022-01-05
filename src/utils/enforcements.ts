@@ -72,8 +72,8 @@ export function isRelayError(payload: string): boolean {
 }
 
 export function isUserError(payload: string): boolean {
-  const evmException: boolean = isEVMError(payload)
   // TODO: Non-evm errors
+  const evmException: boolean = isEVMError(payload)
 
   return evmException
 }

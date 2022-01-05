@@ -1,5 +1,5 @@
 import { Redis } from 'ioredis'
-import { HttpErrors } from '@loopback/rest'
+import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
 import { Node } from '@pokt-network/pocket-js'
 
 import { BlockchainsRepository } from '../repositories'
@@ -33,7 +33,8 @@ export async function loadBlockchain(
   host: string,
   redis: Redis,
   blockchainsRepository: BlockchainsRepository,
-  defaultLogLimitBlocks: number
+  defaultLogLimitBlocks: number,
+  rpcID: number
 ): Promise<BlockchainDetails> {
   // Load the requested blockchain
   const cachedBlockchains = await redis.get('blockchains')
@@ -49,12 +50,12 @@ export async function loadBlockchain(
   // Split off the first part of the request's host and check for matches
   const [blockchainRequest] = host.split('.')
 
-  const [blockchainFilter] = blockchains.filter(
-    (b: { blockchain: string }) => b.blockchain.toLowerCase() === blockchainRequest.toLowerCase()
+  const [blockchainFilter] = blockchains.filter((b: { blockchainAliases: string[] }) =>
+    b.blockchainAliases.some((alias) => alias.toLowerCase() === blockchainRequest.toLowerCase())
   )
 
   if (!blockchainFilter) {
-    throw new HttpErrors.BadRequest(`Incorrect blockchain: ${host}`)
+    throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${host}`, -32057))
   }
 
   let blockchainEnforceResult = ''
@@ -64,7 +65,11 @@ export async function loadBlockchain(
   let blockchainLogLimitBlocks = defaultLogLimitBlocks
   const blockchainSyncCheck = {} as SyncCheckOptions
 
-  const blockchain = blockchainFilter.blockchain // ex. 'eth-mainnet'
+  const blockchain = blockchainFilter.blockchainAliases.find((alias: string) => {
+    if (alias.toLowerCase() === blockchainRequest.toLowerCase()) {
+      return alias // ex. 'eth-mainnet'
+    }
+  })
 
   blockchainID = blockchainFilter.hash as string // ex. '0021'
 

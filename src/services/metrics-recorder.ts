@@ -1,6 +1,5 @@
 import process from 'process'
 import { CustomLogger } from 'ajv'
-import AWS from 'aws-sdk'
 import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
 
@@ -9,18 +8,16 @@ import { Session } from '@pokt-network/pocket-js'
 import { Point, WriteApi } from '@influxdata/influxdb-client'
 
 import { getNodeNetworkData } from '../utils/cache'
+import { BLOCK_TIMING_ERROR } from '../utils/constants'
 import { hashBlockchainNodes } from '../utils/helpers'
 import { CherryPicker } from './cherry-picker'
 const os = require('os')
 const logger = require('../services/logger')
 
-const DISABLE_TIMESTREAM = process.env['DISABLE_TIMESTREAM'] || ''
-
 export class MetricsRecorder {
   redis: Redis
   influxWriteAPI: WriteApi
   pgPool: PGPool
-  timestreamClient: AWS.TimestreamWrite
   cherryPicker: CherryPicker
   processUID: string
 
@@ -28,21 +25,18 @@ export class MetricsRecorder {
     redis,
     influxWriteAPI,
     pgPool,
-    timestreamClient,
     cherryPicker,
     processUID,
   }: {
     redis: Redis
     influxWriteAPI: WriteApi
     pgPool: PGPool
-    timestreamClient: AWS.TimestreamWrite
     cherryPicker: CherryPicker
     processUID: string
   }) {
     this.redis = redis
     this.influxWriteAPI = influxWriteAPI
     this.pgPool = pgPool
-    this.timestreamClient = timestreamClient
     this.cherryPicker = cherryPicker
     this.processUID = processUID
   }
@@ -57,40 +51,45 @@ export class MetricsRecorder {
     relayStart,
     result,
     bytes,
-    delivered,
     fallback,
     method,
     error,
+    code,
     origin,
     data,
     pocketSession,
     timeout,
+    sticky,
+    elapsedTime = 0,
   }: {
     requestID: string
     applicationID: string
     applicationPublicKey: string
     blockchainID: string
     serviceNode: string | undefined
-    relayStart: [number, number]
+    relayStart?: [number, number]
     result: number
     bytes: number
-    delivered: boolean
     fallback: boolean
     method: string | undefined
     error: string | undefined
+    code: string | undefined
     origin: string | undefined
     data: string | undefined
     pocketSession: Session | undefined
     timeout?: number
+    sticky?: string
+    elapsedTime?: number
   }): Promise<void> {
     try {
       const { sessionNodes } = pocketSession || {}
       const sessionHash = hashBlockchainNodes(blockchainID, sessionNodes)
 
-      let elapsedTime = 0
-      const relayEnd = process.hrtime(relayStart)
+      if (!elapsedTime) {
+        const relayEnd = process.hrtime(relayStart)
 
-      elapsedTime = (relayEnd[0] * 1e9 + relayEnd[1]) / 1e9
+        elapsedTime = (relayEnd[0] * 1e9 + relayEnd[1]) / 1e9
+      }
 
       let fallbackTag = ''
 
@@ -121,6 +120,7 @@ export class MetricsRecorder {
           origin,
           blockchainID,
           sessionHash,
+          sticky,
         })
       } else if (result === 500) {
         logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -135,6 +135,7 @@ export class MetricsRecorder {
           origin,
           blockchainID,
           sessionHash,
+          sticky,
         })
       } else if (result === 503) {
         logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -149,6 +150,7 @@ export class MetricsRecorder {
           origin,
           blockchainID,
           sessionHash,
+          sticky,
         })
       }
 
@@ -171,11 +173,10 @@ export class MetricsRecorder {
       // Redis timestamp for bulk logs
       const redisTimestamp = Math.floor(new Date().getTime() / 1000)
 
-      // MARKED FOR REMOVAL --------------------------------------
       // InfluxDB
       const pointRelay = new Point('relay')
         .tag('applicationPublicKey', applicationPublicKey)
-        .tag('nodePublicKey', serviceNode)
+        .tag('nodePublicKey', serviceNode && !fallback ? 'network' : 'fallback')
         .tag('method', method)
         .tag('result', result.toString())
         .tag('blockchain', blockchainID) // 0021
@@ -193,46 +194,6 @@ export class MetricsRecorder {
         .timestamp(relayTimestamp)
 
       this.influxWriteAPI.writePoint(pointOrigin)
-      // MARKED FOR REMOVAL --------------------------------------
-
-      // AWS Timestream Metrics
-      const nodeType = typeof serviceNode === 'string' && serviceNode.includes('fallback') ? 'fallback' : 'network'
-
-      const timeStreamDimensions = [
-        { Name: 'region', Value: `${process.env.REGION || ''}` },
-        { Name: 'applicationPublicKey', Value: `${applicationPublicKey}` },
-        { Name: 'nodeType', Value: `${nodeType}` },
-        { Name: 'blockchainID', Value: `${blockchainID}` },
-        { Name: 'method', Value: `${method || 'none'}` },
-        { Name: 'origin', Value: `${origin || 'none'}` },
-        { Name: 'result', Value: `${result}` },
-      ]
-
-      // console.log(timeStreamDimensions)
-
-      const timeStreamMeasure = {
-        Dimensions: timeStreamDimensions,
-        MeasureName: 'elapsedTime',
-        MeasureValue: `${parseFloat(elapsedTime.toString())}`,
-        MeasureValueType: 'DOUBLE',
-        Time: Date.now().toString(),
-      }
-
-      const records = [timeStreamMeasure]
-
-      const timestreamDatabaseName = `mainnet-${process.env['NODE_ENV']}`
-
-      const timestreamWrite = {
-        DatabaseName: timestreamDatabaseName,
-        TableName: 'relay',
-        Records: records,
-      }
-
-      if (DISABLE_TIMESTREAM.toLowerCase() !== 'true') {
-        const request = this.timestreamClient.writeRecords(timestreamWrite)
-
-        await request.promise()
-      }
 
       // Store errors in redis and every 10 seconds, push to postgres
       const redisErrorKey = 'errors-' + this.processUID
@@ -247,9 +208,21 @@ export class MetricsRecorder {
         bytes,
         method,
         error,
+        code,
       ]
 
+      // Increment node errors
       if (result !== 200) {
+        // TODO: FIND Better way to check for valid service nodes (public key)
+        if (serviceNode && serviceNode.length === 64 && error !== BLOCK_TIMING_ERROR) {
+          // Increment error log
+          await this.redis.incr(blockchainID + '-' + serviceNode + '-errors')
+          await this.redis.expire(blockchainID + '-' + serviceNode + '-errors', 60)
+        }
+      }
+
+      // Process error logs
+      if (result !== 200 || error !== '' || code !== '') {
         await this.processBulkErrors([errorValues], redisTimestamp, redisErrorKey, logger)
       }
     } catch (err) {
