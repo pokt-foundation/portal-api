@@ -256,8 +256,9 @@ export class V1Controller {
         return e
       }
 
-      logger.log('error', e.message, {
+      logger.log('error', 'INTERNAL ERROR: ' + JSON.stringify(e), {
         requestID: this.requestID,
+        error: e,
         relayType: 'LB',
         typeID: id,
         serviceNode: '',
@@ -370,8 +371,9 @@ export class V1Controller {
         return jsonrpc.error(reqRPCID, new JsonRpcError('The request body is not proper JSON.', -32066))
       }
 
-      logger.log('error', 'INTERNAL ERROR: ' + e, {
+      logger.log('error', 'INTERNAL ERROR: ' + JSON.stringify(e), {
         requestID: this.requestID,
+        error: e,
         relayType: 'APP',
         typeID: id,
         serviceNode: '',
