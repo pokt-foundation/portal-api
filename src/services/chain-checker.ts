@@ -43,7 +43,7 @@ export class ChainChecker {
     const checkedNodesKey = `chain-check-${sessionHash}`
     const CheckedNodesCached = await this.redis.get(checkedNodesKey)
 
-    const cached = !!CheckedNodesCached
+    const cached = Boolean(CheckedNodesCached)
 
     if (cached) {
       CheckedNodesList = JSON.parse(CheckedNodesCached)

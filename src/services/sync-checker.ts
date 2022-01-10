@@ -49,7 +49,7 @@ export class SyncChecker {
     const syncedNodesKey = `sync-check-${sessionHash}`
     const syncedNodesCached = await this.redis.get(syncedNodesKey)
 
-    const cached = !!syncedNodesCached
+    const cached = Boolean(syncedNodesCached)
 
     if (cached) {
       syncedNodesList = JSON.parse(syncedNodesCached)
