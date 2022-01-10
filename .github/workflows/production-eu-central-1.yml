@@ -1,6 +1,6 @@
 # .github/workflows: DO NOT MODIFY HERE BUT RATHER REFER TO THEIR CORRESPONDING
 # TEMPLATE IN THE POCKET-GATEWWAY FOLDER OTHERWISE YOUR CHANGES WILL BE OVERWRITTEN
-name: Terraform Production Deployment eu-south-1
+name: Terraform Production Deployment eu-central-1
 
 on:
   push:
@@ -20,13 +20,13 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-south-1
+          aws-region: eu-central-1
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Make envfile eu-south-1
+      - name: Make envfile eu-central-1
         uses: SpicyPizza/create-envfile@v1
         with:
           envkey_GATEWAY_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PRIVATE_KEY }}
@@ -58,9 +58,9 @@ jobs:
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
-          envkey_REDIS_ENDPOINT: gateway-prod-redis.thcgg8.clustercfg.eus1.cache.amazonaws.com
-          envkey_REGION: 'eu-south-1'
-          envkey_REGION_NAME: 'eu-south-1'
+          envkey_REDIS_ENDPOINT: gateway-prod-redis.6iq570.clustercfg.euc1.cache.amazonaws.com
+          envkey_REGION: 'eu-central-1'
+          envkey_REGION_NAME: 'eu-central-1'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
@@ -74,8 +74,8 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
-      - name: Fill in the new image ID / eu-south-1 - gateway
-        id: task-def-eu-south-1-gateway
+      - name: Fill in the new image ID / eu-central-1 - gateway
+        id: task-def-eu-central-1-gateway
         uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
           task-definition: pocket-gateway/tasks/production/ecs-task-definition.json
@@ -84,16 +84,16 @@ jobs:
           # Needs to be set at container level to be read by the dd agent
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
-            DD_SERVICE=/eu-south-1/ecs/gateway
+            DD_SERVICE=/eu-central-1/ecs/gateway
             DD_VERSION=${{ github.sha }}
             DD_ENV=production
             DD_AGENT_HOST=datadog-agent
 
-      - name: Fill in the new image ID / eu-south-1 - datadog-agent
-        id: task-def-eu-south-1-datadog-agent
+      - name: Fill in the new image ID / eu-central-1 - datadog-agent
+        id: task-def-eu-central-1-datadog-agent
         uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
-          task-definition: ${{ steps.task-def-eu-south-1-gateway.outputs.task-definition }}
+          task-definition: ${{ steps.task-def-eu-central-1-gateway.outputs.task-definition }}
           container-name: datadog-agent
           image: gcr.io/datadoghq/agent:latest
           environment-variables: |
@@ -102,11 +102,11 @@ jobs:
             DD_LOGS_ENABLED=false
             DD_APM_ENABLED=true
             DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
-
-      - name: Deploy / eu-south-1
+            
+      - name: Deploy / eu-central-1
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def-eu-south-1-datadog-agent.outputs.task-definition }}
+          task-definition: ${{ steps.task-def-eu-central-1-datadog-agent.outputs.task-definition }}
           service: gateway-prod
           cluster: gateway-prod
           wait-for-service-stability: true

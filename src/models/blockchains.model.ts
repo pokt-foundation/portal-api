@@ -71,6 +71,13 @@ export class Blockchains extends Entity {
   blockchain: string
 
   @property({
+    type: 'array',
+    itemType: 'string',
+    required: true,
+  })
+  blockchainAliases: string[]
+
+  @property({
     type: 'boolean',
     required: true,
     default: true,

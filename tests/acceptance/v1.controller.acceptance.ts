@@ -25,6 +25,7 @@ const BLOCKCHAINS = [
     description: 'Pocket Network Mainnet',
     index: 1,
     blockchain: 'mainnet',
+    blockchainAliases: ['mainnet'],
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
@@ -38,6 +39,7 @@ const BLOCKCHAINS = [
     description: 'Ethereum Mainnet',
     index: 2,
     blockchain: 'eth-mainnet',
+    blockchainAliases: ['eth-mainnet'],
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
@@ -59,6 +61,7 @@ const BLOCKCHAINS = [
     description: 'Ethereum Mainnet String',
     index: 3,
     blockchain: 'eth-mainnet-string',
+    blockchainAliases: ['eth-mainnet-string'],
     active: true,
     nodeCount: 1,
     chainID: '64',
@@ -71,6 +74,7 @@ const BLOCKCHAINS = [
     description: 'Ethereum Mainnet X',
     index: 2,
     blockchain: 'eth-mainnet-x',
+    blockchainAliases: ['eth-mainnet-x'],
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
@@ -790,5 +794,22 @@ describe('V1 controller (acceptance)', () => {
     )
 
     expect(successStickyResponses).to.be.equal(4)
+  })
+
+  it('Returns error on get request to app/lb', async () => {
+    ;({ app, client } = await setupApplication())
+
+    const appResponse = await client.get('/v1/abc1234').expect(200)
+    const lbResponse = await client.get('/v1/abc1234').expect(200)
+
+    console.log(appResponse.body)
+
+    const message = 'GET requests are not supported. Use POST instead'
+
+    expect(appResponse.body).to.have.properties('error', 'id', 'jsonrpc')
+    expect(appResponse.body.error.message).to.be.equal(message)
+
+    expect(lbResponse.body).to.have.properties('error', 'id', 'jsonrpc')
+    expect(lbResponse.body.error.message).to.be.equal(message)
   })
 })

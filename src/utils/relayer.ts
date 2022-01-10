@@ -50,8 +50,8 @@ export async function loadBlockchain(
   // Split off the first part of the request's host and check for matches
   const [blockchainRequest] = host.split('.')
 
-  const [blockchainFilter] = blockchains.filter(
-    (b: { blockchain: string }) => b.blockchain.toLowerCase() === blockchainRequest.toLowerCase()
+  const [blockchainFilter] = blockchains.filter((b: { blockchainAliases: string[] }) =>
+    b.blockchainAliases.some((alias) => alias.toLowerCase() === blockchainRequest.toLowerCase())
   )
 
   if (!blockchainFilter) {
@@ -65,7 +65,11 @@ export async function loadBlockchain(
   let blockchainLogLimitBlocks = defaultLogLimitBlocks
   const blockchainSyncCheck = {} as SyncCheckOptions
 
-  const blockchain = blockchainFilter.blockchain // ex. 'eth-mainnet'
+  const blockchain = blockchainFilter.blockchainAliases.find((alias: string) => {
+    if (alias.toLowerCase() === blockchainRequest.toLowerCase()) {
+      return alias // ex. 'eth-mainnet'
+    }
+  })
 
   blockchainID = blockchainFilter.hash as string // ex. '0021'
 
