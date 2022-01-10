@@ -4,7 +4,7 @@ import { Node } from '@pokt-network/pocket-js'
 
 import { BlockchainsRepository } from '../repositories'
 import { SyncCheckOptions } from '../services/sync-checker'
-import { BlockchainDetails } from './types'
+import { BlockchainDetails, CheckResult } from './types'
 
 // Fetch node client type if Ethereum based
 export async function fetchClientTypeLog(
@@ -17,8 +17,8 @@ export async function fetchClientTypeLog(
   return clientTypeLog
 }
 
-export function isCheckPromiseResolved(promise: PromiseSettledResult<Node[]>): boolean {
-  return promise.status === 'fulfilled' && promise.value !== undefined && promise.value.length > 0
+export function isCheckPromiseResolved(promise: PromiseSettledResult<CheckResult>): boolean {
+  return promise.status === 'fulfilled' && promise.value !== undefined && promise.value.nodes.length > 0
 }
 
 export function filterCheckedNodes(syncCheckNodes: Node[], chainCheckedNodes: Node[]): Node[] {
