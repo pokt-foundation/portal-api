@@ -206,24 +206,26 @@ describe('Chain checker service (unit)', () => {
     const redisGetSpy = sinon.spy(redis, 'get')
     const redisSetSpy = sinon.spy(redis, 'set')
 
-    let checkedNodes = await chainChecker.chainIDFilter({
-      nodes,
-      requestID: '1234',
-      blockchainID: '0027',
-      chainCheck: CHAINCHECK_PAYLOAD,
-      pocket: pocketClient,
-      applicationID: '',
-      applicationPublicKey: '',
-      pocketAAT: undefined,
-      pocketConfiguration,
-      pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-        undefined,
-        undefined,
-        undefined,
-        undefined
-      )) as Session,
-      chainID,
-    })
+    let checkedNodes = (
+      await chainChecker.chainIDFilter({
+        nodes,
+        requestID: '1234',
+        blockchainID: '0027',
+        chainCheck: CHAINCHECK_PAYLOAD,
+        pocket: pocketClient,
+        applicationID: '',
+        applicationPublicKey: '',
+        pocketAAT: undefined,
+        pocketConfiguration,
+        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )) as Session,
+        chainID,
+      })
+    ).nodes
 
     expect(checkedNodes).to.be.Array()
     expect(checkedNodes).to.have.length(5)
@@ -232,24 +234,26 @@ describe('Chain checker service (unit)', () => {
     expect(redisSetSpy.callCount).to.be.equal(7)
 
     // Subsequent calls should retrieve results from redis instead
-    checkedNodes = await chainChecker.chainIDFilter({
-      nodes,
-      requestID: '1234',
-      blockchainID: '0027',
-      chainCheck: CHAINCHECK_PAYLOAD,
-      pocket: pocketClient,
-      applicationID: '',
-      applicationPublicKey: '',
-      pocketAAT: undefined,
-      pocketConfiguration,
-      pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-        undefined,
-        undefined,
-        undefined,
-        undefined
-      )) as Session,
-      chainID,
-    })
+    checkedNodes = (
+      await chainChecker.chainIDFilter({
+        nodes,
+        requestID: '1234',
+        blockchainID: '0027',
+        chainCheck: CHAINCHECK_PAYLOAD,
+        pocket: pocketClient,
+        applicationID: '',
+        applicationPublicKey: '',
+        pocketAAT: undefined,
+        pocketConfiguration,
+        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )) as Session,
+        chainID,
+      })
+    ).nodes
 
     expect(redisGetSpy.callCount).to.be.equal(13)
     expect(redisSetSpy.callCount).to.be.equal(7)
@@ -263,7 +267,7 @@ describe('Chain checker service (unit)', () => {
 
     const pocketClient = pocketMock.object()
     const chainID = 100
-    const checkedNodes = await chainChecker.chainIDFilter({
+    const { nodes: checkedNodes } = await chainChecker.chainIDFilter({
       nodes,
       requestID: '1234',
       blockchainID: '0027',
@@ -309,7 +313,7 @@ describe('Chain checker service (unit)', () => {
       undefined
     )) as Session
 
-    const checkedNodes = await chainChecker.chainIDFilter({
+    const { nodes: checkedNodes } = await chainChecker.chainIDFilter({
       nodes,
       requestID: '1234',
       blockchainID: blockchainID,
