@@ -34,6 +34,7 @@ const blockchains = {
     description: 'Ethereum Mainnet',
     index: 2,
     blockchain: 'eth-mainnet',
+    blockchainAliases: ['eth-mainnet'],
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
@@ -51,6 +52,7 @@ const blockchains = {
     description: 'Solana',
     index: 14,
     blockchain: 'solana-mainnet',
+    blockchainAliases: ['solana-mainnet'],
     active: true,
     enforceResult: 'JSON',
     syncCheckOptions: {
@@ -67,6 +69,7 @@ const blockchains = {
     description: 'Pocket Network Mainnet',
     index: 1,
     blockchain: 'mainnet',
+    blockchainAliases: ['mainnet'],
     active: true,
     enforceResult: 'JSON',
     syncCheckOptions: {

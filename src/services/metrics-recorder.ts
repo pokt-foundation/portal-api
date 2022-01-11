@@ -176,7 +176,7 @@ export class MetricsRecorder {
       // InfluxDB
       const pointRelay = new Point('relay')
         .tag('applicationPublicKey', applicationPublicKey)
-        .tag('nodePublicKey', serviceNode)
+        .tag('nodePublicKey', serviceNode && !fallback ? 'network' : 'fallback')
         .tag('method', method)
         .tag('result', result.toString())
         .tag('blockchain', blockchainID) // 0021

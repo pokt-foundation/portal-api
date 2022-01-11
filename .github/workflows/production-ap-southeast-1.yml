@@ -1,6 +1,6 @@
 # .github/workflows: DO NOT MODIFY HERE BUT RATHER REFER TO THEIR CORRESPONDING
 # TEMPLATE IN THE POCKET-GATEWWAY FOLDER OTHERWISE YOUR CHANGES WILL BE OVERWRITTEN
-name: Production Deployment ap-southeast-1
+name: Terraform Production Deployment ap-southeast-1
 
 on:
   push:
@@ -58,7 +58,7 @@ jobs:
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
-          envkey_REDIS_ENDPOINT: dashboard.y2p8qe.ng.0001.apse1.cache.amazonaws.com:6379
+          envkey_REDIS_ENDPOINT: gateway-prod-redis.y2p8qe.clustercfg.apse1.cache.amazonaws.com
           envkey_REGION: 'ap-southeast-1'
           envkey_REGION_NAME: 'ap-southeast-1'
           file_name: .env
@@ -67,18 +67,18 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: gateway
+          ECR_REPOSITORY: gateway-prod
           IMAGE_TAG: latest
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
-      - name: Fill in the new image ID / ap-southeast-1 -gateway
+      - name: Fill in the new image ID / ap-southeast-1 - gateway
         id: task-def-ap-southeast-1-gateway
         uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
-          task-definition: pocket-gateway/tasks/production/ap-southeast-1/ecs-task-ap-southeast-1.json
+          task-definition: pocket-gateway/tasks/production/ecs-task-definition.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
           # Needs to be set at container level to be read by the dd agent
@@ -87,6 +87,7 @@ jobs:
             DD_SERVICE=/ap-southeast-1/ecs/gateway
             DD_VERSION=${{ github.sha }}
             DD_ENV=production
+            DD_AGENT_HOST=datadog-agent
 
       - name: Fill in the new image ID / ap-southeast-1 - datadog-agent
         id: task-def-ap-southeast-1-datadog-agent
@@ -94,19 +95,18 @@ jobs:
         with:
           task-definition: ${{ steps.task-def-ap-southeast-1-gateway.outputs.task-definition }}
           container-name: datadog-agent
-          image: datadog/agent:latest
+          image: gcr.io/datadoghq/agent:latest
           environment-variables: |
             DD_API_KEY=${{ secrets.DATADOG_API_KEY }}
             DD_SITE=datadoghq.eu
             DD_LOGS_ENABLED=false
             DD_APM_ENABLED=true
             DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
-            ECS_FARGATE=true
 
       - name: Deploy / ap-southeast-1
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def-ap-southeast-1-datadog-agent.outputs.task-definition }}
-          service: gateway-service
-          cluster: gateway
+          service: gateway-prod
+          cluster: gateway-prod
           wait-for-service-stability: true

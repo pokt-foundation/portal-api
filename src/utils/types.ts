@@ -1,4 +1,4 @@
-import { HTTPMethod } from '@pokt-network/pocket-js'
+import { HTTPMethod, Node } from '@pokt-network/pocket-js'
 import { Applications } from '../models'
 import { SyncCheckOptions } from '../services/sync-checker'
 
@@ -34,4 +34,9 @@ export type StickinessOptions = {
   rpcID?: number
   stickyOrigins?: string[]
   rpcIDThreshold?: number
+}
+
+export type CheckResult = {
+  nodes: Node[]
+  cached: boolean
 }

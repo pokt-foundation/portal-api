@@ -6,6 +6,7 @@ import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
 import { MAX_RELAYS_ERROR } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { hashBlockchainNodes } from '../utils/helpers'
+import { CheckResult } from '../utils/types'
 
 const logger = require('../services/logger')
 
@@ -32,7 +33,7 @@ export class ChainChecker {
     pocketAAT,
     pocketConfiguration,
     pocketSession,
-  }: ChainIDFilterOptions): Promise<Node[]> {
+  }: ChainIDFilterOptions): Promise<CheckResult> {
     const sessionHash = hashBlockchainNodes(blockchainID, pocketSession.sessionNodes)
 
     const CheckedNodes: Node[] = []
@@ -42,7 +43,9 @@ export class ChainChecker {
     const checkedNodesKey = `chain-check-${sessionHash}`
     const CheckedNodesCached = await this.redis.get(checkedNodesKey)
 
-    if (CheckedNodesCached) {
+    const cached = Boolean(CheckedNodesCached)
+
+    if (cached) {
       CheckedNodesList = JSON.parse(CheckedNodesCached)
       for (const node of nodes) {
         if (CheckedNodesList.includes(node.publicKey)) {
@@ -50,7 +53,7 @@ export class ChainChecker {
         }
       }
       // logger.log('info', 'CHAIN CHECK CACHE: ' + CheckedNodes.length + ' nodes returned');
-      return CheckedNodes
+      return { nodes: CheckedNodes, cached }
     }
 
     // Cache is stale, start a new cache fill
@@ -58,7 +61,7 @@ export class ChainChecker {
     const ChainLock = await this.redis.get('lock-' + checkedNodesKey)
 
     if (ChainLock) {
-      return nodes
+      return { nodes, cached }
     } else {
       // Set lock as this thread checks the Chain with 60 second ttl.
       // If any major errors happen below, it will retry the Chain check every 60 seconds.
@@ -175,7 +178,7 @@ export class ChainChecker {
         sessionHash,
       })
     }
-    return CheckedNodes
+    return { nodes: CheckedNodes, cached }
   }
 
   async getNodeChainLogs({
