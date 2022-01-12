@@ -84,6 +84,7 @@ jobs:
           # Needs to be set at container level to be read by the dd agent
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
+            DD_PROFILING_ENABLED=true
             DD_SERVICE=/us-east-1/ecs/gateway
             DD_VERSION=${{ github.sha }}
             DD_ENV=production
