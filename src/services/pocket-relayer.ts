@@ -137,14 +137,8 @@ export class PocketRelayer {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries
     }
-
-    if (!applicationID) {
-      applicationID = application.id
-    }
-
-    if (!applicationPublicKey) {
-      applicationPublicKey = application.gatewayAAT.applicationPublicKey
-    }
+    applicationID = applicationID ? applicationID : application.id
+    applicationPublicKey = applicationPublicKey ? applicationPublicKey : application.gatewayAAT.applicationPublicKey
 
     // This converts the raw data into formatted JSON then back to a string for relaying.
     // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
