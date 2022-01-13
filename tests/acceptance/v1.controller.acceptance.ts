@@ -853,8 +853,7 @@ describe('V1 controller (acceptance)', () => {
     expect(lbResponse.body.error.message).to.be.equal(message)
   })
 
-  // eslint-disable-next-line mocha/no-exclusive-tests
-  it.only('relays a gigastaked lb', async () => {
+  it('relays a gigastaked lb', async () => {
     const logSpy = sinon.spy(logger, 'log')
 
     const pocket = pocketMock.class()
