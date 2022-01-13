@@ -23,6 +23,7 @@ export type SendRelayOptions = {
   requestTimeOut?: number
   relayRetries?: number
   logLimitBlocks?: number
+  applicationID?: string
 }
 
 export type StickinessOptions = {

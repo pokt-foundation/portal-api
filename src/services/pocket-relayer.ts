@@ -131,10 +131,16 @@ export class PocketRelayer {
     relayRetries,
     stickinessOptions,
     logLimitBlocks,
+    applicationID,
   }: SendRelayOptions): Promise<string | ErrorObject> {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries
     }
+
+    if (!applicationID) {
+      applicationID = application.id
+    }
+
     // This converts the raw data into formatted JSON then back to a string for relaying.
     // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
     // extraneous characters like newlines and tabs from the rawData.
@@ -229,6 +235,7 @@ export class PocketRelayer {
             httpMethod,
             requestID,
             application,
+            applicationID,
             requestTimeOut,
             blockchainID,
             blockchainEnforceResult,
@@ -267,7 +274,7 @@ export class PocketRelayer {
             this.metricsRecorder
               .recordMetric({
                 requestID: requestID,
-                applicationID: application.id,
+                applicationID,
                 applicationPublicKey: application.gatewayAAT.applicationPublicKey,
                 blockchainID,
                 serviceNode: relayResponse.proof.servicerPubKey,
@@ -329,7 +336,7 @@ export class PocketRelayer {
             this.metricsRecorder
               .recordMetric({
                 requestID,
-                applicationID: application.id,
+                applicationID,
                 applicationPublicKey: application.gatewayAAT.applicationPublicKey,
                 blockchainID,
                 serviceNode: relayResponse.servicer_node,
@@ -427,7 +434,7 @@ export class PocketRelayer {
           this.metricsRecorder
             .recordMetric({
               requestID: requestID,
-              applicationID: application.id,
+              applicationID,
               applicationPublicKey: application.gatewayAAT.applicationPublicKey,
               blockchainID,
               serviceNode: 'fallback:' + redactedAltruistURL,
@@ -493,6 +500,7 @@ export class PocketRelayer {
     httpMethod,
     requestID,
     application,
+    applicationID,
     requestTimeOut,
     blockchainEnforceResult,
     blockchainSyncCheck,
@@ -507,6 +515,7 @@ export class PocketRelayer {
     httpMethod: HTTPMethod
     requestID: string
     application: Applications
+    applicationID: string
     requestTimeOut: number | undefined
     blockchainEnforceResult: string
     blockchainSyncCheck: SyncCheckOptions
@@ -622,7 +631,7 @@ export class PocketRelayer {
         requestID,
         blockchainID,
         pocketAAT,
-        applicationID: application.id,
+        applicationID,
         applicationPublicKey: application.gatewayAAT.applicationPublicKey,
         chainCheck: blockchainIDCheck,
         chainID: parseInt(blockchainChainID),
@@ -642,7 +651,7 @@ export class PocketRelayer {
         syncCheckOptions: blockchainSyncCheck,
         blockchainID,
         blockchainSyncBackup,
-        applicationID: application.id,
+        applicationID,
         applicationPublicKey: application.gatewayAAT.applicationPublicKey,
         pocket: this.pocket,
         pocketAAT,
@@ -668,7 +677,7 @@ export class PocketRelayer {
         this.metricsRecorder
           .recordMetric({
             requestID,
-            applicationID: application.id,
+            applicationID,
             applicationPublicKey: application.gatewayAAT.applicationPublicKey,
             blockchainID,
             serviceNode: 'session-failure',
@@ -706,7 +715,7 @@ export class PocketRelayer {
         this.metricsRecorder
           .recordMetric({
             requestID,
-            applicationID: application.id,
+            applicationID,
             applicationPublicKey: application.gatewayAAT.applicationPublicKey,
             blockchainID,
             serviceNode: 'session-failure',

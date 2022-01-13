@@ -191,18 +191,37 @@ export class V1Controller {
         throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('Load balancer not found', -32054))
       }
 
+      const gigastakeOptions: {
+        gigastaked: boolean
+        lbApplication: Applications | undefined
+      } = {
+        gigastaked: loadBalancer.gigastakeRedirect || false,
+        lbApplication: undefined,
+      }
+
       // Is this LB marked for gigastakeRedirect?
       // Temporary: will be removed when live
-      if (loadBalancer.gigastakeRedirect) {
+      if (gigastakeOptions.gigastaked) {
         for (const redirect of JSON.parse(this.redirects)) {
-          if (this.host.toLowerCase().includes(redirect.blockchain, 0)) {
+          if (this.host.toLowerCase().includes(redirect.blockchain)) {
             logger.log('info', `Found gigastake redirect entry ${redirect.loadBalancerID}`)
+
+            const originalLoadBalancer = { ...loadBalancer }
 
             loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
 
             if (!loadBalancer?.id) {
               throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('GS load balancer not found', -32054))
             }
+
+            gigastakeOptions.lbApplication = await this.fetchLoadBalancerApplication(
+              originalLoadBalancer.id,
+              originalLoadBalancer.applicationIDs,
+              undefined,
+              filter,
+              reqRPCID
+            )
+            break
           }
         }
       }
@@ -252,6 +271,7 @@ export class V1Controller {
           stickyOrigins,
           rpcIDThreshold,
         },
+        applicationID: gigastakeOptions.lbApplication?.id,
       }
 
       if (loadBalancer.logLimitBlocks) {
