@@ -49,6 +49,13 @@ export class LoadBalancers extends Entity {
   })
   id?: string
 
+  // Temporary; remove after gigastake is live and tested
+  @property({
+    type: 'boolean',
+    required: false,
+  })
+  gigastakeRedirect?: boolean
+
   @property({
     type: 'string',
     required: true,

@@ -28,6 +28,7 @@
     "eslint:fix": "npm run eslint -- --fix",
     "pretest": "npm run clean && npm run build",
     "test": "lb-tsc && SILENT_LOGGING=true MONGO_ENDPOINT=test ALTRUISTS='{\"0001\": \"https://user:pass@backups.example.org:18081\"}' mocha --exit --recursive dist/tests",
+    "test:log": "lb-tsc && MONGO_ENDPOINT=test ALTRUISTS='{\"0001\": \"https://user:pass@backups.example.org:18081\"}' mocha --exit --recursive dist/tests",
     "test:parallel": "lb-tsc && SILENT_LOGGING=true MONGO_ENDPOINT=test ALTRUISTS='{\"0001\": \"https://user:pass@backups.example.org:18081\"}' mocha -p --exit --recursive dist/tests",
     "test:cover": "lb-tsc && SILENT_LOGGING=true MONGO_ENDPOINT=test ALTRUISTS='{\"0001\": \"https://user:pass@backups.example.org:18081\"}' nyc mocha --exit --recursive dist/tests",
     "test:dev": "lb-mocha --allow-console-logs dist/tests/**/*.js && npm run posttest",
