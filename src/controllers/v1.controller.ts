@@ -202,27 +202,26 @@ export class V1Controller {
       // Is this LB marked for gigastakeRedirect?
       // Temporary: will be removed when live
       if (gigastakeOptions.gigastaked) {
-        for (const redirect of JSON.parse(this.redirects)) {
-          if (this.host.toLowerCase().includes(redirect.blockchain)) {
-            logger.log('info', `Found gigastake redirect entry ${redirect.loadBalancerID}`)
+        const redirect = JSON.parse(this.redirects).find((rdr) => this.host.toLowerCase().includes(rdr.blockchain))
 
-            const originalLoadBalancer = { ...loadBalancer }
+        if (redirect) {
+          logger.log('info', `Found gigastake redirect entry ${redirect.loadBalancerID}`)
 
-            loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
+          const originalLoadBalancer = { ...loadBalancer }
 
-            if (!loadBalancer?.id) {
-              throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('GS load balancer not found', -32054))
-            }
+          loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
 
-            gigastakeOptions.lbApplication = await this.fetchLoadBalancerApplication(
-              originalLoadBalancer.id,
-              originalLoadBalancer.applicationIDs,
-              undefined,
-              filter,
-              reqRPCID
-            )
-            break
+          if (!loadBalancer?.id) {
+            throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('GS load balancer not found', -32054))
           }
+
+          gigastakeOptions.lbApplication = await this.fetchLoadBalancerApplication(
+            originalLoadBalancer.id,
+            originalLoadBalancer.applicationIDs,
+            undefined,
+            filter,
+            reqRPCID
+          )
         }
       }
 
