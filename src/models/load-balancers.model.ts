@@ -49,7 +49,7 @@ export class LoadBalancers extends Entity {
   })
   id?: string
 
-  // Temporary; remove when gigastake is live
+  // Temporary; remove after gigastake is live and tested
   @property({
     type: 'boolean',
     required: false,
