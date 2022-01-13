@@ -271,6 +271,7 @@ export class V1Controller {
           rpcIDThreshold,
         },
         applicationID: gigastakeOptions.lbApplication?.id,
+        applicationPublicKey: gigastakeOptions.lbApplication?.gatewayAAT?.applicationPublicKey,
       }
 
       if (loadBalancer.logLimitBlocks) {
