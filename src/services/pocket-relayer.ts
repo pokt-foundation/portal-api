@@ -131,10 +131,15 @@ export class PocketRelayer {
     relayRetries,
     stickinessOptions,
     logLimitBlocks,
+    applicationID,
+    applicationPublicKey,
   }: SendRelayOptions): Promise<string | ErrorObject> {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries
     }
+    applicationID = applicationID ? applicationID : application.id
+    applicationPublicKey = applicationPublicKey ? applicationPublicKey : application.gatewayAAT.applicationPublicKey
+
     // This converts the raw data into formatted JSON then back to a string for relaying.
     // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
     // extraneous characters like newlines and tabs from the rawData.
@@ -211,7 +216,7 @@ export class PocketRelayer {
 
           if (overallTimeOut && overallCurrentElasped > overallTimeOut) {
             logger.log('error', 'Overall Timeout exceeded: ' + overallTimeOut, {
-              requestID: requestID,
+              requestID,
               relayType: 'APP',
               typeID: application.id,
               serviceNode: '',
@@ -229,6 +234,8 @@ export class PocketRelayer {
             httpMethod,
             requestID,
             application,
+            applicationID,
+            applicationPublicKey,
             requestTimeOut,
             blockchainID,
             blockchainEnforceResult,
@@ -266,9 +273,9 @@ export class PocketRelayer {
             // Record success metric
             this.metricsRecorder
               .recordMetric({
-                requestID: requestID,
-                applicationID: application.id,
-                applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+                requestID,
+                applicationID,
+                applicationPublicKey,
                 blockchainID,
                 serviceNode: relayResponse.proof.servicerPubKey,
                 relayStart,
@@ -282,10 +289,11 @@ export class PocketRelayer {
                 data,
                 pocketSession: this.pocketSession,
                 sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relayResponse.proof.servicerPubKey),
+                gigastakeAppID: applicationID !== application.id ? application.id : '',
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
-                  requestID: requestID,
+                  requestID,
                   relayType: 'APP',
                   typeID: application.id,
                   serviceNode: relayResponse.proof.servicerPubKey,
@@ -329,8 +337,8 @@ export class PocketRelayer {
             this.metricsRecorder
               .recordMetric({
                 requestID,
-                applicationID: application.id,
-                applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+                applicationID,
+                applicationPublicKey,
                 blockchainID,
                 serviceNode: relayResponse.servicer_node,
                 relayStart,
@@ -344,10 +352,11 @@ export class PocketRelayer {
                 data,
                 pocketSession: this.pocketSession,
                 sticky,
+                gigastakeAppID: applicationID !== application.id ? application.id : '',
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
-                  requestID: requestID,
+                  requestID,
                   relayType: 'APP',
                   typeID: application.id,
                   serviceNode: relayResponse.servicer_node,
@@ -410,7 +419,7 @@ export class PocketRelayer {
 
         if (this.checkDebug) {
           logger.log('debug', JSON.stringify(fallbackResponse.data), {
-            requestID: requestID,
+            requestID,
             relayType: 'FALLBACK',
             typeID: application.id,
             serviceNode: 'fallback:' + redactedAltruistURL,
@@ -426,9 +435,9 @@ export class PocketRelayer {
 
           this.metricsRecorder
             .recordMetric({
-              requestID: requestID,
-              applicationID: application.id,
-              applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+              requestID,
+              applicationID,
+              applicationPublicKey,
               blockchainID,
               serviceNode: 'fallback:' + redactedAltruistURL,
               relayStart,
@@ -441,10 +450,11 @@ export class PocketRelayer {
               origin: this.origin,
               data,
               pocketSession: this.pocketSession,
+              gigastakeAppID: applicationID !== application.id ? application.id : '',
             })
             .catch(function log(e) {
               logger.log('error', 'Error recording metrics: ' + e, {
-                requestID: requestID,
+                requestID,
                 relayType: 'APP',
                 typeID: application.id,
                 serviceNode: 'fallback:' + redactedAltruistURL,
@@ -464,7 +474,7 @@ export class PocketRelayer {
           return responseParsed
         } else {
           logger.log('error', JSON.stringify(fallbackResponse), {
-            requestID: requestID,
+            requestID,
             relayType: 'FALLBACK',
             typeID: application.id,
             serviceNode: 'fallback:' + redactedAltruistURL,
@@ -474,7 +484,7 @@ export class PocketRelayer {
         }
       } catch (e) {
         logger.log('error', e.message, {
-          requestID: requestID,
+          requestID,
           relayType: 'FALLBACK',
           typeID: application.id,
           serviceNode: 'fallback:' + redactedAltruistURL,
@@ -493,6 +503,8 @@ export class PocketRelayer {
     httpMethod,
     requestID,
     application,
+    applicationID,
+    applicationPublicKey,
     requestTimeOut,
     blockchainEnforceResult,
     blockchainSyncCheck,
@@ -507,6 +519,8 @@ export class PocketRelayer {
     httpMethod: HTTPMethod
     requestID: string
     application: Applications
+    applicationID: string
+    applicationPublicKey: string
     requestTimeOut: number | undefined
     blockchainEnforceResult: string
     blockchainSyncCheck: SyncCheckOptions
@@ -599,7 +613,7 @@ export class PocketRelayer {
 
     if (nodes.length === 0) {
       logger.log('warn', `SESSION: ${sessionKey} has exhausted all node relays`, {
-        requestID: requestID,
+        requestID,
         relayType: 'APP',
         typeID: application.id,
         serviceNode: '',
@@ -622,8 +636,8 @@ export class PocketRelayer {
         requestID,
         blockchainID,
         pocketAAT,
-        applicationID: application.id,
-        applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+        applicationID,
+        applicationPublicKey,
         chainCheck: blockchainIDCheck,
         chainID: parseInt(blockchainChainID),
         pocket: this.pocket,
@@ -642,8 +656,8 @@ export class PocketRelayer {
         syncCheckOptions: blockchainSyncCheck,
         blockchainID,
         blockchainSyncBackup,
-        applicationID: application.id,
-        applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+        applicationID,
+        applicationPublicKey,
         pocket: this.pocket,
         pocketAAT,
         pocketConfiguration: this.pocketConfiguration,
@@ -668,8 +682,8 @@ export class PocketRelayer {
         this.metricsRecorder
           .recordMetric({
             requestID,
-            applicationID: application.id,
-            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+            applicationID,
+            applicationPublicKey,
             blockchainID,
             serviceNode: 'session-failure',
             relayStart,
@@ -682,10 +696,11 @@ export class PocketRelayer {
             origin: this.origin,
             data,
             pocketSession,
+            gigastakeAppID: applicationID !== application.id ? application.id : '',
           })
           .catch(function log(e) {
             logger.log('error', 'Error recording metrics: ' + e, {
-              requestID: requestID,
+              requestID,
               relayType: 'APP',
               typeID: application.id,
               serviceNode: 'session-failure',
@@ -706,8 +721,8 @@ export class PocketRelayer {
         this.metricsRecorder
           .recordMetric({
             requestID,
-            applicationID: application.id,
-            applicationPublicKey: application.gatewayAAT.applicationPublicKey,
+            applicationID,
+            applicationPublicKey,
             blockchainID,
             serviceNode: 'session-failure',
             relayStart,
@@ -720,10 +735,11 @@ export class PocketRelayer {
             origin: this.origin,
             data,
             pocketSession,
+            gigastakeAppID: applicationID !== application.id ? application.id : '',
           })
           .catch(function log(e) {
             logger.log('error', 'Error recording metrics: ' + e, {
-              requestID: requestID,
+              requestID,
               relayType: 'APP',
               typeID: application.id,
               serviceNode: 'session-failure',
@@ -761,7 +777,7 @@ export class PocketRelayer {
 
     if (this.checkDebug) {
       logger.log('debug', JSON.stringify(pocketSession), {
-        requestID: requestID,
+        requestID,
         relayType: 'APP',
         typeID: application.id,
         serviceNode: node?.publicKey,
@@ -791,13 +807,13 @@ export class PocketRelayer {
 
     if (this.checkDebug) {
       logger.log('debug', JSON.stringify(relayConfiguration), {
-        requestID: requestID,
+        requestID,
         relayType: 'APP',
         typeID: application.id,
         serviceNode: node?.publicKey,
       })
       logger.log('debug', JSON.stringify(relayResponse), {
-        requestID: requestID,
+        requestID,
         relayType: 'APP',
         typeID: application.id,
         serviceNode: node?.publicKey,

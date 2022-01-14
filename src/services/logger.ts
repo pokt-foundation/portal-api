@@ -26,6 +26,7 @@ interface Log {
   sessionKey: string
   sessionHash: string
   sticky: string
+  gigastakeAppID: string
 }
 
 const environment = process.env.NODE_ENV || 'production'
@@ -60,8 +61,9 @@ const consoleFormat = printf(
     sessionKey = '',
     sessionHash = '',
     sticky = 'NONE',
+    gigastakeAppID = '',
   }: Log) => {
-    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${serviceURL}] [${serviceDomain}] [${sessionKey}] [${sessionHash}] [${error}] [${elapsedTime}] [${blockchainID}] [${origin}] [sticky: ${sticky}] ${message}`
+    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${serviceURL}] [${serviceDomain}] [${sessionKey}] [${sessionHash}] [${error}] [${elapsedTime}] [${blockchainID}] [${origin}] [sticky: ${sticky}] [${gigastakeAppID}] ${message}`
   }
 )
 
