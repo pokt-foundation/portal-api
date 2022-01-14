@@ -216,7 +216,7 @@ export class PocketRelayer {
 
           if (overallTimeOut && overallCurrentElasped > overallTimeOut) {
             logger.log('error', 'Overall Timeout exceeded: ' + overallTimeOut, {
-              requestID: requestID,
+              requestID,
               relayType: 'APP',
               typeID: application.id,
               serviceNode: '',
@@ -273,7 +273,7 @@ export class PocketRelayer {
             // Record success metric
             this.metricsRecorder
               .recordMetric({
-                requestID: requestID,
+                requestID,
                 applicationID,
                 applicationPublicKey,
                 blockchainID,
@@ -289,10 +289,11 @@ export class PocketRelayer {
                 data,
                 pocketSession: this.pocketSession,
                 sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relayResponse.proof.servicerPubKey),
+                gigastakeAppID: applicationID !== application.id ? application.id : '',
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
-                  requestID: requestID,
+                  requestID,
                   relayType: 'APP',
                   typeID: application.id,
                   serviceNode: relayResponse.proof.servicerPubKey,
@@ -351,10 +352,11 @@ export class PocketRelayer {
                 data,
                 pocketSession: this.pocketSession,
                 sticky,
+                gigastakeAppID: applicationID !== application.id ? application.id : '',
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
-                  requestID: requestID,
+                  requestID,
                   relayType: 'APP',
                   typeID: application.id,
                   serviceNode: relayResponse.servicer_node,
@@ -417,7 +419,7 @@ export class PocketRelayer {
 
         if (this.checkDebug) {
           logger.log('debug', JSON.stringify(fallbackResponse.data), {
-            requestID: requestID,
+            requestID,
             relayType: 'FALLBACK',
             typeID: application.id,
             serviceNode: 'fallback:' + redactedAltruistURL,
@@ -433,7 +435,7 @@ export class PocketRelayer {
 
           this.metricsRecorder
             .recordMetric({
-              requestID: requestID,
+              requestID,
               applicationID,
               applicationPublicKey,
               blockchainID,
@@ -448,10 +450,11 @@ export class PocketRelayer {
               origin: this.origin,
               data,
               pocketSession: this.pocketSession,
+              gigastakeAppID: applicationID !== application.id ? application.id : '',
             })
             .catch(function log(e) {
               logger.log('error', 'Error recording metrics: ' + e, {
-                requestID: requestID,
+                requestID,
                 relayType: 'APP',
                 typeID: application.id,
                 serviceNode: 'fallback:' + redactedAltruistURL,
@@ -471,7 +474,7 @@ export class PocketRelayer {
           return responseParsed
         } else {
           logger.log('error', JSON.stringify(fallbackResponse), {
-            requestID: requestID,
+            requestID,
             relayType: 'FALLBACK',
             typeID: application.id,
             serviceNode: 'fallback:' + redactedAltruistURL,
@@ -481,7 +484,7 @@ export class PocketRelayer {
         }
       } catch (e) {
         logger.log('error', e.message, {
-          requestID: requestID,
+          requestID,
           relayType: 'FALLBACK',
           typeID: application.id,
           serviceNode: 'fallback:' + redactedAltruistURL,
@@ -610,7 +613,7 @@ export class PocketRelayer {
 
     if (nodes.length === 0) {
       logger.log('warn', `SESSION: ${sessionKey} has exhausted all node relays`, {
-        requestID: requestID,
+        requestID,
         relayType: 'APP',
         typeID: application.id,
         serviceNode: '',
@@ -693,10 +696,11 @@ export class PocketRelayer {
             origin: this.origin,
             data,
             pocketSession,
+            gigastakeAppID: applicationID !== application.id ? application.id : '',
           })
           .catch(function log(e) {
             logger.log('error', 'Error recording metrics: ' + e, {
-              requestID: requestID,
+              requestID,
               relayType: 'APP',
               typeID: application.id,
               serviceNode: 'session-failure',
@@ -731,10 +735,11 @@ export class PocketRelayer {
             origin: this.origin,
             data,
             pocketSession,
+            gigastakeAppID: applicationID !== application.id ? application.id : '',
           })
           .catch(function log(e) {
             logger.log('error', 'Error recording metrics: ' + e, {
-              requestID: requestID,
+              requestID,
               relayType: 'APP',
               typeID: application.id,
               serviceNode: 'session-failure',
@@ -772,7 +777,7 @@ export class PocketRelayer {
 
     if (this.checkDebug) {
       logger.log('debug', JSON.stringify(pocketSession), {
-        requestID: requestID,
+        requestID,
         relayType: 'APP',
         typeID: application.id,
         serviceNode: node?.publicKey,
@@ -802,13 +807,13 @@ export class PocketRelayer {
 
     if (this.checkDebug) {
       logger.log('debug', JSON.stringify(relayConfiguration), {
-        requestID: requestID,
+        requestID,
         relayType: 'APP',
         typeID: application.id,
         serviceNode: node?.publicKey,
       })
       logger.log('debug', JSON.stringify(relayResponse), {
-        requestID: requestID,
+        requestID,
         relayType: 'APP',
         typeID: application.id,
         serviceNode: node?.publicKey,

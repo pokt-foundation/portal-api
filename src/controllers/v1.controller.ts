@@ -205,12 +205,6 @@ export class V1Controller {
         const redirect = JSON.parse(this.redirects).find((rdr) => this.host.toLowerCase().includes(rdr.blockchain))
 
         if (redirect) {
-          logger.log('info', `Found gigastake redirect entry ${redirect.loadBalancerID}`, {
-            requestID: this.requestID,
-            origin: this.origin,
-            relayType: 'LB',
-          })
-
           const originalLoadBalancer = { ...loadBalancer }
 
           loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
