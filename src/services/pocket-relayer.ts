@@ -289,7 +289,7 @@ export class PocketRelayer {
                 data,
                 pocketSession: this.pocketSession,
                 sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relayResponse.proof.servicerPubKey),
-                gigastakeAppID: applicationID !== application.id ? application.id : '',
+                gigastakeAppID: applicationID !== application.id ? application.id : undefined,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -352,7 +352,7 @@ export class PocketRelayer {
                 data,
                 pocketSession: this.pocketSession,
                 sticky,
-                gigastakeAppID: applicationID !== application.id ? application.id : '',
+                gigastakeAppID: applicationID !== application.id ? application.id : undefined,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -450,7 +450,7 @@ export class PocketRelayer {
               origin: this.origin,
               data,
               pocketSession: this.pocketSession,
-              gigastakeAppID: applicationID !== application.id ? application.id : '',
+              gigastakeAppID: applicationID !== application.id ? application.id : undefined,
             })
             .catch(function log(e) {
               logger.log('error', 'Error recording metrics: ' + e, {
@@ -696,7 +696,7 @@ export class PocketRelayer {
             origin: this.origin,
             data,
             pocketSession,
-            gigastakeAppID: applicationID !== application.id ? application.id : '',
+            gigastakeAppID: applicationID !== application.id ? application.id : undefined,
           })
           .catch(function log(e) {
             logger.log('error', 'Error recording metrics: ' + e, {
@@ -735,7 +735,7 @@ export class PocketRelayer {
             origin: this.origin,
             data,
             pocketSession,
-            gigastakeAppID: applicationID !== application.id ? application.id : '',
+            gigastakeAppID: applicationID !== application.id ? application.id : undefined,
           })
           .catch(function log(e) {
             logger.log('error', 'Error recording metrics: ' + e, {
