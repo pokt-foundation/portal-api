@@ -880,13 +880,6 @@ describe('V1 controller (acceptance)', () => {
     expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
     expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
 
-    const gigastakedFoundLog = logSpy.calledWith(
-      'info',
-      sinon.match((arg: string) => arg.startsWith(`Found gigastake redirect entry ${GIGASTAKE_LEADER_IDS.lb}`))
-    )
-
-    expect(gigastakedFoundLog).to.be.true()
-
     const originalAppLog = logSpy.calledWith(
       'info',
       sinon.match((arg: string) => arg.startsWith('SUCCESS RELAYING')),
@@ -894,5 +887,13 @@ describe('V1 controller (acceptance)', () => {
     )
 
     expect(originalAppLog).to.be.true()
+
+    const gigastakeAppID = logSpy.calledWith(
+      'info',
+      sinon.match((arg: string) => arg.startsWith('SUCCESS RELAYING')),
+      sinon.match((log: object) => log['gigastakeAppID'] === GIGASTAKE_LEADER_IDS.app)
+    )
+
+    expect(gigastakeAppID).to.be.true()
   })
 })
