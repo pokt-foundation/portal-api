@@ -24,7 +24,7 @@ export async function removeNodeFromSession(
   sessionNodes: Node[],
   nodePubKey: string
 ): Promise<void> {
-  const hash = hashBlockchainNodes(blockchainID, sessionNodes)
+  const hash = await hashBlockchainNodes(blockchainID, sessionNodes, redis)
   const sessionKey = `session-${hash}`
 
   await redis.sadd(sessionKey, nodePubKey)

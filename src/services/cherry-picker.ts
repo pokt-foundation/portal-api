@@ -330,7 +330,7 @@ export class CherryPicker {
     pocketSession?: Session
   ): Promise<void> {
     const { sessionKey, sessionNodes } = pocketSession || {}
-    const sessionHash = hashBlockchainNodes(blockchainID, sessionNodes)
+    const sessionHash = await hashBlockchainNodes(blockchainID, sessionNodes, this.redis)
 
     // FIXME: This is not a reliable way on asserting whether is a service node,
     // an issue was created on pocket-tools for a 'isPublicKey' function. Once is
