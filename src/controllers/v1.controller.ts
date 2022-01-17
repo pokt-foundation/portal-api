@@ -413,6 +413,7 @@ export class V1Controller {
         typeID: id,
         serviceNode: '',
         origin: this.origin,
+        trace: e.stack,
       })
 
       return jsonrpc.error(reqRPCID, new JsonRpcError('Relay attempts exhausted', -32050))
