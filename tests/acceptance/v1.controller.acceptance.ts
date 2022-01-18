@@ -25,6 +25,7 @@ const BLOCKCHAINS = [
     description: 'Pocket Network Mainnet',
     index: 1,
     blockchain: 'mainnet',
+    blockchainAliases: ['mainnet'],
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
@@ -38,6 +39,7 @@ const BLOCKCHAINS = [
     description: 'Ethereum Mainnet',
     index: 2,
     blockchain: 'eth-mainnet',
+    blockchainAliases: ['eth-mainnet'],
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
@@ -59,6 +61,7 @@ const BLOCKCHAINS = [
     description: 'Ethereum Mainnet String',
     index: 3,
     blockchain: 'eth-mainnet-string',
+    blockchainAliases: ['eth-mainnet-string'],
     active: true,
     nodeCount: 1,
     chainID: '64',
@@ -71,6 +74,7 @@ const BLOCKCHAINS = [
     description: 'Ethereum Mainnet X',
     index: 2,
     blockchain: 'eth-mainnet-x',
+    blockchainAliases: ['eth-mainnet-x'],
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
@@ -119,10 +123,21 @@ const APPLICATION = {
   },
 }
 
+const GIGASTAKE_LEADER_IDS = {
+  app: 'dofwms0cosmasiqqoadldfisdsf',
+  lb: 'hovj6nfix1nr0dknadwawawaqo',
+}
+const GIGASTAKE_FOLLOWER_IDS = {
+  app: 'asassd9sd0ffjdcusue2fidisss',
+  lb: 'df9f9f9gdklkwotn5o3ixuso3od',
+}
+
 const APPLICATIONS = [
   APPLICATION,
   { ...APPLICATION, id: 'fg5fdj31d714kdif9g9fe68foth' },
   { ...APPLICATION, id: 'cienuohoddigue4w232s9rjafgx' },
+  { ...APPLICATION, id: GIGASTAKE_LEADER_IDS.app },
+  { ...APPLICATION, id: GIGASTAKE_FOLLOWER_IDS.app },
 ]
 
 const LOAD_BALANCERS = [
@@ -169,6 +184,37 @@ const LOAD_BALANCERS = [
     requestTimeout: 5000,
     applicationIDs: APPLICATIONS.map((app) => app.id),
     logLimitBlocks: 25000,
+    stickinessOptions: {
+      stickiness: true,
+      duration: 300,
+      useRPCID: false,
+      relaysLimit: 1e6,
+      stickyOrigins: ['localhost'],
+    },
+  },
+  {
+    id: GIGASTAKE_LEADER_IDS.lb,
+    user: 'test@test.com',
+    name: 'gigastaked lb - leader',
+    requestTimeout: 5000,
+    applicationIDs: [GIGASTAKE_LEADER_IDS.app],
+    logLimitBlocks: 25000,
+    stickinessOptions: {
+      stickiness: true,
+      duration: 300,
+      useRPCID: false,
+      relaysLimit: 1e6,
+      stickyOrigins: ['localhost'],
+    },
+  },
+  {
+    id: GIGASTAKE_FOLLOWER_IDS.lb,
+    user: 'test@test.com',
+    name: 'gigastaked lb - follower',
+    requestTimeout: 5000,
+    applicationIDs: [GIGASTAKE_FOLLOWER_IDS.app],
+    logLimitBlocks: 25000,
+    gigastakeRedirect: true,
     stickinessOptions: {
       stickiness: true,
       duration: 300,
@@ -781,14 +827,73 @@ describe('V1 controller (acceptance)', () => {
         (successStickyResponses = call.calledWith(
           'info',
           sinon.match.any,
-          sinon.match((log: object) => {
-            return log['sticky'] === 'SUCCESS'
-          })
+          sinon.match((log: object) => log['sticky'] === 'SUCCESS')
         )
           ? ++successStickyResponses
           : successStickyResponses)
     )
 
     expect(successStickyResponses).to.be.equal(4)
+  })
+
+  it('Returns error on get request to app/lb', async () => {
+    ;({ app, client } = await setupApplication())
+
+    const appResponse = await client.get('/v1/abc1234').expect(200)
+    const lbResponse = await client.get('/v1/abc1234').expect(200)
+
+    console.log(appResponse.body)
+
+    const message = 'GET requests are not supported. Use POST instead'
+
+    expect(appResponse.body).to.have.properties('error', 'id', 'jsonrpc')
+    expect(appResponse.body.error.message).to.be.equal(message)
+
+    expect(lbResponse.body).to.have.properties('error', 'id', 'jsonrpc')
+    expect(lbResponse.body.error.message).to.be.equal(message)
+  })
+
+  it('relays a gigastaked lb', async () => {
+    const logSpy = sinon.spy(logger, 'log')
+
+    const pocket = pocketMock.class()
+
+    ;({ app, client } = await setupApplication(pocket, {
+      REDIRECTS: JSON.stringify([
+        {
+          domain: 'mainnet.example.com',
+          blockchain: 'mainnet',
+          loadBalancerID: GIGASTAKE_LEADER_IDS.lb,
+          blockchainAliases: ['mainnet'],
+        },
+      ]),
+    }))
+
+    const response = await client
+      .post(`/v1/lb/${GIGASTAKE_FOLLOWER_IDS.lb}`)
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet-x')
+      .expect(200)
+
+    expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+    expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+
+    const originalAppLog = logSpy.calledWith(
+      'info',
+      sinon.match((arg: string) => arg.startsWith('SUCCESS RELAYING')),
+      sinon.match((log: object) => log['typeID'] === GIGASTAKE_FOLLOWER_IDS.app)
+    )
+
+    expect(originalAppLog).to.be.true()
+
+    const gigastakeAppID = logSpy.calledWith(
+      'info',
+      sinon.match((arg: string) => arg.startsWith('SUCCESS RELAYING')),
+      sinon.match((log: object) => log['gigastakeAppID'] === GIGASTAKE_LEADER_IDS.app)
+    )
+
+    expect(gigastakeAppID).to.be.true()
   })
 })

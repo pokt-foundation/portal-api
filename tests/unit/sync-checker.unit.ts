@@ -35,6 +35,7 @@ const blockchains = {
     description: 'Ethereum Mainnet',
     index: 2,
     blockchain: 'eth-mainnet',
+    blockchainAliases: ['eth-mainnet'],
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
@@ -52,6 +53,7 @@ const blockchains = {
     description: 'Solana',
     index: 14,
     blockchain: 'solana-mainnet',
+    blockchainAliases: ['solana-mainnet'],
     active: true,
     enforceResult: 'JSON',
     syncCheckOptions: {
@@ -68,6 +70,7 @@ const blockchains = {
     description: 'Pocket Network Mainnet',
     index: 1,
     blockchain: 'mainnet',
+    blockchainAliases: ['mainnet'],
     active: true,
     enforceResult: 'JSON',
     syncCheckOptions: {
@@ -302,24 +305,26 @@ describe('Sync checker service (unit)', () => {
       const redisGetSpy = sinon.spy(redis, 'get')
       const redisSetSpy = sinon.spy(redis, 'set')
 
-      let syncedNodes = await syncChecker.consensusFilter({
-        nodes,
-        requestID: '1234',
-        blockchainID: blockchains['0021'].hash,
-        syncCheckOptions: blockchains['0021'].syncCheckOptions,
-        pocket: pocketClient,
-        applicationID: '',
-        applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0021'],
-        pocketAAT: undefined,
-        pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
-      })
+      let syncedNodes = (
+        await syncChecker.consensusFilter({
+          nodes,
+          requestID: '1234',
+          blockchainID: blockchains['0021'].hash,
+          syncCheckOptions: blockchains['0021'].syncCheckOptions,
+          pocket: pocketClient,
+          applicationID: '',
+          applicationPublicKey: '',
+          blockchainSyncBackup: ALTRUIST_URL['0021'],
+          pocketAAT: undefined,
+          pocketConfiguration,
+          pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+            undefined,
+            undefined,
+            undefined,
+            undefined
+          )) as Session,
+        })
+      ).nodes
 
       expect(syncedNodes).to.have.length(5)
 
@@ -327,24 +332,26 @@ describe('Sync checker service (unit)', () => {
       expect(redisSetSpy.callCount).to.be.equal(12)
 
       // Subsequent calls should retrieve results from redis instead
-      syncedNodes = await syncChecker.consensusFilter({
-        nodes,
-        requestID: '1234',
-        blockchainID: blockchains['0021'].hash,
-        syncCheckOptions: blockchains['0021'].syncCheckOptions,
-        pocket: pocketClient,
-        applicationID: '',
-        applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0021'],
-        pocketAAT: undefined,
-        pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
-      })
+      syncedNodes = (
+        await syncChecker.consensusFilter({
+          nodes,
+          requestID: '1234',
+          blockchainID: blockchains['0021'].hash,
+          syncCheckOptions: blockchains['0021'].syncCheckOptions,
+          pocket: pocketClient,
+          applicationID: '',
+          applicationPublicKey: '',
+          blockchainSyncBackup: ALTRUIST_URL['0021'],
+          pocketAAT: undefined,
+          pocketConfiguration,
+          pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+            undefined,
+            undefined,
+            undefined,
+            undefined
+          )) as Session,
+        })
+      ).nodes
 
       expect(redisGetSpy.callCount).to.be.equal(13)
       expect(redisSetSpy.callCount).to.be.equal(12)
@@ -358,24 +365,26 @@ describe('Sync checker service (unit)', () => {
       const redisGetSpy = sinon.spy(redis, 'get')
       const redisSetSpy = sinon.spy(redis, 'set')
 
-      let syncedNodes = await syncChecker.consensusFilter({
-        nodes,
-        requestID: '1234',
-        blockchainID: blockchains['0006'].hash,
-        syncCheckOptions: blockchains['0006'].syncCheckOptions,
-        pocket: pocketClient,
-        applicationID: '',
-        applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0006'],
-        pocketAAT: undefined,
-        pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
-      })
+      let syncedNodes = (
+        await syncChecker.consensusFilter({
+          nodes,
+          requestID: '1234',
+          blockchainID: blockchains['0006'].hash,
+          syncCheckOptions: blockchains['0006'].syncCheckOptions,
+          pocket: pocketClient,
+          applicationID: '',
+          applicationPublicKey: '',
+          blockchainSyncBackup: ALTRUIST_URL['0006'],
+          pocketAAT: undefined,
+          pocketConfiguration,
+          pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+            undefined,
+            undefined,
+            undefined,
+            undefined
+          )) as Session,
+        })
+      ).nodes
 
       expect(syncedNodes).to.have.length(5)
 
@@ -383,24 +392,26 @@ describe('Sync checker service (unit)', () => {
       expect(redisSetSpy.callCount).to.be.equal(12)
 
       // Subsequent calls should retrieve results from redis instead
-      syncedNodes = await syncChecker.consensusFilter({
-        nodes,
-        requestID: '1234',
-        blockchainID: blockchains['0006'].hash,
-        syncCheckOptions: blockchains['0006'].syncCheckOptions,
-        pocket: pocketClient,
-        applicationID: '',
-        applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0006'],
-        pocketAAT: undefined,
-        pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
-      })
+      syncedNodes = (
+        await syncChecker.consensusFilter({
+          nodes,
+          requestID: '1234',
+          blockchainID: blockchains['0006'].hash,
+          syncCheckOptions: blockchains['0006'].syncCheckOptions,
+          pocket: pocketClient,
+          applicationID: '',
+          applicationPublicKey: '',
+          blockchainSyncBackup: ALTRUIST_URL['0006'],
+          pocketAAT: undefined,
+          pocketConfiguration,
+          pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+            undefined,
+            undefined,
+            undefined,
+            undefined
+          )) as Session,
+        })
+      ).nodes
 
       expect(redisGetSpy.callCount).to.be.equal(13)
       expect(redisSetSpy.callCount).to.be.equal(12)
@@ -414,24 +425,26 @@ describe('Sync checker service (unit)', () => {
       const redisGetSpy = sinon.spy(redis, 'get')
       const redisSetSpy = sinon.spy(redis, 'set')
 
-      let syncedNodes = await syncChecker.consensusFilter({
-        nodes,
-        requestID: '1234',
-        blockchainID: blockchains['0001'].hash,
-        syncCheckOptions: blockchains['0001'].syncCheckOptions,
-        pocket: pocketClient,
-        applicationID: '',
-        applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0001'],
-        pocketAAT: undefined,
-        pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
-      })
+      let syncedNodes = (
+        await syncChecker.consensusFilter({
+          nodes,
+          requestID: '1234',
+          blockchainID: blockchains['0001'].hash,
+          syncCheckOptions: blockchains['0001'].syncCheckOptions,
+          pocket: pocketClient,
+          applicationID: '',
+          applicationPublicKey: '',
+          blockchainSyncBackup: ALTRUIST_URL['0001'],
+          pocketAAT: undefined,
+          pocketConfiguration,
+          pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+            undefined,
+            undefined,
+            undefined,
+            undefined
+          )) as Session,
+        })
+      ).nodes
 
       expect(syncedNodes).to.have.length(5)
 
@@ -439,24 +452,26 @@ describe('Sync checker service (unit)', () => {
       expect(redisSetSpy.callCount).to.be.equal(12)
 
       // Subsequent calls should retrieve results from redis instead
-      syncedNodes = await syncChecker.consensusFilter({
-        nodes,
-        requestID: '1234',
-        blockchainID: blockchains['0001'].hash,
-        syncCheckOptions: blockchains['0001'].syncCheckOptions,
-        pocket: pocketClient,
-        applicationID: '',
-        applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0001'],
-        pocketAAT: undefined,
-        pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
-      })
+      syncedNodes = (
+        await syncChecker.consensusFilter({
+          nodes,
+          requestID: '1234',
+          blockchainID: blockchains['0001'].hash,
+          syncCheckOptions: blockchains['0001'].syncCheckOptions,
+          pocket: pocketClient,
+          applicationID: '',
+          applicationPublicKey: '',
+          blockchainSyncBackup: ALTRUIST_URL['0001'],
+          pocketAAT: undefined,
+          pocketConfiguration,
+          pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+            undefined,
+            undefined,
+            undefined,
+            undefined
+          )) as Session,
+        })
+      ).nodes
 
       expect(redisGetSpy.callCount).to.be.equal(13)
       expect(redisSetSpy.callCount).to.be.equal(12)
@@ -469,7 +484,7 @@ describe('Sync checker service (unit)', () => {
 
       blockchains['0006'].syncCheckOptions.resultKey = 'height' // should be 'result'
 
-      const syncedNodes = await syncChecker.consensusFilter({
+      const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0006'].hash,
@@ -507,7 +522,7 @@ describe('Sync checker service (unit)', () => {
 
       const pocketClient = pocketMock.object()
 
-      const syncedNodes = await syncChecker.consensusFilter({
+      const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
@@ -543,7 +558,7 @@ describe('Sync checker service (unit)', () => {
 
       const pocketClient = pocketMock.object()
 
-      const syncedNodes = await syncChecker.consensusFilter({
+      const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
@@ -572,7 +587,7 @@ describe('Sync checker service (unit)', () => {
 
       const pocketClient = pocketMock.object()
 
-      const syncedNodes = await syncChecker.consensusFilter({
+      const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
@@ -609,7 +624,7 @@ describe('Sync checker service (unit)', () => {
 
       const pocketClient = pocketMock.object()
 
-      const syncedNodes = await syncChecker.consensusFilter({
+      const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
@@ -656,7 +671,7 @@ describe('Sync checker service (unit)', () => {
 
       const pocketClient = pocketMock.object()
 
-      const syncedNodes = await syncChecker.consensusFilter({
+      const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
@@ -701,7 +716,7 @@ describe('Sync checker service (unit)', () => {
         undefined
       )) as Session
 
-      const syncedNodes = await syncChecker.consensusFilter({
+      const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,

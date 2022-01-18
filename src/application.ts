@@ -2,8 +2,12 @@ import crypto from 'crypto'
 import os from 'os'
 import path from 'path'
 import process from 'process'
+<<<<<<< HEAD
 import AWS from 'aws-sdk'
 import Redis, { ClusterNode } from 'ioredis'
+=======
+import Redis from 'ioredis'
+>>>>>>> f023616f94af7a586fd5e3d5cbb4283e1e8f45fb
 import pg from 'pg'
 import { BootMixin } from '@loopback/boot'
 import { ApplicationConfig } from '@loopback/core'
@@ -17,7 +21,6 @@ import { InfluxDB } from '@influxdata/influxdb-client'
 import AatPlans from './config/aat-plans.json'
 import { DEFAULT_POCKET_CONFIG } from './config/pocket-config'
 import { GatewaySequence } from './sequence'
-const https = require('https')
 const logger = require('./services/logger')
 
 require('log-timestamp')
@@ -150,17 +153,22 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const redisEndpoint: string = REDIS_ENDPOINT || ''
     const redisPort: string = REDIS_PORT || ''
 
-    const awsCluster = {
+    const redisConfig = {
       host: redisEndpoint,
       port: parseInt(redisPort),
-    } as ClusterNode
+    }
 
-    const redis = new Redis.Cluster([awsCluster], {
-      scaleReads: 'slave',
-      redisOptions: {
-        keyPrefix: `${commitHash}-`,
-      },
-    })
+    const redis =
+      environment === 'production'
+        ? new Redis.Cluster([redisConfig], {
+            scaleReads: 'slave',
+            redisOptions: {
+              keyPrefix: `${commitHash}-`,
+            },
+          })
+        : new Redis(redisConfig.port, redisConfig.host, {
+            keyPrefix: `${commitHash}-`,
+          })
 
     this.bind('redisInstance').to(redis)
 

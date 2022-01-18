@@ -4,7 +4,7 @@ import RedisMock from 'ioredis-mock'
 import { ErrorObject } from 'jsonrpc-lite'
 import { Encryptor } from 'strong-cryptor'
 import { expect, sinon } from '@loopback/testlab'
-import { HTTPMethod, Configuration, Node, RpcError, Session } from '@pokt-network/pocket-js'
+import { HTTPMethod, Configuration, RpcError, Session } from '@pokt-network/pocket-js'
 import AatPlans from '../../src/config/aat-plans.json'
 import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
 import { Applications } from '../../src/models/applications.model'
@@ -20,6 +20,7 @@ import { hashBlockchainNodes } from '../../src/utils/helpers'
 import { parseMethod } from '../../src/utils/parsing'
 import { updateConfiguration } from '../../src/utils/pocket'
 import { loadBlockchain } from '../../src/utils/relayer'
+import { CheckResult } from '../../src/utils/types'
 import { gatewayTestDB } from '../fixtures/test.datasource'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
@@ -40,6 +41,7 @@ const BLOCKCHAINS = [
     description: 'Ethereum Mainnet X',
     index: 2,
     blockchain: 'eth-mainnet-x',
+    blockchainAliases: ['eth-mainnet-x'],
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
@@ -59,6 +61,7 @@ const BLOCKCHAINS = [
     description: 'Ethereum Mainnet',
     index: 2,
     blockchain: 'eth-mainnet',
+    blockchainAliases: ['eth-mainnet'],
     active: true,
     enforceResult: 'JSON',
     nodeCount: 1,
@@ -81,6 +84,7 @@ const BLOCKCHAINS = [
     description: 'Ethereum Mainnet String',
     index: 3,
     blockchain: 'eth-mainnet-string',
+    blockchainAliases: ['eth-mainnet-string'],
     active: true,
     nodeCount: 1,
     chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
@@ -422,8 +426,8 @@ describe('Pocket relayer service (unit)', () => {
           applicationPublicKey,
           pocketAAT,
           pocketConfiguration: pocketConfig,
-        }: ChainIDFilterOptions): Promise<Node[]> => {
-          return Promise.resolve(DEFAULT_NODES.slice(maxAmountOfNodes - chainCheckNodes))
+        }: ChainIDFilterOptions): Promise<CheckResult> => {
+          return Promise.resolve({ nodes: DEFAULT_NODES.slice(maxAmountOfNodes - chainCheckNodes), cached: false })
         }
       )
 
@@ -441,8 +445,8 @@ describe('Pocket relayer service (unit)', () => {
           pocket,
           pocketAAT,
           pocketConfiguration: pocketConfig,
-        }: ConsensusFilterOptions): Promise<Node[]> => {
-          return Promise.resolve(DEFAULT_NODES.slice(maxAmountOfNodes - syncCheckNodes))
+        }: ConsensusFilterOptions): Promise<CheckResult> => {
+          return Promise.resolve({ nodes: DEFAULT_NODES.slice(maxAmountOfNodes - syncCheckNodes), cached: false })
         }
       )
 

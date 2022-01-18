@@ -7,6 +7,7 @@ import { removeNodeFromSession, getNodeNetworkData } from '../utils/cache'
 import { MAX_RELAYS_ERROR } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { hashBlockchainNodes } from '../utils/helpers'
+import { CheckResult } from '../utils/types'
 
 const logger = require('../services/logger')
 
@@ -35,7 +36,7 @@ export class SyncChecker {
     pocketAAT,
     pocketConfiguration,
     pocketSession,
-  }: ConsensusFilterOptions): Promise<Node[]> {
+  }: ConsensusFilterOptions): Promise<CheckResult> {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
     syncCheckOptions.allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
 
@@ -48,7 +49,9 @@ export class SyncChecker {
     const syncedNodesKey = `sync-check-${sessionHash}`
     const syncedNodesCached = await this.redis.get(syncedNodesKey)
 
-    if (syncedNodesCached) {
+    const cached = Boolean(syncedNodesCached)
+
+    if (cached) {
       syncedNodesList = JSON.parse(syncedNodesCached)
       for (const node of nodes) {
         if (syncedNodesList.includes(node.publicKey)) {
@@ -56,7 +59,7 @@ export class SyncChecker {
         }
       }
       // logger.log('info', 'SYNC CHECK CACHE: ' + syncedNodes.length + ' nodes returned');
-      return syncedNodes
+      return { nodes: syncedNodes, cached }
     }
 
     // Cache is stale, start a new cache fill
@@ -64,7 +67,7 @@ export class SyncChecker {
     const syncLock = await this.redis.get('lock-' + syncedNodesKey)
 
     if (syncLock) {
-      return nodes
+      return { nodes, cached }
     } else {
       // Set lock as this thread checks the sync with 60 second ttl.
       // If any major errors happen below, it will retry the sync check every 60 seconds.
@@ -171,7 +174,7 @@ export class SyncChecker {
       })
 
       if (errorState) {
-        return nodes
+        return { nodes, cached }
       }
     } else {
       logger.log('info', 'SYNC CHECK ALTRUIST CHECK: ' + altruistBlockHeight, {
@@ -314,7 +317,7 @@ export class SyncChecker {
         sessionHash,
       })
     }
-    return syncedNodes
+    return { nodes: syncedNodes, cached }
   }
 
   async getSyncFromAltruist(syncCheckOptions: SyncCheckOptions, blockchainSyncBackup: string): Promise<number> {

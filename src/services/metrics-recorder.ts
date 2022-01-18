@@ -61,6 +61,7 @@ export class MetricsRecorder {
     timeout,
     sticky,
     elapsedTime = 0,
+    gigastakeAppID,
   }: {
     requestID: string
     applicationID: string
@@ -80,6 +81,7 @@ export class MetricsRecorder {
     timeout?: number
     sticky?: string
     elapsedTime?: number
+    gigastakeAppID?: string
   }): Promise<void> {
     try {
       const { sessionNodes } = pocketSession || {}
@@ -112,6 +114,7 @@ export class MetricsRecorder {
           requestID,
           relayType: 'APP',
           typeID: applicationID,
+          gigastakeAppID,
           serviceNode,
           serviceURL,
           serviceDomain,
@@ -127,6 +130,7 @@ export class MetricsRecorder {
           requestID,
           relayType: 'APP',
           typeID: applicationID,
+          gigastakeAppID,
           serviceNode,
           serviceURL,
           serviceDomain,
@@ -142,6 +146,7 @@ export class MetricsRecorder {
           requestID,
           relayType: 'APP',
           typeID: applicationID,
+          gigastakeAppID,
           serviceNode,
           serviceURL,
           serviceDomain,
@@ -176,7 +181,7 @@ export class MetricsRecorder {
       // InfluxDB
       const pointRelay = new Point('relay')
         .tag('applicationPublicKey', applicationPublicKey)
-        .tag('nodePublicKey', serviceNode)
+        .tag('nodePublicKey', serviceNode && !fallback ? 'network' : 'fallback')
         .tag('method', method)
         .tag('result', result.toString())
         .tag('blockchain', blockchainID) // 0021

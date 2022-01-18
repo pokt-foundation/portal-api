@@ -6,6 +6,7 @@
 			"dnsSearchDomains": null,
 			"environmentFiles": null,
 			"logConfiguration": {
+<<<<<<< HEAD
 			"logDriver": "json-file",
 			"options": {
 				"max-size": "10m",
@@ -19,6 +20,22 @@
 				"protocol": "tcp",
 				"containerPort": 3000
 			}],
+=======
+				"logDriver": "json-file",
+				"options": {
+					"max-size": "10m",
+					"max-file": "3"
+				}
+			},
+			"entryPoint": [],
+			"portMappings": [
+				{
+					"hostPort": 3000,
+					"protocol": "tcp",
+					"containerPort": 3000
+				}
+			],
+>>>>>>> f023616f94af7a586fd5e3d5cbb4283e1e8f45fb
 			"environment": [],
 			"command": [],
 			"linuxParameters": null,
@@ -39,6 +56,7 @@
 			"memoryReservation": 2048,
 			"volumesFrom": [],
 			"stopTimeout": null,
+<<<<<<< HEAD
 			"image": "059424750518.dkr.ecr.ap-northeast-2.amazonaws.com/gateway-terraform:latest",
 			"startTimeout": null,
 			"firelensConfiguration": null,
@@ -46,6 +64,17 @@
 				"containerName": "datadog-agent",
 				"condition": "START"
 			}],
+=======
+			"image": null,
+			"startTimeout": null,
+			"firelensConfiguration": null,
+			"dependsOn": [
+				{
+					"containerName": "datadog-agent",
+					"condition": "START"
+				}
+			],
+>>>>>>> f023616f94af7a586fd5e3d5cbb4283e1e8f45fb
 			"disableNetworking": null,
 			"interactive": null,
 			"healthCheck": null,
@@ -62,6 +91,7 @@
 			"systemControls": null,
 			"privileged": null,
 			"name": "gateway"
+<<<<<<< HEAD
 		}, 
 		{
 		"dnsSearchDomains": null,
@@ -157,10 +187,111 @@
 	],
 	"networkMode": "bridge",
 	"cpu": "2048",
+=======
+		},
+		{
+			"dnsSearchDomains": null,
+			"environmentFiles": null,
+			"logConfiguration": {
+				"logDriver": "json-file",
+				"options": {
+					"max-size": "10m",
+					"max-file": "3"
+				}
+			},
+			"entryPoint": [],
+			"portMappings": [
+				{
+					"hostPort": 8126,
+					"protocol": "tcp",
+					"containerPort": 8126
+				},
+				{
+					"hostPort": 8125,
+					"protocol": "udp",
+					"containerPort": 8125
+				}
+			],
+			"command": [],
+			"linuxParameters": null,
+			"cpu": 512,
+			"environment": [],
+			"resourceRequirements": null,
+			"ulimits": [
+				{
+					"name": "nofile",
+					"softLimit": 65535,
+					"hardLimit": 65535
+				}
+			],
+			"dnsServers": null,
+			"mountPoints": [
+				{
+					"readOnly": null,
+					"containerPath": "/var/run/docker.sock",
+					"sourceVolume": "docker_sock"
+				},
+				{
+					"readOnly": null,
+					"containerPath": "/host/sys/fs/cgroup",
+					"sourceVolume": "cgroup"
+				},
+				{
+					"readOnly": null,
+					"containerPath": "/host/proc",
+					"sourceVolume": "proc"
+				}
+			],
+			"workingDirectory": null,
+			"secrets": null,
+			"dockerSecurityOptions": null,
+			"memory": null,
+			"memoryReservation": 1024,
+			"volumesFrom": [],
+			"stopTimeout": null,
+			"image": "gcr.io/datadoghq/agent:latest",
+			"startTimeout": null,
+			"firelensConfiguration": null,
+			"disableNetworking": null,
+			"interactive": null,
+			"healthCheck": {
+				"retries": 3,
+				"command": [
+					"CMD-SHELL",
+					"agent health"
+				],
+				"timeout": 5,
+				"interval": 30,
+				"startPeriod": 15
+			},
+			"essential": true,
+			"hostname": null,
+			"extraHosts": null,
+			"pseudoTerminal": null,
+			"user": null,
+			"readonlyRootFilesystem": null,
+			"dockerLabels": null,
+			"systemControls": null,
+			"privileged": null,
+			"name": "datadog-agent"
+		}
+	],
+	"placementConstraints": [],
+	"memory": "3072",
+	"taskRoleArn": "arn:aws:iam::059424750518:role/ecsTaskExecutionRole",
+	"family": "gateway-prod",
+	"pidMode": null,
+	"requiresCompatibilities": [
+		"EC2"
+	],
+	"networkMode": "bridge",
+	"cpu": "1536",
+>>>>>>> f023616f94af7a586fd5e3d5cbb4283e1e8f45fb
 	"inferenceAccelerators": null,
 	"proxyConfiguration": null,
 	"volumes": [
 		{
+<<<<<<< HEAD
 		  "fsxWindowsFileServerVolumeConfiguration": null,
 		  "efsVolumeConfiguration": null,
 		  "name": "cgroup",
@@ -188,4 +319,33 @@
 		  "dockerVolumeConfiguration": null
 		}
 	  ]
+=======
+			"fsxWindowsFileServerVolumeConfiguration": null,
+			"efsVolumeConfiguration": null,
+			"name": "cgroup",
+			"host": {
+				"sourcePath": "/sys/fs/cgroup/"
+			},
+			"dockerVolumeConfiguration": null
+		},
+		{
+			"fsxWindowsFileServerVolumeConfiguration": null,
+			"efsVolumeConfiguration": null,
+			"name": "proc",
+			"host": {
+				"sourcePath": "/proc/"
+			},
+			"dockerVolumeConfiguration": null
+		},
+		{
+			"fsxWindowsFileServerVolumeConfiguration": null,
+			"efsVolumeConfiguration": null,
+			"name": "docker_sock",
+			"host": {
+				"sourcePath": "/var/run/docker.sock"
+			},
+			"dockerVolumeConfiguration": null
+		}
+	]
+>>>>>>> f023616f94af7a586fd5e3d5cbb4283e1e8f45fb
 }
