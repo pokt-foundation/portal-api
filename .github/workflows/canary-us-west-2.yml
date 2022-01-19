@@ -58,7 +58,7 @@ jobs:
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
-          envkey_REDIS_ENDPOINT: gateway-canary-redis.6iq570.clustercfg.euc1.cache.amazonaws.com
+          envkey_REDIS_ENDPOINT: gateway-canary-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REGION: 'us-west-2'
           envkey_REGION_NAME: 'us-west-2'
           file_name: .env
