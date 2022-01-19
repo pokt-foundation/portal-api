@@ -84,6 +84,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def-us-west-2-datadog-agent.outputs.task-definition }}
-          service: gateway-service
+          service: gateway-staging
           cluster: gateway-staging
           wait-for-service-stability: true
