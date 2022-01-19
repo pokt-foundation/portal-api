@@ -2,12 +2,7 @@ import crypto from 'crypto'
 import os from 'os'
 import path from 'path'
 import process from 'process'
-<<<<<<< HEAD
-import AWS from 'aws-sdk'
-import Redis, { ClusterNode } from 'ioredis'
-=======
 import Redis from 'ioredis'
->>>>>>> f023616f94af7a586fd5e3d5cbb4283e1e8f45fb
 import pg from 'pg'
 import { BootMixin } from '@loopback/boot'
 import { ApplicationConfig } from '@loopback/core'
