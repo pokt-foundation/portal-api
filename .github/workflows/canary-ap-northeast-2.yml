@@ -60,7 +60,7 @@ jobs:
           envkey_SILENT_LOGGING: true
           envkey_REDIS_ENDPOINT: gateway-canary-redis.jmonrz.clustercfg.apn2.cache.amazonaws.com
           envkey_REGION: 'ap-northeast-2'
-          envkey_REGION_NAME: 'ap-northeast-2'
+          envkey_REGION_NAME: '/canary/ap-northeast-2'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
@@ -85,7 +85,7 @@ jobs:
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
             DD_PROFILING_ENABLED=true
-            DD_SERVICE=/ap-northeast-2/ecs/gateway
+            DD_SERVICE=/canary/ap-northeast-2/ecs/gateway
             DD_VERSION=${{ github.sha }}
             DD_ENV=canary
             DD_AGENT_HOST=datadog-agent

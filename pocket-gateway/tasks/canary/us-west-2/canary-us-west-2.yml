@@ -36,7 +36,7 @@ jobs:
           [[/shared_envs]]
           envkey_REDIS_ENDPOINT: gateway-canary-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REGION: 'us-west-2'
-          envkey_REGION_NAME: 'us-west-2'
+          envkey_REGION_NAME: '/canary/us-west-2'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
@@ -61,7 +61,7 @@ jobs:
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
             DD_PROFILING_ENABLED=true
-            DD_SERVICE=/us-west-2/ecs/gateway
+            DD_SERVICE=/canary/us-west-2/ecs/gateway
             DD_VERSION=${{ github.sha }}
             DD_ENV=canary
             DD_AGENT_HOST=datadog-agent
