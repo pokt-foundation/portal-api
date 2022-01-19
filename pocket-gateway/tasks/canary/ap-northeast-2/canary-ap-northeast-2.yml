@@ -6,7 +6,7 @@ name: Terraform canary Deployment ap-northeast-2
 
 on:
   push:
-    branches: [terraform]
+    branches: [canary]
 
 jobs:
   deploy:

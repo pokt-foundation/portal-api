@@ -6,7 +6,7 @@ name: Staging Deployment us-west-2
 
 on:
   push:
-    branches: [terraform]
+    branches: [staging]
 
 jobs:
   deploy:
