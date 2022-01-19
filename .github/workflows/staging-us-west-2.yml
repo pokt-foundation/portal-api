@@ -78,7 +78,7 @@ jobs:
         id: task-def-us-west-2-gateway
         uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
-          task-definition: pocket-gateway/tasks/staging/ecs-task-staging-us-west-2.json
+          task-definition: pocket-gateway/tasks/staging/ecs-task-definition.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
           # Needs to be set at container level to be read by the dd agent
