@@ -114,12 +114,11 @@ export class CherryPicker {
     /*
     RE-ENABLE LOGS to examine cherry picker behaviour
     */
-    // logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
-    //   requestID: requestID,
-    //   blockchainID: blockchain,
-    //   sessionHash: sessionCacheKey,
-    // })
-    /* */
+    logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
+      requestID: requestID,
+      blockchainID: blockchain,
+      sessionHash: sessionCacheKey,
+    })
 
     // Iterate through sorted logs and form in to a weighted list
     let rankedItems = await this.rankItems(blockchain, sortedLogs, 50)
