@@ -33,6 +33,7 @@ export class ChainChecker {
     pocketAAT,
     pocketConfiguration,
     pocketSession,
+    gigastakeAppID,
   }: ChainIDFilterOptions): Promise<CheckResult> {
     const sessionHash = hashBlockchainNodes(blockchainID, pocketSession.sessionNodes)
 
@@ -81,6 +82,7 @@ export class ChainChecker {
       sessionHash,
       pocketConfiguration,
       pocketSession,
+      gigastakeAppID,
     }
     const nodeChainLogs = await this.getNodeChainLogs(options)
 
@@ -193,6 +195,7 @@ export class ChainChecker {
     sessionHash,
     pocketConfiguration,
     pocketSession,
+    gigastakeAppID,
   }: GetNodesChainLogsOptions): Promise<NodeChainLog[]> {
     const nodeChainLogs: NodeChainLog[] = []
     const promiseStack: Promise<NodeChainLog>[] = []
@@ -219,6 +222,7 @@ export class ChainChecker {
         sessionHash,
         pocketConfiguration,
         pocketSession,
+        gigastakeAppID,
       }
 
       promiseStack.push(this.getNodeChainLog(options))
@@ -246,6 +250,7 @@ export class ChainChecker {
     pocketAAT,
     pocketConfiguration,
     pocketSession,
+    gigastakeAppID,
   }: GetNodeChainLogOptions): Promise<NodeChainLog> {
     const { sessionKey, sessionNodes } = pocketSession || {}
     // Pull the current block from each node using the blockchain's chainCheck as the relay
@@ -320,6 +325,7 @@ export class ChainChecker {
         .recordMetric({
           requestID: requestID,
           applicationID: applicationID,
+          gigastakeAppID,
           applicationPublicKey: applicationPublicKey,
           blockchainID,
           serviceNode: node.publicKey,
@@ -361,6 +367,7 @@ export class ChainChecker {
         .recordMetric({
           requestID: requestID,
           applicationID: applicationID,
+          gigastakeAppID,
           applicationPublicKey: applicationPublicKey,
           blockchainID,
           serviceNode: node.publicKey,
@@ -437,6 +444,7 @@ interface BaseChainLogOptions {
   pocketConfiguration: Configuration
   sessionHash: string
   pocketSession: Session
+  gigastakeAppID?: string
 }
 
 interface GetNodesChainLogsOptions extends BaseChainLogOptions {
@@ -459,4 +467,5 @@ export type ChainIDFilterOptions = {
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
   pocketSession: Session
+  gigastakeAppID?: string
 }
