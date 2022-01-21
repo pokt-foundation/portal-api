@@ -79,7 +79,7 @@ jobs:
         uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
           task-definition: pocket-gateway/tasks/canary/ecs-task-definition.json
-          container-name: gateway-canary
+          container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
           # Needs to be set at container level to be read by the dd agent
           environment-variables: |
