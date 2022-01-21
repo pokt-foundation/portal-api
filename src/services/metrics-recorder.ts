@@ -163,7 +163,7 @@ export class MetricsRecorder {
       if (serviceNode) {
         await this.cherryPicker.updateServiceQuality(
           blockchainID,
-          gigastakeAppID ? gigastakeAppID : applicationID,
+          applicationID,
           serviceNode,
           elapsedTime,
           result,
