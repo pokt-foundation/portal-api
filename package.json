@@ -42,7 +42,7 @@
     "start:watch": "tsnodemon -x 'node -r source-map-support/register .'",
     "services:db:up": "docker-compose -f stacks/local.yml up db",
     "services:all:up": "docker-compose -f stacks/local.yml up -d --build",
-    "services:all:down": "docker-compose -f stacks/local.yml down",
+    "services:all:down": "docker-compose -f stacks/local.yml down --remove-orphans",
     "tasks:db:download-production-data": "docker-compose -f stacks/tasks.yml up download-production-data",
     "tasks:db:import-production-data": "docker-compose -f stacks/tasks.yml up import-production-data",
     "prepare": "husky install",
