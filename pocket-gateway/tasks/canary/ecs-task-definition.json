@@ -64,7 +64,7 @@
 			"dockerLabels": null,
 			"systemControls": null,
 			"privileged": null,
-			"name": "gateway"
+			"name": "gateway-canary"
 		},
 		{
 			"dnsSearchDomains": null,
