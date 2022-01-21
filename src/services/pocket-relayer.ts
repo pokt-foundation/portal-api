@@ -643,7 +643,6 @@ export class PocketRelayer {
         pocket: this.pocket,
         pocketConfiguration: this.pocketConfiguration,
         pocketSession,
-        gigastakeAppID: applicationID !== application.id ? application.id : undefined,
       }
 
       chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
@@ -663,7 +662,6 @@ export class PocketRelayer {
         pocketAAT,
         pocketConfiguration: this.pocketConfiguration,
         pocketSession,
-        gigastakeAppID: applicationID !== application.id ? application.id : undefined,
       }
 
       syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
