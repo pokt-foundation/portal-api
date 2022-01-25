@@ -372,12 +372,14 @@ export class PocketRelayer {
       }
 
       // Any other error (e.g parsing errors) that should not be propagated as response
-      logger.log('error', 'INTERNAL ERROR: ' + e, {
+      logger.log('error', 'POCKET RELAYER ERROR: ' + e, {
         requestID,
         relayType: 'APP',
         typeID: application.id,
         error: e,
         serviceNode: '',
+        origin: this.origin,
+        trace: e.stack,
       })
     }
 
