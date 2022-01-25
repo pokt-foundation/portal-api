@@ -224,8 +224,16 @@ export class ChainChecker {
       promiseStack.push(this.getNodeChainLog(options))
     }
 
-    ;[rawNodeChainLogs[0], rawNodeChainLogs[1], rawNodeChainLogs[2], rawNodeChainLogs[3], rawNodeChainLogs[4]] =
-      await Promise.all(promiseStack)
+    ;[
+      rawNodeChainLogs[0],
+      rawNodeChainLogs[1],
+      rawNodeChainLogs[2],
+      rawNodeChainLogs[3],
+      rawNodeChainLogs[4],
+      rawNodeChainLogs[5],
+      rawNodeChainLogs[6],
+      rawNodeChainLogs[7],
+    ] = await Promise.all(promiseStack)
 
     for (const rawNodeChainLog of rawNodeChainLogs) {
       if (typeof rawNodeChainLog === 'object' && (rawNodeChainLog?.chainID as unknown as string) !== '') {
