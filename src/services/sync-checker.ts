@@ -397,8 +397,16 @@ export class SyncChecker {
       )
     }
 
-    ;[rawNodeSyncLogs[0], rawNodeSyncLogs[1], rawNodeSyncLogs[2], rawNodeSyncLogs[3], rawNodeSyncLogs[4]] =
-      await Promise.all(promiseStack)
+    ;[
+      rawNodeSyncLogs[0],
+      rawNodeSyncLogs[1],
+      rawNodeSyncLogs[2],
+      rawNodeSyncLogs[3],
+      rawNodeSyncLogs[4],
+      rawNodeSyncLogs[5],
+      rawNodeSyncLogs[6],
+      rawNodeSyncLogs[7],
+    ] = await Promise.all(promiseStack)
 
     for (const rawNodeSyncLog of rawNodeSyncLogs) {
       if (typeof rawNodeSyncLog === 'object' && rawNodeSyncLog?.blockHeight > 0) {
