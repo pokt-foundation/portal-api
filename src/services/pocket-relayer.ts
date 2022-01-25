@@ -372,12 +372,14 @@ export class PocketRelayer {
       }
 
       // Any other error (e.g parsing errors) that should not be propagated as response
-      logger.log('error', 'INTERNAL ERROR: ' + e, {
+      logger.log('error', 'POCKET RELAYER ERROR: ' + e, {
         requestID,
         relayType: 'APP',
         typeID: application.id,
         error: e,
         serviceNode: '',
+        origin: this.origin,
+        trace: e.stack,
       })
     }
 
@@ -643,7 +645,6 @@ export class PocketRelayer {
         pocket: this.pocket,
         pocketConfiguration: this.pocketConfiguration,
         pocketSession,
-        gigastakeAppID: applicationID !== application.id ? application.id : undefined,
       }
 
       chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
@@ -663,7 +664,6 @@ export class PocketRelayer {
         pocketAAT,
         pocketConfiguration: this.pocketConfiguration,
         pocketSession,
-        gigastakeAppID: applicationID !== application.id ? application.id : undefined,
       }
 
       syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)

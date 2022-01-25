@@ -36,7 +36,6 @@ export class SyncChecker {
     pocketAAT,
     pocketConfiguration,
     pocketSession,
-    gigastakeAppID,
   }: ConsensusFilterOptions): Promise<CheckResult> {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
     syncCheckOptions.allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
@@ -87,8 +86,7 @@ export class SyncChecker {
       pocketAAT,
       pocketConfiguration,
       sessionHash,
-      pocketSession,
-      gigastakeAppID
+      pocketSession
     )
 
     let errorState = false
@@ -247,8 +245,7 @@ export class SyncChecker {
         this.metricsRecorder
           .recordMetric({
             requestID: requestID,
-            applicationID,
-            gigastakeAppID,
+            applicationID: applicationID,
             applicationPublicKey: applicationPublicKey,
             blockchainID,
             serviceNode: nodeSyncLog.node.publicKey,
@@ -368,8 +365,7 @@ export class SyncChecker {
     pocketAAT: PocketAAT,
     pocketConfiguration: Configuration,
     sessionHash: string,
-    pocketSession: Session,
-    gigastakeAppID?: string
+    pocketSession: Session
   ): Promise<NodeSyncLog[]> {
     const nodeSyncLogs: NodeSyncLog[] = []
     const promiseStack: Promise<NodeSyncLog>[] = []
@@ -396,8 +392,7 @@ export class SyncChecker {
           pocketAAT,
           pocketConfiguration,
           sessionHash,
-          pocketSession,
-          gigastakeAppID
+          pocketSession
         )
       )
     }
@@ -424,8 +419,7 @@ export class SyncChecker {
     pocketAAT: PocketAAT,
     pocketConfiguration: Configuration,
     sessionHash: string,
-    pocketSession?: Session,
-    gigastakeAppID?: string
+    pocketSession?: Session
   ): Promise<NodeSyncLog> {
     const { sessionNodes } = pocketSession || {}
     // Pull the current block from each node using the blockchain's syncCheck as the relay
@@ -501,8 +495,7 @@ export class SyncChecker {
       this.metricsRecorder
         .recordMetric({
           requestID: requestID,
-          applicationID,
-          gigastakeAppID,
+          applicationID: applicationID,
           applicationPublicKey: applicationPublicKey,
           blockchainID,
           serviceNode: node.publicKey,
@@ -544,7 +537,6 @@ export class SyncChecker {
         .recordMetric({
           requestID: requestID,
           applicationID: applicationID,
-          gigastakeAppID,
           applicationPublicKey: applicationPublicKey,
           blockchainID,
           serviceNode: node.publicKey,
@@ -643,5 +635,4 @@ export type ConsensusFilterOptions = {
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
   pocketSession: Session
-  gigastakeAppID?: string
 }

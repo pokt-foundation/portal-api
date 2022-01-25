@@ -122,6 +122,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const rpcProvider = new HttpRpcProvider(dispatchers[0])
     const pocket = new Pocket(dispatchers, rpcProvider, configuration)
 
+    this.bind('dispatchers').to(dispatchers)
     this.bind('pocketInstance').to(pocket)
     this.bind('pocketConfiguration').to(configuration)
     this.bind('relayRetries').to(parseInt(relayRetries))
