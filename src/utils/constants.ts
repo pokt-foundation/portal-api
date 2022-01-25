@@ -10,3 +10,7 @@ export const WS_ONLY_METHODS = [
   'eth_subscribe',
   'newBlockFilter',
 ]
+
+export const POCKET_JS_INSTANCE_TIMEOUT_KEY = 'pocket-js-timeout'
+export const POCKET_JS_TIMEOUT_MIN = 60 // Seconds
+export const POCKET_JS_TIMEOUT_MAX = 120 // Seconds
