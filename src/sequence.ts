@@ -1,3 +1,4 @@
+import { Redis } from 'ioredis'
 import shortID from 'shortid'
 import { inject } from '@loopback/context'
 import {
@@ -10,6 +11,9 @@ import {
   Send,
   SequenceHandler,
 } from '@loopback/rest'
+import { Configuration, HttpRpcProvider, Pocket } from '@pokt-network/pocket-js'
+import { POCKET_JS_INSTANCE_TIMEOUT_KEY, POCKET_JS_TIMEOUT_MAX, POCKET_JS_TIMEOUT_MIN } from './utils/constants'
+import { getRandomInt } from './utils/helpers'
 
 const SequenceActions = RestBindings.SequenceActions
 
@@ -25,6 +29,8 @@ export class GatewaySequence implements SequenceHandler {
   async handle(context: RequestContext): Promise<void> {
     try {
       const { request, response } = context
+
+      await this.updatePocketInstance(context)
 
       // Record the host, user-agent, and origin for processing
       const realIP = request.headers['x-forwarded-for'] || request.socket.remoteAddress || 'no-ip-found'
@@ -88,6 +94,25 @@ export class GatewaySequence implements SequenceHandler {
       }
     } catch (err) {
       this.reject(context, err)
+    }
+  }
+
+  async updatePocketInstance(context: RequestContext): Promise<void> {
+    const redis: Redis = await context.get('redisInstance')
+    const dispatchers: URL[] = await context.get('dispatchers')
+    const configuration: Configuration = await context.get('pocketConfiguration')
+
+    if (!(await redis.get(POCKET_JS_INSTANCE_TIMEOUT_KEY))) {
+      const pocket = new Pocket(dispatchers, new HttpRpcProvider(dispatchers[0]), configuration)
+
+      await redis.set(
+        POCKET_JS_INSTANCE_TIMEOUT_KEY,
+        'true',
+        'EX',
+        getRandomInt(POCKET_JS_TIMEOUT_MIN, POCKET_JS_TIMEOUT_MAX)
+      )
+
+      context.bind('pocketInstance').to(pocket)
     }
   }
 }
