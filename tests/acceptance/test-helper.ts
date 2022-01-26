@@ -1,9 +1,10 @@
 import RedisMock from 'ioredis-mock'
 import rewiremock from 'rewiremock'
 import { createRestAppClient, givenHttpServerConfig, Client } from '@loopback/testlab'
-import { Pocket, Configuration, HttpRpcProvider } from '@pokt-network/pocket-js'
+import { Pocket } from '@pokt-network/pocket-js'
 
 import { PocketGatewayApplication } from '../../src/application'
+import { DEFAULT_POCKET_CONFIG } from '../../src/config/pocket-config'
 import { gatewayTestDB } from '../fixtures/test.datasource'
 
 const DUMMY_ENV = {
@@ -60,12 +61,12 @@ const DUMMY_ENV = {
   AWS_REGION: 'test',
 }
 
-export async function setupApplication(pocket?: typeof Pocket, envs?: object): Promise<AppWithClient> {
+export async function setupApplication(pocket?: Pocket, envs?: object): Promise<AppWithClient> {
   const restConfig = givenHttpServerConfig()
 
   const appWithMock = rewiremock.proxy(() => require('../../src/application'), {
     ioredis: RedisMock,
-    ...(pocket && { '@pokt-network/pocket-js': { Pocket: pocket, Configuration, HttpRpcProvider } }),
+    ...(pocket && { './config/pocket-config': { getPocketInstance: () => pocket, DEFAULT_POCKET_CONFIG } }),
   })
 
   const appEnvs = envs ? { ...DUMMY_ENV, ...envs } : { ...DUMMY_ENV }
