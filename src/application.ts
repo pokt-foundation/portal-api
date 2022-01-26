@@ -170,7 +170,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     this.bind('redisInstance').to(redis)
 
-    // This is to avoid updating the pocketjs instance right awaay on boot
+    // Avoid updating the pocketjs instance right away on boot
     await redis.set(
       POCKET_JS_INSTANCE_TIMEOUT_KEY,
       'true',
