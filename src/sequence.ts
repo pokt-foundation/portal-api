@@ -115,7 +115,9 @@ export class GatewaySequence implements SequenceHandler {
         getRandomInt(POCKET_JS_TIMEOUT_MIN, POCKET_JS_TIMEOUT_MAX)
       )
 
-      context.bind('pocketInstance').to(pocket)
+      const ownerCtx = context.getOwnerContext('pocketInstance')
+
+      ownerCtx.bind('pocketInstance').to(pocket)
     }
   }
 }
