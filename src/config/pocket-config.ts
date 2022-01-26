@@ -1,4 +1,7 @@
-import { Configuration } from '@pokt-network/pocket-js'
+import { HttpErrors } from '@loopback/rest'
+import { Account, Configuration, HttpRpcProvider, Pocket } from '@pokt-network/pocket-js'
+
+const logger = require('../services/logger')
 
 export type PocketConfiguration = {
   maxDispatchers?: number
@@ -61,4 +64,27 @@ export const getPocketConfigOrDefault = (params?: PocketConfiguration): Configur
     rejectSelfSignedCertificates,
     useLegacyTxCodec
   )
+}
+
+export async function getPocketInstance(
+  dispatchers: URL[],
+  configuration: Configuration,
+  clientPrivateKey: string,
+  clientPassphrase: string
+): Promise<Pocket> {
+  const pocket = new Pocket(dispatchers, new HttpRpcProvider(dispatchers[0]), configuration)
+
+  // Unlock primary client account for relay signing
+  try {
+    const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase)
+
+    if (importAccount instanceof Account) {
+      await pocket.keybase.unlockAccount(importAccount.addressHex, clientPassphrase, 0)
+    }
+  } catch (e) {
+    logger.log('error', e)
+    throw new HttpErrors.InternalServerError('Unable to import or unlock base client account')
+  }
+
+  return pocket
 }
