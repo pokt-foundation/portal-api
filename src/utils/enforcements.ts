@@ -42,10 +42,14 @@ export function checkWhitelist(tests: string[], check: string, type: string): bo
 }
 
 export function checkSecretKey(application: Applications, secretKeyDetails: SecretKeyDetails): boolean {
+  const appHasSecretKey = application.gatewaySettings.secretKeyRequired && application.gatewaySettings.secretKey
+
+  if (!appHasSecretKey) {
+    return true
+  }
+
   // Check secretKey; is it required? does it pass? -- temp allowance for unencrypted keys
   const decryptor = new Decryptor({ key: secretKeyDetails.databaseEncryptionKey })
-
-  const appHasSecretKey = application.gatewaySettings.secretKeyRequired && application.gatewaySettings.secretKey
 
   const isSecretKeyInvalid = !secretKeyDetails.secretKey || secretKeyDetails.secretKey.length < 32
 
@@ -56,10 +60,7 @@ export function checkSecretKey(application: Applications, secretKeyDetails: Secr
     secretKeyDetails.secretKey.length > 32 &&
     secretKeyDetails.secretKey !== decryptor.decrypt(application.gatewaySettings.secretKey)
 
-  if (appHasSecretKey && (isSecretKeyInvalid || secretKeyDoesntMatchPlainText || secretKeyDoesntMatchEncrypted)) {
-    return false
-  }
-  return true
+  return !(isSecretKeyInvalid || secretKeyDoesntMatchPlainText || secretKeyDoesntMatchEncrypted)
 }
 
 export type SecretKeyDetails = {
