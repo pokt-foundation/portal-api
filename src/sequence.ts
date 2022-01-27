@@ -116,6 +116,7 @@ export class GatewaySequence implements SequenceHandler {
 
       const ownerCtx = context.getOwnerContext('pocketInstance')
 
+      ownerCtx.unbind('pocketInstance')
       ownerCtx.bind('pocketInstance').to(pocket)
 
       logger.log('info', `pocketjs instance updated`, {

@@ -62,6 +62,7 @@ export class MetricsRecorder {
     sticky,
     elapsedTime = 0,
     gigastakeAppID,
+    sessionBlockHeight,
   }: {
     requestID: string
     applicationID: string
@@ -82,6 +83,7 @@ export class MetricsRecorder {
     sticky?: string
     elapsedTime?: number
     gigastakeAppID?: string
+    sessionBlockHeight?: BigInt
   }): Promise<void> {
     try {
       const { sessionNodes } = pocketSession || {}
@@ -124,6 +126,7 @@ export class MetricsRecorder {
           blockchainID,
           sessionHash,
           sticky,
+          sessionBlockHeight,
         })
       } else if (result === 500) {
         logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
