@@ -137,6 +137,7 @@ export class PocketRelayer {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries
     }
+
     applicationID = applicationID ? applicationID : application.id
     applicationPublicKey = applicationPublicKey ? applicationPublicKey : application.gatewayAAT.applicationPublicKey
 
