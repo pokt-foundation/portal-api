@@ -15,6 +15,7 @@ import { Configuration } from '@pokt-network/pocket-js'
 import { getPocketInstance } from './config/pocket-config'
 import { POCKET_JS_INSTANCE_TIMEOUT_KEY, POCKET_JS_TIMEOUT_MAX, POCKET_JS_TIMEOUT_MIN } from './utils/constants'
 import { getRandomInt, shuffle } from './utils/helpers'
+const logger = require('./services/logger')
 
 const SequenceActions = RestBindings.SequenceActions
 
@@ -30,8 +31,9 @@ export class GatewaySequence implements SequenceHandler {
   async handle(context: RequestContext): Promise<void> {
     try {
       const { request, response } = context
+      const requestID = shortID.generate()
 
-      // await this.updatePocketInstance(context)
+      await this.updatePocketInstance(context, requestID)
 
       // Record the host, user-agent, and origin for processing
       const realIP = request.headers['x-forwarded-for'] || request.socket.remoteAddress || 'no-ip-found'
@@ -59,7 +61,7 @@ export class GatewaySequence implements SequenceHandler {
       context.bind('secretKey').to(secretKey)
 
       // Unique ID for log tracing
-      context.bind('requestID').to(shortID.generate())
+      context.bind('requestID').to(requestID)
 
       // Custom routing for blockchain paths:
       // If it finds an extra path on the end of the request, slice off the path
@@ -98,7 +100,7 @@ export class GatewaySequence implements SequenceHandler {
     }
   }
 
-  async updatePocketInstance(context: RequestContext): Promise<void> {
+  async updatePocketInstance(context: RequestContext, requestID: string): Promise<void> {
     const redis: Redis = await context.get('redisInstance')
     const dispatchers: URL[] = shuffle(await context.get('dispatchers'))
     const configuration: Configuration = await context.get('pocketConfiguration')
@@ -108,16 +110,18 @@ export class GatewaySequence implements SequenceHandler {
     if (!(await redis.get(POCKET_JS_INSTANCE_TIMEOUT_KEY))) {
       const pocket = await getPocketInstance(dispatchers, configuration, clientPrivateKey, clientPassphrase)
 
-      await redis.set(
-        POCKET_JS_INSTANCE_TIMEOUT_KEY,
-        'true',
-        'EX',
-        getRandomInt(POCKET_JS_TIMEOUT_MIN, POCKET_JS_TIMEOUT_MAX)
-      )
+      const nextInstanceRefresh = getRandomInt(POCKET_JS_TIMEOUT_MIN, POCKET_JS_TIMEOUT_MAX)
+
+      await redis.set(POCKET_JS_INSTANCE_TIMEOUT_KEY, 'true', 'EX', nextInstanceRefresh)
 
       const ownerCtx = context.getOwnerContext('pocketInstance')
 
       ownerCtx.bind('pocketInstance').to(pocket)
+
+      logger.log('info', `pocketjs instance updated`, {
+        requestID,
+        nextInstanceRefresh,
+      })
     }
   }
 }
