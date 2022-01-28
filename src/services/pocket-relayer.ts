@@ -21,7 +21,7 @@ import {
   checkSecretKey,
   SecretKeyDetails,
 } from '../utils/enforcements'
-import { hashBlockchainNodes } from '../utils/helpers'
+import { getRandomInt, hashBlockchainNodes } from '../utils/helpers'
 import { parseJSONRPCError, parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
 import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
@@ -52,6 +52,7 @@ export class PocketRelayer {
   defaultLogLimitBlocks: number
   pocketSession: Session
   alwaysRedirectToAltruists: boolean
+  dispatchers: URL[]
 
   constructor({
     host,
@@ -74,6 +75,7 @@ export class PocketRelayer {
     aatPlan,
     defaultLogLimitBlocks,
     alwaysRedirectToAltruists = false,
+    dispatchers,
   }: {
     host: string
     origin: string
@@ -95,6 +97,7 @@ export class PocketRelayer {
     aatPlan: string
     defaultLogLimitBlocks: number
     alwaysRedirectToAltruists?: boolean
+    dispatchers?: URL[]
   }) {
     this.host = host
     this.origin = origin
@@ -118,6 +121,7 @@ export class PocketRelayer {
 
     // Create the array of altruist relayers as last resort
     this.altruists = JSON.parse(altruists)
+    this.dispatchers = dispatchers
   }
 
   async sendRelay({
@@ -580,6 +584,22 @@ export class PocketRelayer {
     // Checks pass; create AAT
     const pocketAAT = new PocketAAT(...aatParams)
 
+    const dispatcher = this.dispatchers[getRandomInt(0, this.dispatchers.length)]
+
+    const session = await axios.post(`${dispatcher}v1/client/dispatch`, {
+      app_public_key: application.freeTierApplicationAccount
+        ? //@ts-ignore
+          application.freeTierApplicationAccount?.publicKey
+        : //@ts-ignore
+          application.publicPocketAccount?.publicKey,
+      chain: blockchainID,
+      session_height: 0,
+    })
+
+    if (session.status !== 200) {
+      throw new Error(`Error obtaining a session: ${session.data}`)
+    }
+
     // Pull the session so we can get a list of nodes and cherry pick which one to use
     const pocketSession = await this.pocket.sessionManager.getCurrentSession(
       pocketAAT,
@@ -603,7 +623,25 @@ export class PocketRelayer {
     // Start the relay timer
     const relayStart = process.hrtime()
 
-    let nodes: Node[] = pocketSession.sessionNodes
+    // console.log("\n\n NODES RPC", session.data.session.nodes)
+    // console.log("\n\n NODES SESSION", pocketSession.sessionNodes)
+
+    // Do not try this at home
+    // let nodes: Node[] = pocketSession.sessionNodes
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let nodes: Node[] = (session.data.session.nodes as Node[]).map(
+      ({ address, chains, jailed, public_key, service_url, status, tokens, unstakingTime }: any) =>
+        ({
+          address,
+          publicKey: public_key,
+          jailed,
+          chains,
+          status,
+          stakedTokens: tokens,
+          unstakingCompletionTimestamp: unstakingTime,
+          serviceURL: new URL(service_url),
+        } as unknown as Node)
+    )
 
     // sessionKey = "blockchain and a hash of the all the nodes in this session, sorted by public key"
     const sessionKey = hashBlockchainNodes(blockchainID, nodes)
