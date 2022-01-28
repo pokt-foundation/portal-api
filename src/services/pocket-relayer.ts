@@ -643,6 +643,23 @@ export class PocketRelayer {
         } as unknown as Node)
     )
 
+    logger.log('info', 'dispatcher rpc session call', {
+      dispatcherURL: dispatcher.toString(),
+      requestURL: `${dispatcher}v1/client/dispatch`,
+      requestBody: {
+        app_public_key: application.freeTierApplicationAccount
+          ? //@ts-ignore
+            application.freeTierApplicationAccount?.publicKey
+          : //@ts-ignore
+            application.publicPocketAccount?.publicKey,
+        chain: blockchainID,
+        session_height: 0,
+      },
+      response: session,
+      requestID,
+      blockchainID,
+    })
+
     // sessionKey = "blockchain and a hash of the all the nodes in this session, sorted by public key"
     const sessionKey = hashBlockchainNodes(blockchainID, nodes)
 
