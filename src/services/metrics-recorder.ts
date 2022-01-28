@@ -83,7 +83,7 @@ export class MetricsRecorder {
     sticky?: string
     elapsedTime?: number
     gigastakeAppID?: string
-    sessionBlockHeight?: BigInt
+    sessionBlockHeight?: number | BigInt
   }): Promise<void> {
     try {
       const { sessionNodes } = pocketSession || {}
@@ -110,6 +110,9 @@ export class MetricsRecorder {
         serviceURL = node.serviceURL
         serviceDomain = node.serviceDomain
       }
+
+      // Parse value if coming as BigInt
+      sessionBlockHeight = sessionBlockHeight ? parseInt(sessionBlockHeight.toString()) : sessionBlockHeight
 
       if (result === 200) {
         logger.log('info', 'SUCCESS' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -143,6 +146,7 @@ export class MetricsRecorder {
           blockchainID,
           sessionHash,
           sticky,
+          sessionBlockHeight,
         })
       } else if (result === 503) {
         logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -159,6 +163,7 @@ export class MetricsRecorder {
           blockchainID,
           sessionHash,
           sticky,
+          sessionBlockHeight,
         })
       }
 
