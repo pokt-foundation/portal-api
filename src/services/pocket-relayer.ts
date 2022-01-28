@@ -653,15 +653,6 @@ export class PocketRelayer {
         } as unknown as Node)
     )
 
-    logger.log('info', 'dispatcher rpc session call', {
-      dispatcherURL: dispatcher.toString(),
-      requestURL: sessionHeaderURL,
-      requestBody: sessionHeaderRequestBody,
-      response: sessionHeader.data,
-      requestID,
-      blockchainID,
-    })
-
     // sessionKey = "blockchain and a hash of the all the nodes in this session, sorted by public key"
     const sessionKey = hashBlockchainNodes(blockchainID, nodes)
 
