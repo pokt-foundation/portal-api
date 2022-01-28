@@ -655,7 +655,7 @@ export class PocketRelayer {
         chain: blockchainID,
         session_height: 0,
       },
-      response: session,
+      response: session.data,
       requestID,
       blockchainID,
     })
