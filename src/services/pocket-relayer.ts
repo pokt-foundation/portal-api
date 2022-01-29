@@ -2,7 +2,16 @@ import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
 import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
 import { JSONObject } from '@loopback/context'
-import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
+import {
+  PocketAAT,
+  Session,
+  RelayResponse,
+  Pocket,
+  Configuration,
+  HTTPMethod,
+  Node,
+  SessionHeader,
+} from '@pokt-network/pocket-js'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
 import { Applications } from '../models'
@@ -599,29 +608,18 @@ export class PocketRelayer {
     // Pocketjs session calls are more prone to timeouts when getting the dispatchers,
     // Doing the rpc call directly minimizes the possibily of failing due to timeouts
     const dispatcher = this.dispatchers[getRandomInt(0, this.dispatchers.length)]
-    const sessionHeaderRequestBody = {
+    const dispatchRequestBody = {
       app_public_key: appPublicKey,
       chain: blockchainID,
       session_height: 0,
     }
-    const sessionHeaderURL = `${dispatcher}v1/client/dispatch`
-    const sessionHeader = await axios.post(sessionHeaderURL, sessionHeaderRequestBody)
+    const dispatchURL = `${dispatcher}v1/client/dispatch`
+    const dispatchResponse = await axios.post(dispatchURL, dispatchRequestBody)
 
-    if (sessionHeader.status !== 200) {
-      throw new Error(`Error obtaining a session: ${sessionHeader.data}`)
-    }
+    console.log('Dispatch Data:', dispatchResponse.data)
 
-    // ----- TODO: To be Removed -----
-    // Pull the session so we can get a list of nodes and cherry pick which one to use
-    const pocketSession = await this.pocket.sessionManager.getCurrentSession(
-      pocketAAT,
-      blockchainID,
-      this.updateConfigurationTimeout(this.pocketConfiguration),
-      2
-    )
-
-    if (pocketSession instanceof Error) {
-      logger.log('error', 'ERROR obtaining a session: ' + pocketSession.message, {
+    if (dispatchResponse.status !== 200) {
+      logger.log('error', `ERROR: obtaining a session: ${dispatchResponse.data}`, {
         relayType: 'APP',
         typeID: application.id,
         origin: this.origin,
@@ -629,29 +627,21 @@ export class PocketRelayer {
         requestID,
       })
 
-      return pocketSession
+      throw new Error(`Error obtaining a session: ${dispatchResponse.data}`)
     }
-    // ----- End of remove session -----
+
+    const sessionHeader = new SessionHeader(appPublicKey, blockchainID, BigInt(0))
+
+    const pocketSession = new Session(
+      sessionHeader,
+      dispatchResponse.data.session.key,
+      dispatchResponse.data.session.nodes as Node[]
+    )
 
     // Start the relay timer
     const relayStart = process.hrtime()
 
-    // Converts the rpc response in a way that is compatible with pocketjs for
-    // sending relays through
-    let nodes: Node[] = (sessionHeader.data.session.nodes as Node[]).map(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ({ address, chains, jailed, public_key, service_url, status, tokens, unstakingTime }: any) =>
-        ({
-          address,
-          publicKey: public_key,
-          jailed,
-          chains,
-          status,
-          stakedTokens: tokens,
-          unstakingCompletionTimestamp: unstakingTime,
-          serviceURL: new URL(service_url),
-        } as unknown as Node)
-    )
+    let nodes: Node[] = pocketSession.sessionNodes
 
     // sessionKey = "blockchain and a hash of the all the nodes in this session, sorted by public key"
     const sessionKey = hashBlockchainNodes(blockchainID, nodes)
