@@ -632,16 +632,27 @@ export class PocketRelayer {
 
     const sessionHeader = new SessionHeader(appPublicKey, blockchainID, BigInt(0))
 
-    const pocketSession = new Session(
-      sessionHeader,
-      dispatchResponse.data.session.key,
-      dispatchResponse.data.session.nodes as Node[]
+    // Converts the rpc response in a way that is compatible with pocketjs for
+    // sending relays through
+    let nodes: Node[] = (dispatchResponse.data.session.nodes as Node[]).map(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ({ address, chains, jailed, public_key, service_url, status, tokens, unstakingTime }: any) =>
+        ({
+          address,
+          publicKey: public_key,
+          jailed,
+          chains,
+          status,
+          stakedTokens: tokens,
+          unstakingCompletionTimestamp: unstakingTime,
+          serviceURL: new URL(service_url),
+        } as unknown as Node)
     )
+
+    const pocketSession = new Session(sessionHeader, dispatchResponse.data.session.key, nodes)
 
     // Start the relay timer
     const relayStart = process.hrtime()
-
-    let nodes: Node[] = pocketSession.sessionNodes
 
     // sessionKey = "blockchain and a hash of the all the nodes in this session, sorted by public key"
     const sessionKey = hashBlockchainNodes(blockchainID, nodes)
