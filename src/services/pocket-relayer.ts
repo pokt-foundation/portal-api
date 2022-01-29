@@ -616,8 +616,6 @@ export class PocketRelayer {
     const dispatchURL = `${dispatcher}v1/client/dispatch`
     const dispatchResponse = await axios.post(dispatchURL, dispatchRequestBody)
 
-    console.log('Dispatch Data:', dispatchResponse.data)
-
     if (dispatchResponse.status !== 200) {
       logger.log('error', `ERROR: obtaining a session: ${dispatchResponse.data}`, {
         relayType: 'APP',
