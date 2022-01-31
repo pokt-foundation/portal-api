@@ -40,7 +40,7 @@ export class SyncChecker {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
     syncCheckOptions.allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
 
-    const sessionHash = hashBlockchainNodes(blockchainID, pocketSession.sessionNodes)
+    const sessionHash = await hashBlockchainNodes(blockchainID, pocketSession.sessionNodes, this.redis)
 
     const syncedNodes: Node[] = []
     let syncedNodesList: string[] = []

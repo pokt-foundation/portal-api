@@ -875,8 +875,6 @@ describe('V1 controller (acceptance)', () => {
     const appResponse = await client.get('/v1/abc1234').expect(200)
     const lbResponse = await client.get('/v1/abc1234').expect(200)
 
-    console.log(appResponse.body)
-
     const message = 'GET requests are not supported. Use POST instead'
 
     expect(appResponse.body).to.have.properties('error', 'id', 'jsonrpc')

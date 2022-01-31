@@ -777,7 +777,7 @@ describe('Pocket relayer service (unit)', () => {
         undefined,
         undefined
       )) as Session
-      const sessionKey = `session-${hashBlockchainNodes(blockchainID, sessionNodes)}`
+      const sessionKey = `session-${await hashBlockchainNodes(blockchainID, sessionNodes, redis)}`
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -870,7 +870,7 @@ describe('Pocket relayer service (unit)', () => {
         undefined,
         undefined
       )) as Session
-      const sessionKey = `session-${hashBlockchainNodes(blockchainID, sessionNodes)}`
+      const sessionKey = `session-${await hashBlockchainNodes(blockchainID, sessionNodes, redis)}`
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',

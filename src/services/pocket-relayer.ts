@@ -614,7 +614,7 @@ export class PocketRelayer {
     const relayStart = process.hrtime()
 
     // sessionKey = "blockchain and a hash of the all the nodes in this session, sorted by public key"
-    const sessionKey = hashBlockchainNodes(blockchainID, nodes)
+    const sessionKey = await hashBlockchainNodes(blockchainID, nodes, this.redis)
 
     this.pocketSession = pocketSession
     const sessionCacheKey = `session-${sessionKey}`
