@@ -1,6 +1,6 @@
 # .github/workflows: DO NOT MODIFY HERE BUT RATHER REFER TO THEIR CORRESPONDING
 # TEMPLATE IN THE POCKET-GATEWWAY FOLDER OTHERWISE YOUR CHANGES WILL BE OVERWRITTEN
-name: Canary Deployment us-west-2
+name: Terraform canary Deployment us-west-2
 
 on:
   push:
@@ -58,7 +58,7 @@ jobs:
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
-          envkey_REDIS_ENDPOINT: gateway-canary.js6zbp.ng.0001.usw2.cache.amazonaws.com:6379
+          envkey_REDIS_ENDPOINT: gateway-canary-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REGION: 'us-west-2'
           envkey_REGION_NAME: '/canary/us-west-2'
           file_name: .env
@@ -78,8 +78,8 @@ jobs:
         id: task-def-us-west-2-gateway
         uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
-          task-definition: pocket-gateway/tasks/canary/us-west-2/ecs-task-us-west-2.json
-          container-name: gateway-canary
+          task-definition: pocket-gateway/tasks/canary/ecs-task-definition.json
+          container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
           # Needs to be set at container level to be read by the dd agent
           environment-variables: |
@@ -88,6 +88,7 @@ jobs:
             DD_SERVICE=/canary/us-west-2/ecs/gateway
             DD_VERSION=${{ github.sha }}
             DD_ENV=canary
+            DD_AGENT_HOST=datadog-agent
 
       - name: Fill in the new image ID / us-west-2 - datadog-agent
         id: task-def-us-west-2-datadog-agent
@@ -95,19 +96,18 @@ jobs:
         with:
           task-definition: ${{ steps.task-def-us-west-2-gateway.outputs.task-definition }}
           container-name: datadog-agent
-          image: datadog/agent:latest
+          image: gcr.io/datadoghq/agent:latest
           environment-variables: |
             DD_API_KEY=${{ secrets.DATADOG_API_KEY }}
             DD_SITE=datadoghq.eu
             DD_LOGS_ENABLED=false
-            DD_APM_ENABLED=true
-            DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
-            ECS_FARGATE=true
+            DD_APM_ENABLED=false
+            DD_DOGSTATSD_NON_LOCAL_TRAFFIC=false
 
       - name: Deploy / us-west-2
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def-us-west-2-datadog-agent.outputs.task-definition }}
-          service: gateway-service
+          service: gateway-canary
           cluster: gateway-canary
           wait-for-service-stability: true

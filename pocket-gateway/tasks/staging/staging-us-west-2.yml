@@ -34,7 +34,7 @@ jobs:
           [[#shared_envs]]
           envkey_[[key]]: [[&value]]
           [[/shared_envs]]
-          envkey_REDIS_ENDPOINT: dashboard.js6zbp.ng.0001.usw2.cache.amazonaws.com
+          envkey_REDIS_ENDPOINT: gateway-canary-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REGION: 'us-west-2'
           envkey_REGION_NAME: 'staging'
           file_name: .env
@@ -54,7 +54,7 @@ jobs:
         id: task-def-us-west-2-gateway
         uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
-          task-definition: pocket-gateway/tasks/staging/ecs-task-staging-us-west-2.json
+          task-definition: pocket-gateway/tasks/staging/ecs-task-definition.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
           # Needs to be set at container level to be read by the dd agent
@@ -84,6 +84,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def-us-west-2-datadog-agent.outputs.task-definition }}
-          service: gateway-service
+          service: gateway-staging
           cluster: gateway-staging
           wait-for-service-stability: true

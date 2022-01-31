@@ -2,7 +2,7 @@
 
 echo "Downloading production collections";
 
-for collection in "Applications" "Blockchains" "CronJobData" "LoadBalancers" "Nodes" "PaymentHistory" "PaymentMethods" "PendingTransactions" "Users"; \
+for collection in "Applications" "Blockchains" "CronJobData" "LoadBalancers" "Nodes" "PaymentHistory" "PaymentMethods" "PendingTransactions" "Users" "NetworkData"; \
   do \
     echo "Downloading $collection..."; \
 

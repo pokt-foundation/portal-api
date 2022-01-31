@@ -7,8 +7,8 @@ import { ApplicationsRepository } from '../../src/repositories/applications.repo
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
 import { LoadBalancersRepository } from '../../src/repositories/load-balancers.repository'
 import { gatewayTestDB } from '../fixtures/test.datasource'
-import { MockRelayResponse, PocketMock } from '../mocks/pocketjs'
-import { setupApplication } from './test-helper'
+import { DEFAULT_NODES, MockRelayResponse, PocketMock } from '../mocks/pocketjs'
+import { DUMMY_ENV, setupApplication } from './test-helper'
 
 const logger = require('../../src/services/logger')
 
@@ -244,6 +244,38 @@ describe('V1 controller (acceptance)', () => {
     axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
       service_url: 'https://localhost:443',
     })
+    axiosMock.onPost(`${DUMMY_ENV.DISPATCH_URL}v1/client/dispatch`).reply(200, {
+      block_height: 1,
+      session: {
+        header: {
+          app_public_key: '1234567890',
+          chain: '0001',
+          session_height: 1,
+        },
+        key: '1234567890',
+        nodes: DEFAULT_NODES.map(
+          ({
+            address,
+            chains,
+            jailed,
+            publicKey: public_key,
+            serviceURL: service_url,
+            status,
+            stakedTokens: tokens,
+            unstakingCompletionTimestamp: unstaking_time,
+          }) => ({
+            address,
+            chains,
+            jailed,
+            public_key,
+            service_url,
+            status,
+            tokens: tokens.toString(),
+            unstaking_time,
+          })
+        ),
+      },
+    })
   })
 
   after(async () => {
@@ -278,10 +310,11 @@ describe('V1 controller (acceptance)', () => {
   })
 
   it('invokes GET /v1/{appId} and successfully relays a request', async () => {
-    const pocket = pocketMock.class()
+    const pocket = pocketMock.object()
 
     relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
       '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+    //@ts-ignore
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
@@ -297,7 +330,7 @@ describe('V1 controller (acceptance)', () => {
   })
 
   it('returns 404 when no app is found', async () => {
-    const pocket = pocketMock.class()
+    const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
 
@@ -315,7 +348,7 @@ describe('V1 controller (acceptance)', () => {
   })
 
   it('returns 404 when the specified blockchain is not found', async () => {
-    const pocket = pocketMock.class()
+    const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
 
@@ -337,7 +370,7 @@ describe('V1 controller (acceptance)', () => {
     relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
       '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
 
-    const pocket = pocketMock.class()
+    const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
 
@@ -371,7 +404,7 @@ describe('V1 controller (acceptance)', () => {
 
     await applicationsRepository.create(appWithSecurity)
 
-    const pocket = pocketMock.class()
+    const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
 
@@ -402,7 +435,7 @@ describe('V1 controller (acceptance)', () => {
 
     await applicationsRepository.create(appWithSecurity)
 
-    const pocket = pocketMock.class()
+    const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
 
@@ -437,7 +470,7 @@ describe('V1 controller (acceptance)', () => {
 
     await applicationsRepository.create(appWithSecurity)
 
-    const pocket = pocketMock.class()
+    const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
 
@@ -458,7 +491,7 @@ describe('V1 controller (acceptance)', () => {
 
   it('performs a failed request returning error', async () => {
     pocketMock.fail = true
-    const pocket = pocketMock.class()
+    const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
 
@@ -477,7 +510,7 @@ describe('V1 controller (acceptance)', () => {
     // Failing chain check
     relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
 
-    const pocket = pocketMock.class()
+    const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
 
@@ -493,7 +526,7 @@ describe('V1 controller (acceptance)', () => {
   })
 
   it('succesfully relays a loadbalancer application', async () => {
-    const pocket = pocketMock.class()
+    const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
 
@@ -510,7 +543,7 @@ describe('V1 controller (acceptance)', () => {
   })
 
   it('succesfully relays a loadbalancer application with log limits', async () => {
-    const pocket = pocketMock.class()
+    const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
 
@@ -537,7 +570,7 @@ describe('V1 controller (acceptance)', () => {
   })
 
   it('returns error when no load balancer is found', async () => {
-    const pocket = pocketMock.class()
+    const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
 
@@ -554,7 +587,7 @@ describe('V1 controller (acceptance)', () => {
 
   it('returns error on load balancer relay failure', async () => {
     pocketMock.fail = true
-    const pocket = pocketMock.class()
+    const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
 
@@ -570,7 +603,7 @@ describe('V1 controller (acceptance)', () => {
   })
 
   it('redirects empty path with specific load balancer', async () => {
-    const pocket = pocketMock.class()
+    const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket, {
       REDIRECTS:
@@ -590,7 +623,7 @@ describe('V1 controller (acceptance)', () => {
   })
 
   it("app doesn't initialize when no redirects are set", async () => {
-    const pocket = pocketMock.class()
+    const pocket = pocketMock.object()
 
     await expect(
       setupApplication(pocket, {
@@ -600,7 +633,7 @@ describe('V1 controller (acceptance)', () => {
   })
 
   it('fails on invalid redirect load balancer', async () => {
-    const pocket = pocketMock.class()
+    const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket, {
       REDIRECTS:
@@ -640,7 +673,7 @@ describe('V1 controller (acceptance)', () => {
       mockPocket.relayResponse[relayRequest(i)] = relayResponseData(i)
     }
 
-    const pocketClass = mockPocket.class()
+    const pocketClass = mockPocket.object()
 
     ;({ app, client } = await setupApplication(pocketClass))
 
@@ -694,7 +727,7 @@ describe('V1 controller (acceptance)', () => {
 
     mockPocket.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
 
-    const pocketClass = mockPocket.class()
+    const pocketClass = mockPocket.object()
 
     ;({ app, client } = await setupApplication(pocketClass))
 
@@ -748,7 +781,7 @@ describe('V1 controller (acceptance)', () => {
 
     mockPocket.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
 
-    const pocketClass = mockPocket.class()
+    const pocketClass = mockPocket.object()
 
     ;({ app, client } = await setupApplication(pocketClass))
 
@@ -801,7 +834,7 @@ describe('V1 controller (acceptance)', () => {
 
     mockPocket.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
 
-    const pocketClass = mockPocket.class()
+    const pocketClass = mockPocket.object()
 
     ;({ app, client } = await setupApplication(pocketClass))
 
@@ -854,7 +887,7 @@ describe('V1 controller (acceptance)', () => {
   it('relays a gigastaked lb', async () => {
     const logSpy = sinon.spy(logger, 'log')
 
-    const pocket = pocketMock.class()
+    const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket, {
       REDIRECTS: JSON.stringify([

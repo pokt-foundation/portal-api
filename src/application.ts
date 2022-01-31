@@ -9,13 +9,14 @@ import { ApplicationConfig } from '@loopback/core'
 import { RepositoryMixin } from '@loopback/repository'
 import { RestApplication, HttpErrors } from '@loopback/rest'
 import { ServiceMixin } from '@loopback/service-proxy'
-import { Pocket, Configuration, HttpRpcProvider } from '@pokt-network/pocket-js'
-import { Account } from '@pokt-network/pocket-js/dist/keybase/models/account'
+import { Configuration } from '@pokt-network/pocket-js'
 import { InfluxDB } from '@influxdata/influxdb-client'
 
 import AatPlans from './config/aat-plans.json'
-import { DEFAULT_POCKET_CONFIG } from './config/pocket-config'
+import { DEFAULT_POCKET_CONFIG, getPocketInstance } from './config/pocket-config'
 import { GatewaySequence } from './sequence'
+import { POCKET_JS_INSTANCE_TIMEOUT_KEY, POCKET_JS_TIMEOUT_MAX, POCKET_JS_TIMEOUT_MIN } from './utils/constants'
+import { getRandomInt } from './utils/helpers'
 const logger = require('./services/logger')
 
 require('log-timestamp')
@@ -119,9 +120,11 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       DEFAULT_POCKET_CONFIG.rejectSelfSignedCertificates,
       DEFAULT_POCKET_CONFIG.useLegacyTxCodec
     )
-    const rpcProvider = new HttpRpcProvider(dispatchers[0])
-    const pocket = new Pocket(dispatchers, rpcProvider, configuration)
+    const pocket = await getPocketInstance(dispatchers, configuration, clientPrivateKey, clientPassphrase)
 
+    this.bind('clientPrivateKey').to(clientPrivateKey)
+    this.bind('clientPassphrase').to(clientPassphrase)
+    this.bind('dispatchers').to(dispatchers)
     this.bind('pocketInstance').to(pocket)
     this.bind('pocketConfiguration').to(configuration)
     this.bind('relayRetries').to(parseInt(relayRetries))
@@ -131,18 +134,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('defaultLogLimitBlocks').to(defaultLogLimitBlocks)
     this.bind('redirects').to(redirects)
     this.bind('alwaysRedirectToAltruists').to(alwaysRedirectToAltruists)
-
-    // Unlock primary client account for relay signing
-    try {
-      const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase)
-
-      if (importAccount instanceof Account) {
-        await pocket.keybase.unlockAccount(importAccount.addressHex, clientPassphrase, 0)
-      }
-    } catch (e) {
-      logger.log('error', e)
-      throw new HttpErrors.InternalServerError('Unable to import or unlock base client account')
-    }
 
     // Load Redis for cache
     const redisEndpoint: string = REDIS_ENDPOINT || ''
@@ -166,6 +157,14 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
           })
 
     this.bind('redisInstance').to(redis)
+
+    // Avoid updating the pocketjs instance right away on boot
+    await redis.set(
+      POCKET_JS_INSTANCE_TIMEOUT_KEY,
+      'true',
+      'EX',
+      getRandomInt(POCKET_JS_TIMEOUT_MIN, POCKET_JS_TIMEOUT_MAX)
+    )
 
     // New metrics postgres for error recording
     const psqlConnection: string = PSQL_CONNECTION || ''

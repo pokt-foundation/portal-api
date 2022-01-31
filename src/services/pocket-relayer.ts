@@ -28,6 +28,7 @@ import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../u
 import { CheckResult, SendRelayOptions } from '../utils/types'
 import { enforceEVMLimits } from './limiter'
 import { NodeSticker } from './node-sticker'
+import { PocketRPC } from './pocket-rpc'
 const logger = require('../services/logger')
 
 export class PocketRelayer {
@@ -52,6 +53,7 @@ export class PocketRelayer {
   defaultLogLimitBlocks: number
   pocketSession: Session
   alwaysRedirectToAltruists: boolean
+  dispatchers: URL[]
 
   constructor({
     host,
@@ -74,6 +76,7 @@ export class PocketRelayer {
     aatPlan,
     defaultLogLimitBlocks,
     alwaysRedirectToAltruists = false,
+    dispatchers,
   }: {
     host: string
     origin: string
@@ -95,6 +98,7 @@ export class PocketRelayer {
     aatPlan: string
     defaultLogLimitBlocks: number
     alwaysRedirectToAltruists?: boolean
+    dispatchers?: URL[]
   }) {
     this.host = host
     this.origin = origin
@@ -118,6 +122,7 @@ export class PocketRelayer {
 
     // Create the array of altruist relayers as last resort
     this.altruists = JSON.parse(altruists)
+    this.dispatchers = dispatchers
   }
 
   async sendRelay({
@@ -137,8 +142,18 @@ export class PocketRelayer {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries
     }
+
+    // Actual application's public key
+    const appPublicKey = application.freeTierApplicationAccount
+      ? //@ts-ignore
+        application.freeTierApplicationAccount?.publicKey
+      : //@ts-ignore
+        application.publicPocketAccount?.publicKey
+
+    // ID/Public key of dummy application in case is coming from a gigastake load balancer,
+    // used only for metrics.
+    applicationPublicKey = applicationPublicKey ? applicationPublicKey : appPublicKey
     applicationID = applicationID ? applicationID : application.id
-    applicationPublicKey = applicationPublicKey ? applicationPublicKey : application.gatewayAAT.applicationPublicKey
 
     // This converts the raw data into formatted JSON then back to a string for relaying.
     // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
@@ -243,6 +258,7 @@ export class PocketRelayer {
             blockchainIDCheck,
             blockchainChainID,
             nodeSticker,
+            appPublicKey,
             blockchainSyncBackup: String(this.altruists[blockchainID]),
           })
 
@@ -290,6 +306,7 @@ export class PocketRelayer {
                 pocketSession: this.pocketSession,
                 sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relayResponse.proof.servicerPubKey),
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
+                sessionBlockHeight: this.pocketSession?.sessionHeader?.sessionBlockHeight,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -353,6 +370,7 @@ export class PocketRelayer {
                 pocketSession: this.pocketSession,
                 sticky,
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
+                sessionBlockHeight: this.pocketSession?.sessionHeader?.sessionBlockHeight,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -372,12 +390,14 @@ export class PocketRelayer {
       }
 
       // Any other error (e.g parsing errors) that should not be propagated as response
-      logger.log('error', 'INTERNAL ERROR: ' + e, {
+      logger.log('error', 'POCKET RELAYER ERROR: ' + e, {
         requestID,
         relayType: 'APP',
         typeID: application.id,
         error: e,
         serviceNode: '',
+        origin: this.origin,
+        trace: e.stack,
       })
     }
 
@@ -451,6 +471,7 @@ export class PocketRelayer {
               data,
               pocketSession: this.pocketSession,
               gigastakeAppID: applicationID !== application.id ? application.id : undefined,
+              sessionBlockHeight: this.pocketSession?.sessionHeader?.sessionBlockHeight,
             })
             .catch(function log(e) {
               logger.log('error', 'Error recording metrics: ' + e, {
@@ -513,6 +534,7 @@ export class PocketRelayer {
     blockchainID,
     blockchainChainID,
     nodeSticker,
+    appPublicKey,
   }: {
     data: string
     relayPath: string
@@ -529,6 +551,7 @@ export class PocketRelayer {
     blockchainID: string
     blockchainChainID: string
     nodeSticker: NodeSticker
+    appPublicKey: string
   }): Promise<RelayResponse | Error> {
     const secretKeyDetails: SecretKeyDetails = {
       secretKey: this.secretKey,
@@ -574,30 +597,21 @@ export class PocketRelayer {
     // Checks pass; create AAT
     const pocketAAT = new PocketAAT(...aatParams)
 
-    // Pull the session so we can get a list of nodes and cherry pick which one to use
-    const pocketSession = await this.pocket.sessionManager.getCurrentSession(
-      pocketAAT,
+    const pocketRPC = new PocketRPC(this.dispatchers)
+
+    const pocketSession = await pocketRPC.dispatchNewSession({
+      appPublicKey,
       blockchainID,
-      this.updateConfigurationTimeout(this.pocketConfiguration),
-      2
-    )
+      sessionHeight: 0,
+      applicationID: application.id,
+      origin: this.origin,
+      requestID,
+    })
 
-    if (pocketSession instanceof Error) {
-      logger.log('error', 'ERROR obtaining a session: ' + pocketSession.message, {
-        relayType: 'APP',
-        typeID: application.id,
-        origin: this.origin,
-        blockchainID,
-        requestID,
-      })
-
-      return pocketSession
-    }
+    let nodes: Node[] = pocketSession.sessionNodes
 
     // Start the relay timer
     const relayStart = process.hrtime()
-
-    let nodes: Node[] = pocketSession.sessionNodes
 
     // sessionKey = "blockchain and a hash of the all the nodes in this session, sorted by public key"
     const sessionKey = await hashBlockchainNodes(blockchainID, nodes, this.redis)

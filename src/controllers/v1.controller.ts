@@ -66,6 +66,7 @@ export class V1Controller {
     @inject('influxWriteAPI') private influxWriteAPI: WriteApi,
     @inject('archivalChains') private archivalChains: string[],
     @inject('alwaysRedirectToAltruists') private alwaysRedirectToAltruists: boolean,
+    @inject('dispatchers') private dispatchers: URL[],
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -108,6 +109,7 @@ export class V1Controller {
       aatPlan: this.aatPlan,
       defaultLogLimitBlocks: this.defaultLogLimitBlocks,
       alwaysRedirectToAltruists: this.alwaysRedirectToAltruists,
+      dispatchers,
     })
   }
 
@@ -193,10 +195,12 @@ export class V1Controller {
 
       const gigastakeOptions: {
         gigastaked: boolean
-        lbApplication: Applications | undefined
+        originalAppID: string | undefined
+        originalAppPK: string | undefined
       } = {
         gigastaked: loadBalancer.gigastakeRedirect || false,
-        lbApplication: undefined,
+        originalAppID: undefined,
+        originalAppPK: undefined,
       }
 
       // Is this LB marked for gigastakeRedirect?
@@ -213,13 +217,20 @@ export class V1Controller {
             throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('GS load balancer not found', -32054))
           }
 
-          gigastakeOptions.lbApplication = await this.fetchLoadBalancerApplication(
+          const originalApp = await this.fetchLoadBalancerApplication(
             originalLoadBalancer.id,
             originalLoadBalancer.applicationIDs,
             undefined,
             filter,
             reqRPCID
           )
+
+          gigastakeOptions.originalAppID = originalApp.id
+          gigastakeOptions.originalAppPK = originalApp.freeTierApplicationAccount
+            ? //@ts-ignore
+              originalApp.freeTierApplicationAccount?.publicKey
+            : //@ts-ignore
+              originalApp.publicPocketAccount?.publicKey
         }
       }
 
@@ -268,8 +279,8 @@ export class V1Controller {
           stickyOrigins,
           rpcIDThreshold,
         },
-        applicationID: gigastakeOptions.lbApplication?.id,
-        applicationPublicKey: gigastakeOptions.lbApplication?.gatewayAAT?.applicationPublicKey,
+        applicationID: gigastakeOptions.originalAppID,
+        applicationPublicKey: gigastakeOptions.originalAppPK,
       }
 
       if (loadBalancer.logLimitBlocks) {
