@@ -310,7 +310,7 @@ describe('Cherry picker service (unit)', () => {
         pocketSession
       )
 
-      let removedNodes = await redis.smembers(`session-${hashBlockchainNodes(blockchain, sessionNodes)}`)
+      let removedNodes = await redis.smembers(`session-${await hashBlockchainNodes(blockchain, sessionNodes, redis)}`)
 
       expect(removedNodes).to.have.length(0)
 
@@ -325,7 +325,7 @@ describe('Cherry picker service (unit)', () => {
         )
       }
 
-      removedNodes = await redis.smembers(`session-${hashBlockchainNodes(blockchain, sessionNodes)}`)
+      removedNodes = await redis.smembers(`session-${await hashBlockchainNodes(blockchain, sessionNodes, redis)}`)
 
       expect(removedNodes).to.have.length(1)
     })
