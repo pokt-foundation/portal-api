@@ -270,7 +270,7 @@ describe('Pocket relayer service (unit)', () => {
   it('loads all blockchains from db, caches them and returns config of requested blockchain', async () => {
     const dbBlockchains = await blockchainRepository.createAll(BLOCKCHAINS)
 
-    expect(dbBlockchains).to.be.length(3)
+    expect(dbBlockchains).to.have.length(3)
 
     const repositorySpy = sinon.spy(blockchainRepository, 'find')
     const redisGetSpy = sinon.spy(redis, 'get')
