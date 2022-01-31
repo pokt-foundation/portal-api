@@ -1,17 +1,15 @@
 import { Redis } from 'ioredis'
 import { Node } from '@pokt-network/pocket-js'
-const crypto = require('crypto')
 
 // hashes a blockchain and all of the nodes given, sorted by public key
 export async function hashBlockchainNodes(blockchainID: string, nodes: Node[] = [], redis: Redis): Promise<string> {
-  const sortedNodes = JSON.stringify(
-    nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0)),
-    (k, v) => (k !== 'publicKey' ? v : undefined)
-  )
+  const sortedNodes = nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0))
 
-  const calculateHash = () => crypto.createHash('sha256').update(sortedNodes).digest('hex')
+  const sortedNodesStr = JSON.stringify(sortedNodes, (k, v) => (k !== 'publicKey' ? v : undefined))
 
-  const blockchainHashKey = `${blockchainID}-${sortedNodes}`
+  const calculateHash = () => sortedNodes.map((node) => node.publicKey.slice(0, 5)).join('')
+
+  const blockchainHashKey = `${blockchainID}-${sortedNodesStr}`
   let blockchainHash = await redis.get(blockchainHashKey)
 
   if (!blockchainHash) {
