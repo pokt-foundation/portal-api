@@ -164,7 +164,6 @@ describe('Pocket relayer service (unit)', () => {
     blockchainRepository = new BlockchainsRepository(gatewayTestDB)
 
     pocketConfiguration = getPocketConfigOrDefault()
-
     pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
 
     const pocket = pocketMock.object()
