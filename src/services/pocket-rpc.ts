@@ -38,11 +38,15 @@ export class PocketRPC {
       dispatcher = this.pickRandomDispatcher()
       const dispatchURL = `${dispatcher}v1/client/dispatch`
 
-      dispatchResponse = await axios.post(dispatchURL, {
-        app_public_key: appPublicKey,
-        chain: blockchainID,
-        session_height: sessionHeight,
-      } as DispatchNewSessionRequest)
+      dispatchResponse = await axios.post(
+        dispatchURL,
+        {
+          app_public_key: appPublicKey,
+          chain: blockchainID,
+          session_height: sessionHeight,
+        } as DispatchNewSessionRequest,
+        { timeout: 2000 }
+      )
 
       if (dispatchResponse.status !== 200) {
         logger.log('error', `ERROR: obtaining a session: ${dispatchResponse.data}`, {
