@@ -1,4 +1,4 @@
-import { HTTPMethod, Node } from '@pokt-network/pocket-js'
+import { HTTPMethod, Node, StakingStatus } from '@pokt-network/pocket-js'
 import { Applications } from '../models'
 import { SyncCheckOptions } from '../services/sync-checker'
 
@@ -41,4 +41,21 @@ export type StickinessOptions = {
 export type CheckResult = {
   nodes: Node[]
   cached: boolean
+}
+
+export type NodeAxiosResponse = {
+  address: string
+  chains: string[]
+  jailed: boolean
+  public_key: string
+  service_url: string
+  status: StakingStatus
+  tokens: string
+  unstakingTime: string
+}
+
+export type DispatchNewSessionRequest = {
+  app_public_key: string
+  chain: string
+  session_height: number
 }

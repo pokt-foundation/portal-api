@@ -2,16 +2,7 @@ import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
 import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
 import { JSONObject } from '@loopback/context'
-import {
-  PocketAAT,
-  Session,
-  RelayResponse,
-  Pocket,
-  Configuration,
-  HTTPMethod,
-  Node,
-  SessionHeader,
-} from '@pokt-network/pocket-js'
+import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
 import { Applications } from '../models'
@@ -30,13 +21,14 @@ import {
   checkSecretKey,
   SecretKeyDetails,
 } from '../utils/enforcements'
-import { getRandomInt, hashBlockchainNodes } from '../utils/helpers'
+import { hashBlockchainNodes } from '../utils/helpers'
 import { parseJSONRPCError, parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
 import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
 import { CheckResult, SendRelayOptions } from '../utils/types'
 import { enforceEVMLimits } from './limiter'
 import { NodeSticker } from './node-sticker'
+import { PocketRPC } from './pocket-rpc'
 const logger = require('../services/logger')
 
 export class PocketRelayer {
@@ -605,49 +597,18 @@ export class PocketRelayer {
     // Checks pass; create AAT
     const pocketAAT = new PocketAAT(...aatParams)
 
-    // Pocketjs session calls are more prone to timeouts when getting the dispatchers,
-    // Doing the rpc call directly minimizes the possibily of failing due to timeouts
-    const dispatcher = this.dispatchers[getRandomInt(0, this.dispatchers.length)]
-    const dispatchRequestBody = {
-      app_public_key: appPublicKey,
-      chain: blockchainID,
-      session_height: 0,
-    }
-    const dispatchURL = `${dispatcher}v1/client/dispatch`
-    const dispatchResponse = await axios.post(dispatchURL, dispatchRequestBody)
+    const pocketRPC = new PocketRPC(this.dispatchers)
 
-    if (dispatchResponse.status !== 200) {
-      logger.log('error', `ERROR: obtaining a session: ${dispatchResponse.data}`, {
-        relayType: 'APP',
-        typeID: application.id,
-        origin: this.origin,
-        blockchainID,
-        requestID,
-      })
+    const pocketSession = await pocketRPC.dispatchNewSession({
+      appPublicKey,
+      blockchainID,
+      sessionHeight: 0,
+      applicationID: application.id,
+      origin: this.origin,
+      requestID,
+    })
 
-      throw new Error(`Error obtaining a session: ${dispatchResponse.data}`)
-    }
-
-    const sessionHeader = new SessionHeader(appPublicKey, blockchainID, BigInt(0))
-
-    // Converts the rpc response in a way that is compatible with pocketjs for
-    // sending relays through
-    let nodes: Node[] = (dispatchResponse.data.session.nodes as Node[]).map(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ({ address, chains, jailed, public_key, service_url, status, tokens, unstakingTime }: any) =>
-        ({
-          address,
-          publicKey: public_key,
-          jailed,
-          chains,
-          status,
-          stakedTokens: tokens,
-          unstakingCompletionTimestamp: unstakingTime,
-          serviceURL: new URL(service_url),
-        } as unknown as Node)
-    )
-
-    const pocketSession = new Session(sessionHeader, dispatchResponse.data.session.key, nodes)
+    let nodes: Node[] = pocketSession.sessionNodes
 
     // Start the relay timer
     const relayStart = process.hrtime()
