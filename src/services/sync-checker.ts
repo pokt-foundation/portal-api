@@ -406,6 +406,22 @@ export class SyncChecker {
       rawNodeSyncLogs[5],
       rawNodeSyncLogs[6],
       rawNodeSyncLogs[7],
+      rawNodeSyncLogs[8],
+      rawNodeSyncLogs[9],
+      rawNodeSyncLogs[10],
+      rawNodeSyncLogs[11],
+      rawNodeSyncLogs[12],
+      rawNodeSyncLogs[13],
+      rawNodeSyncLogs[14],
+      rawNodeSyncLogs[15],
+      rawNodeSyncLogs[16],
+      rawNodeSyncLogs[17],
+      rawNodeSyncLogs[18],
+      rawNodeSyncLogs[19],
+      rawNodeSyncLogs[20],
+      rawNodeSyncLogs[21],
+      rawNodeSyncLogs[22],
+      rawNodeSyncLogs[23],
     ] = await Promise.all(promiseStack)
 
     for (const rawNodeSyncLog of rawNodeSyncLogs) {

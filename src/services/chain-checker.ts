@@ -232,7 +232,22 @@ export class ChainChecker {
       rawNodeChainLogs[4],
       rawNodeChainLogs[5],
       rawNodeChainLogs[6],
-      rawNodeChainLogs[7],
+      rawNodeChainLogs[8],
+      rawNodeChainLogs[9],
+      rawNodeChainLogs[10],
+      rawNodeChainLogs[11],
+      rawNodeChainLogs[12],
+      rawNodeChainLogs[13],
+      rawNodeChainLogs[14],
+      rawNodeChainLogs[15],
+      rawNodeChainLogs[16],
+      rawNodeChainLogs[17],
+      rawNodeChainLogs[18],
+      rawNodeChainLogs[19],
+      rawNodeChainLogs[20],
+      rawNodeChainLogs[21],
+      rawNodeChainLogs[22],
+      rawNodeChainLogs[23],
     ] = await Promise.all(promiseStack)
 
     for (const rawNodeChainLog of rawNodeChainLogs) {
