@@ -7,8 +7,8 @@ import { ApplicationsRepository } from '../../src/repositories/applications.repo
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
 import { LoadBalancersRepository } from '../../src/repositories/load-balancers.repository'
 import { gatewayTestDB } from '../fixtures/test.datasource'
-import { MockRelayResponse, PocketMock } from '../mocks/pocketjs'
-import { setupApplication } from './test-helper'
+import { DEFAULT_NODES, MockRelayResponse, PocketMock } from '../mocks/pocketjs'
+import { DUMMY_ENV, setupApplication } from './test-helper'
 
 const logger = require('../../src/services/logger')
 
@@ -243,6 +243,38 @@ describe('V1 controller (acceptance)', () => {
     axiosMock = new MockAdapter(axios)
     axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
       service_url: 'https://localhost:443',
+    })
+    axiosMock.onPost(`${DUMMY_ENV.DISPATCH_URL}v1/client/dispatch`).reply(200, {
+      block_height: 1,
+      session: {
+        header: {
+          app_public_key: '1234567890',
+          chain: '0001',
+          session_height: 1,
+        },
+        key: '1234567890',
+        nodes: DEFAULT_NODES.map(
+          ({
+            address,
+            chains,
+            jailed,
+            publicKey: public_key,
+            serviceURL: service_url,
+            status,
+            stakedTokens: tokens,
+            unstakingCompletionTimestamp: unstaking_time,
+          }) => ({
+            address,
+            chains,
+            jailed,
+            public_key,
+            service_url,
+            status,
+            tokens: tokens.toString(),
+            unstaking_time,
+          })
+        ),
+      },
     })
   })
 
@@ -842,8 +874,6 @@ describe('V1 controller (acceptance)', () => {
 
     const appResponse = await client.get('/v1/abc1234').expect(200)
     const lbResponse = await client.get('/v1/abc1234').expect(200)
-
-    console.log(appResponse.body)
 
     const message = 'GET requests are not supported. Use POST instead'
 

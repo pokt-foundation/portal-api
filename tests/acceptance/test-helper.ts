@@ -7,7 +7,7 @@ import { PocketGatewayApplication } from '../../src/application'
 import { DEFAULT_POCKET_CONFIG } from '../../src/config/pocket-config'
 import { gatewayTestDB } from '../fixtures/test.datasource'
 
-const DUMMY_ENV = {
+export const DUMMY_ENV = {
   NODE_ENV: 'development',
   GATEWAY_CLIENT_PRIVATE_KEY: 'v3rys3cr3tk3yud0nt3venkn0w',
   GATEWAY_CLIENT_PASSPHRASE: 'v3rys3cr3tp4ssphr4ze',
@@ -20,8 +20,7 @@ const DUMMY_ENV = {
   INFLUX_URL: 'http://influxdb:8086',
   INFLUX_TOKEN: 'abcde',
   INFLUX_ORG: 'myorg',
-  DISPATCH_URL:
-    'https://node1.mainnet.pokt.network,https://node2.mainnet.pokt.network,https://node3.mainnet.pokt.network,https://node4.mainnet.pokt.network,https://node5.mainnet.pokt.network,https://node6.mainnet.pokt.network,https://node7.mainnet.pokt.network,https://node8.mainnet.pokt.network,https://node9.mainnet.pokt.network,https://node10.mainnet.pokt.network,https://node11.mainnet.pokt.network,https://node12.mainnet.pokt.network,https://node13.mainnet.pokt.network,https://node14.mainnet.pokt.network,https://node15.mainnet.pokt.network,https://node16.mainnet.pokt.network,https://node17.mainnet.pokt.network,https://node18.mainnet.pokt.network,https://node19.mainnet.pokt.network,https://node20.mainnet.pokt.network',
+  DISPATCH_URL: 'https://node1.dispatcher.pokt.network/',
   ALTRUISTS: `{
     "0001": "https://user:pass@backups.example.org:18081",
     "0003": "https://user:pass@backups.example.org:19650",
