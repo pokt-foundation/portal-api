@@ -10,8 +10,9 @@ export class PocketRPC {
   dispatchers: URL[]
   redis: Redis
 
-  constructor(dispatchers: string) {
+  constructor(dispatchers: string, redis: Redis) {
     this.dispatchers = dispatchers.split(',').map((distpatcher) => new URL(distpatcher))
+    this.redis = redis
   }
 
   async dispatchNewSession({
