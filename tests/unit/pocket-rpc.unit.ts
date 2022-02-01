@@ -1,12 +1,10 @@
 import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
-import { sinon, expect } from '@loopback/testlab'
+import { expect } from '@loopback/testlab'
 import { Session } from '@pokt-network/pocket-js'
 import { PocketRPC } from '../../src/services/pocket-rpc'
 import { DUMMY_ENV } from '../acceptance/test-helper'
 import { DEFAULT_NODES } from '../mocks/pocketjs'
-
-const DISPATCHERS = DUMMY_ENV.DISPATCH_URL.split(',').map((dispatcher) => new URL(dispatcher))
 
 describe('Pocket RPC (unit)', () => {
   let axiosMock: MockAdapter
@@ -52,7 +50,7 @@ describe('Pocket RPC (unit)', () => {
   })
 
   it('successfully request a new session', async () => {
-    const pocketRPC = new PocketRPC(DISPATCHERS)
+    const pocketRPC = new PocketRPC(DUMMY_ENV.DISPATCH_URL)
 
     const session = await pocketRPC.dispatchNewSession({ appPublicKey: '000', blockchainID: '0021' })
 
