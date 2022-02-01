@@ -54,13 +54,6 @@ export class PocketRPC {
       dispatcher = this.pickRandomDispatcher()
       const dispatchURL = `${dispatcher}v1/client/dispatch`
 
-      logger.log('info', 'Dispatcher information', {
-        dispatcherList: this.dispatchers.map((dist) => dist.toString()),
-        dispatchURL: dispatchURL,
-        requestID,
-        applicationID,
-      })
-
       try {
         dispatchResponse = await axios.post(
           dispatchURL,
