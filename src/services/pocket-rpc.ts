@@ -65,7 +65,7 @@ export class PocketRPC {
           { timeout: 2000 }
         )
       } catch (e) {
-        logger.log('error', `ERROR obtaining a session`, {
+        logger.log('error', `ERROR obtaining a session at ${attempts + 1} attempt.`, {
           relayType: 'APP',
           typeID: applicationID,
           origin,
@@ -77,7 +77,7 @@ export class PocketRPC {
       }
 
       if (dispatchResponse.status !== 200) {
-        logger.log('error', `Got a non 200 response on dispatcher request: ${dispatchResponse.statusText}`, {
+        logger.log('error', `Got a non 200 response on dispatcher request: ${dispatchResponse.status}`, {
           relayType: 'APP',
           typeID: applicationID,
           origin,
