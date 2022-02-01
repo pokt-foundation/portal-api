@@ -11,11 +11,6 @@ import {
   Send,
   SequenceHandler,
 } from '@loopback/rest'
-import { Configuration } from '@pokt-network/pocket-js'
-import { getPocketInstance } from './config/pocket-config'
-import { POCKET_JS_INSTANCE_TIMEOUT_KEY, POCKET_JS_TIMEOUT_MAX, POCKET_JS_TIMEOUT_MIN } from './utils/constants'
-import { getRandomInt, shuffle } from './utils/helpers'
-const logger = require('./services/logger')
 
 const SequenceActions = RestBindings.SequenceActions
 
@@ -32,8 +27,6 @@ export class GatewaySequence implements SequenceHandler {
     try {
       const { request, response } = context
       const requestID = shortID.generate()
-
-      await this.updatePocketInstance(context, requestID)
 
       // Record the host, user-agent, and origin for processing
       const realIP = request.headers['x-forwarded-for'] || request.socket.remoteAddress || 'no-ip-found'
@@ -97,37 +90,6 @@ export class GatewaySequence implements SequenceHandler {
       }
     } catch (err) {
       this.reject(context, err)
-    }
-  }
-
-  async updatePocketInstance(context: RequestContext, requestID: string): Promise<void> {
-    const redis: Redis = await context.get('redisInstance')
-    const dispatchers: string = await context.get('dispatchURL')
-    const configuration: Configuration = await context.get('pocketConfiguration')
-    const clientPrivateKey: string = await context.get('clientPrivateKey')
-    const clientPassphrase: string = await context.get('clientPassphrase')
-
-    if (!(await redis.get(POCKET_JS_INSTANCE_TIMEOUT_KEY))) {
-      const pocket = await getPocketInstance(
-        shuffle(dispatchers.split(',').map((dist) => new URL(dist))),
-        configuration,
-        clientPrivateKey,
-        clientPassphrase
-      )
-
-      const nextInstanceRefresh = getRandomInt(POCKET_JS_TIMEOUT_MIN, POCKET_JS_TIMEOUT_MAX)
-
-      await redis.set(POCKET_JS_INSTANCE_TIMEOUT_KEY, 'true', 'EX', nextInstanceRefresh)
-
-      const ownerCtx = context.getOwnerContext('pocketInstance')
-
-      ownerCtx.unbind('pocketInstance')
-      ownerCtx.bind('pocketInstance').to(pocket)
-
-      logger.log('info', `pocketjs instance updated`, {
-        requestID,
-        nextInstanceRefresh,
-      })
     }
   }
 }
