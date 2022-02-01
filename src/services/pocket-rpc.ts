@@ -10,11 +10,6 @@ export class PocketRPC {
 
   constructor(dispatchers: string) {
     this.dispatchers = dispatchers.split(',').map((distpatcher) => new URL(distpatcher))
-
-    console.log(
-      'DISPATCHERS: ',
-      this.dispatchers.map((d) => d.toString())
-    )
   }
 
   async dispatchNewSession({
