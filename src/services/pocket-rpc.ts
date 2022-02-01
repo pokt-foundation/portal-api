@@ -8,10 +8,13 @@ const logger = require('../services/logger')
 export class PocketRPC {
   dispatchers: URL[]
 
-  constructor(dispatchers: URL[]) {
-    this.dispatchers = dispatchers
+  constructor(dispatchers: string) {
+    this.dispatchers = dispatchers.split(',').map((distpatcher) => new URL(distpatcher))
 
-    console.log('DISPARCHERS _____----:', this.dispatchers)
+    console.log(
+      'DISPATCHERS: ',
+      this.dispatchers.map((d) => d.toString())
+    )
   }
 
   async dispatchNewSession({

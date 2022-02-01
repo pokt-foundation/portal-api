@@ -124,7 +124,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     this.bind('clientPrivateKey').to(clientPrivateKey)
     this.bind('clientPassphrase').to(clientPassphrase)
-    this.bind('dispatchers').to(dispatchers)
+    this.bind('dispatchURL').to(dispatchURL)
     this.bind('pocketInstance').to(pocket)
     this.bind('pocketConfiguration').to(configuration)
     this.bind('relayRetries').to(parseInt(relayRetries))
