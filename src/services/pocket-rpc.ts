@@ -1,4 +1,5 @@
 import axios, { AxiosResponse } from 'axios'
+import { Redis } from 'ioredis'
 import { Node, Session, SessionHeader } from '@pokt-network/pocket-js'
 import { getRandomInt } from '../utils/helpers'
 import { DispatchNewSessionRequest, NodeAxiosResponse } from '../utils/types'
@@ -7,9 +8,11 @@ const logger = require('../services/logger')
 
 export class PocketRPC {
   dispatchers: URL[]
+  redis: Redis
 
-  constructor(dispatchers: URL[]) {
+  constructor(dispatchers: URL[], redis: Redis) {
     this.dispatchers = dispatchers
+    this.redis = redis
   }
 
   async dispatchNewSession({
@@ -31,6 +34,19 @@ export class PocketRPC {
   }): Promise<Session> {
     let dispatcher: URL
     let dispatchResponse: AxiosResponse
+
+    const sessionHeader = new SessionHeader(appPublicKey, blockchainID, BigInt(0))
+    const cacheSessionKey = `rpc-session-key-${appPublicKey}-${blockchainID}`
+
+    const cachedSession = await this.redis.get(cacheSessionKey)
+
+    if (cachedSession) {
+      const { sessionKey, sessionNodes } = JSON.parse(cachedSession)
+
+      const nodes: Node[] = (sessionNodes as NodeAxiosResponse[]).map(PocketRPC.formatNode)
+
+      return new Session(sessionHeader, sessionKey, nodes)
+    }
 
     for (let attempts = 0; attempts < retries; attempts++) {
       // Pocketjs session calls are more prone to timeouts when getting the dispatchers,
@@ -71,13 +87,22 @@ export class PocketRPC {
         continue
       }
 
-      const sessionHeader = new SessionHeader(appPublicKey, blockchainID, BigInt(0))
+      const sessionKey = dispatchResponse.data.session.key
+      const sessionNodes = dispatchResponse.data.session.nodes
+
+      await this.redis.set(
+        cacheSessionKey,
+        JSON.stringify({
+          sessionKey,
+          sessionNodes,
+        })
+      )
 
       // Converts the rpc response in a way that is compatible with pocketjs for
       // sending relays through
-      const nodes: Node[] = (dispatchResponse.data.session.nodes as NodeAxiosResponse[]).map(PocketRPC.formatNode)
+      const nodes: Node[] = (sessionNodes as NodeAxiosResponse[]).map(PocketRPC.formatNode)
 
-      return new Session(sessionHeader, dispatchResponse.data.session.key, nodes)
+      return new Session(sessionHeader, sessionKey, nodes)
     }
 
     throw new Error(`Error obtaining a session: ${dispatchResponse.data}`)
