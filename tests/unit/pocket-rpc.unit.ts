@@ -47,10 +47,6 @@ describe('Pocket RPC (unit)', () => {
     })
   })
 
-  afterEach(async () => {
-    sinon.restore()
-  })
-
   after(async () => {
     axiosMock.restore()
   })

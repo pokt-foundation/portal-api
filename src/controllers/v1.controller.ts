@@ -109,7 +109,7 @@ export class V1Controller {
       aatPlan: this.aatPlan,
       defaultLogLimitBlocks: this.defaultLogLimitBlocks,
       alwaysRedirectToAltruists: this.alwaysRedirectToAltruists,
-      dispatchers,
+      dispatchers: this.dispatchers,
     })
   }
 
