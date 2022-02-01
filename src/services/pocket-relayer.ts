@@ -53,7 +53,7 @@ export class PocketRelayer {
   defaultLogLimitBlocks: number
   pocketSession: Session
   alwaysRedirectToAltruists: boolean
-  dispatchers: URL[]
+  dispatchers: string
 
   constructor({
     host,
@@ -98,7 +98,7 @@ export class PocketRelayer {
     aatPlan: string
     defaultLogLimitBlocks: number
     alwaysRedirectToAltruists?: boolean
-    dispatchers?: URL[]
+    dispatchers?: string
   }) {
     this.host = host
     this.origin = origin
@@ -119,10 +119,10 @@ export class PocketRelayer {
     this.aatPlan = aatPlan
     this.defaultLogLimitBlocks = defaultLogLimitBlocks
     this.alwaysRedirectToAltruists = alwaysRedirectToAltruists
+    this.dispatchers = dispatchers
 
     // Create the array of altruist relayers as last resort
     this.altruists = JSON.parse(altruists)
-    this.dispatchers = dispatchers
   }
 
   async sendRelay({
@@ -597,7 +597,7 @@ export class PocketRelayer {
     // Checks pass; create AAT
     const pocketAAT = new PocketAAT(...aatParams)
 
-    const pocketRPC = new PocketRPC(this.dispatchers)
+    const pocketRPC = new PocketRPC(this.dispatchers, this.redis)
 
     const pocketSession = await pocketRPC.dispatchNewSession({
       appPublicKey,

@@ -1,17 +1,18 @@
 import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
+import RedisMock from 'ioredis-mock'
 import { sinon, expect } from '@loopback/testlab'
 import { Session } from '@pokt-network/pocket-js'
 import { PocketRPC } from '../../src/services/pocket-rpc'
 import { DUMMY_ENV } from '../acceptance/test-helper'
 import { DEFAULT_NODES } from '../mocks/pocketjs'
 
-const DISPATCHERS = DUMMY_ENV.DISPATCH_URL.split(',').map((dispatcher) => new URL(dispatcher))
-
 describe('Pocket RPC (unit)', () => {
+  let redis: RedisMock
   let axiosMock: MockAdapter
 
   before('setup', async () => {
+    redis = new RedisMock(0, '')
     axiosMock = new MockAdapter(axios)
     axiosMock.onPost(`${DUMMY_ENV.DISPATCH_URL}v1/client/dispatch`).reply(200, {
       block_height: 1,
@@ -47,8 +48,8 @@ describe('Pocket RPC (unit)', () => {
     })
   })
 
-  afterEach(async () => {
-    sinon.restore()
+  beforeEach(async () => {
+    await redis.flushall()
   })
 
   after(async () => {
@@ -56,11 +57,26 @@ describe('Pocket RPC (unit)', () => {
   })
 
   it('successfully request a new session', async () => {
-    const pocketRPC = new PocketRPC(DISPATCHERS)
+    const pocketRPC = new PocketRPC(DUMMY_ENV.DISPATCH_URL, redis)
 
-    const session = await pocketRPC.dispatchNewSession({ appPublicKey: '000', blockchainID: '0021' })
+    const redisGetSpy = sinon.spy(redis, 'get')
+    const redisSetSpy = sinon.spy(redis, 'set')
+
+    let session = await pocketRPC.dispatchNewSession({ appPublicKey: '000', blockchainID: '0021' })
 
     expect(session).to.be.instanceOf(Session)
     expect(session.sessionNodes).to.have.length(DEFAULT_NODES.length)
+
+    expect(redisGetSpy.callCount).to.be.equal(1)
+    expect(redisSetSpy.callCount).to.be.equal(1)
+
+    // Subsequent calls should retrieve results from redis instead
+    session = await pocketRPC.dispatchNewSession({ appPublicKey: '000', blockchainID: '0021' })
+
+    expect(session).to.be.instanceOf(Session)
+    expect(session.sessionNodes).to.have.length(DEFAULT_NODES.length)
+
+    expect(redisGetSpy.callCount).to.be.equal(2)
+    expect(redisSetSpy.callCount).to.be.equal(1)
   })
 })

@@ -66,7 +66,7 @@ export class V1Controller {
     @inject('influxWriteAPI') private influxWriteAPI: WriteApi,
     @inject('archivalChains') private archivalChains: string[],
     @inject('alwaysRedirectToAltruists') private alwaysRedirectToAltruists: boolean,
-    @inject('dispatchers') private dispatchers: URL[],
+    @inject('dispatchURL') private dispatchURL: string,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -109,7 +109,7 @@ export class V1Controller {
       aatPlan: this.aatPlan,
       defaultLogLimitBlocks: this.defaultLogLimitBlocks,
       alwaysRedirectToAltruists: this.alwaysRedirectToAltruists,
-      dispatchers,
+      dispatchers: this.dispatchURL,
     })
   }
 

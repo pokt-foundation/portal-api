@@ -124,7 +124,10 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     this.bind('clientPrivateKey').to(clientPrivateKey)
     this.bind('clientPassphrase').to(clientPassphrase)
-    this.bind('dispatchers').to(dispatchers)
+    // I know what you're thinking: "why pass the dispatchURL raw string and not parsed as URL() array?".
+    // Well doing so for some reason injects service nodes urls instead of the dispatcher urls and
+    // those change per request, so let's keep it this way until loopback figures it out.
+    this.bind('dispatchURL').to(dispatchURL)
     this.bind('pocketInstance').to(pocket)
     this.bind('pocketConfiguration').to(configuration)
     this.bind('relayRetries').to(parseInt(relayRetries))
