@@ -597,7 +597,7 @@ export class PocketRelayer {
     // Checks pass; create AAT
     const pocketAAT = new PocketAAT(...aatParams)
 
-    const pocketRPC = new PocketRPC(this.dispatchers)
+    const pocketRPC = new PocketRPC(this.dispatchers, this.redis)
 
     const pocketSession = await pocketRPC.dispatchNewSession({
       appPublicKey,
