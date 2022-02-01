@@ -95,7 +95,9 @@ export class PocketRPC {
         JSON.stringify({
           sessionKey,
           sessionNodes,
-        })
+        }),
+        'EX',
+        60
       )
 
       // Converts the rpc response in a way that is compatible with pocketjs for
