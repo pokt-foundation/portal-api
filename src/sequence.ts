@@ -33,8 +33,6 @@ export class GatewaySequence implements SequenceHandler {
       const { request, response } = context
       const requestID = shortID.generate()
 
-      await this.updatePocketInstance(context, requestID)
-
       // Record the host, user-agent, and origin for processing
       const realIP = request.headers['x-forwarded-for'] || request.socket.remoteAddress || 'no-ip-found'
 
