@@ -92,8 +92,8 @@ describe('Chain checker new service (unit)', () => {
     expect(checkedNodes).to.be.Array()
     expect(checkedNodes).to.have.length(5)
 
-    expect(redisGetSpy.callCount).to.be.equal(7)
-    expect(redisSetSpy.callCount).to.be.equal(7)
+    expect(redisGetSpy.callCount).to.be.equal(9)
+    expect(redisSetSpy.callCount).to.be.equal(8)
 
     // Subsequent calls should retrieve results from redis instead
     checkedNodes = await chainChecker.check(
@@ -109,8 +109,8 @@ describe('Chain checker new service (unit)', () => {
       'abcd'
     )
 
-    expect(redisGetSpy.callCount).to.be.equal(8)
-    expect(redisSetSpy.callCount).to.be.equal(7)
+    expect(redisGetSpy.callCount).to.be.equal(11)
+    expect(redisSetSpy.callCount).to.be.equal(8)
   })
 
   it('fails the chain check', async () => {
@@ -172,7 +172,9 @@ describe('Chain checker new service (unit)', () => {
     expect(checkedNodes).to.be.Array()
     expect(checkedNodes).to.have.length(4)
 
-    const removedNode = await redis.smembers(`session-${hashBlockchainNodes(blockchainID, pocketSession.sessionNodes)}`)
+    const removedNode = await redis.smembers(
+      `session-${await hashBlockchainNodes(blockchainID, pocketSession.sessionNodes, redis)}`
+    )
 
     expect(removedNode).to.have.length(1)
   })
