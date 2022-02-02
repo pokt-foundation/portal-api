@@ -144,10 +144,8 @@ export class PocketRelayer {
 
     // Actual application's public key
     const appPublicKey = application.freeTierApplicationAccount
-      ? //@ts-ignore
-        application.freeTierApplicationAccount?.publicKey
-      : //@ts-ignore
-        application.publicPocketAccount?.publicKey
+      ? application.freeTierApplicationAccount?.publicKey
+      : application.publicPocketAccount?.publicKey
 
     // ID/Public key of dummy application in case is coming from a gigastake load balancer,
     // used only for metrics.
