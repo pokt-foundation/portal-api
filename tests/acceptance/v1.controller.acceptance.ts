@@ -7,8 +7,8 @@ import { ApplicationsRepository } from '../../src/repositories/applications.repo
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
 import { LoadBalancersRepository } from '../../src/repositories/load-balancers.repository'
 import { gatewayTestDB } from '../fixtures/test.datasource'
-import { DEFAULT_NODES, MockRelayResponse, PocketMock } from '../mocks/pocketjs'
-import { DUMMY_ENV, setupApplication } from './test-helper'
+import { MockRelayResponse, PocketMock } from '../mocks/pocketjs'
+import { setupApplication } from './test-helper'
 
 const logger = require('../../src/services/logger')
 
