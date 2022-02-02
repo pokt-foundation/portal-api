@@ -71,7 +71,7 @@ jobs:
             DD_PROFILING_ENABLED=true
             DD_SERVICE=/us-west-2/ecs/gateway-new-testnet
             DD_VERSION=${{ github.sha }}
-            DD_ENV=staging
+            DD_ENV=testnet
             DD_AGENT_HOST=datadog-agent
 
       - name: Fill in the new image ID / us-west-2 - datadog-agent
