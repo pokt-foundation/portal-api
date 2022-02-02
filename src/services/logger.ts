@@ -74,8 +74,8 @@ const logFormat = format.combine(
   format.simple(),
   format.timestamp({
     format: 'YYYY-MM-DD HH:mm:ss.SSS',
-  })
-  // consoleFormat
+  }),
+  consoleFormat
 )
 
 const logName = (process.env.REGION_NAME || '') + '/ecs/gateway'
