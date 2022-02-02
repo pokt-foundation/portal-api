@@ -14,7 +14,7 @@
   ],
   "main": "index.js",
   "engines": {
-    "node": ">=12.16.0 <=16.13.0"
+    "node": ">=12.16.0 <=16.13.2"
   },
   "scripts": {
     "build": "lb-tsc",
@@ -67,14 +67,14 @@
   "dependencies": {
     "@fullerstack/nax-ipware": "0.0.4",
     "@influxdata/influxdb-client": "^1.15.0",
-    "@loopback/boot": "^3.4.1",
-    "@loopback/context": "^3.17.0",
-    "@loopback/core": "^2.16.1",
-    "@loopback/openapi-v3": "^5.3.1",
-    "@loopback/repository": "^3.7.0",
-    "@loopback/rest": "^9.3.1",
-    "@loopback/rest-explorer": "3.3.1",
-    "@loopback/service-proxy": "^3.2.1",
+    "@loopback/boot": "^4.0.1",
+    "@loopback/context": "^4.0.1",
+    "@loopback/core": "^3.0.1",
+    "@loopback/openapi-v3": "^7.0.1",
+    "@loopback/repository": "^4.0.1",
+    "@loopback/rest": "^11.0.1",
+    "@loopback/rest-explorer": "^4.0.1",
+    "@loopback/service-proxy": "^4.0.1",
     "@pokt-network/pocket-js": "^0.7.0-rc",
     "aws-sdk": "^2.1023.0",
     "axios": "^0.21.1",
