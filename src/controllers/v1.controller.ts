@@ -8,6 +8,7 @@ import { Configuration, HTTPMethod, Pocket } from '@pokt-network/pocket-js'
 import { WriteApi } from '@influxdata/influxdb-client'
 
 import { Applications, LoadBalancers } from '../models'
+import { StickinessOptions } from '../models/load-balancers.model'
 import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from '../repositories'
 import { ChainChecker } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
@@ -197,10 +198,12 @@ export class V1Controller {
         gigastaked: boolean
         originalAppID: string | undefined
         originalAppPK: string | undefined
+        stickinessOptions: StickinessOptions | undefined
       } = {
         gigastaked: loadBalancer.gigastakeRedirect || false,
         originalAppID: undefined,
         originalAppPK: undefined,
+        stickinessOptions: undefined,
       }
 
       // Is this LB marked for gigastakeRedirect?
@@ -227,10 +230,9 @@ export class V1Controller {
 
           gigastakeOptions.originalAppID = originalApp.id
           gigastakeOptions.originalAppPK = originalApp.freeTierApplicationAccount
-            ? //@ts-ignore
-              originalApp.freeTierApplicationAccount?.publicKey
-            : //@ts-ignore
-              originalApp.publicPocketAccount?.publicKey
+            ? originalApp.freeTierApplicationAccount?.publicKey
+            : originalApp.publicPocketAccount?.publicKey
+          gigastakeOptions.stickinessOptions = originalApp?.stickinessOptions
         }
       }
 
@@ -241,7 +243,7 @@ export class V1Controller {
       // with increasing rpcID relays to maintain consistency and with prefix all relays from a load
       // balancer go to the same app/node regardless the data.
       const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins, rpcIDThreshold } =
-        loadBalancer?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
+        gigastakeOptions?.stickinessOptions || loadBalancer?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
       const stickyKeyPrefix = stickiness && !useRPCID ? loadBalancer?.id : ''
 
       const { preferredApplicationID, preferredNodeAddress, rpcID } = stickiness
