@@ -28,7 +28,6 @@ import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../u
 import { CheckResult, SendRelayOptions } from '../utils/types'
 import { enforceEVMLimits } from './limiter'
 import { NodeSticker } from './node-sticker'
-import { PocketRPC } from './pocket-rpc'
 const logger = require('../services/logger')
 
 export class PocketRelayer {
@@ -306,7 +305,6 @@ export class PocketRelayer {
                 pocketSession: this.pocketSession,
                 sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relayResponse.proof.servicerPubKey),
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
-                sessionBlockHeight: this.pocketSession?.sessionHeader?.sessionBlockHeight,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -370,7 +368,6 @@ export class PocketRelayer {
                 pocketSession: this.pocketSession,
                 sticky,
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
-                sessionBlockHeight: this.pocketSession?.sessionHeader?.sessionBlockHeight,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -471,7 +468,6 @@ export class PocketRelayer {
               data,
               pocketSession: this.pocketSession,
               gigastakeAppID: applicationID !== application.id ? application.id : undefined,
-              sessionBlockHeight: this.pocketSession?.sessionHeader?.sessionBlockHeight,
             })
             .catch(function log(e) {
               logger.log('error', 'Error recording metrics: ' + e, {
@@ -597,22 +593,31 @@ export class PocketRelayer {
     // Checks pass; create AAT
     const pocketAAT = new PocketAAT(...aatParams)
 
-    const pocketRPC = new PocketRPC(this.dispatchers, this.redis)
-
-    const pocketSession = await pocketRPC.dispatchNewSession({
-      appPublicKey,
+    // Pull the session so we can get a list of nodes and cherry pick which one to use
+    const pocketSession = await this.pocket.sessionManager.getCurrentSession(
+      pocketAAT,
       blockchainID,
-      sessionHeight: 0,
-      applicationID: application.id,
-      origin: this.origin,
-      requestID,
-    })
+      this.updateConfigurationTimeout(this.pocketConfiguration),
+      2
+    )
 
-    let nodes: Node[] = pocketSession.sessionNodes
+    if (pocketSession instanceof Error) {
+      logger.log('error', 'ERROR obtaining a session: ' + pocketSession.message, {
+        relayType: 'APP',
+        typeID: application.id,
+        origin: this.origin,
+        blockchainID,
+        requestID,
+      })
 
+      return pocketSession
+    }
     // Start the relay timer
     const relayStart = process.hrtime()
 
+    let nodes: Node[] = pocketSession.sessionNodes
+
+    this.pocketSession = pocketSession
     // sessionKey = "blockchain and a hash of the all the nodes in this session, sorted by public key"
     const sessionKey = await hashBlockchainNodes(blockchainID, nodes, this.redis)
 

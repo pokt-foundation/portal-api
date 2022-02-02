@@ -193,38 +193,6 @@ describe('Pocket relayer service (unit)', () => {
     axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
       service_url: 'https://localhost:443',
     })
-    axiosMock.onPost(`${DUMMY_ENV.DISPATCH_URL}v1/client/dispatch`).reply(200, {
-      block_height: 1,
-      session: {
-        header: {
-          app_public_key: '1234567890',
-          chain: '0001',
-          session_height: 1,
-        },
-        key: '1234567890',
-        nodes: DEFAULT_NODES.map(
-          ({
-            address,
-            chains,
-            jailed,
-            publicKey: public_key,
-            serviceURL: service_url,
-            status,
-            stakedTokens: tokens,
-            unstakingCompletionTimestamp: unstaking_time,
-          }) => ({
-            address,
-            chains,
-            jailed,
-            public_key,
-            service_url,
-            status,
-            tokens: tokens.toString(),
-            unstaking_time,
-          })
-        ),
-      },
-    })
   })
 
   after(() => {
