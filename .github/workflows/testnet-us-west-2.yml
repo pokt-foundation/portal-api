@@ -33,6 +33,7 @@ jobs:
           envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_TESTNET_ENCRYPTION_KEY }}
           envkey_DISPATCH_URL: https://node1.testnet.pokt.network,https://node2.testnet.pokt.network,https://node3.testnet.pokt.network
           envkey_ALTRUISTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_ALTRUISTS }}
+          envkey_REDIRECTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_REDIRECTS }}
           envkey_REDIS_ENDPOINT: gateway-new-testnet-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REDIS_PORT: 6379
           envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
@@ -40,11 +41,24 @@ jobs:
           envkey_POCKET_RELAY_RETRIES: 5
           envkey_DEFAULT_SYNC_ALLOWANCE: 5
           envkey_DEFAULT_LOG_LIMIT_BLOCKS: 10000
+          envkey_NODE_TLS_REJECT_UNAUTHORIZED: 0
           envkey_AAT_PLAN: 'premium'
           envkey_NODE_ENV: 'production'
-          envkey_REGION: 'testnet'
+          envkey_INFLUX_URL: https://influx.portal.pokt.network:8086
+          envkey_INFLUX_ORG: pocket
+          envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
+          envkey_PSQL_CONNECTION: ${{ secrets.PSQL_CONNECTION }}
+          envkey_LOG_TO_CLOUDWATCH: false
+          envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           envkey_COMMIT_HASH: ${{ github.sha }}
           envkey_ARCHIVAL_CHAINS: '0022,0028,0010,000A,000B,000C'
+          envkey_LOG_TO_DATADOG: true
+          envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
+          envkey_SILENT_LOGGING: true
+          envkey_REGION: 'us-west-2'
+          envkey_REGION_NAME: 'testnet'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
