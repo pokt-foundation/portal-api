@@ -229,7 +229,7 @@ export class V1Controller {
           )
 
           gigastakeOptions.originalAppID = originalApp.id
-          gigastakeOptions.originalAppPK = originalApp.freeTierApplicationAccount
+          gigastakeOptions.originalAppPK = originalApp.freeTierApplicationAccount?.publicKey
             ? originalApp.freeTierApplicationAccount?.publicKey
             : originalApp.publicPocketAccount?.publicKey
           gigastakeOptions.stickinessOptions = originalApp?.stickinessOptions
