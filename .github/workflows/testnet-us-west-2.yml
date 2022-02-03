@@ -1,4 +1,4 @@
-name: us-west-2 Terraform Testnet Deployment
+name: Terraform Production Deployment us-west-2
 
 on:
   push:
@@ -24,10 +24,10 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Make envfile
+      - name: Make envfile us-west-2
         uses: SpicyPizza/create-envfile@v1
         with:
-envkey_GATEWAY_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PRIVATE_KEY }}
+          envkey_GATEWAY_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PRIVATE_KEY }}
           envkey_GATEWAY_CLIENT_PASSPHRASE: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PASSPHRASE }}
           envkey_MONGO_ENDPOINT: ${{ secrets.MONGO_PRODUCTION_ENDPOINT }}
           envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_PRODUCTION_ENCRYPTION_KEY }}
@@ -56,7 +56,7 @@ envkey_GATEWAY_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
-          envkey_REDIS_ENDPOINT: gateway-prod-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
+          envkey_REDIS_ENDPOINT: gateway-new-testnet-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REGION: 'us-west-2'
           envkey_REGION_NAME: 'us-west-2'
           file_name: .env
@@ -76,16 +76,16 @@ envkey_GATEWAY_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_
         id: task-def-us-west-2-gateway
         uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
-          task-definition: pocket-gateway/tasks/testnet/ecs-task-definition.json
+          task-definition: pocket-gateway/tasks/production/ecs-task-definition.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
           # Needs to be set at container level to be read by the dd agent
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
             DD_PROFILING_ENABLED=true
-            DD_SERVICE=/us-west-2/ecs/gateway-new-testnet
+            DD_SERVICE=/us-west-2/ecs/gateway
             DD_VERSION=${{ github.sha }}
-            DD_ENV=testnet
+            DD_ENV=production
             DD_AGENT_HOST=datadog-agent
 
       - name: Fill in the new image ID / us-west-2 - datadog-agent
