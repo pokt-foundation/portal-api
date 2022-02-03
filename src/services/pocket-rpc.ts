@@ -54,13 +54,6 @@ export class PocketRPC {
       dispatcher = this.pickRandomDispatcher()
       const dispatchURL = `${dispatcher}v1/client/dispatch`
 
-      logger.log('info', 'Dispatcher information', {
-        dispatcherList: this.dispatchers.map((dist) => dist.toString()),
-        dispatchURL: dispatchURL,
-        requestID,
-        applicationID,
-      })
-
       try {
         dispatchResponse = await axios.post(
           dispatchURL,
@@ -72,7 +65,7 @@ export class PocketRPC {
           { timeout: 2000 }
         )
       } catch (e) {
-        logger.log('error', `ERROR obtaining a session`, {
+        logger.log('error', `ERROR obtaining a session at ${attempts + 1} attempt.`, {
           relayType: 'APP',
           typeID: applicationID,
           origin,
@@ -84,7 +77,7 @@ export class PocketRPC {
       }
 
       if (dispatchResponse.status !== 200) {
-        logger.log('error', `Got a non 200 response on dispatcher request: ${dispatchResponse.data}`, {
+        logger.log('error', `Got a non 200 response on dispatcher request: ${dispatchResponse.status}`, {
           relayType: 'APP',
           typeID: applicationID,
           origin,
@@ -114,7 +107,7 @@ export class PocketRPC {
       return new Session(sessionHeader, sessionKey, nodes)
     }
 
-    throw new Error(`Error obtaining a session: ${dispatchResponse.data}`)
+    throw new Error(`Error obtaining a session: ${dispatchResponse.statusText}`)
   }
 
   pickRandomDispatcher(): URL {

@@ -18,7 +18,7 @@ export type PocketConfiguration = {
 }
 
 export const DEFAULT_POCKET_CONFIG = {
-  maxDispatchers: 20,
+  maxDispatchers: 44,
   maxSessions: 100000,
   consensusNodeCount: 5,
   requestTimeout: 120000, // 3 minutes

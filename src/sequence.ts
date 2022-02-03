@@ -11,6 +11,11 @@ import {
   Send,
   SequenceHandler,
 } from '@loopback/rest'
+import { Configuration } from '@pokt-network/pocket-js'
+import { getPocketInstance } from './config/pocket-config'
+import { POCKET_JS_INSTANCE_TIMEOUT_KEY, POCKET_JS_TIMEOUT_MAX, POCKET_JS_TIMEOUT_MIN } from './utils/constants'
+import { getRandomInt, shuffle } from './utils/helpers'
+const logger = require('./services/logger')
 
 const SequenceActions = RestBindings.SequenceActions
 
@@ -90,6 +95,34 @@ export class GatewaySequence implements SequenceHandler {
       }
     } catch (err) {
       this.reject(context, err)
+    }
+  }
+
+  async updatePocketInstance(context: RequestContext, requestID: string): Promise<void> {
+    const redis: Redis = await context.get('redisInstance')
+    const dispatchers: URL[] = shuffle(
+      ((await context.get('dispatchURL')) as string).split(',').map((dist) => new URL(dist))
+    )
+    const configuration: Configuration = await context.get('pocketConfiguration')
+    const clientPrivateKey: string = await context.get('clientPrivateKey')
+    const clientPassphrase: string = await context.get('clientPassphrase')
+
+    if (!(await redis.get(POCKET_JS_INSTANCE_TIMEOUT_KEY))) {
+      const pocket = await getPocketInstance(dispatchers, configuration, clientPrivateKey, clientPassphrase)
+
+      const nextInstanceRefresh = getRandomInt(POCKET_JS_TIMEOUT_MIN, POCKET_JS_TIMEOUT_MAX)
+
+      await redis.set(POCKET_JS_INSTANCE_TIMEOUT_KEY, 'true', 'EX', nextInstanceRefresh)
+
+      const ownerCtx = context.getOwnerContext('pocketInstance')
+
+      ownerCtx.unbind('pocketInstance')
+      ownerCtx.bind('pocketInstance').to(pocket)
+
+      logger.log('info', `pocketjs instance updated`, {
+        requestID,
+        nextInstanceRefresh,
+      })
     }
   }
 }
