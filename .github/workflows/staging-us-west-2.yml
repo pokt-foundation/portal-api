@@ -85,9 +85,10 @@ jobs:
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
             DD_PROFILING_ENABLED=true
-            DD_SERVICE=us-west-2/ecs/gateway-staging
+            DD_SERVICE=/us-west-2/ecs/gateway-staging
             DD_VERSION=${{ github.sha }}
             DD_ENV=staging
+            DD_AGENT_HOST=datadog-agent
 
       - name: Fill in the new image ID / us-west-2 - datadog-agent
         id: task-def-us-west-2-datadog-agent
