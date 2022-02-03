@@ -87,7 +87,9 @@ export class MetricsRecorder {
   }): Promise<void> {
     try {
       const { sessionNodes } = pocketSession || {}
-      const sessionHash = hashBlockchainNodes(blockchainID, sessionNodes)
+      const sessionHash = await hashBlockchainNodes(blockchainID, sessionNodes, this.redis)
+
+      applicationPublicKey = applicationPublicKey ?? 'no_public_key'
 
       if (!elapsedTime) {
         const relayEnd = process.hrtime(relayStart)

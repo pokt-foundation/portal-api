@@ -40,7 +40,7 @@ export class SyncChecker {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
     syncCheckOptions.allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
 
-    const sessionHash = hashBlockchainNodes(blockchainID, pocketSession.sessionNodes)
+    const sessionHash = await hashBlockchainNodes(blockchainID, pocketSession.sessionNodes, this.redis)
 
     const syncedNodes: Node[] = []
     let syncedNodesList: string[] = []
@@ -406,6 +406,22 @@ export class SyncChecker {
       rawNodeSyncLogs[5],
       rawNodeSyncLogs[6],
       rawNodeSyncLogs[7],
+      rawNodeSyncLogs[8],
+      rawNodeSyncLogs[9],
+      rawNodeSyncLogs[10],
+      rawNodeSyncLogs[11],
+      rawNodeSyncLogs[12],
+      rawNodeSyncLogs[13],
+      rawNodeSyncLogs[14],
+      rawNodeSyncLogs[15],
+      rawNodeSyncLogs[16],
+      rawNodeSyncLogs[17],
+      rawNodeSyncLogs[18],
+      rawNodeSyncLogs[19],
+      rawNodeSyncLogs[20],
+      rawNodeSyncLogs[21],
+      rawNodeSyncLogs[22],
+      rawNodeSyncLogs[23],
     ] = await Promise.all(promiseStack)
 
     for (const rawNodeSyncLog of rawNodeSyncLogs) {

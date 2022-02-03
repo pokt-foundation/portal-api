@@ -21,6 +21,7 @@ import { parseMethod } from '../../src/utils/parsing'
 import { updateConfiguration } from '../../src/utils/pocket'
 import { loadBlockchain } from '../../src/utils/relayer'
 import { CheckResult } from '../../src/utils/types'
+import { DUMMY_ENV } from '../acceptance/test-helper'
 import { gatewayTestDB } from '../fixtures/test.datasource'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
@@ -161,7 +162,6 @@ describe('Pocket relayer service (unit)', () => {
     blockchainRepository = new BlockchainsRepository(gatewayTestDB)
 
     pocketConfiguration = getPocketConfigOrDefault()
-
     pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
 
     const pocket = pocketMock.object()
@@ -186,6 +186,7 @@ describe('Pocket relayer service (unit)', () => {
       altruists: '{}',
       aatPlan: AatPlans.FREEMIUM,
       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+      dispatchers: DUMMY_ENV.DISPATCH_URL,
     })
 
     axiosMock = new MockAdapter(axios)
@@ -235,7 +236,7 @@ describe('Pocket relayer service (unit)', () => {
   it('loads all blockchains from db, caches them and returns config of requested blockchain', async () => {
     const dbBlockchains = await blockchainRepository.createAll(BLOCKCHAINS)
 
-    expect(dbBlockchains).to.be.length(3)
+    expect(dbBlockchains).to.have.length(3)
 
     const repositorySpy = sinon.spy(blockchainRepository, 'find')
     const redisGetSpy = sinon.spy(redis, 'get')
@@ -312,6 +313,7 @@ describe('Pocket relayer service (unit)', () => {
       altruists: '{}',
       aatPlan: AatPlans.FREEMIUM,
       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+      dispatchers: DUMMY_ENV.DISPATCH_URL,
     })
 
     const application = {
@@ -352,6 +354,7 @@ describe('Pocket relayer service (unit)', () => {
       altruists: '{}',
       aatPlan: AatPlans.FREEMIUM,
       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+      dispatchers: DUMMY_ENV.DISPATCH_URL,
     })
 
     const isInvalidApp = checkSecretKey(application as unknown as Applications, {
@@ -490,6 +493,7 @@ describe('Pocket relayer service (unit)', () => {
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+        dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -544,6 +548,7 @@ describe('Pocket relayer service (unit)', () => {
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+        dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -595,6 +600,7 @@ describe('Pocket relayer service (unit)', () => {
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+        dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
       try {
@@ -646,6 +652,7 @@ describe('Pocket relayer service (unit)', () => {
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+        dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -694,6 +701,7 @@ describe('Pocket relayer service (unit)', () => {
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+        dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -735,7 +743,7 @@ describe('Pocket relayer service (unit)', () => {
         undefined,
         undefined
       )) as Session
-      const sessionKey = `session-${hashBlockchainNodes(blockchainID, sessionNodes)}`
+      const sessionKey = `session-${await hashBlockchainNodes(blockchainID, sessionNodes, redis)}`
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -757,6 +765,7 @@ describe('Pocket relayer service (unit)', () => {
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+        dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -827,7 +836,7 @@ describe('Pocket relayer service (unit)', () => {
         undefined,
         undefined
       )) as Session
-      const sessionKey = `session-${hashBlockchainNodes(blockchainID, sessionNodes)}`
+      const sessionKey = `session-${await hashBlockchainNodes(blockchainID, sessionNodes, redis)}`
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -849,6 +858,7 @@ describe('Pocket relayer service (unit)', () => {
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+        dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -932,6 +942,7 @@ describe('Pocket relayer service (unit)', () => {
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+        dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -985,6 +996,7 @@ describe('Pocket relayer service (unit)', () => {
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+        dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -1037,6 +1049,7 @@ describe('Pocket relayer service (unit)', () => {
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+        dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -1088,6 +1101,7 @@ describe('Pocket relayer service (unit)', () => {
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+        dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
       rawData =
@@ -1139,6 +1153,7 @@ describe('Pocket relayer service (unit)', () => {
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+        dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
       rawData =
@@ -1196,6 +1211,7 @@ describe('Pocket relayer service (unit)', () => {
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+        dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -1259,6 +1275,7 @@ describe('Pocket relayer service (unit)', () => {
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+        dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
       for (let i = 0; i <= 5; i++) {
@@ -1340,6 +1357,7 @@ describe('Pocket relayer service (unit)', () => {
         altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+        dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
       for (let i = 0; i <= 5; i++) {
@@ -1419,6 +1437,7 @@ describe('Pocket relayer service (unit)', () => {
           altruists: '{}',
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+          dispatchers: DUMMY_ENV.DISPATCH_URL,
         })
 
         try {
@@ -1479,6 +1498,7 @@ describe('Pocket relayer service (unit)', () => {
           altruists: '{}',
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+          dispatchers: DUMMY_ENV.DISPATCH_URL,
         })
 
         try {
@@ -1538,6 +1558,7 @@ describe('Pocket relayer service (unit)', () => {
           altruists: '{}',
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+          dispatchers: DUMMY_ENV.DISPATCH_URL,
         })
 
         try {
@@ -1603,6 +1624,7 @@ describe('Pocket relayer service (unit)', () => {
           altruists: JSON.stringify(ALTRUISTS),
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+          dispatchers: DUMMY_ENV.DISPATCH_URL,
         }) as PocketRelayer
 
         return poktRelayer

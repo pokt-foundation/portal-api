@@ -33,8 +33,6 @@ export class GatewaySequence implements SequenceHandler {
       const { request, response } = context
       const requestID = shortID.generate()
 
-      await this.updatePocketInstance(context, requestID)
-
       // Record the host, user-agent, and origin for processing
       const realIP = request.headers['x-forwarded-for'] || request.socket.remoteAddress || 'no-ip-found'
 
@@ -102,7 +100,9 @@ export class GatewaySequence implements SequenceHandler {
 
   async updatePocketInstance(context: RequestContext, requestID: string): Promise<void> {
     const redis: Redis = await context.get('redisInstance')
-    const dispatchers: URL[] = shuffle(await context.get('dispatchers'))
+    const dispatchers: URL[] = shuffle(
+      ((await context.get('dispatchURL')) as string).split(',').map((dist) => new URL(dist))
+    )
     const configuration: Configuration = await context.get('pocketConfiguration')
     const clientPrivateKey: string = await context.get('clientPrivateKey')
     const clientPassphrase: string = await context.get('clientPassphrase')

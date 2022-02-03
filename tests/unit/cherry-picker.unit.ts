@@ -93,7 +93,7 @@ describe('Cherry picker service (unit)', () => {
       await redis.set(blockchain + '-' + nodes[0].publicKey + '-failure', 'true', 'EX', 120)
 
       // @ts-ignore
-      const node = await cherryPicker.cherryPickNode(app, nodes, blockchain, '34sfDg')
+      const node = await cherryPicker.cherryPickNode(app, nodes, blockchain, '34sfDg', '')
 
       expect(node).to.be.ok()
       expect(node).to.be.Object()
@@ -159,7 +159,7 @@ describe('Cherry picker service (unit)', () => {
       }
 
       // @ts-ignore
-      const pickedNode = await cherryPicker.cherryPickNode(app, nodes, blockchain, '34sfDg')
+      const pickedNode = await cherryPicker.cherryPickNode(app, nodes, blockchain, '34sfDg', '')
 
       expect(pickedNode).to.be.ok()
       expect(pickedNode).to.be.Object()
@@ -310,7 +310,7 @@ describe('Cherry picker service (unit)', () => {
         pocketSession
       )
 
-      let removedNodes = await redis.smembers(`session-${hashBlockchainNodes(blockchain, sessionNodes)}`)
+      let removedNodes = await redis.smembers(`session-${await hashBlockchainNodes(blockchain, sessionNodes, redis)}`)
 
       expect(removedNodes).to.have.length(0)
 
@@ -325,7 +325,7 @@ describe('Cherry picker service (unit)', () => {
         )
       }
 
-      removedNodes = await redis.smembers(`session-${hashBlockchainNodes(blockchain, sessionNodes)}`)
+      removedNodes = await redis.smembers(`session-${await hashBlockchainNodes(blockchain, sessionNodes, redis)}`)
 
       expect(removedNodes).to.have.length(1)
     })

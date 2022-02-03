@@ -34,12 +34,12 @@ export class Applications extends Entity {
   @property({
     type: 'object',
   })
-  publicPocketAccount?: object
+  publicPocketAccount?: PocketAccount
 
   @property({
     type: 'object',
   })
-  freeTierApplicationAccount?: object
+  freeTierApplicationAccount?: PocketAccount
 
   @property({
     type: 'object',
@@ -82,3 +82,9 @@ export interface ApplicationsRelations {
 }
 
 export type ApplicationsWithRelations = Applications & ApplicationsRelations
+
+export type PocketAccount = {
+  address: string
+  publicKey: string
+  privateKey?: string
+}
