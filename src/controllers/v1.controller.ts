@@ -8,6 +8,7 @@ import { Configuration, HTTPMethod, Pocket } from '@pokt-network/pocket-js'
 import { WriteApi } from '@influxdata/influxdb-client'
 
 import { Applications, LoadBalancers } from '../models'
+import { StickinessOptions } from '../models/load-balancers.model'
 import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from '../repositories'
 import { ChainChecker } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
@@ -66,7 +67,7 @@ export class V1Controller {
     @inject('influxWriteAPI') private influxWriteAPI: WriteApi,
     @inject('archivalChains') private archivalChains: string[],
     @inject('alwaysRedirectToAltruists') private alwaysRedirectToAltruists: boolean,
-    @inject('dispatchers') private dispatchers: URL[],
+    @inject('dispatchURL') private dispatchURL: string,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -109,7 +110,7 @@ export class V1Controller {
       aatPlan: this.aatPlan,
       defaultLogLimitBlocks: this.defaultLogLimitBlocks,
       alwaysRedirectToAltruists: this.alwaysRedirectToAltruists,
-      dispatchers: this.dispatchers,
+      dispatchers: this.dispatchURL,
     })
   }
 
@@ -197,10 +198,12 @@ export class V1Controller {
         gigastaked: boolean
         originalAppID: string | undefined
         originalAppPK: string | undefined
+        stickinessOptions: StickinessOptions | undefined
       } = {
         gigastaked: loadBalancer.gigastakeRedirect || false,
         originalAppID: undefined,
         originalAppPK: undefined,
+        stickinessOptions: undefined,
       }
 
       // Is this LB marked for gigastakeRedirect?
@@ -226,11 +229,10 @@ export class V1Controller {
           )
 
           gigastakeOptions.originalAppID = originalApp.id
-          gigastakeOptions.originalAppPK = originalApp.freeTierApplicationAccount
-            ? //@ts-ignore
-              originalApp.freeTierApplicationAccount?.publicKey
-            : //@ts-ignore
-              originalApp.publicPocketAccount?.publicKey
+          gigastakeOptions.originalAppPK = originalApp.freeTierApplicationAccount?.publicKey
+            ? originalApp.freeTierApplicationAccount?.publicKey
+            : originalApp.publicPocketAccount?.publicKey
+          gigastakeOptions.stickinessOptions = originalApp?.stickinessOptions
         }
       }
 
@@ -241,7 +243,7 @@ export class V1Controller {
       // with increasing rpcID relays to maintain consistency and with prefix all relays from a load
       // balancer go to the same app/node regardless the data.
       const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins, rpcIDThreshold } =
-        loadBalancer?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
+        gigastakeOptions?.stickinessOptions || loadBalancer?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
       const stickyKeyPrefix = stickiness && !useRPCID ? loadBalancer?.id : ''
 
       const { preferredApplicationID, preferredNodeAddress, rpcID } = stickiness
