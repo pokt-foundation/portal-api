@@ -158,7 +158,10 @@ export class SyncChecker {
     }
 
     // Consult Altruist for sync source of truth
-    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
+    let altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
+
+    // Percentage of nodes with block height > 0 > altruist's block height
+    let percentAheadAltruist = 0
 
     if (altruistBlockHeight === 0 || isNaN(altruistBlockHeight)) {
       // Failure to find sync from consensus and altruist
@@ -205,19 +208,30 @@ export class SyncChecker {
         origin: this.origin,
         sessionHash,
       })
+
+      // If altruist height > 0, get the percent of nodes above altruist's block height
+      percentAheadAltruist = this.nodePercentageAheadAltruist(altruistBlockHeight, nodeSyncLogs)
     }
 
-    const isBlockHeightTooFar =
-      validatedBlockHeight > altruistBlockHeight &&
-      validatedBlockHeight - altruistBlockHeight > syncCheckOptions.allowance
-
-    const isBlockHeightTooBehind =
-      validatedBlockHeight < altruistBlockHeight &&
-      altruistBlockHeight - validatedBlockHeight > syncCheckOptions.allowance
+    // If 90% of the nodes' block height > 0 > altruist block height, ignore altruist.
+    if (percentAheadAltruist > 90) {
+      // Setting altruist height to 0 is basically ignoring it
+      altruistBlockHeight = 0
+    }
 
     // Make sure nodes aren't running too far ahead or behind of altruists
-    if (altruistBlockHeight !== 0 && (isBlockHeightTooFar || isBlockHeightTooBehind)) {
-      validatedBlockHeight = altruistBlockHeight
+    if (altruistBlockHeight !== 0) {
+      const isBlockHeightTooFar =
+        validatedBlockHeight > altruistBlockHeight &&
+        validatedBlockHeight - altruistBlockHeight > syncCheckOptions.allowance
+
+      const isBlockHeightTooBehind =
+        validatedBlockHeight < altruistBlockHeight &&
+        altruistBlockHeight - validatedBlockHeight > syncCheckOptions.allowance
+
+      if (isBlockHeightTooFar || isBlockHeightTooBehind) {
+        validatedBlockHeight = altruistBlockHeight
+      }
     }
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
@@ -667,6 +681,23 @@ export class SyncChecker {
     const blockHeight = blockHexToDecimal(rawHeight)
 
     return blockHeight
+  }
+
+  nodePercentageAheadAltruist(altruistBlockHeight: number, nodeSyncLogs: NodeSyncLog[]): number {
+    let nodesAhead = 0
+    let totalAbove0 = 0
+
+    for (const nodeSyncLog of nodeSyncLogs) {
+      if (nodeSyncLog.blockHeight > 0) {
+        totalAbove0++
+      }
+
+      if (nodeSyncLog.blockHeight > altruistBlockHeight) {
+        nodesAhead++
+      }
+    }
+
+    return (nodesAhead / totalAbove0) * 100
   }
 }
 
