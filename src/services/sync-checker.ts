@@ -211,26 +211,27 @@ export class SyncChecker {
 
       // If altruist height > 0, get the percent of nodes above altruist's block height
       percentAheadAltruist = this.nodePercentageAheadAltruist(altruistBlockHeight, nodeSyncLogs)
-    }
 
-    // If 90% of the nodes' block height > 0 > altruist block height, ignore altruist.
-    if (percentAheadAltruist > 90) {
-      // Setting altruist height to 0 is basically ignoring it
-      altruistBlockHeight = 0
-    }
+      // If 90% of the nodes' block height > 0 > altruist block height, ignore altruist.
+      // Altruist is not trustworthy at this point.
+      if (percentAheadAltruist > 90) {
+        // Setting altruist height to 0 is basically ignoring it
+        altruistBlockHeight = 0
+      } else {
+        // In case altruist is trustworthy...
+        // Make sure nodes aren't running too far ahead or behind of altruist
+        const isBlockHeightTooFar =
+          validatedBlockHeight > altruistBlockHeight &&
+          validatedBlockHeight - altruistBlockHeight > syncCheckOptions.allowance
 
-    // Make sure nodes aren't running too far ahead or behind of altruists
-    if (altruistBlockHeight !== 0) {
-      const isBlockHeightTooFar =
-        validatedBlockHeight > altruistBlockHeight &&
-        validatedBlockHeight - altruistBlockHeight > syncCheckOptions.allowance
+        const isBlockHeightTooBehind =
+          validatedBlockHeight < altruistBlockHeight &&
+          altruistBlockHeight - validatedBlockHeight > syncCheckOptions.allowance
 
-      const isBlockHeightTooBehind =
-        validatedBlockHeight < altruistBlockHeight &&
-        altruistBlockHeight - validatedBlockHeight > syncCheckOptions.allowance
-
-      if (isBlockHeightTooFar || isBlockHeightTooBehind) {
-        validatedBlockHeight = altruistBlockHeight
+        // If they are too far, use altruist block height
+        if (isBlockHeightTooFar || isBlockHeightTooBehind) {
+          validatedBlockHeight = altruistBlockHeight
+        }
       }
     }
 
