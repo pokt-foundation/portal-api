@@ -42,6 +42,7 @@ const blockchains = {
     syncCheckOptions: {
       body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
       resultKey: 'result',
+      path: '',
       allowance: 2,
     },
   },
@@ -59,6 +60,7 @@ const blockchains = {
     syncCheckOptions: {
       body: '{"jsonrpc": "2.0", "id": 1, "method": "getSlot"}',
       resultKey: 'result',
+      path: '',
       allowance: 2,
     },
   },
@@ -125,9 +127,15 @@ describe('Sync checker service (unit)', () => {
     pocketMock.relayResponse[blockchains['0001'].syncCheckOptions.body] = POCKET_RELAY_RESPONSE
 
     //// Add responses to axios mock
-    axiosMock.onPost(ALTRUIST_URL['0021']).reply(200, EVM_RELAY_RESPONSE)
-    axiosMock.onPost(ALTRUIST_URL['0006']).reply(200, SOLANA_RELAY_RESPONSE)
-    axiosMock.onPost(ALTRUIST_URL['0001']).reply(200, POCKET_RELAY_RESPONSE)
+    axiosMock
+      .onPost(ALTRUIST_URL['0021'].concat(blockchains['0021'].syncCheckOptions.path))
+      .reply(200, EVM_RELAY_RESPONSE)
+    axiosMock
+      .onPost(ALTRUIST_URL['0006'].concat(blockchains['0006'].syncCheckOptions.path))
+      .reply(200, SOLANA_RELAY_RESPONSE)
+    axiosMock
+      .onPost(ALTRUIST_URL['0001'].concat(blockchains['0001'].syncCheckOptions.path))
+      .reply(200, POCKET_RELAY_RESPONSE)
 
     await redis.flushall()
   })
@@ -653,20 +661,21 @@ describe('Sync checker service (unit)', () => {
       expect(expectedLog).to.be.true()
     })
 
-    it('fails agreement of two highest nodes', async () => {
+    it('fails agreement of three highest nodes', async () => {
       const nodes = DEFAULT_NODES
 
       const highestNode = EVM_RELAY_RESPONSE // 17435804
 
       // Difference is over the allowed sync check
       const secondHighestNode = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c7e" }' // 17435774
+      const thirdHighestNode = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c1a" }' // 17435674
 
       pocketMock.relayResponse[blockchains['0021'].syncCheckOptions.body] = [
         highestNode,
         secondHighestNode,
-        secondHighestNode,
-        secondHighestNode,
-        secondHighestNode,
+        thirdHighestNode,
+        thirdHighestNode,
+        thirdHighestNode,
       ]
 
       const pocketClient = pocketMock.object()
@@ -692,7 +701,7 @@ describe('Sync checker service (unit)', () => {
 
       expect(syncedNodes).to.have.length(1)
 
-      const expectedLog = logSpy.calledWith('error', 'SYNC CHECK ERROR: two highest nodes could not agree on sync')
+      const expectedLog = logSpy.calledWith('error', 'SYNC CHECK ERROR: three highest nodes could not agree on sync')
 
       expect(expectedLog).to.be.true()
     })
