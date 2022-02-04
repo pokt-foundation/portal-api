@@ -174,6 +174,22 @@ export class SyncChecker {
         sessionHash,
       })
 
+      // If altruist is down and the highest node height is 0 (all unsynced) —
+      if (validatedBlockHeight === 0) {
+        logger.log('info', 'SYNC CHECK FAILURE: both altruist and nodes stuck at height 0.', {
+          requestID: requestID,
+          relayType: '',
+          blockchainID,
+          typeID: '',
+          serviceNode: 'ALTRUIST',
+          error: '',
+          elapsedTime: '',
+          origin: this.origin,
+          sessionHash,
+        })
+        errorState = true
+      }
+
       if (errorState) {
         return { nodes, cached }
       }
