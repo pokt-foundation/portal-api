@@ -214,7 +214,7 @@ export class SyncChecker {
 
       // If 90% of the nodes' block height > 0 > altruist block height, ignore altruist.
       // Altruist is not trustworthy at this point.
-      if (percentAheadAltruist > 90) {
+      if (percentAheadAltruist >= 90) {
         // Setting altruist height to 0 is basically ignoring it
         altruistBlockHeight = 0
       } else {
