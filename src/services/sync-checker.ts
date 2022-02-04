@@ -107,7 +107,7 @@ export class SyncChecker {
       errorState = true
     }
 
-    let currentBlockHeight = 0
+    let validatedBlockHeight = 0
 
     // Sort NodeSyncLogs by blockHeight
     nodeSyncLogs.sort((a, b) => b.blockHeight - a.blockHeight)
@@ -132,17 +132,17 @@ export class SyncChecker {
       })
       errorState = true
     } else {
-      currentBlockHeight = nodeSyncLogs[0].blockHeight
+      validatedBlockHeight = nodeSyncLogs[0].blockHeight
     }
 
-    // If there's at least 2 nodes, make sure at least two of them agree on current highest block to prevent one node
+    // If there's at least three nodes, make sure at least three of them agree on current highest block to prevent one node
     // from being wildly off
     if (
       !errorState &&
-      nodeSyncLogs.length >= 2 &&
+      nodeSyncLogs.length >= 3 &&
       nodeSyncLogs[0].blockHeight > nodeSyncLogs[1].blockHeight + syncCheckOptions.allowance
     ) {
-      logger.log('error', 'SYNC CHECK ERROR: two highest nodes could not agree on sync', {
+      logger.log('error', 'SYNC CHECK ERROR: three highest nodes could not agree on sync', {
         requestID: requestID,
         relayType: '',
         blockchainID,
@@ -191,25 +191,23 @@ export class SyncChecker {
     }
 
     // Make sure nodes aren't running too far ahead of altruists
-    if (currentBlockHeight + syncCheckOptions.allowance > altruistBlockHeight) {
-      currentBlockHeight = altruistBlockHeight
+    if (validatedBlockHeight + syncCheckOptions.allowance > altruistBlockHeight) {
+      validatedBlockHeight = altruistBlockHeight
     }
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
     for (const nodeSyncLog of nodeSyncLogs) {
       const relayStart = process.hrtime()
-      const allowedBlockHeight = nodeSyncLog.blockHeight + syncCheckOptions.allowance
+
+      // Record the node's blockheight with the allowed variance
+      const correctedNodeBlockHeight = nodeSyncLog.blockHeight + syncCheckOptions.allowance
 
       // This allows for nodes to be slightly ahead but within allowance
       const maximumBlockHeight = altruistBlockHeight + syncCheckOptions.allowance
 
       const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, nodeSyncLog.node.publicKey, requestID)
 
-      if (
-        nodeSyncLog.blockHeight < maximumBlockHeight &&
-        allowedBlockHeight >= currentBlockHeight &&
-        allowedBlockHeight >= altruistBlockHeight
-      ) {
+      if (nodeSyncLog.blockHeight <= maximumBlockHeight && correctedNodeBlockHeight >= validatedBlockHeight) {
         logger.log(
           'info',
           'SYNC CHECK IN-SYNC: ' + nodeSyncLog.node.publicKey + ' height: ' + nodeSyncLog.blockHeight,
@@ -266,7 +264,7 @@ export class SyncChecker {
             bytes: Buffer.byteLength('OUT OF SYNC', 'utf8'),
             fallback: false,
             method: 'synccheck',
-            error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${currentBlockHeight} altruist block height: ${altruistBlockHeight} nodes height: ${nodeSyncLog.blockHeight} sync allowance: ${syncCheckOptions.allowance}`,
+            error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${validatedBlockHeight} altruist block height: ${altruistBlockHeight} nodes height: ${nodeSyncLog.blockHeight} sync allowance: ${syncCheckOptions.allowance}`,
             code: undefined,
             origin: this.origin,
             data: undefined,
