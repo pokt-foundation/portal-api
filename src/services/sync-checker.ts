@@ -135,8 +135,6 @@ export class SyncChecker {
       validatedBlockHeight = nodeSyncLogs[0].blockHeight
     }
 
-    console.log('nodeSyncLogs', nodeSyncLogs)
-
     // If there's at least three nodes, make sure at least three of them agree on current highest block to prevent one node
     // from being wildly off
     if (
@@ -161,8 +159,6 @@ export class SyncChecker {
 
     // Consult Altruist for sync source of truth
     const altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
-
-    console.log('altruistBlockHeight', altruistBlockHeight)
 
     if (altruistBlockHeight === 0 || isNaN(altruistBlockHeight)) {
       // Failure to find sync from consensus and altruist
@@ -349,7 +345,6 @@ export class SyncChecker {
     const syncCheckPath = syncCheckOptions.path ? syncCheckOptions.path : ''
 
     try {
-      console.log('altruistURL', `${blockchainSyncBackup}${syncCheckPath}`)
       const syncResponse = await axios({
         method: 'POST',
         url: `${blockchainSyncBackup}${syncCheckPath}`,
