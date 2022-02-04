@@ -190,14 +190,26 @@ export class SyncChecker {
       })
     }
 
+    // Make sure nodes aren't running too far ahead of altruists
+    if (currentBlockHeight + syncCheckOptions.allowance > altruistBlockHeight) {
+      currentBlockHeight = altruistBlockHeight
+    }
+
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
     for (const nodeSyncLog of nodeSyncLogs) {
       const relayStart = process.hrtime()
       const allowedBlockHeight = nodeSyncLog.blockHeight + syncCheckOptions.allowance
 
+      // This allows for nodes to be slightly ahead but within allowance
+      const maximumBlockHeight = altruistBlockHeight + syncCheckOptions.allowance
+
       const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, nodeSyncLog.node.publicKey, requestID)
 
-      if (allowedBlockHeight >= currentBlockHeight && allowedBlockHeight >= altruistBlockHeight) {
+      if (
+        nodeSyncLog.blockHeight < maximumBlockHeight &&
+        allowedBlockHeight >= currentBlockHeight &&
+        allowedBlockHeight >= altruistBlockHeight
+      ) {
         logger.log(
           'info',
           'SYNC CHECK IN-SYNC: ' + nodeSyncLog.node.publicKey + ' height: ' + nodeSyncLog.blockHeight,
