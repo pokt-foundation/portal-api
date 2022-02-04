@@ -140,7 +140,8 @@ export class SyncChecker {
     if (
       !errorState &&
       nodeSyncLogs.length >= 3 &&
-      nodeSyncLogs[0].blockHeight > nodeSyncLogs[1].blockHeight + syncCheckOptions.allowance
+      nodeSyncLogs[0].blockHeight > nodeSyncLogs[1].blockHeight + syncCheckOptions.allowance &&
+      nodeSyncLogs[0].blockHeight > nodeSyncLogs[2].blockHeight + syncCheckOptions.allowance
     ) {
       logger.log('error', 'SYNC CHECK ERROR: three highest nodes could not agree on sync', {
         requestID: requestID,
