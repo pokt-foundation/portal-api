@@ -2,7 +2,7 @@ version: '3.5'
 
 services:
   download-production-data:
-    image: mongo:4.2.14
+    image: mongo:5.0.6
     command: /scripts/export-production-data.sh
     volumes:
       - ~/.pocket/production_data:/data/
@@ -13,7 +13,7 @@ services:
       - pocket
 
   import-production-data:
-    image: mongo:4.2.14
+    image: mongo:5.0.6
     command: /scripts/import-production-data.sh
     volumes:
       - ~/.pocket/production_data:/data/

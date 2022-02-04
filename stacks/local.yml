@@ -23,7 +23,7 @@ services:
       - pocket
 
   db:
-    image: mongo:4.2.14
+    image: mongo:5.0.6
     container_name: db
     env_file:
       - ../.tasks.env
