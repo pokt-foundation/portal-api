@@ -200,7 +200,7 @@ export class SyncChecker {
       altruistBlockHeight - validatedBlockHeight > syncCheckOptions.allowance
 
     // Make sure nodes aren't running too far ahead or behind of altruists
-    if (isBlockHeightTooFar || isBlockHeightTooBehind) {
+    if (altruistBlockHeight !== 0 && (isBlockHeightTooFar || isBlockHeightTooBehind)) {
       validatedBlockHeight = altruistBlockHeight
     }
 
@@ -212,7 +212,8 @@ export class SyncChecker {
       const correctedNodeBlockHeight = nodeSyncLog.blockHeight + syncCheckOptions.allowance
 
       // This allows for nodes to be slightly ahead but within allowance
-      const maximumBlockHeight = altruistBlockHeight + syncCheckOptions.allowance
+      const maximumBlockHeight =
+        altruistBlockHeight > 0 ? altruistBlockHeight + syncCheckOptions.allowance : validatedBlockHeight
 
       const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, nodeSyncLog.node.publicKey, requestID)
 
