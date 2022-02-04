@@ -476,7 +476,7 @@ describe('V1 controller (acceptance)', () => {
       .post('/v1/sd9fj31d714kgos42e68f9gh')
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
-      .set('host', 'eth-mainnet')
+      .set('host', 'eth-mainnet-string') // blockchain without altruist
       .expect(200)
 
     expect(response.body).to.have.property('error')
@@ -572,7 +572,7 @@ describe('V1 controller (acceptance)', () => {
       .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc04')
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
-      .set('host', 'eth-mainnet')
+      .set('host', 'eth-mainnet-string') // blockchain without altruist
       .expect(200)
 
     expect(response.body).to.have.property('error')
