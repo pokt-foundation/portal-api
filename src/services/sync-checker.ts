@@ -160,9 +160,8 @@ export class SyncChecker {
     // Consult Altruist for sync source of truth
     const altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
 
-    console.log('highestNodeBlockHeight', highestNodeBlockHeight)
     // Determine whether altruist is trustworthy or not
-    const isAltruistTrustworthy = altruistBlockHeight > highestNodeBlockHeight
+    const isAltruistTrustworthy = altruistBlockHeight >= highestNodeBlockHeight
 
     if (!isAltruistTrustworthy) {
       logger.log('info', `SYNC CHECK ALTRUIST FAILURE: All synced nodes are ahead of altruist`, {
