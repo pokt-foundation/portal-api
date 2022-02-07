@@ -305,7 +305,7 @@ describe('V1 controller (acceptance)', () => {
     await applicationsRepository.deleteAll()
 
     const res = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh')
+      .post('/v1/notfoundapp')
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
@@ -326,7 +326,7 @@ describe('V1 controller (acceptance)', () => {
       .post('/v1/sd9fj31d714kgos42e68f9gh')
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
-      .set('host', 'eth-mainnet')
+      .set('host', 'invalid-blockchain')
       .expect(200)
 
     expect(res.body).to.have.property('error')
@@ -361,7 +361,7 @@ describe('V1 controller (acceptance)', () => {
     const key = 'encrypt123456789120encrypt123456789120'
     const encryptedKey = encryptor.encrypt(key)
 
-    const appWithSecurity = { ...APPLICATION }
+    const appWithSecurity = { ...APPLICATION, id: 'secretAppID12345' }
 
     appWithSecurity.gatewaySettings = {
       secretKey: encryptedKey,
@@ -370,14 +370,14 @@ describe('V1 controller (acceptance)', () => {
       whitelistUserAgents: [],
     }
 
-    await applicationsRepository.create(appWithSecurity)
+    const dbApp = await applicationsRepository.create(appWithSecurity)
 
     const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh')
+      .post(`/v1/${dbApp.id}`)
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
@@ -392,7 +392,7 @@ describe('V1 controller (acceptance)', () => {
   it('fails on request with invalid origin', async () => {
     await applicationsRepository.deleteAll()
 
-    const appWithSecurity = { ...APPLICATION }
+    const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
 
     appWithSecurity.gatewaySettings = {
       secretKey: '',
@@ -401,14 +401,14 @@ describe('V1 controller (acceptance)', () => {
       whitelistUserAgents: [],
     }
 
-    await applicationsRepository.create(appWithSecurity)
+    const dbApp = await applicationsRepository.create(appWithSecurity)
 
     const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh')
+      .post(`/v1/${dbApp.id}`)
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
@@ -478,6 +478,7 @@ describe('V1 controller (acceptance)', () => {
     // Failing chain check
     relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
 
+    pocketMock.relayResponse = relayResponses
     const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
