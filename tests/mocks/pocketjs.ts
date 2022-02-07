@@ -1,4 +1,5 @@
 /* eslint-disable no-prototype-builtins */
+import { URL } from 'url'
 import { Mock, It } from 'moq.ts'
 import {
   Pocket,

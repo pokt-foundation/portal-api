@@ -1,5 +1,5 @@
 import process from 'process'
-import { CustomLogger } from 'ajv'
+import { Logger } from 'ajv'
 import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
 
@@ -251,7 +251,7 @@ export class MetricsRecorder {
     bulkData: any[],
     currentTimestamp: number,
     redisKey: string,
-    processlogger: CustomLogger
+    processlogger: Logger
   ): Promise<void> {
     const redisListAge = await this.redis.get('age-' + redisKey)
     const redisListSize = await this.redis.llen(redisKey)
@@ -274,7 +274,7 @@ export class MetricsRecorder {
     bulkData: any[],
     redisListSize: number,
     redisKey: string,
-    processlogger: CustomLogger
+    processlogger: Logger
   ): Promise<void> {
     for (let count = 0; count < redisListSize; count++) {
       const redisRecord = await this.redis.lpop(redisKey)

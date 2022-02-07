@@ -1,3 +1,4 @@
+import { URL } from 'url'
 import { HttpErrors } from '@loopback/rest'
 import { Account, Configuration, HttpRpcProvider, Pocket } from '@pokt-network/pocket-js'
 

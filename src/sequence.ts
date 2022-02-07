@@ -1,3 +1,4 @@
+import { URL } from 'url'
 import { Redis } from 'ioredis'
 import shortID from 'shortid'
 import { inject } from '@loopback/context'
