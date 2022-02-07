@@ -160,8 +160,9 @@ export class SyncChecker {
     // Consult Altruist for sync source of truth
     const altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
 
+    console.log('highestNodeBlockHeight', highestNodeBlockHeight)
     // Determine whether altruist is trustworthy or not
-    const isAltruistTrustworthy = this.isAltruistTrustworthy(altruistBlockHeight, nodeSyncLogs)
+    const isAltruistTrustworthy = altruistBlockHeight > highestNodeBlockHeight
 
     if (!isAltruistTrustworthy) {
       logger.log('info', `SYNC CHECK ALTRUIST FAILURE: All synced nodes are ahead of altruist`, {
@@ -666,25 +667,6 @@ export class SyncChecker {
     const rawHeight = payload[`${syncCheckResultKey}`] || '0'
 
     return blockHexToDecimal(rawHeight)
-  }
-
-  // If all nodes reporting height above 0 are ahead altruist,
-  // we should trust the nodes.
-  isAltruistTrustworthy(altruistBlockHeight: number, nodeSyncLogs: NodeSyncLog[]): boolean {
-    let nodesAheadAltruist = 0
-    let nonZeroHeightNodes = 0
-
-    for (const nodeSyncLog of nodeSyncLogs) {
-      if (nodeSyncLog.blockHeight > 0) {
-        nonZeroHeightNodes++
-      }
-
-      if (nodeSyncLog.blockHeight > altruistBlockHeight) {
-        nodesAheadAltruist++
-      }
-    }
-
-    return nonZeroHeightNodes > 0 && !(nonZeroHeightNodes === nodesAheadAltruist)
   }
 }
 
