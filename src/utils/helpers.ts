@@ -1,5 +1,6 @@
 import { Redis } from 'ioredis'
 import { Node } from '@pokt-network/pocket-js'
+import { Applications } from '../models/applications.model'
 
 // hashes a blockchain and all of the nodes given, sorted by public key
 export async function hashBlockchainNodes(blockchainID: string, nodes: Node[] = [], redis: Redis): Promise<string> {
