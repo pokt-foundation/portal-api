@@ -354,7 +354,6 @@ export class SyncChecker {
         sessionHash,
       })
     }
-
     return { nodes: syncedNodes, cached }
   }
 
