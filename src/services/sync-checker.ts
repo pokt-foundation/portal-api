@@ -669,7 +669,7 @@ export class SyncChecker {
   }
 
   // If all nodes reporting height above 0 are ahead altruist,
-  // we should not trust the altruist.
+  // we should trust the nodes.
   isAltruistTrustworthy(altruistBlockHeight: number, nodeSyncLogs: NodeSyncLog[]): boolean {
     let nodesAheadAltruist = 0
     let nonZeroHeightNodes = 0
