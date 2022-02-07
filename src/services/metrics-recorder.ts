@@ -91,6 +91,15 @@ export class MetricsRecorder {
 
       applicationPublicKey = applicationPublicKey ?? 'no_public_key'
 
+      if (applicationPublicKey === 'no_public_key') {
+        logger.log('warn', 'no public key found for app', {
+          requestID,
+          typeID: applicationID,
+          gigastakeAppID,
+          serviceNode,
+        })
+      }
+
       if (!elapsedTime) {
         const relayEnd = process.hrtime(relayStart)
 
