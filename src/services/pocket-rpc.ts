@@ -1,3 +1,4 @@
+import { URL } from 'url'
 import axios, { AxiosResponse } from 'axios'
 import { Redis } from 'ioredis'
 import { Node, Session, SessionHeader } from '@pokt-network/pocket-js'

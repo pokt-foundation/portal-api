@@ -89,6 +89,12 @@ export async function setupApplication(pocket?: Pocket, envs?: object): Promise<
   await app.start()
   await app.loadPocket()
 
+  // Redis mock persist data between instances as long as they share the same host/port
+  // so they need to be cleaned each time.
+  const mock = new RedisMock(parseInt(DUMMY_ENV.REDIS_PORT), DUMMY_ENV.REDIS_ENDPOINT)
+
+  await mock.flushall()
+
   const client = createRestAppClient(app)
 
   return { app, client }
