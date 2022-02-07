@@ -559,6 +559,42 @@ describe('Sync checker service (unit)', () => {
       expect(expectedLog).to.be.true()
     })
 
+    it('passes sync check with altruist behind and all nodes ahead', async () => {
+      const nodes = DEFAULT_NODES
+
+      axiosMock.onPost(ALTRUIST_URL['0021']).reply(200, '{ "id": 1, "jsonrpc": "2.0", "result": "0x64" }')
+
+      const pocketClient = pocketMock.object()
+
+      const { nodes: syncedNodes } = await syncChecker.consensusFilter({
+        nodes,
+        requestID: '1234',
+        blockchainID: blockchains['0021'].hash,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
+        pocket: pocketClient,
+        applicationID: '',
+        applicationPublicKey: '',
+        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        pocketAAT: undefined,
+        pocketConfiguration,
+        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )) as Session,
+      })
+
+      expect(syncedNodes).to.have.length(5)
+
+      const expectedLog = logSpy.calledWith(
+        'info',
+        sinon.match((arg: string) => arg.endsWith('nodes are ahead of altruist'))
+      )
+
+      expect(expectedLog).to.be.true()
+    })
+
     it('fails the sync check due to all nodes failing', async () => {
       const nodes = DEFAULT_NODES
 
@@ -659,6 +695,48 @@ describe('Sync checker service (unit)', () => {
       )
 
       expect(expectedLog).to.be.true()
+    })
+
+    it('filters nodes that are too ahead of altruist', async () => {
+      const nodes = DEFAULT_NODES
+
+      const altruistHeightResult = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c7b" }' // 17432771
+
+      axiosMock.onPost(ALTRUIST_URL['0021']).reply(200, altruistHeightResult)
+
+      const firstNodeAhead = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c7e" }' // 17435774
+      const secondNodeAhead = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c7f" }' // 17435775
+
+      pocketMock.relayResponse[blockchains['0021'].syncCheckOptions.body] = [
+        firstNodeAhead,
+        secondNodeAhead,
+        altruistHeightResult,
+        altruistHeightResult,
+        altruistHeightResult,
+      ]
+
+      const pocketClient = pocketMock.object()
+
+      const { nodes: syncedNodes } = await syncChecker.consensusFilter({
+        nodes,
+        requestID: '1234',
+        blockchainID: blockchains['0021'].hash,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
+        pocket: pocketClient,
+        applicationID: '',
+        applicationPublicKey: '',
+        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        pocketAAT: undefined,
+        pocketConfiguration,
+        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )) as Session,
+      })
+
+      expect(syncedNodes).to.have.length(3)
     })
 
     it('fails agreement of three highest nodes', async () => {
