@@ -89,7 +89,8 @@ export class MetricsRecorder {
       const { sessionNodes } = pocketSession || {}
       const sessionHash = await hashBlockchainNodes(blockchainID, sessionNodes, this.redis)
 
-      applicationPublicKey = applicationPublicKey ?? 'no_public_key'
+      // Might come empty
+      applicationPublicKey = applicationPublicKey || 'no_public_key'
 
       if (applicationPublicKey === 'no_public_key') {
         logger.log('warn', 'no public key found for app', {
