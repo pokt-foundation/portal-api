@@ -697,8 +697,7 @@ describe('Sync checker service (unit)', () => {
       expect(expectedLog).to.be.true()
     })
 
-    // eslint-disable-next-line mocha/no-exclusive-tests
-    it.only('filters nodes that are too ahead of altruist', async () => {
+    it('filters nodes that are too ahead of altruist', async () => {
       const nodes = DEFAULT_NODES
 
       const altruistHeightResult = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c7b" }' // 17432771
