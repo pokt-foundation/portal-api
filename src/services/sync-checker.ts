@@ -38,7 +38,7 @@ export class SyncChecker {
     pocketSession,
   }: ConsensusFilterOptions): Promise<CheckResult> {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
-    syncCheckOptions.allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
+    const syncAllowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
 
     const sessionHash = await hashBlockchainNodes(blockchainID, pocketSession.sessionNodes, this.redis)
 
@@ -107,7 +107,7 @@ export class SyncChecker {
       errorState = true
     }
 
-    let validatedBlockHeight = 0
+    let highestNodeBlockHeight = 0
 
     // Sort NodeSyncLogs by blockHeight
     nodeSyncLogs.sort((a, b) => b.blockHeight - a.blockHeight)
@@ -132,7 +132,7 @@ export class SyncChecker {
       })
       errorState = true
     } else {
-      validatedBlockHeight = nodeSyncLogs[0].blockHeight
+      highestNodeBlockHeight = nodeSyncLogs[0].blockHeight
     }
 
     // If there's at least three nodes, make sure at least three of them agree on current highest block to prevent one node
@@ -140,8 +140,8 @@ export class SyncChecker {
     if (
       !errorState &&
       nodeSyncLogs.length >= 3 &&
-      nodeSyncLogs[0].blockHeight > nodeSyncLogs[1].blockHeight + syncCheckOptions.allowance &&
-      nodeSyncLogs[0].blockHeight > nodeSyncLogs[2].blockHeight + syncCheckOptions.allowance
+      nodeSyncLogs[0].blockHeight > nodeSyncLogs[1].blockHeight + syncAllowance &&
+      nodeSyncLogs[0].blockHeight > nodeSyncLogs[2].blockHeight + syncAllowance
     ) {
       logger.log('error', 'SYNC CHECK ERROR: three highest nodes could not agree on sync', {
         requestID: requestID,
@@ -158,10 +158,24 @@ export class SyncChecker {
     }
 
     // Consult Altruist for sync source of truth
-    let altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
+    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
 
-    // Percentage of nodes with block height > 0 > altruist's block height
-    let percentAheadAltruist = 0
+    // Determine whether altruist is trustworthy or not
+    const isAltruistTrustworthy = this.isAltruistTrustworthy(altruistBlockHeight, nodeSyncLogs)
+
+    if (!isAltruistTrustworthy) {
+      logger.log('info', `SYNC CHECK ALTRUIST FAILURE: All synced nodes are ahead of altruist`, {
+        requestID: requestID,
+        relayType: '',
+        blockchainID,
+        typeID: '',
+        serviceNode: 'ALTRUIST',
+        error: '',
+        elapsedTime: '',
+        origin: this.origin,
+        sessionHash,
+      })
+    }
 
     if (altruistBlockHeight === 0 || isNaN(altruistBlockHeight)) {
       // Failure to find sync from consensus and altruist
@@ -176,22 +190,6 @@ export class SyncChecker {
         origin: this.origin,
         sessionHash,
       })
-
-      // If altruist is down and the highest node height is 0 (all unsynced) —
-      if (validatedBlockHeight === 0) {
-        logger.log('info', 'SYNC CHECK FAILURE: both altruist and nodes stuck at height 0.', {
-          requestID: requestID,
-          relayType: '',
-          blockchainID,
-          typeID: '',
-          serviceNode: 'ALTRUIST',
-          error: '',
-          elapsedTime: '',
-          origin: this.origin,
-          sessionHash,
-        })
-        errorState = true
-      }
 
       if (errorState) {
         return { nodes, cached }
@@ -208,47 +206,35 @@ export class SyncChecker {
         origin: this.origin,
         sessionHash,
       })
-
-      // If altruist height > 0, get the percent of nodes above altruist's block height
-      percentAheadAltruist = this.nodePercentageAheadAltruist(altruistBlockHeight, nodeSyncLogs)
-
-      // If 90% of the nodes' block height > 0 > altruist block height, ignore altruist.
-      // Altruist is not trustworthy at this point.
-      if (percentAheadAltruist >= 90) {
-        // Setting altruist height to 0 is basically ignoring it
-        altruistBlockHeight = 0
-      } else {
-        // In case altruist is trustworthy...
-        // Make sure nodes aren't running too far ahead or behind of altruist
-        const isBlockHeightTooFar =
-          validatedBlockHeight > altruistBlockHeight &&
-          validatedBlockHeight - altruistBlockHeight > syncCheckOptions.allowance
-
-        const isBlockHeightTooBehind =
-          validatedBlockHeight < altruistBlockHeight &&
-          altruistBlockHeight - validatedBlockHeight > syncCheckOptions.allowance
-
-        // If they are too far, use altruist block height
-        if (isBlockHeightTooFar || isBlockHeightTooBehind) {
-          validatedBlockHeight = altruistBlockHeight
-        }
-      }
     }
 
-    // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
+    const isBlockHeightTooFar = highestNodeBlockHeight + syncAllowance > altruistBlockHeight
+
+    // If altruist is trustworthy...
+    // Make sure nodes aren't running too far ahead of altruist
+    if (isAltruistTrustworthy && isBlockHeightTooFar) {
+      highestNodeBlockHeight = altruistBlockHeight
+    }
+
+    // Go through nodes and add all nodes that are current or within allowance -- this allows for block processing times
     for (const nodeSyncLog of nodeSyncLogs) {
       const relayStart = process.hrtime()
 
       // Record the node's blockheight with the allowed variance
-      const correctedNodeBlockHeight = nodeSyncLog.blockHeight + syncCheckOptions.allowance
+      const correctedNodeBlockHeight = nodeSyncLog.blockHeight + syncAllowance
 
       // This allows for nodes to be slightly ahead but within allowance
-      const maximumBlockHeight =
-        altruistBlockHeight > 0 ? altruistBlockHeight + syncCheckOptions.allowance : validatedBlockHeight
+      const maximumBlockHeight = isAltruistTrustworthy
+        ? altruistBlockHeight + syncAllowance
+        : highestNodeBlockHeight + syncAllowance
 
       const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, nodeSyncLog.node.publicKey, requestID)
 
-      if (nodeSyncLog.blockHeight <= maximumBlockHeight && correctedNodeBlockHeight >= validatedBlockHeight) {
+      if (
+        correctedNodeBlockHeight >= highestNodeBlockHeight &&
+        correctedNodeBlockHeight >= altruistBlockHeight &&
+        correctedNodeBlockHeight <= maximumBlockHeight
+      ) {
         logger.log(
           'info',
           'SYNC CHECK IN-SYNC: ' + nodeSyncLog.node.publicKey + ' height: ' + nodeSyncLog.blockHeight,
@@ -305,7 +291,7 @@ export class SyncChecker {
             bytes: Buffer.byteLength('OUT OF SYNC', 'utf8'),
             fallback: false,
             method: 'synccheck',
-            error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${validatedBlockHeight} altruist block height: ${altruistBlockHeight} nodes height: ${nodeSyncLog.blockHeight} sync allowance: ${syncCheckOptions.allowance}`,
+            error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${highestNodeBlockHeight} - altruist block height: ${altruistBlockHeight} - nodes height: ${nodeSyncLog.blockHeight} - sync allowance: ${syncAllowance}`,
             code: undefined,
             origin: this.origin,
             data: undefined,
@@ -368,6 +354,7 @@ export class SyncChecker {
         sessionHash,
       })
     }
+
     return { nodes: syncedNodes, cached }
   }
 
@@ -679,26 +666,26 @@ export class SyncChecker {
   parseBlockFromPayload(payload: object, syncCheckResultKey: string): number {
     const rawHeight = payload[`${syncCheckResultKey}`] || '0'
 
-    const blockHeight = blockHexToDecimal(rawHeight)
-
-    return blockHeight
+    return blockHexToDecimal(rawHeight)
   }
 
-  nodePercentageAheadAltruist(altruistBlockHeight: number, nodeSyncLogs: NodeSyncLog[]): number {
-    let nodesAhead = 0
-    let totalAbove0 = 0
+  // If all nodes reporting height above 0 are ahead altruist,
+  // we should not trust the altruist.
+  isAltruistTrustworthy(altruistBlockHeight: number, nodeSyncLogs: NodeSyncLog[]): boolean {
+    let nodesAheadAltruist = 0
+    let nonZeroHeightNodes = 0
 
     for (const nodeSyncLog of nodeSyncLogs) {
       if (nodeSyncLog.blockHeight > 0) {
-        totalAbove0++
+        nonZeroHeightNodes++
       }
 
       if (nodeSyncLog.blockHeight > altruistBlockHeight) {
-        nodesAhead++
+        nodesAheadAltruist++
       }
     }
 
-    return (nodesAhead / totalAbove0) * 100
+    return nonZeroHeightNodes > 0 && !(nonZeroHeightNodes === nodesAheadAltruist)
   }
 }
 
