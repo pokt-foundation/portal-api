@@ -64,3 +64,19 @@ export function shuffle(array: any[]): any[] {
 
   return array
 }
+
+// TODO: Remove once database fields are normalized
+// Due to some changes in schema from the database, the public key field is scattered accross
+// several other parent fields depending on when the app was created
+export function getApplicationPublicKey(application: Applications): string {
+  // Is on freetierApplicationAccount field
+  if (Boolean(application.freeTierApplicationAccount) && application.freeTierApplicationAccount?.publicKey) {
+    return application.freeTierApplicationAccount.publicKey
+    // Or on publicPocketAccount field
+  } else if (Boolean(application.publicPocketAccount) && application.publicPocketAccount?.publicKey) {
+    return application.publicPocketAccount.publicKey
+  }
+
+  // Must be on gatewayAAT, otherwise the app wouldn't work
+  return application.gatewayAAT.applicationPublicKey
+}
