@@ -21,7 +21,7 @@ import {
   checkSecretKey,
   SecretKeyDetails,
 } from '../utils/enforcements'
-import { hashBlockchainNodes } from '../utils/helpers'
+import { getApplicationPublicKey, hashBlockchainNodes } from '../utils/helpers'
 import { parseJSONRPCError, parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
 import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
@@ -144,10 +144,7 @@ export class PocketRelayer {
 
     // Actual application's public key
     // TODO: Simplify public key logic once the database discrepancies are fixed
-    const appPublicKey =
-      Boolean(application.freeTierApplicationAccount) && application.freeTierApplicationAccount?.publicKey
-        ? application.freeTierApplicationAccount?.publicKey
-        : application.publicPocketAccount?.publicKey
+    const appPublicKey = getApplicationPublicKey(application)
 
     // ID/Public key of dummy application in case is coming from a gigastake load balancer,
     // used only for metrics.
@@ -158,7 +155,6 @@ export class PocketRelayer {
     // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
     // extraneous characters like newlines and tabs from the rawData.
     // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
-
     const parsedRawData = parseRawData(rawData)
     const rpcID = parseRPCID(parsedRawData)
 
