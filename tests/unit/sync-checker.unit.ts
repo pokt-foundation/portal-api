@@ -736,7 +736,7 @@ describe('Sync checker service (unit)', () => {
         )) as Session,
       })
 
-      expect(syncedNodes).to.have.length(2)
+      expect(syncedNodes).to.have.length(3)
     })
 
     it('fails agreement of three highest nodes', async () => {

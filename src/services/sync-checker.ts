@@ -108,6 +108,7 @@ export class SyncChecker {
     }
 
     let highestNodeBlockHeight = 0
+    let lowestBlockHeight = 0
 
     // Sort NodeSyncLogs by blockHeight
     nodeSyncLogs.sort((a, b) => b.blockHeight - a.blockHeight)
@@ -133,6 +134,7 @@ export class SyncChecker {
       errorState = true
     } else {
       highestNodeBlockHeight = nodeSyncLogs[0].blockHeight
+      lowestBlockHeight = nodeSyncLogs[nodeSyncLogs.length - 1].blockHeight
     }
 
     // If there's at least three nodes, make sure at least three of them agree on current highest block to prevent one node
@@ -159,8 +161,6 @@ export class SyncChecker {
 
     // Consult altruist for sync source of truth
     const altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
-
-    const lowestBlockHeight = nodeSyncLogs[nodeSyncLogs.length - 1].blockHeight
 
     // Determine whether altruist is trustworthy or not
     const isAltruistTrustworthy = altruistBlockHeight >= lowestBlockHeight
