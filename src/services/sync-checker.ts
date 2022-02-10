@@ -108,7 +108,6 @@ export class SyncChecker {
     }
 
     let highestNodeBlockHeight = 0
-    let lowestBlockHeight = 0
 
     // Sort NodeSyncLogs by blockHeight
     nodeSyncLogs.sort((a, b) => b.blockHeight - a.blockHeight)
@@ -134,7 +133,6 @@ export class SyncChecker {
       errorState = true
     } else {
       highestNodeBlockHeight = nodeSyncLogs[0].blockHeight
-      lowestBlockHeight = nodeSyncLogs[nodeSyncLogs.length - 1].blockHeight
     }
 
     // If there's at least three nodes, make sure at least three of them agree on current highest block to prevent one node
@@ -160,24 +158,10 @@ export class SyncChecker {
     }
 
     // Consult altruist for sync source of truth
-    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
+    let altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
 
-    // Determine whether altruist is trustworthy or not
-    const isAltruistTrustworthy = altruistBlockHeight >= lowestBlockHeight
-
-    if (!isAltruistTrustworthy) {
-      logger.log('info', `SYNC CHECK ALTRUIST FAILURE: All synced nodes are ahead of altruist`, {
-        requestID: requestID,
-        relayType: '',
-        blockchainID,
-        typeID: '',
-        serviceNode: 'ALTRUIST',
-        error: '',
-        elapsedTime: '',
-        origin: this.origin,
-        sessionHash,
-      })
-    }
+    // Are nodes right or altruist right?
+    let isAltruistTrustworthy: boolean
 
     if (altruistBlockHeight === 0 || isNaN(altruistBlockHeight)) {
       // Failure to find sync from consensus and altruist
@@ -208,9 +192,37 @@ export class SyncChecker {
         origin: this.origin,
         sessionHash,
       })
+
+      // If altruist height > 0, get the percent of nodes above altruist's block height
+      const nodesAheadAltruist = this.nodesAheadAltruist(altruistBlockHeight, nodeSyncLogs)
+
+      // Altruist needs to be ahead of more than 80% of the nodes
+      // to be considered trustworthy
+      isAltruistTrustworthy = !(nodesAheadAltruist > 0.8)
+
+      if (!isAltruistTrustworthy) {
+        logger.log(
+          'info',
+          `SYNC CHECK ALTRUIST FAILURE: ${nodesAheadAltruist * 100}% of the synced nodes are ahead of altruist`,
+          {
+            requestID: requestID,
+            relayType: '',
+            blockchainID,
+            typeID: '',
+            serviceNode: 'ALTRUIST',
+            error: '',
+            elapsedTime: '',
+            origin: this.origin,
+            sessionHash,
+          }
+        )
+
+        // Since we don't trust altruist, let's overwrite its block height
+        altruistBlockHeight = highestNodeBlockHeight
+      }
     }
 
-    const isBlockHeightTooFar = highestNodeBlockHeight + syncAllowance > altruistBlockHeight
+    const isBlockHeightTooFar = highestNodeBlockHeight > altruistBlockHeight + syncAllowance
 
     // If altruist is trustworthy...
     // Make sure nodes aren't running too far ahead of altruist
@@ -668,6 +680,24 @@ export class SyncChecker {
     const rawHeight = payload[`${syncCheckResultKey}`] || '0'
 
     return blockHexToDecimal(rawHeight)
+  }
+
+  // Calculates the percentage of nodes that is already of altruist (e.g. 20/24)
+  nodesAheadAltruist(altruistBlockHeight: number, nodeSyncLogs: NodeSyncLog[]): number {
+    let totalNodesAhead = 0
+    let totalNodes = 0
+
+    for (const nodeSyncLog of nodeSyncLogs) {
+      if (nodeSyncLog.blockHeight > altruistBlockHeight) {
+        totalNodesAhead++
+      }
+
+      if (nodeSyncLog.blockHeight > 0) {
+        totalNodes++
+      }
+    }
+
+    return totalNodesAhead / totalNodes
   }
 }
 
