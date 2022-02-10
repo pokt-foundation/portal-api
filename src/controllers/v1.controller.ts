@@ -35,6 +35,8 @@ const DEFAULT_STICKINESS_PARAMS = {
   rpcIDThreshold: 2,
 }
 
+const MAX_APPLICATION_TRIES = 3
+
 export class V1Controller {
   cherryPicker: CherryPicker
   metricsRecorder: MetricsRecorder
@@ -616,7 +618,30 @@ export class V1Controller {
       return this.fetchApplication(preferredApplicationID, filter)
     }
 
-    return this.fetchApplication(verifiedIDs[Math.floor(Math.random() * verifiedIDs.length)], filter)
+    const verifiedIDsNonExhausted = [...verifiedIDs]
+    let applicationID = ''
+
+    // Check whether the application's session is exhausted, on that case try again
+    // with another app until the limit is exceeded or all apps are exhausted,
+    // otherwise simply pick a random app
+    for (let i = 0; i < MAX_APPLICATION_TRIES; i++) {
+      if (i < MAX_APPLICATION_TRIES - 1 && verifiedIDsNonExhausted.length > 0) {
+        const appIndex = Math.floor(Math.random() * verifiedIDsNonExhausted.length)
+        const appID = verifiedIDsNonExhausted[appIndex]
+
+        const isAppExhausted = await this.redis.get(`app-${appID}-exhausted`)
+
+        if (isAppExhausted) {
+          verifiedIDsNonExhausted.splice(appIndex, 1)
+          continue
+        }
+
+        applicationID = appID
+      } else {
+        applicationID = verifiedIDs[Math.floor(Math.random() * verifiedIDs.length)]
+      }
+    }
+    return this.fetchApplication(applicationID, filter)
   }
 
   // Debug log for testing based on user agent

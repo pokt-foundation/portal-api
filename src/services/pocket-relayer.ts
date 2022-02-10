@@ -635,6 +635,11 @@ export class PocketRelayer {
         blockchainID,
         origin: this.origin,
       })
+
+      // Removes the app from a load balancer pool if any, short cache time as
+      // session rollover cannot be predicted from the load balancer app picking.
+      await this.redis.set(`app-${application.id}-exhausted`, '-true', 'EX', 10)
+
       return new Error("session doesn't have any available nodes")
     }
 
