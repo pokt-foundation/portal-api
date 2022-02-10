@@ -157,11 +157,10 @@ export class SyncChecker {
       errorState = true
     }
 
+    let isAltruistTrustworthy: boolean
+
     // Consult altruist for sync source of truth
     let altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
-
-    // Are nodes right or altruist right?
-    let isAltruistTrustworthy: boolean
 
     if (altruistBlockHeight === 0 || isNaN(altruistBlockHeight)) {
       // Failure to find sync from consensus and altruist
