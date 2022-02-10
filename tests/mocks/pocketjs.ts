@@ -1,4 +1,5 @@
 /* eslint-disable no-prototype-builtins */
+import crypto from 'crypto'
 import { URL } from 'url'
 import { Mock, It } from 'moq.ts'
 import {
@@ -132,6 +133,22 @@ export class PocketMock {
     this.configuration = configuration || DEFAULT_MOCK_VALUES.CONFIGURATION
 
     this.relayCounter = {}
+  }
+
+  /**
+   * Generates a node with random address/public key
+   * @returns node with random address/public key
+   */
+  static getRandomNote(): Node {
+    return new Node(
+      crypto.randomBytes(40).toString('hex'),
+      crypto.randomBytes(64).toString('hex'),
+      false,
+      StakingStatus.Staked,
+      BigInt(Math.floor(Math.random() * 100000)),
+      'http://localhost',
+      ['0027', '0002', '0004', '0022', '0040']
+    )
   }
 
   /**

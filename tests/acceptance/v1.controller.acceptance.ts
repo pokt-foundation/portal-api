@@ -2,18 +2,28 @@ import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
 import { Encryptor } from 'strong-cryptor'
 import { Client, sinon, expect } from '@loopback/testlab'
+import { RpcError } from '@pokt-network/pocket-js'
 import { PocketGatewayApplication } from '../..'
 import { ApplicationsRepository } from '../../src/repositories/applications.repository'
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
 import { LoadBalancersRepository } from '../../src/repositories/load-balancers.repository'
+import { MAX_RELAYS_ERROR } from '../../src/utils/constants'
 import { gatewayTestDB } from '../fixtures/test.datasource'
-import { MockRelayResponse, PocketMock } from '../mocks/pocketjs'
+import { DEFAULT_NODES, MockRelayResponse, PocketMock } from '../mocks/pocketjs'
 import { setupApplication, DUMMY_ENV } from './test-helper'
+const seedrandom = require('seedrandom')
 
 const logger = require('../../src/services/logger')
 
 // Must be the same one from the test environment on ./test-helper.ts
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
+
+const BLOCKCHAIN_CHECKS = {
+  '100': {
+    syncCheck: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+    chainCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
+  },
+}
 
 // Might not actually reflect real-world values
 const BLOCKCHAINS = [
@@ -44,9 +54,9 @@ const BLOCKCHAINS = [
     enforceResult: 'JSON',
     nodeCount: 1,
     chainID: '100',
-    chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
+    chainIDCheck: BLOCKCHAIN_CHECKS[100].chainCheck,
     syncCheckOptions: {
-      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+      body: BLOCKCHAIN_CHECKS[100].syncCheck,
       resultKey: 'result',
       allowance: 5,
       path: '',
@@ -79,7 +89,7 @@ const BLOCKCHAINS = [
     nodeCount: 1,
     chainID: '137',
     syncCheckOptions: {
-      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+      body: BLOCKCHAIN_CHECKS[100].syncCheck,
       resultKey: 'result',
       allowance: 5,
     },
@@ -122,13 +132,19 @@ const APPLICATION = {
   },
 }
 
+const LB_IDS_NAMES = {
+  GIGASTAKE_LEADER: 'hovj6nfix1nr0dknadwawawaqo',
+  GIGASTAKE_FOLLOWER: 'df9f9f9gdklkwotn5o3ixuso3od',
+  LB_WITH_TWO_APPS: 'dsdhc7w56hfysow83rhfgsadh',
+}
+
 const GIGASTAKE_LEADER_IDS = {
   app: 'dofwms0cosmasiqqoadldfisdsf',
-  lb: 'hovj6nfix1nr0dknadwawawaqo',
+  lb: LB_IDS_NAMES.GIGASTAKE_LEADER,
 }
 const GIGASTAKE_FOLLOWER_IDS = {
   app: 'asassd9sd0ffjdcusue2fidisss',
-  lb: 'df9f9f9gdklkwotn5o3ixuso3od',
+  lb: LB_IDS_NAMES.GIGASTAKE_FOLLOWER,
 }
 
 const APPLICATIONS = [
@@ -212,6 +228,22 @@ const LOAD_BALANCERS = [
     name: 'gigastaked lb - follower',
     requestTimeout: 5000,
     applicationIDs: [GIGASTAKE_FOLLOWER_IDS.app],
+    logLimitBlocks: 25000,
+    gigastakeRedirect: true,
+    stickinessOptions: {
+      stickiness: true,
+      duration: 300,
+      useRPCID: false,
+      relaysLimit: 1e6,
+      stickyOrigins: ['localhost'],
+    },
+  },
+  {
+    id: LB_IDS_NAMES.LB_WITH_TWO_APPS,
+    user: 'test@test.com',
+    name: 'lb with two apps',
+    requestTimeout: 5000,
+    applicationIDs: [GIGASTAKE_FOLLOWER_IDS.app, GIGASTAKE_LEADER_IDS.app],
     logLimitBlocks: 25000,
     gigastakeRedirect: true,
     stickinessOptions: {
@@ -630,7 +662,7 @@ describe('V1 controller (acceptance)', () => {
     expect(response.body.error.message).to.be.equal('Invalid domain')
   })
 
-  it('Perfoms sticky requests on LBs that support it using rpcID', async () => {
+  it('Performs sticky requests on LBs that support it using rpcID', async () => {
     const logSpy = sinon.spy(logger, 'log')
 
     const relayRequest = (id) => `{"method":"eth_chainId","id":${id},"jsonrpc":"2.0"}`
@@ -641,10 +673,8 @@ describe('V1 controller (acceptance)', () => {
     mockPocket.relayResponse = {}
 
     // Sync/Chain check
-    mockPocket.relayResponse['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] =
-      '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
-    mockPocket.relayResponse['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
-      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+    mockPocket.relayResponse[BLOCKCHAIN_CHECKS[100].chainCheck] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+    mockPocket.relayResponse[BLOCKCHAIN_CHECKS[100].syncCheck] = '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
 
     // Add some default relay requests
     for (let i = 0; i < 10; i++) {
@@ -660,7 +690,7 @@ describe('V1 controller (acceptance)', () => {
         .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc05')
         .send({ method: 'eth_chainId', id: i, jsonrpc: '2.0' })
         .set('Accept', 'application/json')
-        .set('host', 'eth-mainnet-x')
+        .set('host', 'eth-mainnet')
         .expect(200)
 
       expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
@@ -904,5 +934,101 @@ describe('V1 controller (acceptance)', () => {
     )
 
     expect(gigastakeAppID).to.be.true()
+  })
+
+  it('fails first request due to session exhausted, following request goes to another non-exhausted app and succeeds', async () => {
+    // Guaranteed to return >= 0.5 for at least the first 6 calls, therefore picking the second app of the lb
+    seedrandom('43', { global: true })
+
+    const logSpy = sinon.spy(logger, 'log')
+
+    const mockPocket = new PocketMock()
+
+    mockPocket.relayResponse[BLOCKCHAIN_CHECKS[100].syncCheck] = [
+      // First relay sync check result
+      ...Array(DEFAULT_NODES.length).fill(new RpcError('90', MAX_RELAYS_ERROR)),
+      // Second relay sync check result, plus one for the actual relay request (which is the same method)
+      ...Array(DEFAULT_NODES.length + 1).fill('{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'),
+    ]
+    ;({ app, client } = await setupApplication(mockPocket.object()))
+
+    const responseFallback = await client
+      .post(`/v1/lb/${LB_IDS_NAMES.LB_WITH_TWO_APPS}`)
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet-x')
+      .expect(200)
+
+    expect(responseFallback.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(responseFallback.body).to.have.properties('id', 'jsonrpc', 'result')
+    expect(parseInt(responseFallback.body.result, 16)).to.be.aboveOrEqual(0)
+
+    const expectedFallbackLog = logSpy.calledWith(
+      'info',
+      sinon.match((arg: string) => {
+        return arg.startsWith('SUCCESS FALLBACK RELAYING')
+      })
+    )
+
+    expect(expectedFallbackLog).to.be.true()
+
+    // The last log is the one with the fallback success information, that is assured in the assertion before
+    // so from that same log properties we then obtain the typeID
+    const failureID = logSpy.args[logSpy.args.length - 1][2]['typeID']
+
+    // Relay that sets the app as exhausted
+    const responseExhausted = await client
+      .post(`/v1/lb/${LB_IDS_NAMES.LB_WITH_TWO_APPS}`)
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet-x')
+      .expect(200)
+
+    expect(responseExhausted.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(responseExhausted.body).to.have.properties('id', 'jsonrpc', 'result')
+    expect(parseInt(responseExhausted.body.result, 16)).to.be.aboveOrEqual(0)
+
+    const expectedExhuastedLog = logSpy.calledWith(
+      'warn',
+      sinon.match((arg: string) => {
+        return arg.includes('has exhausted all node relays')
+      })
+    )
+
+    expect(expectedExhuastedLog).to.be.true()
+
+    // The session key is generated from the node's public keys and the mock uses the same nodes
+    // for all calls therefore generating the same key, so is needed to generate nodes with other public keys
+    // so they're not threated as the same and fail due to exhaustion again.
+    mockPocket.nodes = Array(5)
+      .fill(1)
+      .map(() => PocketMock.getRandomNote())
+
+    const { client: client2 } = await setupApplication(mockPocket.object())
+
+    const responseRelay = await client2
+      .post(`/v1/lb/${LB_IDS_NAMES.LB_WITH_TWO_APPS}`)
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet-x')
+      .expect(200)
+
+    expect(responseRelay.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(responseRelay.body).to.have.properties('id', 'jsonrpc', 'result')
+    expect(parseInt(responseRelay.body.result, 16)).to.be.aboveOrEqual(0)
+
+    const expectedSuccessLog = logSpy.calledWith(
+      'info',
+      sinon.match((arg: string) => {
+        return arg.startsWith('SUCCESS RELAYING')
+      })
+    )
+
+    expect(expectedSuccessLog).to.be.true()
+
+    // Just like with the fallback, the last log corresponds to the success relay but using the service node now
+    const successID = logSpy.args[logSpy.args.length - 1][2]['typeID']
+
+    expect(successID).to.not.be.equal(failureID)
   })
 })
