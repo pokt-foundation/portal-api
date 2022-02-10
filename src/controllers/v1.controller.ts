@@ -631,12 +631,12 @@ export class V1Controller {
 
         const isAppExhausted = await this.redis.get(`app-${appID}-exhausted`)
 
-        if (isAppExhausted) {
-          verifiedIDsNonExhausted.splice(appIndex, 1)
-          continue
+        if (!isAppExhausted) {
+          applicationID = appID
+          break
         }
 
-        applicationID = appID
+        verifiedIDsNonExhausted.splice(appIndex, 1)
       } else {
         applicationID = verifiedIDs[Math.floor(Math.random() * verifiedIDs.length)]
       }
