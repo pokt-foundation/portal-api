@@ -559,7 +559,7 @@ describe('Sync checker service (unit)', () => {
       expect(expectedLog).to.be.true()
     })
 
-    it('passes sync check with altruist behind and all nodes ahead', async () => {
+    it('passes sync check with altruist behind and >80% nodes ahead', async () => {
       const nodes = DEFAULT_NODES
 
       axiosMock.onPost(ALTRUIST_URL['0021']).reply(200, '{ "id": 1, "jsonrpc": "2.0", "result": "0x64" }')
