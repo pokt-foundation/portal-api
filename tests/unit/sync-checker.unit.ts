@@ -624,7 +624,7 @@ describe('Sync checker service (unit)', () => {
       expect(syncedNodes).to.have.length(0)
     })
 
-    it('pass session sync check but fails due to behind altruist', async () => {
+    it('fails session sync check, all nodes behind altruist', async () => {
       axiosMock.onPost(ALTRUIST_URL['0021']).reply(200, '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0d00" }') // 100 blocks after the EVM_RELAY_RESPONSE
 
       const nodes = DEFAULT_NODES
@@ -740,7 +740,7 @@ describe('Sync checker service (unit)', () => {
       expect(expectedLog).to.be.true()
     })
 
-    it('filters nodes that are too ahead of altruist', async () => {
+    it('pass session sync check excluding nodes that are too ahead of altruist', async () => {
       const nodes = DEFAULT_NODES
 
       const altruistHeightResult = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c7b" }' // 17435771
