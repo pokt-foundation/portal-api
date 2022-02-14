@@ -244,9 +244,9 @@ export class SyncChecker {
       const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, nodeSyncLog.node.publicKey, requestID)
 
       if (
+        nodeSyncLog.blockHeight <= maximumBlockHeight &&
         correctedNodeBlockHeight >= highestNodeBlockHeight &&
-        correctedNodeBlockHeight >= altruistBlockHeight &&
-        correctedNodeBlockHeight <= maximumBlockHeight
+        correctedNodeBlockHeight >= altruistBlockHeight
       ) {
         logger.log(
           'info',

@@ -43,7 +43,7 @@ const blockchains = {
       body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
       resultKey: 'result',
       path: '',
-      allowance: 2,
+      allowance: 5,
     },
   },
   '0006': {
@@ -624,7 +624,7 @@ describe('Sync checker service (unit)', () => {
       expect(syncedNodes).to.have.length(0)
     })
 
-    it('pass session sync check but fails due to behind altruist', async () => {
+    it('fails session sync check, all nodes behind altruist', async () => {
       axiosMock.onPost(ALTRUIST_URL['0021']).reply(200, '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0d00" }') // 100 blocks after the EVM_RELAY_RESPONSE
 
       const nodes = DEFAULT_NODES
@@ -651,6 +651,49 @@ describe('Sync checker service (unit)', () => {
       })
 
       expect(syncedNodes).to.have.length(0)
+    })
+
+    it('pass session sync check, nodes ahead within allowance', async () => {
+      const nodes = DEFAULT_NODES
+
+      const altruistHeightResult = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a00c3" }' // 17432771
+
+      axiosMock.onPost(ALTRUIST_URL['0021']).reply(200, altruistHeightResult)
+
+      // Nodes ahead within allowance
+      const firstNodeAhead = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a00c6" }' // 17432774
+      const secondNodeAhead = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a00c7" }' // 17435775
+
+      pocketMock.relayResponse[blockchains['0021'].syncCheckOptions.body] = [
+        firstNodeAhead,
+        secondNodeAhead,
+        altruistHeightResult,
+        altruistHeightResult,
+        altruistHeightResult,
+      ]
+
+      const pocketClient = pocketMock.object()
+
+      const { nodes: syncedNodes } = await syncChecker.consensusFilter({
+        nodes,
+        requestID: '1234',
+        blockchainID: blockchains['0021'].hash,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
+        pocket: pocketClient,
+        applicationID: '',
+        applicationPublicKey: '',
+        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        pocketAAT: undefined,
+        pocketConfiguration,
+        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        )) as Session,
+      })
+
+      expect(syncedNodes).to.have.length(5)
     })
 
     it('penalize node failing sync check', async () => {
@@ -697,15 +740,15 @@ describe('Sync checker service (unit)', () => {
       expect(expectedLog).to.be.true()
     })
 
-    it('filters nodes that are too ahead of altruist', async () => {
+    it('pass session sync check excluding nodes that are too ahead of altruist', async () => {
       const nodes = DEFAULT_NODES
 
-      const altruistHeightResult = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c7b" }' // 17432771
+      const altruistHeightResult = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c7b" }' // 17435771
 
       axiosMock.onPost(ALTRUIST_URL['0021']).reply(200, altruistHeightResult)
 
-      const firstNodeAhead = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c7e" }' // 17435774
-      const secondNodeAhead = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c7f" }' // 17435775
+      const firstNodeAhead = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0cdf" }' // 17435871
+      const secondNodeAhead = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0ce0" }' // 17435872
 
       pocketMock.relayResponse[blockchains['0021'].syncCheckOptions.body] = [
         firstNodeAhead,
