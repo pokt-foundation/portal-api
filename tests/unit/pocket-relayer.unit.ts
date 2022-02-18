@@ -581,7 +581,7 @@ describe('Pocket relayer service (unit)', () => {
       const pocket = mock.object()
 
       const poktRelayer = new PocketRelayer({
-        host: 'eth-mainnet-string',
+        host: 'eth-mainnet',
         origin: '',
         userAgent: '',
         ipAddress: '',
@@ -603,26 +603,24 @@ describe('Pocket relayer service (unit)', () => {
         dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
-      try {
-        await poktRelayer.sendRelay({
-          rawData,
-          relayPath: '',
-          httpMethod: HTTPMethod.POST,
-          application: APPLICATION as unknown as Applications,
-          requestID: '1234',
-          requestTimeOut: undefined,
-          overallTimeOut: undefined,
-          stickinessOptions: {
-            stickiness: false,
-            duration: 0,
-            preferredNodeAddress: '',
-          },
-          relayRetries: 0,
-        })
-      } catch (error) {
-        expect(error).to.be.instanceOf(ErrorObject)
-        expect(error.error.message).to.be.equal('Service Node returned an invalid response')
-      }
+      const relay = (await poktRelayer.sendRelay({
+        rawData,
+        relayPath: '',
+        httpMethod: HTTPMethod.POST,
+        application: APPLICATION as unknown as Applications,
+        requestID: '1234',
+        requestTimeOut: undefined,
+        overallTimeOut: undefined,
+        stickinessOptions: {
+          stickiness: false,
+          duration: 0,
+          preferredNodeAddress: '',
+        },
+        relayRetries: 0,
+      })) as ErrorObject
+
+      expect(relay).to.be.instanceOf(ErrorObject)
+      expect(relay.error.message).to.be.equal('Relay attempts exhausted')
     })
 
     it('throws an error when provided timeout is exceeded', async () => {
