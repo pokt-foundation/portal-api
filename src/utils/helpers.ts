@@ -47,8 +47,7 @@ export function getRandomInt(min: number, max: number): number {
 }
 
 // Source: https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function shuffle(array: any[]): any[] {
+export function shuffle<T>(array: T[]): T[] {
   let currentIndex = array.length
   let randomIndex: number
 
