@@ -1,6 +1,6 @@
 import { Redis } from 'ioredis'
 import { Configuration, Node, Pocket, PocketAAT, Session } from '@pokt-network/pocket-js'
-import { hashBlockchainNodes, measuredPromise } from '../utils/helpers'
+import { measuredPromise } from '../utils/helpers'
 import { MetricsRecorder } from './metrics-recorder'
 import { ArchivalCheck, NodeChecker, NodeCheckResponse } from './node-checker'
 import { NodeCheckerWrapper } from './node-checker-wrapper'
@@ -45,9 +45,9 @@ export class ArchivalChecker extends NodeCheckerWrapper {
     requestID,
   }: ArchivalCheckParams): Promise<Node[]> {
     const { body, resultKey, comparator, path } = archivalCheckOptions
+    const { sessionKey } = pocketSession
 
-    const sessionHash = await hashBlockchainNodes(blockchainID, pocketSession.sessionNodes, this.redis)
-    const archivalNodesKey = `archival-check-${sessionHash}`
+    const archivalNodesKey = `archival-check-${sessionKey}`
 
     const archivalNodes: Node[] = await this.checkForCachedNodes(nodes, archivalNodesKey)
     const archivalNodesList: string[] = []
@@ -101,7 +101,7 @@ export class ArchivalChecker extends NodeCheckerWrapper {
       requestID: requestID,
       blockchainID,
       origin: this.origin,
-      sessionHash,
+      sessionHash: sessionKey,
     })
     await this.redis.set(
       archivalNodesKey,

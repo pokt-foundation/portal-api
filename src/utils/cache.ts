@@ -2,8 +2,6 @@ import axios, { AxiosError } from 'axios'
 import extractDomain from 'extract-domain'
 import { Redis } from 'ioredis'
 import { getAddressFromPublicKey } from 'pocket-tools'
-import { Node } from '@pokt-network/pocket-js'
-import { hashBlockchainNodes } from './helpers'
 
 const logger = require('../services/logger')
 
@@ -18,23 +16,17 @@ const ALTRUIST_URL = JSON.parse(process.env.ALTRUISTS)?.['0001']
  * @param nodePubKey node to remove's public key
  * @returns
  */
-export async function removeNodeFromSession(
-  redis: Redis,
-  blockchainID: string,
-  sessionNodes: Node[],
-  nodePubKey: string
-): Promise<void> {
-  const hash = await hashBlockchainNodes(blockchainID, sessionNodes, redis)
-  const sessionKey = `session-${hash}`
+export async function removeNodeFromSession(redis: Redis, pocketSessionKey: string, nodePubKey: string): Promise<void> {
+  const sessionKey = `session-${pocketSessionKey}`
 
   await redis.sadd(sessionKey, nodePubKey)
-  await redis.del(`sync-check-${hash}`)
-  await redis.del(`chain-check-${hash}`)
+  await redis.del(`sync-check-${pocketSessionKey}`)
+  await redis.del(`chain-check-${pocketSessionKey}`)
 
   const nodesToRemoveTTL = await redis.ttl(sessionKey)
 
   if (nodesToRemoveTTL < 0) {
-    await redis.expire(sessionKey, 3600) // 1 hour
+    await redis.expire(sessionKey, 900) // 15 min
   }
 }
 /**

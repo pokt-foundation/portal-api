@@ -2,7 +2,7 @@ import axios from 'axios'
 import { Redis } from 'ioredis'
 import { Configuration, Node, Pocket, PocketAAT, Session } from '@pokt-network/pocket-js'
 import { getNodeNetworkData } from '../utils/cache'
-import { hashBlockchainNodes, measuredPromise } from '../utils/helpers'
+import { measuredPromise } from '../utils/helpers'
 import { MetricsRecorder } from './metrics-recorder'
 import { NodeChecker, NodeCheckResponse, SyncCheck } from './node-checker'
 import { NodeCheckerWrapper } from './node-checker-wrapper'
@@ -27,7 +27,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
    * @param blockchainID Blockchain to request data from.
    * @param pocketAAT Pocket Authentication Token object.
    * @param pocketConfiguration pocket's configuration object.
-   * @param pocketSession. pocket's current session object.
+   * @param pocketSession pocket's current session object.
    * @param blockchainSyncBackup altruist's URL.
    * @param applicationID application database's ID.
    * @param applicationPublicKey application's public key.
@@ -46,9 +46,9 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     applicationPublicKey,
     requestID,
   }: SyncCheckerParams): Promise<Node[]> {
-    const sessionHash = await hashBlockchainNodes(blockchainID, pocketSession.sessionNodes, this.redis)
+    const { sessionKey } = pocketSession
     const allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
-    const syncedNodesKey = `sync-check-${sessionHash}`
+    const syncedNodesKey = `sync-check-${sessionKey}`
 
     const syncedRelayNodes: NodeCheckResponse<SyncCheck>[] = []
     let syncedNodes: Node[] = await this.checkForCachedNodes(nodes, syncedNodesKey)
@@ -120,7 +120,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
         requestID: requestID,
         blockchainID,
         origin: this.origin,
-        sessionHash,
+        sessionHash: sessionKey,
       })
       errorState = true
     }
@@ -142,7 +142,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
           requestID: requestID,
           blockchainID,
           origin: this.origin,
-          sessionHash: sessionHash,
+          sessionHash: sessionKey,
         }
       )
       errorState = true
@@ -155,7 +155,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
         blockchainID,
         serviceNode: 'ALTRUIST',
         origin: this.origin,
-        sessionHash,
+        sessionHash: sessionKey,
       })
 
       if (errorState) {
@@ -167,7 +167,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
         blockchainID,
         serviceNode: 'ALTRUIST',
         origin: this.origin,
-        sessionHash,
+        sessionHash: sessionKey,
       })
     }
 
@@ -207,7 +207,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
             origin: this.origin,
             serviceURL,
             serviceDomain,
-            sessionHash,
+            sessionHash: sessionKey,
           })
 
           this.metricsRecorder
@@ -246,7 +246,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
           origin: this.origin,
           serviceURL,
           serviceDomain,
-          sessionHash,
+          sessionHash: sessionKey,
         })
 
         return this.redis.set(blockchainID + '-' + publicKey + '-failure', 'false', 'EX', 60 * 60 * 24 * 30)
@@ -257,7 +257,7 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
       requestID: requestID,
       blockchainID,
       origin: this.origin,
-      sessionHash,
+      sessionHash: sessionKey,
     })
 
     await this.redis.set(

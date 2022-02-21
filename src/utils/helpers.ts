@@ -1,25 +1,4 @@
-import { Redis } from 'ioredis'
-import { Node } from '@pokt-network/pocket-js'
 import { Applications } from '../models/applications.model'
-
-// hashes a blockchain and all of the nodes given, sorted by public key
-export async function hashBlockchainNodes(blockchainID: string, nodes: Node[] = [], redis: Redis): Promise<string> {
-  const sortedNodes = nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0))
-
-  const sortedNodesStr = JSON.stringify(sortedNodes, (k, v) => (k !== 'publicKey' ? v : undefined))
-
-  const calculateHash = () => sortedNodes.map((node) => node.publicKey.slice(0, 5)).join('')
-
-  const blockchainHashKey = `${blockchainID}-${sortedNodesStr}`
-  let blockchainHash = await redis.get(blockchainHashKey)
-
-  if (!blockchainHash) {
-    blockchainHash = `${blockchainID}-${calculateHash()}`
-    await redis.set(blockchainHashKey, blockchainHash, 'EX', 300)
-  }
-
-  return blockchainHash
-}
 
 interface MeasuredPromise<T> {
   time: number
@@ -47,8 +26,7 @@ export function getRandomInt(min: number, max: number): number {
 }
 
 // Source: https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function shuffle(array: any[]): any[] {
+export function shuffle<T>(array: T[]): T[] {
   let currentIndex = array.length
   let randomIndex: number
 

@@ -16,7 +16,6 @@ import { PocketRelayer } from '../../src/services/pocket-relayer'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../../src/services/sync-checker'
 import { MAX_RELAYS_ERROR } from '../../src/utils/constants'
 import { checkWhitelist, checkSecretKey } from '../../src/utils/enforcements'
-import { hashBlockchainNodes } from '../../src/utils/helpers'
 import { parseMethod } from '../../src/utils/parsing'
 import { updateConfiguration } from '../../src/utils/pocket'
 import { loadBlockchain } from '../../src/utils/relayer'
@@ -724,7 +723,6 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     it('Fails relay due to all nodes in session running out of relays, subsequent relays should not attempt to perform checks', async () => {
-      const blockchainID = '0021'
       const mock = new PocketMock()
 
       const maxRelaysError = new RpcError('90', MAX_RELAYS_ERROR)
@@ -737,13 +735,13 @@ describe('Pocket relayer service (unit)', () => {
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
 
       const pocket = mock.object()
-      const { sessionNodes } = (await pocket.sessionManager.getCurrentSession(
+      const { sessionKey: pocketSessionKey } = (await pocket.sessionManager.getCurrentSession(
         undefined,
         undefined,
         undefined,
         undefined
       )) as Session
-      const sessionKey = `session-${await hashBlockchainNodes(blockchainID, sessionNodes, redis)}`
+      const sessionKey = `session-${pocketSessionKey}`
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
@@ -821,7 +819,6 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     it('Fails relay due to one node in session running out of relays, subsequent relays should attempt to perform checks', async () => {
-      const blockchainID = '0021'
       const mock = new PocketMock()
 
       mock.relayResponse[rawData] = new RpcError('90', MAX_RELAYS_ERROR)
@@ -830,13 +827,13 @@ describe('Pocket relayer service (unit)', () => {
       const chainCheckerSpy = sinon.spy(chainChecker, 'chainIDFilter')
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
       const pocket = mock.object()
-      const { sessionNodes } = (await pocket.sessionManager.getCurrentSession(
+      const { sessionKey: pocketSessionKey } = (await pocket.sessionManager.getCurrentSession(
         undefined,
         undefined,
         undefined,
         undefined
       )) as Session
-      const sessionKey = `session-${await hashBlockchainNodes(blockchainID, sessionNodes, redis)}`
+      const sessionKey = `session-${pocketSessionKey}`
 
       const poktRelayer = new PocketRelayer({
         host: 'eth-mainnet',
