@@ -2,6 +2,7 @@ import { Redis } from 'ioredis'
 import { Node, Session } from '@pokt-network/pocket-js'
 import { Applications } from '../models'
 import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
+import { hashBlockchainNodes } from '../utils/helpers'
 
 const logger = require('../services/logger')
 
@@ -327,8 +328,8 @@ export class CherryPicker {
     requestTimeout: number | undefined,
     pocketSession?: Session
   ): Promise<void> {
-    const { sessionKey } = pocketSession || {}
-    const sessionHash = pocketSession.sessionKey
+    const { sessionKey, sessionNodes } = pocketSession || {}
+    const sessionHash = await hashBlockchainNodes(blockchainID, sessionNodes, this.redis)
 
     // FIXME: This is not a reliable way on asserting whether is a service node,
     // an issue was created on pocket-tools for a 'isPublicKey' function. Once is
@@ -358,7 +359,7 @@ export class CherryPicker {
           serviceDomain,
           sessionHash,
         })
-        await removeNodeFromSession(this.redis, pocketSession.sessionKey, serviceNode)
+        await removeNodeFromSession(this.redis, blockchainID, sessionNodes, serviceNode)
       }
     }
   }
