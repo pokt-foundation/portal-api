@@ -1,4 +1,25 @@
+import { Redis } from 'ioredis'
+import { Node } from '@pokt-network/pocket-js'
 import { Applications } from '../models/applications.model'
+
+// hashes a blockchain and all of the nodes given, sorted by public key
+export async function hashBlockchainNodes(blockchainID: string, nodes: Node[] = [], redis: Redis): Promise<string> {
+  const sortedNodes = nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0))
+
+  const sortedNodesStr = JSON.stringify(sortedNodes, (k, v) => (k !== 'publicKey' ? v : undefined))
+
+  const calculateHash = () => sortedNodes.map((node) => node.publicKey.slice(0, 5)).join('')
+
+  const blockchainHashKey = `${blockchainID}-${sortedNodesStr}`
+  let blockchainHash = await redis.get(blockchainHashKey)
+
+  if (!blockchainHash) {
+    blockchainHash = `${blockchainID}-${calculateHash()}`
+    await redis.set(blockchainHashKey, blockchainHash, 'EX', 300)
+  }
+
+  return blockchainHash
+}
 
 interface MeasuredPromise<T> {
   time: number
