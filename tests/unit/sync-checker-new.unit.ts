@@ -8,7 +8,6 @@ import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { PocketSyncChecker } from '../../src/services/sync-checker-new'
 import { MAX_RELAYS_ERROR } from '../../src/utils/constants'
-import { hashBlockchainNodes } from '../../src/utils/helpers'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
@@ -198,8 +197,8 @@ describe('Sync checker service new (unit)', () => {
 
       expect(syncedNodes).to.have.length(5)
 
-      expect(redisGetSpy.callCount).to.be.equal(14)
-      expect(redisSetSpy.callCount).to.be.equal(13)
+      expect(redisGetSpy.callCount).to.be.equal(12)
+      expect(redisSetSpy.callCount).to.be.equal(12)
 
       // Subsequent calls should retrieve results from redis instead
       syncedNodes = await syncChecker.check({
@@ -215,8 +214,8 @@ describe('Sync checker service new (unit)', () => {
         requestID: 'abcd',
       })
 
-      expect(redisGetSpy.callCount).to.be.equal(16)
-      expect(redisSetSpy.callCount).to.be.equal(13)
+      expect(redisGetSpy.callCount).to.be.equal(13)
+      expect(redisSetSpy.callCount).to.be.equal(12)
     })
 
     it('performs a non-EVM (Solana) sync check successfully', async () => {
@@ -240,8 +239,8 @@ describe('Sync checker service new (unit)', () => {
 
       expect(syncedNodes).to.have.length(5)
 
-      expect(redisGetSpy.callCount).to.be.equal(14)
-      expect(redisSetSpy.callCount).to.be.equal(13)
+      expect(redisGetSpy.callCount).to.be.equal(12)
+      expect(redisSetSpy.callCount).to.be.equal(12)
 
       // Subsequent calls should retrieve results from redis instead
       syncedNodes = await syncChecker.check({
@@ -256,8 +255,8 @@ describe('Sync checker service new (unit)', () => {
         applicationPublicKey: '5678',
         requestID: 'abcd',
       })
-      expect(redisGetSpy.callCount).to.be.equal(16)
-      expect(redisSetSpy.callCount).to.be.equal(13)
+      expect(redisGetSpy.callCount).to.be.equal(13)
+      expect(redisSetSpy.callCount).to.be.equal(12)
     })
 
     it('performs a non-EVM (Pocket) sync check successfully', async () => {
@@ -281,8 +280,8 @@ describe('Sync checker service new (unit)', () => {
 
       expect(syncedNodes).to.have.length(5)
 
-      expect(redisGetSpy.callCount).to.be.equal(14)
-      expect(redisSetSpy.callCount).to.be.equal(13)
+      expect(redisGetSpy.callCount).to.be.equal(12)
+      expect(redisSetSpy.callCount).to.be.equal(12)
 
       // Subsequent calls should retrieve results from redis instead
       syncedNodes = await syncChecker.check({
@@ -298,8 +297,8 @@ describe('Sync checker service new (unit)', () => {
         requestID: 'abcd',
       })
 
-      expect(redisGetSpy.callCount).to.be.equal(16)
-      expect(redisSetSpy.callCount).to.be.equal(13)
+      expect(redisGetSpy.callCount).to.be.equal(13)
+      expect(redisSetSpy.callCount).to.be.equal(12)
     })
 
     it('fails a sync check due to wrong result key (evm/non-evm)', async () => {
@@ -521,9 +520,7 @@ describe('Sync checker service new (unit)', () => {
 
       expect(syncedNodes).to.have.length(4)
 
-      const removedNode = await redis.smembers(
-        `session-${await hashBlockchainNodes(blockchains['0021'].hash, pocketSession.sessionNodes, redis)}`
-      )
+      const removedNode = await redis.smembers(`session-${pocketSession.sessionKey}`)
 
       expect(removedNode).to.have.length(1)
     })

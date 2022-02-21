@@ -2,7 +2,6 @@ import { Redis } from 'ioredis'
 import { Pocket, Node, PocketAAT, Configuration, Session } from '@pokt-network/pocket-js'
 import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
 import { MAX_RELAYS_ERROR } from '../utils/constants'
-import { hashBlockchainNodes } from '../utils/helpers'
 import { MetricsRecorder } from './metrics-recorder'
 import { ArchivalCheck, ChainCheck, Check, NodeChecker, NodeCheckResponse, SyncCheck } from './node-checker'
 
@@ -84,8 +83,7 @@ export class NodeCheckerWrapper {
     elapsedTimes,
   }: FilterParams<T>): Promise<NodeCheckResponse<T>[]> {
     const filteredNodes: NodeCheckResponse<T>[] = []
-    const { sessionNodes } = pocketSession
-    const sessionHash = await hashBlockchainNodes(blockchainID, sessionNodes, this.redis)
+    const { sessionKey } = pocketSession
 
     for (const [idx, check] of checksResult.entries()) {
       const node = nodes[idx]
@@ -109,11 +107,11 @@ export class NodeCheckerWrapper {
           origin: this.origin,
           serviceURL,
           serviceDomain,
-          sessionHash,
+          sessionHash: sessionKey,
         })
 
         if (errorMsg === MAX_RELAYS_ERROR) {
-          await removeNodeFromSession(this.redis, blockchainID, sessionNodes, node.publicKey)
+          await removeNodeFromSession(this.redis, sessionKey, node.publicKey)
         }
 
         if (typeof error === 'object') {
@@ -134,7 +132,7 @@ export class NodeCheckerWrapper {
           error: typeof error === 'string' ? error : errorMsg,
           origin: this.origin,
           data: undefined,
-          sessionHash,
+          sessionHash: sessionKey,
           bytes: 0,
           pocketSession: pocketSession,
           code: undefined,
@@ -201,7 +199,7 @@ export class NodeCheckerWrapper {
         origin: this.origin,
         serviceURL,
         serviceDomain,
-        sessionHash,
+        sessionHash: sessionKey,
       })
 
       // Sync check requires additional assertions outside the scope of this method.
@@ -213,7 +211,7 @@ export class NodeCheckerWrapper {
           origin: this.origin,
           serviceURL,
           serviceDomain,
-          sessionHash,
+          sessionHash: sessionKey,
         })
       }
 
@@ -256,7 +254,7 @@ export class NodeCheckerWrapper {
       requestID: requestID,
       blockchainID,
       origin: this.origin,
-      sessionHash: await hashBlockchainNodes(blockchainID, pocketSession.sessionNodes, this.redis),
+      sessionHash: pocketSession.sessionKey,
     })
   }
 }

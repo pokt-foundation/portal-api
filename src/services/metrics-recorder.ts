@@ -9,7 +9,6 @@ import { Point, WriteApi } from '@influxdata/influxdb-client'
 
 import { getNodeNetworkData } from '../utils/cache'
 import { BLOCK_TIMING_ERROR } from '../utils/constants'
-import { hashBlockchainNodes } from '../utils/helpers'
 import { CherryPicker } from './cherry-picker'
 const os = require('os')
 const logger = require('../services/logger')
@@ -86,9 +85,6 @@ export class MetricsRecorder {
     sessionBlockHeight?: number | BigInt
   }): Promise<void> {
     try {
-      const { sessionNodes } = pocketSession || {}
-      const sessionHash = await hashBlockchainNodes(blockchainID, sessionNodes, this.redis)
-
       // Might come empty
       applicationPublicKey = applicationPublicKey || 'no_public_key'
 
@@ -130,7 +126,7 @@ export class MetricsRecorder {
           error: '',
           origin,
           blockchainID,
-          sessionHash,
+          sessionHash: pocketSession.sessionKey,
           sticky,
           sessionBlockHeight,
         })
@@ -147,7 +143,7 @@ export class MetricsRecorder {
           error,
           origin,
           blockchainID,
-          sessionHash,
+          sessionHash: pocketSession.sessionKey,
           sticky,
           sessionBlockHeight,
         })
@@ -164,7 +160,7 @@ export class MetricsRecorder {
           error,
           origin,
           blockchainID,
-          sessionHash,
+          sessionHash: pocketSession.sessionKey,
           sticky,
           sessionBlockHeight,
         })

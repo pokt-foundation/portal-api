@@ -8,7 +8,6 @@ import { ArchivalChecker } from '../../src/services/archival-check'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { MAX_RELAYS_ERROR } from '../../src/utils/constants'
-import { hashBlockchainNodes } from '../../src/utils/helpers'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
@@ -99,8 +98,8 @@ describe('Archival checker new service (unit)', () => {
     expect(checkedNodes).to.be.Array()
     expect(checkedNodes).to.have.length(5)
 
-    expect(redisGetSpy.callCount).to.be.equal(9)
-    expect(redisSetSpy.callCount).to.be.equal(8)
+    expect(redisGetSpy.callCount).to.be.equal(7)
+    expect(redisSetSpy.callCount).to.be.equal(7)
 
     // Subsequent calls should retrieve results from redis instead
     checkedNodes = await archivalChecker.check({
@@ -115,8 +114,8 @@ describe('Archival checker new service (unit)', () => {
       requestID: 'abcd',
     })
 
-    expect(redisGetSpy.callCount).to.be.equal(11)
-    expect(redisSetSpy.callCount).to.be.equal(8)
+    expect(redisGetSpy.callCount).to.be.equal(8)
+    expect(redisSetSpy.callCount).to.be.equal(7)
   })
 
   it('fails the archival check', async () => {
@@ -138,7 +137,6 @@ describe('Archival checker new service (unit)', () => {
 
   it('Fails the archival check due to max relays error on a node', async () => {
     const nonArchivalResponse = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c9c" }'
-    const blockchainID = '0027'
 
     // Fails last node due to max relays
     pocketMock.relayResponse[ARCHIVALCHECK_PAYLOAD.body] = [
@@ -168,9 +166,7 @@ describe('Archival checker new service (unit)', () => {
     expect(checkedNodes).to.be.Array()
     expect(checkedNodes).to.have.length(4)
 
-    const removedNode = await redis.smembers(
-      `session-${await hashBlockchainNodes(blockchainID, pocketSession.sessionNodes, redis)}`
-    )
+    const removedNode = await redis.smembers(`session-${pocketSession.sessionKey}`)
 
     expect(removedNode).to.have.length(1)
   })
