@@ -21,7 +21,7 @@ import {
   checkSecretKey,
   SecretKeyDetails,
 } from '../utils/enforcements'
-import { getApplicationPublicKey } from '../utils/helpers'
+import { getApplicationPublicKey, hashBlockchainNodes } from '../utils/helpers'
 import { parseJSONRPCError, parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
 import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
@@ -615,7 +615,7 @@ export class PocketRelayer {
 
     this.pocketSession = pocketSession
     // sessionKey = "blockchain and a hash of the all the nodes in this session, sorted by public key"
-    const { sessionKey } = pocketSession
+    const sessionKey = await hashBlockchainNodes(blockchainID, nodes, this.redis)
 
     this.pocketSession = pocketSession
     const sessionCacheKey = `session-${sessionKey}`
@@ -860,7 +860,7 @@ export class PocketRelayer {
     } else if (relayResponse instanceof Error) {
       // Remove node from session if error is due to max relays allowed reached
       if (relayResponse.message === MAX_RELAYS_ERROR) {
-        await removeNodeFromSession(this.redis, (pocketSession as Session).sessionKey, node.publicKey)
+        await removeNodeFromSession(this.redis, blockchainID, (pocketSession as Session).sessionNodes, node.publicKey)
       }
       return new RelayError(relayResponse.message, 500, node?.publicKey)
       // ConsensusNode

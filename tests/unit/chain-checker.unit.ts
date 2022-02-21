@@ -9,6 +9,7 @@ import { ChainChecker } from '../../src/services/chain-checker'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { MAX_RELAYS_ERROR } from '../../src/utils/constants'
+import { hashBlockchainNodes } from '../../src/utils/helpers'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
@@ -100,12 +101,8 @@ describe('Chain checker service (unit)', () => {
         applicationPublicKey: '',
         pocketAAT: undefined,
         pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
+        pocketSession: undefined,
+        sessionHash: '',
       })
 
       const expectedChainID = 100 // 0x64 to base 10
@@ -130,12 +127,8 @@ describe('Chain checker service (unit)', () => {
         applicationPublicKey: '',
         pocketAAT: undefined,
         pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
+        pocketSession: undefined,
+        sessionHash: '',
       })
 
       const expectedChainID = 0
@@ -161,12 +154,8 @@ describe('Chain checker service (unit)', () => {
         applicationPublicKey: '',
         pocketAAT: undefined,
         pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
+        pocketSession: undefined,
+        sessionHash: '',
       })
 
       const expectedChainID = 0
@@ -197,12 +186,8 @@ describe('Chain checker service (unit)', () => {
       applicationPublicKey: '',
       pocketAAT: undefined,
       pocketConfiguration,
-      pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-        undefined,
-        undefined,
-        undefined,
-        undefined
-      )) as Session,
+      pocketSession: undefined,
+      sessionHash: '',
     })
 
     const expectedChainID = 100 // 0x64 to base 10
@@ -245,8 +230,8 @@ describe('Chain checker service (unit)', () => {
     expect(checkedNodes).to.be.Array()
     expect(checkedNodes).to.have.length(5)
 
-    expect(redisGetSpy.callCount).to.be.equal(12)
-    expect(redisSetSpy.callCount).to.be.equal(7)
+    expect(redisGetSpy.callCount).to.be.equal(13)
+    expect(redisSetSpy.callCount).to.be.equal(8)
 
     // Subsequent calls should retrieve results from redis instead
     checkedNodes = (
@@ -270,8 +255,8 @@ describe('Chain checker service (unit)', () => {
       })
     ).nodes
 
-    expect(redisGetSpy.callCount).to.be.equal(13)
-    expect(redisSetSpy.callCount).to.be.equal(7)
+    expect(redisGetSpy.callCount).to.be.equal(15)
+    expect(redisSetSpy.callCount).to.be.equal(8)
   })
 
   it('fails the chain check', async () => {
@@ -345,7 +330,9 @@ describe('Chain checker service (unit)', () => {
     expect(checkedNodes).to.be.Array()
     expect(checkedNodes).to.have.length(4)
 
-    const removedNode = await redis.smembers(`session-${pocketSession.sessionKey}`)
+    const removedNode = await redis.smembers(
+      `session-${await hashBlockchainNodes(blockchainID, pocketSession.sessionNodes, redis)}`
+    )
 
     expect(removedNode).to.have.length(1)
   })
