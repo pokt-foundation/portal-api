@@ -74,7 +74,7 @@ export class EnvironmentObserver implements LifeCycleObserver {
     environmentVariables.forEach((name: string) => {
       const variable = process.env[name]
 
-      if (!variable && EnvironmentObserver.optionalEnvVars.indexOf(name) < 0) {
+      if ((!variable || variable === '') && EnvironmentObserver.optionalEnvVars.indexOf(name) < 0) {
         if (ENV !== 'production' && EnvironmentObserver.requiredEnvVarsOnlyInProd.indexOf(name) >= 0) {
           return
         }
