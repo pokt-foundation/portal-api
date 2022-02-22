@@ -74,6 +74,7 @@
     "@loopback/service-proxy": "^4.0.1",
     "@pokt-network/pocket-js": "^0.7.0-rc",
     "axios": "^0.25.0",
+    "assert": "^2.0.0",
     "aws-sdk": "^2.1023.0",
     "datadog-winston": "^1.5.1",
     "dd-trace": "^2.0.0",

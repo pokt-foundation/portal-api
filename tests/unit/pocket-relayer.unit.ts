@@ -1,3 +1,4 @@
+import assert from 'assert'
 import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
 import RedisMock from 'ioredis-mock'
@@ -603,24 +604,27 @@ describe('Pocket relayer service (unit)', () => {
         dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
-      const relay = (await poktRelayer.sendRelay({
-        rawData,
-        relayPath: '',
-        httpMethod: HTTPMethod.POST,
-        application: APPLICATION as unknown as Applications,
-        requestID: '1234',
-        requestTimeOut: undefined,
-        overallTimeOut: undefined,
-        stickinessOptions: {
-          stickiness: false,
-          duration: 0,
-          preferredNodeAddress: '',
-        },
-        relayRetries: 0,
-      })) as ErrorObject
-
-      expect(relay).to.be.instanceOf(ErrorObject)
-      expect(relay.error.message).to.be.equal('Relay attempts exhausted')
+      await assert.rejects(
+        poktRelayer.sendRelay({
+          rawData,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
+          relayRetries: 0,
+        }),
+        (e: ErrorObject) => {
+          assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+          return true
+        }
+      )
     })
 
     it('throws an error when provided timeout is exceeded', async () => {
@@ -653,23 +657,27 @@ describe('Pocket relayer service (unit)', () => {
         dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
-      const relayResponse = await poktRelayer.sendRelay({
-        rawData,
-        relayPath: '',
-        httpMethod: HTTPMethod.POST,
-        application: APPLICATION as unknown as Applications,
-        requestID: '1234',
-        requestTimeOut: 0,
-        overallTimeOut: 1,
-        relayRetries: 1,
-        stickinessOptions: {
-          stickiness: false,
-          duration: 0,
-          preferredNodeAddress: '',
-        },
-      })
-
-      expect(relayResponse).to.be.instanceOf(ErrorObject)
+      await assert.rejects(
+        poktRelayer.sendRelay({
+          rawData,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          requestID: '1234',
+          requestTimeOut: 0,
+          overallTimeOut: 1,
+          relayRetries: 1,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
+        }),
+        (e: ErrorObject) => {
+          assert.strictEqual(e.error.message, 'Overall Timeout exceeded: 1')
+          return true
+        }
+      )
     })
 
     it('returns relay error on successful relay response that returns error', async () => {
@@ -702,23 +710,27 @@ describe('Pocket relayer service (unit)', () => {
         dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
-      const relayResponse = await poktRelayer.sendRelay({
-        rawData,
-        relayPath: '',
-        httpMethod: HTTPMethod.POST,
-        application: APPLICATION as unknown as Applications,
-        requestID: '1234',
-        requestTimeOut: undefined,
-        overallTimeOut: undefined,
-        stickinessOptions: {
-          stickiness: false,
-          duration: 0,
-          preferredNodeAddress: '',
-        },
-        relayRetries: 0,
-      })
-
-      expect(relayResponse).to.be.instanceOf(ErrorObject)
+      await assert.rejects(
+        poktRelayer.sendRelay({
+          rawData,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
+          relayRetries: 0,
+        }),
+        (e: ErrorObject) => {
+          assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+          return true
+        }
+      )
     })
 
     it('Fails relay due to all nodes in session running out of relays, subsequent relays should not attempt to perform checks', async () => {
@@ -766,23 +778,27 @@ describe('Pocket relayer service (unit)', () => {
         dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
-      const relayResponse = await poktRelayer.sendRelay({
-        rawData,
-        relayPath: '',
-        httpMethod: HTTPMethod.POST,
-        application: APPLICATION as unknown as Applications,
-        requestID: '1234',
-        requestTimeOut: undefined,
-        overallTimeOut: undefined,
-        stickinessOptions: {
-          stickiness: false,
-          duration: 0,
-          preferredNodeAddress: '',
-        },
-        relayRetries: 0,
-      })
-
-      expect(relayResponse).to.be.instanceOf(ErrorObject)
+      await assert.rejects(
+        poktRelayer.sendRelay({
+          rawData,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
+          relayRetries: 0,
+        }),
+        (e: ErrorObject) => {
+          assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+          return true
+        }
+      )
 
       let removedNodes = await redis.smembers(sessionKey)
 
@@ -792,23 +808,27 @@ describe('Pocket relayer service (unit)', () => {
       expect(syncCherckerSpy.callCount).to.be.equal(1)
 
       // Subsequent calls should not go to sync or chain checker
-      const secondRelayResponse = await poktRelayer.sendRelay({
-        rawData,
-        relayPath: '',
-        httpMethod: HTTPMethod.POST,
-        application: APPLICATION as unknown as Applications,
-        requestID: '1234',
-        requestTimeOut: undefined,
-        overallTimeOut: undefined,
-        stickinessOptions: {
-          stickiness: false,
-          duration: 0,
-          preferredNodeAddress: '',
-        },
-        relayRetries: 0,
-      })
-
-      expect(secondRelayResponse).to.be.instanceOf(ErrorObject)
+      await assert.rejects(
+        poktRelayer.sendRelay({
+          rawData,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
+          relayRetries: 0,
+        }),
+        (e: ErrorObject) => {
+          assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+          return true
+        }
+      )
 
       removedNodes = await redis.smembers(sessionKey)
 
@@ -859,23 +879,27 @@ describe('Pocket relayer service (unit)', () => {
         dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
-      const relayResponse = await poktRelayer.sendRelay({
-        rawData,
-        relayPath: '',
-        httpMethod: HTTPMethod.POST,
-        application: APPLICATION as unknown as Applications,
-        requestID: '1234',
-        requestTimeOut: undefined,
-        overallTimeOut: undefined,
-        stickinessOptions: {
-          stickiness: false,
-          duration: 0,
-          preferredNodeAddress: '',
-        },
-        relayRetries: 0,
-      })
-
-      expect(relayResponse).to.be.instanceOf(ErrorObject)
+      await assert.rejects(
+        poktRelayer.sendRelay({
+          rawData,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
+          relayRetries: 0,
+        }),
+        (e: ErrorObject) => {
+          assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+          return true
+        }
+      )
 
       let removedNodes = await redis.smembers(sessionKey)
 
@@ -885,23 +909,27 @@ describe('Pocket relayer service (unit)', () => {
       expect(syncCherckerSpy.callCount).to.be.equal(1)
 
       // Subsequent calls should go to sync or chain checker
-      const secondRelayResponse = await poktRelayer.sendRelay({
-        rawData,
-        relayPath: '',
-        httpMethod: HTTPMethod.POST,
-        application: APPLICATION as unknown as Applications,
-        requestID: '1234',
-        requestTimeOut: undefined,
-        overallTimeOut: undefined,
-        stickinessOptions: {
-          stickiness: false,
-          duration: 0,
-          preferredNodeAddress: '',
-        },
-        relayRetries: 0,
-      })
-
-      expect(secondRelayResponse).to.be.instanceOf(ErrorObject)
+      await assert.rejects(
+        poktRelayer.sendRelay({
+          rawData,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
+          relayRetries: 0,
+        }),
+        (e: ErrorObject) => {
+          assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+          return true
+        }
+      )
 
       removedNodes = await redis.smembers(sessionKey)
 
@@ -997,23 +1025,27 @@ describe('Pocket relayer service (unit)', () => {
         dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
-      const relayResponse = await poktRelayer.sendRelay({
-        rawData,
-        relayPath: '',
-        httpMethod: HTTPMethod.POST,
-        application: APPLICATION as unknown as Applications,
-        requestID: '1234',
-        requestTimeOut: undefined,
-        overallTimeOut: undefined,
-        stickinessOptions: {
-          stickiness: false,
-          duration: 0,
-          preferredNodeAddress: '',
-        },
-        relayRetries: 0,
-      })
-
-      expect(relayResponse).to.be.instanceOf(ErrorObject)
+      await assert.rejects(
+        poktRelayer.sendRelay({
+          rawData,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
+          relayRetries: 0,
+        }),
+        (e: ErrorObject) => {
+          assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+          return true
+        }
+      )
 
       expect(mockChainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
@@ -1050,23 +1082,27 @@ describe('Pocket relayer service (unit)', () => {
         dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
-      const relayResponse = await poktRelayer.sendRelay({
-        rawData,
-        relayPath: '',
-        httpMethod: HTTPMethod.POST,
-        application: APPLICATION as unknown as Applications,
-        requestID: '1234',
-        requestTimeOut: undefined,
-        overallTimeOut: undefined,
-        stickinessOptions: {
-          stickiness: false,
-          duration: 0,
-          preferredNodeAddress: '',
-        },
-        relayRetries: 0,
-      })
-
-      expect(relayResponse).to.be.instanceOf(ErrorObject)
+      await assert.rejects(
+        poktRelayer.sendRelay({
+          rawData,
+          relayPath: '',
+          httpMethod: HTTPMethod.POST,
+          application: APPLICATION as unknown as Applications,
+          requestID: '1234',
+          requestTimeOut: undefined,
+          overallTimeOut: undefined,
+          stickinessOptions: {
+            stickiness: false,
+            duration: 0,
+            preferredNodeAddress: '',
+          },
+          relayRetries: 0,
+        }),
+        (e: ErrorObject) => {
+          assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+          return true
+        }
+      )
 
       expect(mockChainCheckerSpy.callCount).to.be.equal(1)
       expect(syncCherckerSpy.callCount).to.be.equal(1)
@@ -1438,8 +1474,8 @@ describe('Pocket relayer service (unit)', () => {
           dispatchers: DUMMY_ENV.DISPATCH_URL,
         })
 
-        try {
-          await poktRelayer.sendRelay({
+        await assert.rejects(
+          poktRelayer.sendRelay({
             rawData,
             relayPath: '',
             httpMethod: HTTPMethod.POST,
@@ -1453,11 +1489,12 @@ describe('Pocket relayer service (unit)', () => {
               preferredNodeAddress: '',
             },
             relayRetries: 0,
-          })
-        } catch (error) {
-          expect(error).to.be.instanceOf(ErrorObject)
-          expect(error.error.message).to.be.equal('SecretKey does not match')
-        }
+          }),
+          (e: ErrorObject) => {
+            assert.strictEqual(e.error.message, 'SecretKey does not match')
+            return true
+          }
+        )
       })
 
       it('returns forbidden when origins checks fail', async () => {
@@ -1499,8 +1536,8 @@ describe('Pocket relayer service (unit)', () => {
           dispatchers: DUMMY_ENV.DISPATCH_URL,
         })
 
-        try {
-          await poktRelayer.sendRelay({
+        await assert.rejects(
+          poktRelayer.sendRelay({
             rawData,
             relayPath: '',
             httpMethod: HTTPMethod.POST,
@@ -1514,11 +1551,12 @@ describe('Pocket relayer service (unit)', () => {
               preferredNodeAddress: '',
             },
             relayRetries: 0,
-          })
-        } catch (error) {
-          expect(error).to.be.instanceOf(ErrorObject)
-          expect(error.error.message).to.be.equal('Whitelist Origin check failed: ' + invalidOrigin)
-        }
+          }),
+          (e: ErrorObject) => {
+            assert.strictEqual(e.error.message, 'Whitelist Origin check failed: ' + invalidOrigin)
+            return true
+          }
+        )
       })
 
       it('returns forbidden when user agent checks fail', async () => {
@@ -1559,8 +1597,8 @@ describe('Pocket relayer service (unit)', () => {
           dispatchers: DUMMY_ENV.DISPATCH_URL,
         })
 
-        try {
-          await poktRelayer.sendRelay({
+        await assert.rejects(
+          poktRelayer.sendRelay({
             rawData,
             relayPath: '',
             httpMethod: HTTPMethod.POST,
@@ -1574,11 +1612,12 @@ describe('Pocket relayer service (unit)', () => {
               preferredNodeAddress: '',
             },
             relayRetries: 0,
-          })
-        } catch (error) {
-          expect(error).to.be.instanceOf(ErrorObject)
-          expect(error.error.message).to.be.equal(`Whitelist User Agent check failed: ${invalidUserAgent}`)
-        }
+          }),
+          (e: ErrorObject) => {
+            assert.strictEqual(e.error.message, `Whitelist User Agent check failed: ${invalidUserAgent}`)
+            return true
+          }
+        )
       })
     })
 
@@ -1680,31 +1719,34 @@ describe('Pocket relayer service (unit)', () => {
         expect(relayResponse).to.be.deepEqual(axiosRelayResponse)
       })
 
-      it('returns a string response from altruists', async () => {
-        const stringResponse = 'a string response'
+      it('fails after receiving a string response from altruists', async () => {
+        const stringResponse = '<html>503 Service Unavailable</html>'
 
         axiosMock.onGet(ALTRUISTS['0021']).reply(200, stringResponse)
 
         const altruistRelayer = getAltruistRelayer()
 
-        const relayResponse = await altruistRelayer.sendRelay({
-          rawData,
-          relayPath: '',
-          httpMethod: HTTPMethod.GET,
-          application: APPLICATION as unknown as Applications,
-          requestID: '1234',
-          requestTimeOut: undefined,
-          overallTimeOut: undefined,
-          stickinessOptions: {
-            stickiness: false,
-            duration: 0,
-            preferredNodeAddress: '',
-          },
-
-          relayRetries: 0,
-        })
-
-        expect(JSON.parse(relayResponse as string)).to.be.deepEqual(stringResponse)
+        await assert.rejects(
+          altruistRelayer.sendRelay({
+            rawData,
+            relayPath: '',
+            httpMethod: HTTPMethod.POST,
+            application: APPLICATION as unknown as Applications,
+            requestID: '1234',
+            requestTimeOut: undefined,
+            overallTimeOut: undefined,
+            stickinessOptions: {
+              stickiness: false,
+              duration: 0,
+              preferredNodeAddress: '',
+            },
+            relayRetries: 0,
+          }),
+          (e: ErrorObject) => {
+            assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+            return true
+          }
+        )
       })
 
       it('returns timeout error when fallback fails', async () => {
@@ -1712,23 +1754,27 @@ describe('Pocket relayer service (unit)', () => {
 
         const altruistRelayer = getAltruistRelayer()
 
-        const relayResponse = await altruistRelayer.sendRelay({
-          rawData,
-          relayPath: '',
-          httpMethod: HTTPMethod.GET,
-          application: APPLICATION as unknown as Applications,
-          requestID: '1234',
-          requestTimeOut: undefined,
-          overallTimeOut: undefined,
-          stickinessOptions: {
-            stickiness: false,
-            duration: 0,
-            preferredNodeAddress: '',
-          },
-          relayRetries: 0,
-        })
-
-        expect(relayResponse).to.be.instanceOf(ErrorObject)
+        await assert.rejects(
+          altruistRelayer.sendRelay({
+            rawData,
+            relayPath: '',
+            httpMethod: HTTPMethod.POST,
+            application: APPLICATION as unknown as Applications,
+            requestID: '1234',
+            requestTimeOut: undefined,
+            overallTimeOut: undefined,
+            stickinessOptions: {
+              stickiness: false,
+              duration: 0,
+              preferredNodeAddress: '',
+            },
+            relayRetries: 0,
+          }),
+          (e: ErrorObject) => {
+            assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+            return true
+          }
+        )
       })
 
       it('should return an error if exceeded eth_getLogs max blocks range (using latest)', async () => {
@@ -1861,7 +1907,7 @@ describe('Pocket relayer service (unit)', () => {
           relayRetries: 0,
         })
 
-        expect(JSON.parse(relayResponse as string)).to.be.deepEqual(JSON.parse(mockRelayResponse as string))
+        expect(relayResponse).to.be.deepEqual(JSON.parse(mockRelayResponse as string))
       })
 
       it('should return an error if relay method requires WebSockets', async () => {
