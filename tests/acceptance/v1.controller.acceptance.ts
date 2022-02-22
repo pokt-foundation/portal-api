@@ -547,6 +547,40 @@ describe('V1 controller (acceptance)', () => {
     expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
   })
 
+  it('returns an error when load balancer relay body is not a JSON', async () => {
+    const pocket = pocketMock.object()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    const response = await client
+      .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc05')
+      .send('{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6"')
+      .set('Content-Type', 'application/json')
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet-x')
+      .expect(200)
+
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('The request body is not proper JSON')
+  })
+
+  it('returns an error when application relay body is not a JSON', async () => {
+    const pocket = pocketMock.object()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    const response = await client
+      .post('/v1/sd9fj31d714kgos42e68f9gh')
+      .send('{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6"')
+      .set('Content-Type', 'application/json')
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet-x')
+      .expect(200)
+
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('The request body is not proper JSON')
+  })
+
   it('returns error when no load balancer is found', async () => {
     const pocket = pocketMock.object()
 
