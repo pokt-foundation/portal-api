@@ -1,4 +1,8 @@
-name: Testnet Deployment
+# .github/workflows: DO NOT MODIFY HERE BUT RATHER REFER TO THEIR CORRESPONDING
+# TEMPLATE IN THE POCKET-GATEWWAY FOLDER OTHERWISE YOUR CHANGES WILL BE OVERWRITTEN
+{{! Template used to generate workflow file with shared-enviroments }}
+{{=[[ ]]=}}
+name: Testnet Deployment us-west-2
 
 on:
   push:
@@ -18,44 +22,18 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: us-west-2
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Make envfile
+      - name: Make envfile us-west-2
         uses: SpicyPizza/create-envfile@v1
         with:
-          envkey_GATEWAY_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_TESTNET_CLIENT_PRIVATE_KEY }}
-          envkey_GATEWAY_CLIENT_PASSPHRASE: ${{ secrets.POCKET_NETWORK_TESTNET_CLIENT_PASSPHRASE }}
-          envkey_MONGO_ENDPOINT: ${{ secrets.MONGO_TESTNET_ENDPOINT }}
-          envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_TESTNET_ENCRYPTION_KEY }}
-          envkey_DISPATCH_URL: https://node1.testnet.pokt.network,https://node2.testnet.pokt.network,https://node3.testnet.pokt.network
-          envkey_ALTRUISTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_ALTRUISTS }}
-          envkey_REDIRECTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_REDIRECTS }}
-          envkey_REDIS_PORT: 6379
-          envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
-          envkey_POCKET_BLOCK_TIME: 1038000
-          envkey_POCKET_RELAY_RETRIES: 0
-          envkey_DEFAULT_SYNC_ALLOWANCE: 5
-          envkey_DEFAULT_LOG_LIMIT_BLOCKS: 10000
-          envkey_NODE_TLS_REJECT_UNAUTHORIZED: 0
-          envkey_AAT_PLAN: premium
-          envkey_NODE_ENV: production
-          envkey_INFLUX_URL: https://influx.portal.pokt.network:8086
-          envkey_INFLUX_ORG: pocket
-          envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
-          envkey_PSQL_CONNECTION: ${{ secrets.PSQL_CONNECTION }}
-          envkey_LOG_TO_CLOUDWATCH: false
-          envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          envkey_COMMIT_HASH: ${{ github.sha }}
-          envkey_ARCHIVAL_CHAINS: '0022,0028,0010,000A,000B,000C'
-          envkey_LOG_TO_DATADOG: true
-          envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
-          envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
-          envkey_SILENT_LOGGING: true
+          [[#shared_envs]]
+          envkey_[[key]]: [[&value]]
+          [[/shared_envs]]
           envkey_REDIS_ENDPOINT: dashboard-testnet.js6zbp.ng.0001.usw2.cache.amazonaws.com
           envkey_REGION: 'us-west-2'
           envkey_REGION_NAME: 'testnet'
@@ -73,10 +51,10 @@ jobs:
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
       - name: Fill in the new image ID / us-west-2 - gateway
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        id: task-def-us-west-2-gateway
+        uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
-          task-definition: pocket-gateway/tasks/testnet/ecs-task-testnet.json
+          task-definition: pocket-gateway/tasks/testnet/ecs-task-testnet-definition.json
           container-name: gateway-testnet
           image: ${{ steps.build-image.outputs.image }}
           # Needs to be set at container level to be read by the dd agent
@@ -105,7 +83,7 @@ jobs:
       - name: Deploy / us-west-2
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          task-definition: ${{ steps.task-def-us-west-2-datadog-agent.outputs.task-definition }}
           service: gateway-testnet
           cluster: gateway-testnet
           wait-for-service-stability: true
