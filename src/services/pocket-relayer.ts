@@ -445,7 +445,7 @@ export class PocketRelayer {
             // If the fallback response string is not valid JSON,
             // we throw because a parsing error would occur.
             if (!checkEnforcementJSON(fallbackResponse.data)) {
-              throw new Error('Unable to parse JSON response')
+              throw new Error('Response is not valid JSON')
             }
 
             responseParsed = JSON.parse(fallbackResponse.data)
