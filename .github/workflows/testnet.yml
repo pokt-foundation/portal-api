@@ -40,18 +40,18 @@ jobs:
           envkey_POCKET_RELAY_RETRIES: 0
           envkey_DEFAULT_SYNC_ALLOWANCE: 5
           envkey_DEFAULT_LOG_LIMIT_BLOCKS: 10000
-          envkey_NODE_TLS_REJECT_UNAUTHORIZED: ''
-          envkey_AAT_PLAN: ''
-          envkey_NODE_ENV: ''
-          envkey_INFLUX_URL: ''
-          envkey_INFLUX_ORG: ''
-          envkey_INFLUX_TOKEN: ''
-          envkey_PSQL_CONNECTION: ''
-          envkey_LOG_TO_CLOUDWATCH: ''
-          envkey_AWS_ACCESS_KEY_ID: ''
-          envkey_AWS_SECRET_ACCESS_KEY: ''
+          envkey_NODE_TLS_REJECT_UNAUTHORIZED: 0
+          envkey_AAT_PLAN: premium
+          envkey_NODE_ENV: production
+          envkey_INFLUX_URL: https://influx.portal.pokt.network:8086
+          envkey_INFLUX_ORG: pocket
+          envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
+          envkey_PSQL_CONNECTION: ${{ secrets.PSQL_CONNECTION }}
+          envkey_LOG_TO_CLOUDWATCH: false
+          envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           envkey_COMMIT_HASH: ${{ github.sha }}
-          envkey_ARCHIVAL_CHAINS: '0022,0028,0010,000A,000B,000C'
+          envkey_ARCHIVAL_CHAINS: ''
           envkey_LOG_TO_DATADOG: false
           envkey_DATADOG_API_KEY: false
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: false
