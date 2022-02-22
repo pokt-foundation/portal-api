@@ -14,7 +14,7 @@
   ],
   "main": "index.js",
   "engines": {
-    "node": ">=12.16.0 <=16.13.2"
+    "node": ">=12.16.0 <=16.14"
   },
   "scripts": {
     "build": "lb-tsc",
