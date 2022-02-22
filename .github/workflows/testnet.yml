@@ -46,10 +46,10 @@ jobs:
           envkey_INFLUX_URL: https://influx.portal.pokt.network:8086
           envkey_INFLUX_ORG: pocket
           envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
-          envkey_PSQL_CONNECTION:
-          envkey_LOG_TO_CLOUDWATCH:
-          envkey_AWS_ACCESS_KEY_ID:
-          envkey_AWS_SECRET_ACCESS_KEY:
+          envkey_PSQL_CONNECTION: ''
+          envkey_LOG_TO_CLOUDWATCH: ''
+          envkey_AWS_ACCESS_KEY_ID: ''
+          envkey_AWS_SECRET_ACCESS_KEY: ''
           envkey_COMMIT_HASH: ${{ github.sha }}
           envkey_ARCHIVAL_CHAINS: '0022,0028,0010,000A,000B,000C'
           envkey_LOG_TO_DATADOG: false
