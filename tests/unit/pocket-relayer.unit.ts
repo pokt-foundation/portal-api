@@ -621,7 +621,7 @@ describe('Pocket relayer service (unit)', () => {
           relayRetries: 0,
         }),
         (e: ErrorObject) => {
-          assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+          assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
           return true
         }
       )
@@ -727,7 +727,7 @@ describe('Pocket relayer service (unit)', () => {
           relayRetries: 0,
         }),
         (e: ErrorObject) => {
-          assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+          assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
           return true
         }
       )
@@ -795,7 +795,7 @@ describe('Pocket relayer service (unit)', () => {
           relayRetries: 0,
         }),
         (e: ErrorObject) => {
-          assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+          assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
           return true
         }
       )
@@ -825,7 +825,7 @@ describe('Pocket relayer service (unit)', () => {
           relayRetries: 0,
         }),
         (e: ErrorObject) => {
-          assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+          assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
           return true
         }
       )
@@ -896,7 +896,7 @@ describe('Pocket relayer service (unit)', () => {
           relayRetries: 0,
         }),
         (e: ErrorObject) => {
-          assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+          assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
           return true
         }
       )
@@ -926,7 +926,7 @@ describe('Pocket relayer service (unit)', () => {
           relayRetries: 0,
         }),
         (e: ErrorObject) => {
-          assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+          assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
           return true
         }
       )
@@ -1042,7 +1042,7 @@ describe('Pocket relayer service (unit)', () => {
           relayRetries: 0,
         }),
         (e: ErrorObject) => {
-          assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+          assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
           return true
         }
       )
@@ -1099,7 +1099,7 @@ describe('Pocket relayer service (unit)', () => {
           relayRetries: 0,
         }),
         (e: ErrorObject) => {
-          assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+          assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
           return true
         }
       )
@@ -1743,7 +1743,7 @@ describe('Pocket relayer service (unit)', () => {
             relayRetries: 0,
           }),
           (e: ErrorObject) => {
-            assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+            assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
             return true
           }
         )
@@ -1771,7 +1771,7 @@ describe('Pocket relayer service (unit)', () => {
             relayRetries: 0,
           }),
           (e: ErrorObject) => {
-            assert.strictEqual(e.error.message, 'Relay attempts exhausted')
+            assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
             return true
           }
         )

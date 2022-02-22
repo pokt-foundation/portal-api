@@ -504,7 +504,7 @@ export class PocketRelayer {
       }
     }
 
-    throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('Relay attempts exhausted', -32050))
+    throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('Internal JSON-RPC error.', -32603))
   }
 
   // Private function to allow relay retries

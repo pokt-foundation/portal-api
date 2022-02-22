@@ -480,7 +480,7 @@ describe('V1 controller (acceptance)', () => {
       .expect(200)
 
     expect(response.body).to.have.property('error')
-    expect(response.body.error.message).to.be.equal('Relay attempts exhausted')
+    expect(response.body.error.message).to.be.equal('Internal JSON-RPC error.')
   })
 
   it('returns error on chain check failure', async () => {
@@ -500,7 +500,7 @@ describe('V1 controller (acceptance)', () => {
       .expect(200)
 
     expect(response.body).to.have.property('error')
-    expect(response.body.error.message).to.be.equal('Relay attempts exhausted')
+    expect(response.body.error.message).to.be.equal('Internal JSON-RPC error.')
   })
 
   it('succesfully relays a loadbalancer application', async () => {
@@ -611,7 +611,7 @@ describe('V1 controller (acceptance)', () => {
       .expect(200)
 
     expect(response.body).to.have.property('error')
-    expect(response.body.error.message).to.be.equal('Relay attempts exhausted')
+    expect(response.body.error.message).to.be.equal('Internal JSON-RPC error.')
   })
 
   it('redirects empty path with specific load balancer', async () => {
