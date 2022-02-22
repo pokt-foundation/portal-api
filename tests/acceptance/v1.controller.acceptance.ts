@@ -614,6 +614,27 @@ describe('V1 controller (acceptance)', () => {
     expect(response.body.error.message).to.be.equal('Internal JSON-RPC error.')
   })
 
+  it('returns error when altruist returns non-json string as response', async () => {
+    pocketMock.fail = true
+    const pocket = pocketMock.object()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    axiosMock
+      .onPost(ALTRUISTS['0041'], { method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .reply(200, '<html>503 Service Unavailable</html>')
+
+    const response = await client
+      .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc04')
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet-x')
+      .expect(200)
+
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('Internal JSON-RPC error.')
+  })
+
   it('redirects empty path with specific load balancer', async () => {
     const pocket = pocketMock.object()
 

@@ -295,7 +295,7 @@ export class V1Controller {
       return await this.pocketRelayer.sendRelay(options)
     } catch (e) {
       if (e instanceof ErrorObject) {
-        logger.log('error', e.error.message, {
+        logger.log('error', 'LOAD BALANCER RELAY ERROR: ' + e.error.message, {
           requestID: this.requestID,
           relayType: 'LB',
           typeID: id,
@@ -409,7 +409,7 @@ export class V1Controller {
       return await this.pocketRelayer.sendRelay(sendRelayOptions)
     } catch (e) {
       if (e instanceof ErrorObject) {
-        logger.log('error', e.error.message, {
+        logger.log('error', 'APP RELAY ERROR: ' + e.error.message, {
           requestID: this.requestID,
           relayType: 'APP',
           typeID: id,
