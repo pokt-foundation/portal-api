@@ -84,8 +84,9 @@ export class NodeCheckerWrapper {
     elapsedTimes,
   }: FilterParams<T>): Promise<NodeCheckResponse<T>[]> {
     const filteredNodes: NodeCheckResponse<T>[] = []
+    // TODO: Use session again
     const { sessionNodes } = pocketSession
-    const sessionHash = await hashBlockchainNodes(blockchainID, sessionNodes, this.redis)
+    const sessionHash = await hashBlockchainNodes(blockchainID, [], this.redis)
 
     for (const [idx, check] of checksResult.entries()) {
       const node = nodes[idx]
@@ -113,7 +114,7 @@ export class NodeCheckerWrapper {
         })
 
         if (errorMsg === MAX_RELAYS_ERROR) {
-          await removeNodeFromSession(this.redis, blockchainID, sessionNodes, node.publicKey)
+          await removeNodeFromSession(this.redis, blockchainID, [], node.publicKey)
         }
 
         if (typeof error === 'object') {
@@ -256,7 +257,7 @@ export class NodeCheckerWrapper {
       requestID: requestID,
       blockchainID,
       origin: this.origin,
-      sessionHash: await hashBlockchainNodes(blockchainID, pocketSession.sessionNodes, this.redis),
+      sessionHash: await hashBlockchainNodes(blockchainID, [], this.redis),
     })
   }
 }

@@ -1,12 +1,12 @@
+import { Relayer } from '@pokt-foundation/pocketjs-relayer'
 import { Redis } from 'ioredis'
 import jsonrpc, { ErrorObject, JsonRpcError } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
 import { FilterExcludingWhere, repository } from '@loopback/repository'
 import { get, param, post, requestBody } from '@loopback/rest'
-import { Configuration, HTTPMethod, Pocket } from '@pokt-network/pocket-js'
+import { Configuration, HTTPMethod } from '@pokt-network/pocket-js'
 import { WriteApi } from '@influxdata/influxdb-client'
-
 import { Applications, LoadBalancers } from '../models'
 import { StickinessOptions } from '../models/load-balancers.model'
 import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from '../repositories'
@@ -52,7 +52,7 @@ export class V1Controller {
     @inject('httpMethod') private httpMethod: HTTPMethod,
     @inject('relayPath') private relayPath: string,
     @inject('relayRetries') private relayRetries: number,
-    @inject('pocketInstance') private pocket: Pocket,
+    @inject('relayer') private relayer: Relayer,
     @inject('pocketConfiguration') private pocketConfiguration: Configuration,
     @inject('redisInstance') private redis: Redis,
     @inject('pgPool') private pgPool: PGPool,
@@ -94,7 +94,7 @@ export class V1Controller {
       origin: this.origin,
       userAgent: this.userAgent,
       ipAddress: this.ipAddress,
-      pocket: this.pocket,
+      relayer: this.relayer,
       pocketConfiguration: this.pocketConfiguration,
       cherryPicker: this.cherryPicker,
       metricsRecorder: this.metricsRecorder,

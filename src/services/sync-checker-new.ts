@@ -46,7 +46,8 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
     applicationPublicKey,
     requestID,
   }: SyncCheckerParams): Promise<Node[]> {
-    const sessionHash = await hashBlockchainNodes(blockchainID, pocketSession.sessionNodes, this.redis)
+    // TODO: Add session nodes
+    const sessionHash = await hashBlockchainNodes(blockchainID, [], this.redis)
     const allowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
     const syncedNodesKey = `sync-check-${sessionHash}`
 

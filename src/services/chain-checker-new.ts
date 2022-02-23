@@ -40,7 +40,8 @@ export class PocketChainChecker extends NodeCheckerWrapper {
     applicationPublicKey: string,
     requestID: string
   ): Promise<Node[]> {
-    const sessionHash = await hashBlockchainNodes(blockchainID, pocketSession.sessionNodes, this.redis)
+    // TODO: Add session nodes
+    const sessionHash = await hashBlockchainNodes(blockchainID, [], this.redis)
     const checkedNodesKey = `chain-check-${sessionHash}`
 
     const checkedNodes: Node[] = await this.checkForCachedNodes(nodes, checkedNodesKey)

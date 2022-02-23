@@ -46,7 +46,8 @@ export class ArchivalChecker extends NodeCheckerWrapper {
   }: ArchivalCheckParams): Promise<Node[]> {
     const { body, resultKey, comparator, path } = archivalCheckOptions
 
-    const sessionHash = await hashBlockchainNodes(blockchainID, pocketSession.sessionNodes, this.redis)
+    // TODO: Add session nodes
+    const sessionHash = await hashBlockchainNodes(blockchainID, [], this.redis)
     const archivalNodesKey = `archival-check-${sessionHash}`
 
     const archivalNodes: Node[] = await this.checkForCachedNodes(nodes, archivalNodesKey)
