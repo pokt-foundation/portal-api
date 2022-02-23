@@ -1,5 +1,6 @@
 import { Redis } from 'ioredis'
 import { Node } from '@pokt-network/pocket-js'
+import { Applications } from '../models/applications.model'
 
 // hashes a blockchain and all of the nodes given, sorted by public key
 export async function hashBlockchainNodes(blockchainID: string, nodes: Node[] = [], redis: Redis): Promise<string> {
@@ -46,8 +47,7 @@ export function getRandomInt(min: number, max: number): number {
 }
 
 // Source: https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function shuffle(array: any[]): any[] {
+export function shuffle<T>(array: T[]): T[] {
   let currentIndex = array.length
   let randomIndex: number
 
@@ -62,4 +62,20 @@ export function shuffle(array: any[]): any[] {
   }
 
   return array
+}
+
+// TODO: Remove once database fields are normalized
+// Due to some changes in schema from the database, the public key field is scattered accross
+// several other parent fields depending on when the app was created
+export function getApplicationPublicKey(application: Applications): string {
+  // Is on freetierApplicationAccount field
+  if (Boolean(application.freeTierApplicationAccount) && application.freeTierApplicationAccount?.publicKey) {
+    return application.freeTierApplicationAccount.publicKey
+    // Or on publicPocketAccount field
+  } else if (Boolean(application.publicPocketAccount) && application.publicPocketAccount?.publicKey) {
+    return application.publicPocketAccount.publicKey
+  }
+
+  // Must be on gatewayAAT, otherwise the app wouldn't work
+  return application.gatewayAAT.applicationPublicKey
 }

@@ -8,7 +8,7 @@ import { BlockchainsRepository } from '../../src/repositories/blockchains.reposi
 import { LoadBalancersRepository } from '../../src/repositories/load-balancers.repository'
 import { gatewayTestDB } from '../fixtures/test.datasource'
 import { MockRelayResponse, PocketMock } from '../mocks/pocketjs'
-import { setupApplication } from './test-helper'
+import { setupApplication, DUMMY_ENV } from './test-helper'
 
 const logger = require('../../src/services/logger')
 
@@ -49,8 +49,7 @@ const BLOCKCHAINS = [
       body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
       resultKey: 'result',
       allowance: 5,
-      // Path doesnt exist on this chain, just for testing.
-      path: '/v1/query/height',
+      path: '',
     },
   },
   {
@@ -225,6 +224,8 @@ const LOAD_BALANCERS = [
   },
 ]
 
+const ALTRUISTS = JSON.parse(DUMMY_ENV.ALTRUISTS)
+
 describe('V1 controller (acceptance)', () => {
   let app: PocketGatewayApplication
   let client: Client
@@ -256,6 +257,14 @@ describe('V1 controller (acceptance)', () => {
       '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","toBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}':
         '{"jsonrpc":"2.0","id":1,"result":[{"address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff","blockHash":"0x2ad90e24266edd835bb03071c0c0b58ee8356c2feb4576d15b3c2c2b2ef319c5","blockNumber":"0xc5bdc9","data":"0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000767fe9edc9e0df98e07454847909b5e959d7ca0e0000000000000000000000000000000000000000000000019274b259f653fc110000000000000000000000000000000000000000000000104bf2ffa4dcbf8de5","logIndex":"0x4c","removed":false,"topics":["0x0f6672f78a59ba8e5e5b5d38df3ebc67f3c792e2c9259b8d97d7f00dd78ba1b3","0x000000000000000000000000e5feeac09d36b18b3fa757e5cf3f8da6b8e27f4c"],"transactionHash":"0x14430f1e344b5f95ea68a5f4c0538fc732cc97efdc68f6ee0ba20e2c633542f6","transactionIndex":"0x1a"}]}',
     }
+
+    axiosMock
+      .onPost(ALTRUISTS['0041'], { method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .reply(200, relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'])
+
+    axiosMock
+      .onPost(ALTRUISTS['0021'], { method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .reply(200, relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'])
 
     pocketMock = new PocketMock(undefined, undefined, undefined)
     pocketMock.relayResponse = relayResponses
@@ -305,7 +314,7 @@ describe('V1 controller (acceptance)', () => {
     await applicationsRepository.deleteAll()
 
     const res = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh')
+      .post('/v1/notfoundapp')
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
@@ -326,7 +335,7 @@ describe('V1 controller (acceptance)', () => {
       .post('/v1/sd9fj31d714kgos42e68f9gh')
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
-      .set('host', 'eth-mainnet')
+      .set('host', 'invalid-blockchain')
       .expect(200)
 
     expect(res.body).to.have.property('error')
@@ -361,7 +370,7 @@ describe('V1 controller (acceptance)', () => {
     const key = 'encrypt123456789120encrypt123456789120'
     const encryptedKey = encryptor.encrypt(key)
 
-    const appWithSecurity = { ...APPLICATION }
+    const appWithSecurity = { ...APPLICATION, id: 'secretAppID12345' }
 
     appWithSecurity.gatewaySettings = {
       secretKey: encryptedKey,
@@ -370,14 +379,14 @@ describe('V1 controller (acceptance)', () => {
       whitelistUserAgents: [],
     }
 
-    await applicationsRepository.create(appWithSecurity)
+    const dbApp = await applicationsRepository.create(appWithSecurity)
 
     const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh')
+      .post(`/v1/${dbApp.id}`)
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
@@ -392,7 +401,7 @@ describe('V1 controller (acceptance)', () => {
   it('fails on request with invalid origin', async () => {
     await applicationsRepository.deleteAll()
 
-    const appWithSecurity = { ...APPLICATION }
+    const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
 
     appWithSecurity.gatewaySettings = {
       secretKey: '',
@@ -401,14 +410,14 @@ describe('V1 controller (acceptance)', () => {
       whitelistUserAgents: [],
     }
 
-    await applicationsRepository.create(appWithSecurity)
+    const dbApp = await applicationsRepository.create(appWithSecurity)
 
     const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh')
+      .post(`/v1/${dbApp.id}`)
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
@@ -467,7 +476,7 @@ describe('V1 controller (acceptance)', () => {
       .post('/v1/sd9fj31d714kgos42e68f9gh')
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
-      .set('host', 'eth-mainnet')
+      .set('host', 'eth-mainnet-string') // blockchain without altruist
       .expect(200)
 
     expect(response.body).to.have.property('error')
@@ -478,6 +487,7 @@ describe('V1 controller (acceptance)', () => {
     // Failing chain check
     relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
 
+    pocketMock.relayResponse = relayResponses
     const pocket = pocketMock.object()
 
     ;({ app, client } = await setupApplication(pocket))
@@ -563,7 +573,7 @@ describe('V1 controller (acceptance)', () => {
       .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc04')
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
-      .set('host', 'eth-mainnet')
+      .set('host', 'eth-mainnet-string') // blockchain without altruist
       .expect(200)
 
     expect(response.body).to.have.property('error')
