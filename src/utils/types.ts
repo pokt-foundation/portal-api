@@ -1,4 +1,5 @@
-import { HTTPMethod, Node, StakingStatus } from '@pokt-network/pocket-js'
+import { Node } from '@pokt-foundation/pocketjs-types'
+import { HTTPMethod, StakingStatus } from '@pokt-network/pocket-js'
 import { Applications } from '../models'
 import { SyncCheckOptions } from '../services/sync-checker'
 

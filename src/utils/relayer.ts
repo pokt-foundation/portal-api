@@ -1,6 +1,6 @@
+import { Node } from '@pokt-foundation/pocketjs-types'
 import { Redis } from 'ioredis'
 import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
-import { Node } from '@pokt-network/pocket-js'
 
 import { BlockchainsRepository } from '../repositories'
 import { SyncCheckOptions } from '../services/sync-checker'

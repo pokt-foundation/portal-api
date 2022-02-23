@@ -1,8 +1,8 @@
+import { Node } from '@pokt-foundation/pocketjs-types'
 import axios, { AxiosError } from 'axios'
 import extractDomain from 'extract-domain'
 import { Redis } from 'ioredis'
 import { getAddressFromPublicKey } from 'pocket-tools'
-import { Node } from '@pokt-network/pocket-js'
 import { hashBlockchainNodes } from './helpers'
 
 const logger = require('../services/logger')
