@@ -5,7 +5,7 @@ import { Configuration, PocketAAT } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
-import { MAX_RELAYS_ERROR } from '../utils/constants'
+import { CHECK_TIMEOUT, MAX_RELAYS_ERROR } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { hashBlockchainNodes } from '../utils/helpers'
 import { CheckResult } from '../utils/types'
@@ -261,6 +261,11 @@ export class ChainChecker {
         blockchain: blockchainID,
         pocketAAT,
         session: session,
+        options: {
+          retryAttemps: 1,
+          rejectSelfSignedCertificates: false,
+          timeout: CHECK_TIMEOUT,
+        },
       })
     } catch (error) {
       relayResponse = error
