@@ -504,6 +504,15 @@ export class PocketRelayer {
       }
     }
 
+    logger.log('error', `RELAY ATTEMPTS EXHAUSTED req: ${rawData.toString()}`, {
+      requestID,
+      error: 'Relay attempts exhausted',
+      relayType: 'EXHAUSTED',
+      typeID: application.id,
+      blockchainID,
+      origin: this.origin,
+    })
+
     throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('Internal JSON-RPC error.', -32603))
   }
 
