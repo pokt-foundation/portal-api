@@ -480,7 +480,7 @@ describe('V1 controller (acceptance)', () => {
       .expect(200)
 
     expect(response.body).to.have.property('error')
-    expect(response.body.error.message).to.be.equal('Relay attempts exhausted')
+    expect(response.body.error.message).to.be.equal('Internal JSON-RPC error.')
   })
 
   it('returns error on chain check failure', async () => {
@@ -500,7 +500,7 @@ describe('V1 controller (acceptance)', () => {
       .expect(200)
 
     expect(response.body).to.have.property('error')
-    expect(response.body.error.message).to.be.equal('Relay attempts exhausted')
+    expect(response.body.error.message).to.be.equal('Internal JSON-RPC error.')
   })
 
   it('succesfully relays a loadbalancer application', async () => {
@@ -547,6 +547,40 @@ describe('V1 controller (acceptance)', () => {
     expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
   })
 
+  it('returns an error when load balancer relay body is not a JSON', async () => {
+    const pocket = pocketMock.object()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    const response = await client
+      .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc05')
+      .send('{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6"')
+      .set('Content-Type', 'application/json')
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet-x')
+      .expect(200)
+
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('The request body is not proper JSON')
+  })
+
+  it('returns an error when application relay body is not a JSON', async () => {
+    const pocket = pocketMock.object()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    const response = await client
+      .post('/v1/sd9fj31d714kgos42e68f9gh')
+      .send('{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6"')
+      .set('Content-Type', 'application/json')
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet-x')
+      .expect(200)
+
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('The request body is not proper JSON')
+  })
+
   it('returns error when no load balancer is found', async () => {
     const pocket = pocketMock.object()
 
@@ -577,7 +611,28 @@ describe('V1 controller (acceptance)', () => {
       .expect(200)
 
     expect(response.body).to.have.property('error')
-    expect(response.body.error.message).to.be.equal('Relay attempts exhausted')
+    expect(response.body.error.message).to.be.equal('Internal JSON-RPC error.')
+  })
+
+  it('returns error when altruist returns non-json string as response', async () => {
+    pocketMock.fail = true
+    const pocket = pocketMock.object()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    axiosMock
+      .onPost(ALTRUISTS['0041'], { method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .reply(200, '<html>503 Service Unavailable</html>')
+
+    const response = await client
+      .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc04')
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet-x')
+      .expect(200)
+
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.be.equal('Internal JSON-RPC error.')
   })
 
   it('redirects empty path with specific load balancer', async () => {
