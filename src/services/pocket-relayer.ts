@@ -1,6 +1,6 @@
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
-import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
+import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
 import { JSONObject } from '@loopback/context'
 import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
 import AatPlans from '../config/aat-plans.json'
@@ -231,10 +231,10 @@ export class PocketRelayer {
               typeID: application.id,
               serviceNode: '',
             })
-            return jsonrpc.error(
+            throw new ErrorObject(
               rpcID,
               new jsonrpc.JsonRpcError(`Overall Timeout exceeded: ${overallTimeOut}`, -32051)
-            ) as ErrorObject
+            )
           }
 
           // Send this relay attempt
@@ -258,18 +258,6 @@ export class PocketRelayer {
           })
 
           if (!(relayResponse instanceof Error)) {
-            // Even if the relay is successful, we could get an invalid response from servide node.
-            // We attempt to parse the service node response using jsonrpc-lite lib.
-            const parsedRelayResponse = jsonrpc.parse(relayResponse.payload as string) as IParsedObject
-
-            // If the parsing goes wrong, we get a response with 'invalid' type and the following message.
-            // We could get 'invalid' and not a parse error, hence we check both.
-            if (parsedRelayResponse.type === 'invalid' && parsedRelayResponse.payload.message === 'Parse error') {
-              throw new ErrorObject(
-                rpcID,
-                new jsonrpc.JsonRpcError('Service Node returned an invalid response', -32065)
-              )
-            }
             // Check for user error to bubble these up to the API
             let userErrorMessage = ''
             let userErrorCode = ''
@@ -444,7 +432,24 @@ export class PocketRelayer {
         }
 
         if (!(fallbackResponse instanceof Error)) {
-          const responseParsed = JSON.stringify(fallbackResponse.data)
+          // This could either be a string or a json object
+          let responseParsed = fallbackResponse.data
+
+          // If return payload is a string and blockchain has json enforcement,
+          // turn it into an object so it is sent with content-type: json
+          if (
+            blockchainEnforceResult && // Is this blockchain marked for result enforcement and
+            blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON
+            typeof fallbackResponse.data === 'string'
+          ) {
+            // If the fallback response string is not valid JSON,
+            // we throw because a parsing error would occur.
+            if (!checkEnforcementJSON(fallbackResponse.data)) {
+              throw new Error('Response is not valid JSON')
+            }
+
+            responseParsed = JSON.parse(fallbackResponse.data)
+          }
 
           this.metricsRecorder
             .recordMetric({
@@ -455,7 +460,7 @@ export class PocketRelayer {
               serviceNode: 'fallback:' + redactedAltruistURL,
               relayStart,
               result: 200,
-              bytes: Buffer.byteLength(responseParsed, 'utf8'),
+              bytes: Buffer.byteLength(JSON.stringify(responseParsed), 'utf8'),
               fallback: true,
               method: method,
               error: undefined,
@@ -474,20 +479,11 @@ export class PocketRelayer {
               })
             })
 
-          // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
-          if (
-            blockchainEnforceResult && // Is this blockchain marked for result enforcement and
-            blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON
-            typeof responseParsed === 'string' &&
-            (responseParsed.match('{') || responseParsed.match(/'\[{'/g)) // and it matches JSON
-          ) {
-            return JSON.parse(responseParsed)
-          }
-
           return responseParsed
         } else {
-          logger.log('error', JSON.stringify(fallbackResponse), {
+          logger.log('error', 'FAILURE FALLBACK RELAYING', {
             requestID,
+            error: JSON.stringify(fallbackResponse),
             relayType: 'FALLBACK',
             typeID: application.id,
             serviceNode: 'fallback:' + redactedAltruistURL,
@@ -496,8 +492,9 @@ export class PocketRelayer {
           })
         }
       } catch (e) {
-        logger.log('error', e.message, {
+        logger.log('error', 'INTERNAL FAILURE FALLBACK: ' + e.message, {
           requestID,
+          error: e,
           relayType: 'FALLBACK',
           typeID: application.id,
           serviceNode: 'fallback:' + redactedAltruistURL,
@@ -506,7 +503,8 @@ export class PocketRelayer {
         })
       }
     }
-    return jsonrpc.error(rpcID, new jsonrpc.JsonRpcError('Relay attempts exhausted', -32050)) as ErrorObject
+
+    throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('Internal JSON-RPC error.', -32603))
   }
 
   // Private function to allow relay retries
@@ -574,16 +572,16 @@ export class PocketRelayer {
     const aatParams: [string, string, string, string] =
       this.aatPlan === AatPlans.FREEMIUM
         ? [
-            application.gatewayAAT.version,
-            application.freeTierAAT.clientPublicKey,
-            application.freeTierAAT.applicationPublicKey,
-            application.freeTierAAT.applicationSignature,
+            application?.gatewayAAT?.version,
+            application?.freeTierAAT?.clientPublicKey,
+            application?.freeTierAAT?.applicationPublicKey,
+            application?.freeTierAAT?.applicationSignature,
           ]
         : [
-            application.gatewayAAT.version,
-            application.gatewayAAT.clientPublicKey,
-            application.gatewayAAT.applicationPublicKey,
-            application.gatewayAAT.applicationSignature,
+            application?.gatewayAAT?.version,
+            application?.gatewayAAT?.clientPublicKey,
+            application?.gatewayAAT?.applicationPublicKey,
+            application?.gatewayAAT?.applicationSignature,
           ]
 
     // Checks pass; create AAT
