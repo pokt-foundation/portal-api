@@ -14,7 +14,7 @@ import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { removeNodeFromSession } from '../utils/cache'
-import { MAX_RELAYS_ERROR } from '../utils/constants'
+import { MAX_RELAYS_ERROR, SESSION_TIMEOUT } from '../utils/constants'
 import {
   checkEnforcementJSON,
   isRelayError,
@@ -603,10 +603,35 @@ export class PocketRelayer {
     let session: Session
 
     try {
-      session = await this.relayer.getNewSession({
-        chain: blockchainID,
-        applicationPubKey: appPublicKey,
-      })
+      // toObject() {
+      //   return JSON.parse(JSON.stringify(this, (key, value) =>
+      //       typeof value === 'bigint'
+      //           ? value.toString()
+      //           : value // return everything else unchanged
+      //   ));
+      const sessionCacheKey = `session-${appPublicKey}-${blockchainChainID}`
+      const cachedSession = await this.redis.get(sessionCacheKey)
+
+      if (cachedSession) {
+        session = JSON.parse(cachedSession)
+      } else {
+        session = await this.relayer.getNewSession({
+          chain: blockchainID,
+          applicationPubKey: appPublicKey,
+          options: {
+            retryAttemps: 3,
+            rejectSelfSignedCertificates: false,
+            timeout: SESSION_TIMEOUT,
+          },
+        })
+
+        await this.redis.set(
+          sessionCacheKey,
+          JSON.stringify(session, (_, value) => (typeof value === 'bigint' ? value.toString() : value)),
+          'EX',
+          90
+        )
+      }
     } catch (error) {
       logger.log('error', 'ERROR obtaining a session: ' + error, {
         relayType: 'APP',
