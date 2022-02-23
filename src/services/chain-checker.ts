@@ -5,6 +5,7 @@ import { blockHexToDecimal } from '../utils/block'
 import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
 import { MAX_RELAYS_ERROR } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
+import { hashBlockchainNodes } from '../utils/helpers'
 import { CheckResult } from '../utils/types'
 
 const logger = require('../services/logger')
@@ -33,13 +34,13 @@ export class ChainChecker {
     pocketConfiguration,
     pocketSession,
   }: ChainIDFilterOptions): Promise<CheckResult> {
-    const { sessionKey } = pocketSession
+    const sessionHash = await hashBlockchainNodes(blockchainID, pocketSession.sessionNodes, this.redis)
 
     const CheckedNodes: Node[] = []
     let CheckedNodesList: string[] = []
 
     // Value is an array of node public keys that have passed Chain checks for this session in the past 5 minutes
-    const checkedNodesKey = `chain-check-${sessionKey}`
+    const checkedNodesKey = `chain-check-${sessionHash}`
     const CheckedNodesCached = await this.redis.get(checkedNodesKey)
 
     const cached = Boolean(CheckedNodesCached)
@@ -77,6 +78,7 @@ export class ChainChecker {
       applicationPublicKey,
       pocket,
       pocketAAT,
+      sessionHash,
       pocketConfiguration,
       pocketSession,
     }
@@ -103,7 +105,7 @@ export class ChainChecker {
             origin: this.origin,
             serviceURL,
             serviceDomain,
-            sessionHash: sessionKey,
+            sessionHash,
           }
         )
 
@@ -125,7 +127,7 @@ export class ChainChecker {
             origin: this.origin,
             serviceURL,
             serviceDomain,
-            sessionHash: sessionKey,
+            sessionHash,
           }
         )
       }
@@ -140,7 +142,7 @@ export class ChainChecker {
       elapsedTime: '',
       blockchainID,
       origin: this.origin,
-      sessionHash: sessionKey,
+      sessionHash,
     })
     await this.redis.set(
       checkedNodesKey,
@@ -173,7 +175,7 @@ export class ChainChecker {
         elapsedTime: '',
         blockchainID,
         origin: this.origin,
-        sessionHash: sessionKey,
+        sessionHash,
       })
     }
     return { nodes: CheckedNodes, cached }
@@ -188,6 +190,7 @@ export class ChainChecker {
     applicationPublicKey,
     pocket,
     pocketAAT,
+    sessionHash,
     pocketConfiguration,
     pocketSession,
   }: GetNodesChainLogsOptions): Promise<NodeChainLog[]> {
@@ -213,6 +216,7 @@ export class ChainChecker {
         applicationPublicKey,
         pocket,
         pocketAAT,
+        sessionHash,
         pocketConfiguration,
         pocketSession,
       }
@@ -266,7 +270,7 @@ export class ChainChecker {
     pocketConfiguration,
     pocketSession,
   }: GetNodeChainLogOptions): Promise<NodeChainLog> {
-    const { sessionKey } = pocketSession
+    const { sessionKey, sessionNodes } = pocketSession || {}
     // Pull the current block from each node using the blockchain's chainCheck as the relay
     const relayStart = process.hrtime()
 
@@ -328,7 +332,7 @@ export class ChainChecker {
       let error = relayResponse.message
 
       if (error === MAX_RELAYS_ERROR) {
-        await removeNodeFromSession(this.redis, sessionKey, node.publicKey)
+        await removeNodeFromSession(this.redis, blockchainID, sessionNodes, node.publicKey)
       }
 
       if (typeof relayResponse.message === 'object') {
@@ -454,6 +458,7 @@ interface BaseChainLogOptions {
   pocket: Pocket
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
+  sessionHash: string
   pocketSession: Session
 }
 

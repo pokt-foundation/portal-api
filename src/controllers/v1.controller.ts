@@ -178,8 +178,7 @@ export class V1Controller {
     @param.filter(Applications, { exclude: 'where' })
     filter?: FilterExcludingWhere<Applications>
   ): Promise<string | ErrorObject> {
-    const parsedRawData = parseRawData(rawData)
-    const reqRPCID = parseRPCID(parsedRawData)
+    let reqRPCID = 1
 
     // Take the relay path from the end of the endpoint URL
     if (id.match(/[0-9a-zA-Z]{24}~/g)) {
@@ -188,6 +187,10 @@ export class V1Controller {
     }
 
     try {
+      const parsedRawData = parseRawData(rawData)
+
+      reqRPCID = parseRPCID(parsedRawData)
+
       let loadBalancer = await this.fetchLoadBalancer(id, filter)
 
       if (!loadBalancer?.id) {
@@ -292,7 +295,7 @@ export class V1Controller {
       return await this.pocketRelayer.sendRelay(options)
     } catch (e) {
       if (e instanceof ErrorObject) {
-        logger.log('error', e.error.message, {
+        logger.log('error', 'LOAD BALANCER RELAY ERROR: ' + e.error.message, {
           requestID: this.requestID,
           relayType: 'LB',
           typeID: id,
@@ -301,6 +304,10 @@ export class V1Controller {
         })
 
         return e
+      }
+
+      if (e instanceof SyntaxError && e.message.includes('JSON')) {
+        return jsonrpc.error(reqRPCID, new JsonRpcError('The request body is not proper JSON', -32066))
       }
 
       logger.log('error', 'INTERNAL ERROR: ' + JSON.stringify(e), {
@@ -312,8 +319,6 @@ export class V1Controller {
         origin: this.origin,
         trace: e.stack,
       })
-
-      return jsonrpc.error(reqRPCID, new JsonRpcError('Relay attempts exhausted', -32050))
     }
   }
 
@@ -404,7 +409,7 @@ export class V1Controller {
       return await this.pocketRelayer.sendRelay(sendRelayOptions)
     } catch (e) {
       if (e instanceof ErrorObject) {
-        logger.log('error', e.error.message, {
+        logger.log('error', 'APP RELAY ERROR: ' + e.error.message, {
           requestID: this.requestID,
           relayType: 'APP',
           typeID: id,
@@ -416,7 +421,7 @@ export class V1Controller {
       }
 
       if (e instanceof SyntaxError && e.message.includes('JSON')) {
-        return jsonrpc.error(reqRPCID, new JsonRpcError('The request body is not proper JSON.', -32066))
+        return jsonrpc.error(reqRPCID, new JsonRpcError('The request body is not proper JSON', -32066))
       }
 
       logger.log('error', 'INTERNAL ERROR: ' + JSON.stringify(e), {
@@ -428,8 +433,6 @@ export class V1Controller {
         origin: this.origin,
         trace: e.stack,
       })
-
-      return jsonrpc.error(reqRPCID, new JsonRpcError('Relay attempts exhausted', -32050))
     }
   }
 

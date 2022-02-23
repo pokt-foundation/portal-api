@@ -3,6 +3,7 @@ import { expect } from '@loopback/testlab'
 import { Node, Session } from '@pokt-network/pocket-js'
 import { Applications } from '../../src/models'
 import { CherryPicker } from '../../src/services/cherry-picker'
+import { hashBlockchainNodes } from '../../src/utils/helpers'
 import { PocketMock } from '../mocks/pocketjs'
 
 describe('Cherry picker service (unit)', () => {
@@ -253,11 +254,7 @@ describe('Cherry picker service (unit)', () => {
       logs = await redis.get(blockchain + '-' + id + '-service')
       expect(logs).to.be.null()
 
-      const pocketSession = (await new PocketMock()
-        .object()
-        .sessionManager.getCurrentSession(undefined, undefined, undefined, undefined)) as Session
-
-      await cherryPicker.updateServiceQuality(blockchain, 'appID', id, elapseTime, result, undefined, pocketSession)
+      await cherryPicker.updateServiceQuality(blockchain, 'appID', id, elapseTime, result)
 
       logs = await redis.get(blockchain + '-' + id + '-service')
       console.log(logs)
@@ -303,6 +300,8 @@ describe('Cherry picker service (unit)', () => {
         .object()
         .sessionManager.getCurrentSession(undefined, undefined, undefined, undefined)) as Session
 
+      const { sessionNodes } = pocketSession
+
       await cherryPicker.updateBadNodeTimeoutQuality(
         blockchain,
         nodePublicKey,
@@ -311,7 +310,7 @@ describe('Cherry picker service (unit)', () => {
         pocketSession
       )
 
-      let removedNodes = await redis.smembers(`session-${pocketSession.sessionKey}`)
+      let removedNodes = await redis.smembers(`session-${await hashBlockchainNodes(blockchain, sessionNodes, redis)}`)
 
       expect(removedNodes).to.have.length(0)
 
@@ -326,7 +325,7 @@ describe('Cherry picker service (unit)', () => {
         )
       }
 
-      removedNodes = await redis.smembers(`session-${pocketSession.sessionKey}`)
+      removedNodes = await redis.smembers(`session-${await hashBlockchainNodes(blockchain, sessionNodes, redis)}`)
 
       expect(removedNodes).to.have.length(1)
     })
