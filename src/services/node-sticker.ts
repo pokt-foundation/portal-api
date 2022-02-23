@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
+import { Node } from '@pokt-foundation/pocketjs-types'
 import { Redis } from 'ioredis'
 import { getAddressFromPublicKey } from 'pocket-tools'
-import { Node } from '@pokt-network/pocket-js'
 import { checkWhitelist } from '../utils/enforcements'
 import { StickinessOptions } from '../utils/types'
 

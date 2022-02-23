@@ -86,8 +86,9 @@ export class MetricsRecorder {
     sessionBlockHeight?: number | BigInt
   }): Promise<void> {
     try {
+      // TODO: Use session again
       const { sessionNodes } = pocketSession || {}
-      const sessionHash = await hashBlockchainNodes(blockchainID, sessionNodes, this.redis)
+      const sessionHash = await hashBlockchainNodes(blockchainID, [], this.redis)
 
       // Might come empty
       applicationPublicKey = applicationPublicKey || 'no_public_key'
@@ -179,7 +180,7 @@ export class MetricsRecorder {
           elapsedTime,
           result,
           timeout,
-          pocketSession
+          undefined
         )
       }
 
