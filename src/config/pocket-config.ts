@@ -1,8 +1,12 @@
-import { URL } from 'url'
+import { JsonRpcProvider } from '@pokt-foundation/pocketjs-provider'
+import { Relayer } from '@pokt-foundation/pocketjs-relayer'
+import { KeyManager } from '@pokt-foundation/pocketjs-signer'
 import { HttpErrors } from '@loopback/rest'
-import { Account, Configuration, HttpRpcProvider, Pocket } from '@pokt-network/pocket-js'
+import { Configuration } from '@pokt-network/pocket-js'
 
 const logger = require('../services/logger')
+
+const IMPORT_ERROR_MESSAGE = 'Unable to import account'
 
 export type PocketConfiguration = {
   maxDispatchers?: number
@@ -67,25 +71,24 @@ export const getPocketConfigOrDefault = (params?: PocketConfiguration): Configur
   )
 }
 
-export async function getPocketInstance(
-  dispatchers: URL[],
-  configuration: Configuration,
-  clientPrivateKey: string,
-  clientPassphrase: string
-): Promise<Pocket> {
-  const pocket = new Pocket(dispatchers, new HttpRpcProvider(dispatchers[0]), configuration)
+export async function getPocketInstance(dispatchers: string[], privateKey: string): Promise<Relayer> {
+  const provider = new JsonRpcProvider({
+    rpcUrl: dispatchers[0].toString(),
+    dispatchers,
+  })
+
+  let signer: KeyManager
 
   // Unlock primary client account for relay signing
   try {
-    const importAccount = await pocket.keybase.importAccount(Buffer.from(clientPrivateKey, 'hex'), clientPassphrase)
-
-    if (importAccount instanceof Account) {
-      await pocket.keybase.unlockAccount(importAccount.addressHex, clientPassphrase, 0)
-    }
-  } catch (e) {
-    logger.log('error', e)
-    throw new HttpErrors.InternalServerError('Unable to import or unlock base client account')
+    signer = await KeyManager.fromPrivateKey(privateKey)
+  } catch (error) {
+    logger.log('error', IMPORT_ERROR_MESSAGE, { error })
+    throw new HttpErrors.InternalServerError(IMPORT_ERROR_MESSAGE)
   }
 
-  return pocket
+  return new Relayer({
+    keyManager: signer,
+    provider,
+  })
 }

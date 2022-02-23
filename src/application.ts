@@ -2,7 +2,6 @@ import crypto from 'crypto'
 import os from 'os'
 import path from 'path'
 import process from 'process'
-import { URL } from 'url'
 import Redis from 'ioredis'
 import pg from 'pg'
 import { BootMixin } from '@loopback/boot'
@@ -97,17 +96,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
     }
 
-    const dispatchers = []
-
-    if (dispatchURL.indexOf(',')) {
-      const dispatcherArray = dispatchURL.split(',')
-
-      dispatcherArray.forEach(function (dispatcher) {
-        dispatchers.push(new URL(dispatcher))
-      })
-    } else {
-      dispatchers.push(new URL(dispatchURL))
-    }
+    const dispatchers = dispatchURL.indexOf(',') ? dispatchURL.split(',') : [dispatchURL]
 
     const configuration = new Configuration(
       DEFAULT_POCKET_CONFIG.maxDispatchers,
@@ -121,7 +110,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       DEFAULT_POCKET_CONFIG.rejectSelfSignedCertificates,
       DEFAULT_POCKET_CONFIG.useLegacyTxCodec
     )
-    const pocket = await getPocketInstance(dispatchers, configuration, clientPrivateKey, clientPassphrase)
+    const pocket = await getPocketInstance(dispatchers, clientPrivateKey)
 
     this.bind('clientPrivateKey').to(clientPrivateKey)
     this.bind('clientPassphrase').to(clientPassphrase)
@@ -129,7 +118,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     // Well doing so for some reason injects service nodes urls instead of the dispatcher urls and
     // those change per request, so let's keep it this way until loopback figures it out.
     this.bind('dispatchURL').to(dispatchURL)
-    this.bind('pocketInstance').to(pocket)
+    this.bind('relayer').to(pocket)
     this.bind('pocketConfiguration').to(configuration)
     this.bind('relayRetries').to(parseInt(relayRetries))
     this.bind('altruists').to(altruists)
