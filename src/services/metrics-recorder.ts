@@ -1,10 +1,10 @@
 import process from 'process'
+import { Session } from '@pokt-foundation/pocketjs-types'
 import { Logger } from 'ajv'
 import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
 
 import pgFormat from 'pg-format'
-import { Session } from '@pokt-network/pocket-js'
 import { Point, WriteApi } from '@influxdata/influxdb-client'
 
 import { getNodeNetworkData } from '../utils/cache'
@@ -57,7 +57,7 @@ export class MetricsRecorder {
     code,
     origin,
     data,
-    pocketSession,
+    session,
     timeout,
     sticky,
     elapsedTime = 0,
@@ -78,7 +78,7 @@ export class MetricsRecorder {
     code: string | undefined
     origin: string | undefined
     data: string | undefined
-    pocketSession: Session | undefined
+    session: Session | undefined
     timeout?: number
     sticky?: string
     elapsedTime?: number
@@ -86,9 +86,8 @@ export class MetricsRecorder {
     sessionBlockHeight?: number | BigInt
   }): Promise<void> {
     try {
-      // TODO: Use session again
-      const { sessionNodes } = pocketSession || {}
-      const sessionHash = await hashBlockchainNodes(blockchainID, [], this.redis)
+      const { nodes } = session || {}
+      const sessionHash = await hashBlockchainNodes(blockchainID, nodes, this.redis)
 
       // Might come empty
       applicationPublicKey = applicationPublicKey || 'no_public_key'
@@ -180,7 +179,7 @@ export class MetricsRecorder {
           elapsedTime,
           result,
           timeout,
-          undefined
+          session
         )
       }
 

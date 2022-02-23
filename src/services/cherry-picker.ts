@@ -329,8 +329,8 @@ export class CherryPicker {
     pocketSession?: Session
   ): Promise<void> {
     // TODO: Improve naming
-    const { key: sessionKey, nodes: sessionNodes } = pocketSession || {}
-    const sessionHash = await hashBlockchainNodes(blockchainID, sessionNodes, this.redis)
+    const { key: sessionKey, nodes } = pocketSession || {}
+    const sessionHash = await hashBlockchainNodes(blockchainID, nodes, this.redis)
 
     // FIXME: This is not a reliable way on asserting whether is a service node,
     // an issue was created on pocket-tools for a 'isPublicKey' function. Once is
@@ -360,7 +360,7 @@ export class CherryPicker {
           serviceDomain,
           sessionHash,
         })
-        await removeNodeFromSession(this.redis, blockchainID, sessionNodes, serviceNode)
+        await removeNodeFromSession(this.redis, blockchainID, nodes, serviceNode)
       }
     }
   }

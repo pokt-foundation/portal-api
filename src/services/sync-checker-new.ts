@@ -226,7 +226,8 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
               error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${topBlockheight} altruist block height: ${altruistBlockHeight} node height: ${blockHeight} sync allowance: ${allowance}`,
               origin: this.origin,
               data: undefined,
-              pocketSession: pocketSession,
+              // TODO: Change to v2 session object once this is to be implemented
+              session: undefined,
               code: undefined,
             })
             .catch(function log(e) {

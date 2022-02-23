@@ -249,7 +249,7 @@ export class ChainChecker {
     pocketConfiguration,
     session,
   }: GetNodeChainLogOptions): Promise<NodeChainLog> {
-    const { key: sessionKey, nodes } = session || {}
+    const { key, nodes } = session || {}
     // Pull the current block from each node using the blockchain's chainCheck as the relay
     const relayStart = process.hrtime()
 
@@ -265,10 +265,6 @@ export class ChainChecker {
     } catch (error) {
       relayResponse = error
     }
-
-    // console.log(" ---- CHAIN CHECK RESPONSE ---")
-    // console.log(relayResponse)
-    // console.log(" ---- END OF CHAIN CHECK RESPONSE ---")
 
     const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
 
@@ -292,7 +288,7 @@ export class ChainChecker {
         origin: this.origin,
         serviceURL,
         serviceDomain,
-        sessionKey,
+        sessionKey: key,
       })
 
       // Success
@@ -309,7 +305,7 @@ export class ChainChecker {
         origin: this.origin,
         serviceURL,
         serviceDomain,
-        sessionKey,
+        sessionKey: key,
       })
 
       let error = relayResponse.message
@@ -338,7 +334,7 @@ export class ChainChecker {
           code: undefined,
           origin: this.origin,
           data: undefined,
-          pocketSession: undefined,
+          session,
         })
         .catch(function log(e) {
           logger.log('error', 'Error recording metrics: ' + e, {
@@ -360,7 +356,7 @@ export class ChainChecker {
         origin: this.origin,
         serviceURL,
         serviceDomain,
-        sessionKey,
+        sessionKey: key,
       })
 
       this.metricsRecorder
@@ -379,7 +375,7 @@ export class ChainChecker {
           code: undefined,
           origin: this.origin,
           data: undefined,
-          pocketSession: undefined,
+          session,
         })
         .catch(function log(e) {
           logger.log('error', 'Error recording metrics: ' + e, {
@@ -394,36 +390,6 @@ export class ChainChecker {
     const nodeChainLog = { node: node, chainID: 0 } as NodeChainLog
 
     return nodeChainLog
-  }
-
-  updateConfigurationConsensus(pocketConfiguration: Configuration): Configuration {
-    return new Configuration(
-      pocketConfiguration.maxDispatchers,
-      pocketConfiguration.maxSessions,
-      5,
-      2000,
-      false,
-      pocketConfiguration.sessionBlockFrequency,
-      pocketConfiguration.blockTime,
-      pocketConfiguration.maxSessionRefreshRetries,
-      pocketConfiguration.validateRelayResponses,
-      pocketConfiguration.rejectSelfSignedCertificates
-    )
-  }
-
-  updateConfigurationTimeout(pocketConfiguration: Configuration): Configuration {
-    return new Configuration(
-      pocketConfiguration.maxDispatchers,
-      pocketConfiguration.maxSessions,
-      pocketConfiguration.consensusNodeCount,
-      4000,
-      pocketConfiguration.acceptDisputedResponses,
-      pocketConfiguration.sessionBlockFrequency,
-      pocketConfiguration.blockTime,
-      pocketConfiguration.maxSessionRefreshRetries,
-      pocketConfiguration.validateRelayResponses,
-      pocketConfiguration.rejectSelfSignedCertificates
-    )
   }
 }
 

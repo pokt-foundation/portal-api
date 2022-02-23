@@ -53,7 +53,7 @@ export class PocketRelayer {
   altruists: JSONObject
   aatPlan: string
   defaultLogLimitBlocks: number
-  pocketSession: Session
+  session: Session
   alwaysRedirectToAltruists: boolean
   dispatchers: string
 
@@ -305,7 +305,7 @@ export class PocketRelayer {
                 code: userErrorCode,
                 origin: this.origin,
                 data,
-                pocketSession: undefined,
+                session: this.session,
                 // TODO: Add servicerPublicKey again once is implemented on sdk
                 // sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relayResponse.proof.servicerPubKey),
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
@@ -371,7 +371,7 @@ export class PocketRelayer {
                 origin: this.origin,
                 data,
                 // TODO: Add pocket session again
-                pocketSession: undefined,
+                session: this.session,
                 sticky,
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
               })
@@ -472,7 +472,7 @@ export class PocketRelayer {
               code: undefined,
               origin: this.origin,
               data,
-              pocketSession: undefined,
+              session: this.session,
               gigastakeAppID: applicationID !== application.id ? application.id : undefined,
             })
             .catch(function log(e) {
@@ -600,37 +600,40 @@ export class PocketRelayer {
     const pocketAAT = new PocketAAT(...aatParams)
 
     // Pull the session so we can get a list of nodes and cherry pick which one to use
-    // TODO: Add Error handling for relayer
-    const session: Session = await this.relayer.getNewSession({
-      chain: blockchainID,
-      applicationPubKey: appPublicKey,
-    })
+    let session: Session
+
+    try {
+      session = await this.relayer.getNewSession({
+        chain: blockchainID,
+        applicationPubKey: appPublicKey,
+      })
+    } catch (error) {
+      logger.log('error', 'ERROR obtaining a session: ' + error, {
+        relayType: 'APP',
+        typeID: application.id,
+        origin: this.origin,
+        blockchainID,
+        requestID,
+      })
+
+      return error
+    }
+    this.session = session
 
     // TODO: Remove when sdk does it internally
     // @ts-ignore
     session.nodes.forEach((node) => (node.stakedTokens = node.stakedTokens.toString()))
 
-    // if (pocketSession instanceof Error) {
-    //   logger.log('error', 'ERROR obtaining a session: ' + pocketSession.message, {
-    //     relayType: 'APP',
-    //     typeID: application.id,
-    //     origin: this.origin,
-    //     blockchainID,
-    //     requestID,
-    //   })
-
-    //   return pocketSession
-    // }
     // Start the relay timer
     const relayStart = process.hrtime()
 
     let nodes: Node[] = session.nodes
 
-    this.pocketSession = session
+    this.session = session
     // sessionKey = "blockchain and a hash of the all the nodes in this session, sorted by public key"
     const sessionKey = await hashBlockchainNodes(blockchainID, nodes, this.redis)
 
-    this.pocketSession = session
+    this.session = session
     const sessionCacheKey = `session-${sessionKey}`
 
     const exhaustedNodes = await this.redis.smembers(sessionCacheKey)
@@ -723,7 +726,7 @@ export class PocketRelayer {
             code: undefined,
             origin: this.origin,
             data,
-            pocketSession: undefined,
+            session: this.session,
             gigastakeAppID: applicationID !== application.id ? application.id : undefined,
           })
           .catch(function log(e) {
@@ -762,7 +765,7 @@ export class PocketRelayer {
             code: undefined,
             origin: this.origin,
             data,
-            pocketSession: undefined,
+            session: this.session,
             gigastakeAppID: applicationID !== application.id ? application.id : undefined,
           })
           .catch(function log(e) {

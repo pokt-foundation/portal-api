@@ -310,7 +310,7 @@ export class SyncChecker {
             code: undefined,
             origin: this.origin,
             data: undefined,
-            pocketSession: undefined,
+            session,
           })
           .catch(function log(e) {
             logger.log('error', 'Error recording metrics: ' + e, {
@@ -491,10 +491,6 @@ export class SyncChecker {
       relayResponse = error
     }
 
-    // console.log(" ---- SYNC CHECK RESPONSE ---")
-    // console.log(relayResponse)
-    // console.log(" ---- END OF SYNC CHECK RESPONSE ---")
-
     const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
 
     if (!(relayResponse instanceof Error) && checkEnforcementJSON(relayResponse)) {
@@ -565,7 +561,7 @@ export class SyncChecker {
           code: undefined,
           origin: this.origin,
           data: undefined,
-          pocketSession: undefined,
+          session,
         })
         .catch(function log(e) {
           logger.log('error', 'Error recording metrics: ' + e, {
@@ -606,8 +602,7 @@ export class SyncChecker {
           code: undefined,
           origin: this.origin,
           data: undefined,
-          // TODO: Add session again
-          pocketSession: undefined,
+          session,
         })
         .catch(function log(e) {
           logger.log('error', 'Error recording metrics: ' + e, {
@@ -626,36 +621,6 @@ export class SyncChecker {
     } as NodeSyncLog
 
     return nodeSyncLog
-  }
-
-  updateConfigurationConsensus(pocketConfiguration: Configuration): Configuration {
-    return new Configuration(
-      pocketConfiguration.maxDispatchers,
-      pocketConfiguration.maxSessions,
-      5,
-      2000,
-      false,
-      pocketConfiguration.sessionBlockFrequency,
-      pocketConfiguration.blockTime,
-      pocketConfiguration.maxSessionRefreshRetries,
-      pocketConfiguration.validateRelayResponses,
-      pocketConfiguration.rejectSelfSignedCertificates
-    )
-  }
-
-  updateConfigurationTimeout(pocketConfiguration: Configuration): Configuration {
-    return new Configuration(
-      pocketConfiguration.maxDispatchers,
-      pocketConfiguration.maxSessions,
-      pocketConfiguration.consensusNodeCount,
-      4000,
-      pocketConfiguration.acceptDisputedResponses,
-      pocketConfiguration.sessionBlockFrequency,
-      pocketConfiguration.blockTime,
-      pocketConfiguration.maxSessionRefreshRetries,
-      pocketConfiguration.validateRelayResponses,
-      pocketConfiguration.rejectSelfSignedCertificates
-    )
   }
 
   // TODO: We might want to support result keys in nested objects

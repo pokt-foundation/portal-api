@@ -137,7 +137,8 @@ export class NodeCheckerWrapper {
           data: undefined,
           sessionHash,
           bytes: 0,
-          pocketSession: pocketSession,
+          // TODO: Change to v2 session object once is implemented
+          session: undefined,
           code: undefined,
         }
 
@@ -257,6 +258,7 @@ export class NodeCheckerWrapper {
       requestID: requestID,
       blockchainID,
       origin: this.origin,
+      // TODO: Add session nodes
       sessionHash: await hashBlockchainNodes(blockchainID, [], this.redis),
     })
   }
