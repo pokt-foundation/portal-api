@@ -9,7 +9,7 @@ import { removeNodeFromSession, getNodeNetworkData } from '../utils/cache'
 import { CHECK_TIMEOUT, MAX_RELAYS_ERROR } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { hashBlockchainNodes } from '../utils/helpers'
-import { CheckResult } from '../utils/types'
+import { CheckResult, RelayResponse } from '../utils/types'
 
 const logger = require('../services/logger')
 
@@ -477,11 +477,11 @@ export class SyncChecker {
     // Pull the current block from each node using the blockchain's syncCheck as the relay
     const relayStart = process.hrtime()
 
-    let relayResponse: string | Error
+    let relay: RelayResponse | Error
 
     // TODO: Refactor try/catch to go with current flow
     try {
-      relayResponse = await relayer.relay({
+      relay = await relayer.relay({
         data: syncCheckOptions.body,
         blockchain: blockchainID,
         pocketAAT,
@@ -493,13 +493,13 @@ export class SyncChecker {
         },
       })
     } catch (error) {
-      relayResponse = error
+      relay = error
     }
 
     const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
 
-    if (!(relayResponse instanceof Error) && checkEnforcementJSON(relayResponse)) {
-      const payload = JSON.parse(relayResponse) // object that may not include 'resultKey'
+    if (!(relay instanceof Error) && checkEnforcementJSON(relay.response)) {
+      const payload = JSON.parse(relay.response) // object that may not include 'resultKey'
 
       const blockHeight = this.parseBlockFromPayload(payload, syncCheckOptions.resultKey)
 
@@ -525,8 +525,8 @@ export class SyncChecker {
       })
       // Success
       return nodeSyncLog
-    } else if (relayResponse instanceof Error) {
-      logger.log('error', 'SYNC CHECK ERROR: ' + JSON.stringify(relayResponse), {
+    } else if (relay instanceof Error) {
+      logger.log('error', 'SYNC CHECK ERROR: ' + JSON.stringify(relay), {
         requestID: requestID,
         relayType: '',
         typeID: '',
@@ -540,14 +540,14 @@ export class SyncChecker {
         sessionHash,
       })
 
-      let error = relayResponse.message
+      let error = relay.message
 
       if (error === MAX_RELAYS_ERROR) {
         await removeNodeFromSession(this.redis, blockchainID, sessionNodes, node.publicKey)
       }
 
-      if (typeof relayResponse.message === 'object') {
-        error = JSON.stringify(relayResponse.message)
+      if (typeof relay.message === 'object') {
+        error = JSON.stringify(relay.message)
       }
 
       this.metricsRecorder
@@ -559,7 +559,7 @@ export class SyncChecker {
           serviceNode: node.publicKey,
           relayStart,
           result: 500,
-          bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
+          bytes: Buffer.byteLength(relay.message, 'utf8'),
           fallback: false,
           method: 'synccheck',
           error,
@@ -577,7 +577,7 @@ export class SyncChecker {
           })
         })
     } else {
-      logger.log('error', 'SYNC CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
+      logger.log('error', 'SYNC CHECK ERROR UNHANDLED: ' + JSON.stringify(relay), {
         requestID: requestID,
         relayType: '',
         typeID: '',
@@ -603,7 +603,7 @@ export class SyncChecker {
           bytes: Buffer.byteLength('SYNC CHECK', 'utf8'),
           fallback: false,
           method: 'synccheck',
-          error: JSON.stringify(relayResponse),
+          error: JSON.stringify(relay),
           code: undefined,
           origin: this.origin,
           data: undefined,

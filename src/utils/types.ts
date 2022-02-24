@@ -60,3 +60,23 @@ export type DispatchNewSessionRequest = {
   chain: string
   session_height: number
 }
+
+// TODO: Remove once is implemented within pocket-js-slim
+export type RelayResponse = {
+  response: string
+  relayProof: {
+    entropy: number
+    sessionBlockHeight: number
+    servicerPubKey: string
+    blockchain: string
+    aat: {
+      version: string
+      appPubKey: string
+      clientPubKey: string
+      signature: string
+    }
+    signature: string
+    requestHash: string
+    serviceNode: Node
+  }
+}

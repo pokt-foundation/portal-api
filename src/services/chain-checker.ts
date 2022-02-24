@@ -8,7 +8,7 @@ import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
 import { CHECK_TIMEOUT, MAX_RELAYS_ERROR } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { hashBlockchainNodes } from '../utils/helpers'
-import { CheckResult } from '../utils/types'
+import { CheckResult, RelayResponse } from '../utils/types'
 
 const logger = require('../services/logger')
 
@@ -253,10 +253,10 @@ export class ChainChecker {
     // Pull the current block from each node using the blockchain's chainCheck as the relay
     const relayStart = process.hrtime()
 
-    let relayResponse: string | Error
+    let relay: RelayResponse | Error
 
     try {
-      relayResponse = await relayer.relay({
+      relay = await relayer.relay({
         data: chainCheck,
         blockchain: blockchainID,
         pocketAAT,
@@ -268,13 +268,13 @@ export class ChainChecker {
         },
       })
     } catch (error) {
-      relayResponse = error
+      relay = error
     }
 
     const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
 
-    if (!(relayResponse instanceof Error) && checkEnforcementJSON(relayResponse)) {
-      const payload = JSON.parse(relayResponse)
+    if (!(relay instanceof Error) && checkEnforcementJSON(relay.response)) {
+      const payload = JSON.parse(relay.response)
 
       // Create a NodeChainLog for each node with current chainID
       const nodeChainLog = {
@@ -298,8 +298,8 @@ export class ChainChecker {
 
       // Success
       return nodeChainLog
-    } else if (relayResponse instanceof Error) {
-      logger.log('error', 'CHAIN CHECK ERROR: ' + JSON.stringify(relayResponse), {
+    } else if (relay instanceof Error) {
+      logger.log('error', 'CHAIN CHECK ERROR: ' + JSON.stringify(relay), {
         requestID: requestID,
         relayType: '',
         typeID: '',
@@ -313,14 +313,14 @@ export class ChainChecker {
         sessionKey: key,
       })
 
-      let error = relayResponse.message
+      let error = relay.message
 
       if (error === MAX_RELAYS_ERROR) {
         await removeNodeFromSession(this.redis, blockchainID, nodes, node.publicKey)
       }
 
-      if (typeof relayResponse.message === 'object') {
-        error = JSON.stringify(relayResponse.message)
+      if (typeof relay.message === 'object') {
+        error = JSON.stringify(relay.message)
       }
 
       this.metricsRecorder
@@ -350,7 +350,7 @@ export class ChainChecker {
           })
         })
     } else {
-      logger.log('error', 'CHAIN CHECK ERROR UNHANDLED: ' + JSON.stringify(relayResponse), {
+      logger.log('error', 'CHAIN CHECK ERROR UNHANDLED: ' + JSON.stringify(relay), {
         requestID: requestID,
         relayType: '',
         typeID: '',
@@ -376,7 +376,7 @@ export class ChainChecker {
           bytes: Buffer.byteLength('WRONG CHAIN', 'utf8'),
           fallback: false,
           method: 'chaincheck',
-          error: JSON.stringify(relayResponse),
+          error: JSON.stringify(relay),
           code: undefined,
           origin: this.origin,
           data: undefined,
