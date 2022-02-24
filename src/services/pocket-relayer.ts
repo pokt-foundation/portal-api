@@ -12,7 +12,7 @@ import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { removeNodeFromSession } from '../utils/cache'
-import { MAX_RELAYS_ERROR } from '../utils/constants'
+import { DEFAULT_ALTRUIST_TIMEOUT, MAX_RELAYS_ERROR } from '../utils/constants'
 import {
   checkEnforcementJSON,
   isRelayError,
@@ -412,7 +412,7 @@ export class PocketRelayer {
       }
 
       if (requestTimeOut) {
-        axiosConfig.timeout = requestTimeOut
+        axiosConfig.timeout = DEFAULT_ALTRUIST_TIMEOUT
       }
 
       try {
