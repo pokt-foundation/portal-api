@@ -78,6 +78,10 @@ export async function getNodeNetworkData(redis: Redis, publicKey: string, reques
   return nodeUrl
 }
 
+export async function removeSessionCache(redis: Redis, publicKey: string, blockchainID: string): Promise<void> {
+  await redis.del(`session-cached-${publicKey}-${blockchainID}`)
+}
+
 type NodeURLInfo = {
   serviceURL: string
   serviceDomain: string

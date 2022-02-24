@@ -601,13 +601,7 @@ export class PocketRelayer {
     let session: Session
 
     try {
-      // toObject() {
-      //   return JSON.parse(JSON.stringify(this, (key, value) =>
-      //       typeof value === 'bigint'
-      //           ? value.toString()
-      //           : value // return everything else unchanged
-      //   ));
-      const sessionCacheKey = `session-${appPublicKey}-${blockchainChainID}`
+      const sessionCacheKey = `session-cached-${appPublicKey}-${blockchainID}`
       const cachedSession = await this.redis.get(sessionCacheKey)
 
       if (cachedSession) {

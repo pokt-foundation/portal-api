@@ -1,12 +1,17 @@
-import { Relayer } from '@pokt-foundation/pocketjs-relayer'
+import {
+  Relayer,
+  InvalidSessionError,
+  EvidenceSealedError,
+  ServiceNodeNotInSessionError,
+} from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node } from '@pokt-foundation/pocketjs-types'
 import axios from 'axios'
 import { Redis } from 'ioredis'
 import { Configuration, PocketAAT } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
-import { removeNodeFromSession, getNodeNetworkData } from '../utils/cache'
-import { CHECK_TIMEOUT, MAX_RELAYS_ERROR } from '../utils/constants'
+import { removeNodeFromSession, getNodeNetworkData, removeSessionCache } from '../utils/cache'
+import { CHECK_TIMEOUT } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { hashBlockchainNodes } from '../utils/helpers'
 import { CheckResult, RelayResponse } from '../utils/types'
@@ -473,7 +478,7 @@ export class SyncChecker {
     sessionHash: string,
     session?: Session
   ): Promise<NodeSyncLog> {
-    const { nodes: sessionNodes } = session || {}
+    const { nodes } = session || {}
     // Pull the current block from each node using the blockchain's syncCheck as the relay
     const relayStart = process.hrtime()
 
@@ -540,14 +545,12 @@ export class SyncChecker {
         sessionHash,
       })
 
-      let error = relay.message
-
-      if (error === MAX_RELAYS_ERROR) {
-        await removeNodeFromSession(this.redis, blockchainID, sessionNodes, node.publicKey)
+      if (relay instanceof EvidenceSealedError) {
+        await removeNodeFromSession(this.redis, blockchainID, nodes, node.publicKey)
       }
 
-      if (typeof relay.message === 'object') {
-        error = JSON.stringify(relay.message)
+      if (relay instanceof InvalidSessionError || relay instanceof ServiceNodeNotInSessionError) {
+        await removeSessionCache(this.redis, applicationPublicKey, blockchainID)
       }
 
       this.metricsRecorder
@@ -562,7 +565,7 @@ export class SyncChecker {
           bytes: Buffer.byteLength(relay.message, 'utf8'),
           fallback: false,
           method: 'synccheck',
-          error,
+          error: typeof relay.message === 'object' ? JSON.stringify(relay.message) : relay.message,
           code: undefined,
           origin: this.origin,
           data: undefined,

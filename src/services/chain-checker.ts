@@ -1,11 +1,16 @@
-import { Relayer } from '@pokt-foundation/pocketjs-relayer'
+import {
+  Relayer,
+  InvalidSessionError,
+  EvidenceSealedError,
+  ServiceNodeNotInSessionError,
+} from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node } from '@pokt-foundation/pocketjs-types'
 import { Redis } from 'ioredis'
 import { Configuration, PocketAAT } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
-import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
-import { CHECK_TIMEOUT, MAX_RELAYS_ERROR } from '../utils/constants'
+import { getNodeNetworkData, removeNodeFromSession, removeSessionCache } from '../utils/cache'
+import { CHECK_TIMEOUT } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { hashBlockchainNodes } from '../utils/helpers'
 import { CheckResult, RelayResponse } from '../utils/types'
@@ -313,14 +318,12 @@ export class ChainChecker {
         sessionKey: key,
       })
 
-      let error = relay.message
-
-      if (error === MAX_RELAYS_ERROR) {
+      if (relay instanceof EvidenceSealedError) {
         await removeNodeFromSession(this.redis, blockchainID, nodes, node.publicKey)
       }
 
-      if (typeof relay.message === 'object') {
-        error = JSON.stringify(relay.message)
+      if (relay instanceof InvalidSessionError || relay instanceof ServiceNodeNotInSessionError) {
+        await removeSessionCache(this.redis, applicationPublicKey, blockchainID)
       }
 
       this.metricsRecorder
@@ -335,7 +338,7 @@ export class ChainChecker {
           bytes: Buffer.byteLength('WRONG CHAIN', 'utf8'),
           fallback: false,
           method: 'chaincheck',
-          error,
+          error: typeof relay.message === 'object' ? JSON.stringify(relay.message) : relay.message,
           code: undefined,
           origin: this.origin,
           data: undefined,
