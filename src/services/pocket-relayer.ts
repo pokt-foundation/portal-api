@@ -611,7 +611,7 @@ export class PocketRelayer {
           chain: blockchainID,
           applicationPubKey: appPublicKey,
           options: {
-            retryAttemps: 3,
+            retryAttempts: 3,
             rejectSelfSignedCertificates: false,
             timeout: SESSION_TIMEOUT,
           },
@@ -917,20 +917,5 @@ export class PocketRelayer {
     }
 
     return limiterResponse
-  }
-
-  updateConfigurationTimeout(pocketConfiguration: Configuration): Configuration {
-    return new Configuration(
-      pocketConfiguration.maxDispatchers,
-      pocketConfiguration.maxSessions,
-      pocketConfiguration.consensusNodeCount,
-      4000,
-      pocketConfiguration.acceptDisputedResponses,
-      pocketConfiguration.sessionBlockFrequency,
-      pocketConfiguration.blockTime,
-      pocketConfiguration.maxSessionRefreshRetries,
-      pocketConfiguration.validateRelayResponses,
-      pocketConfiguration.rejectSelfSignedCertificates
-    )
   }
 }
