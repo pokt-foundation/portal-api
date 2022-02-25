@@ -14,7 +14,7 @@
   ],
   "main": "index.js",
   "engines": {
-    "node": ">=12.16.0 <=16.13.2"
+    "node": ">=12.16.0 <=16.14"
   },
   "scripts": {
     "build": "lb-tsc",
@@ -78,6 +78,7 @@
     "@pokt-foundation/pocketjs-types": "^0.0.3",
     "@pokt-foundation/pocketjs-utils": "^0.0.3",
     "@pokt-network/pocket-js": "^0.7.0-rc",
+    "assert": "^2.0.0",
     "aws-sdk": "^2.1023.0",
     "axios": "^0.25.0",
     "datadog-winston": "^1.5.1",
@@ -119,6 +120,7 @@
     "lint-staged": "^12.3.3",
     "moq.ts": "^7.4.1",
     "mustache": "^4.2.0",
+    "prettier": "^2.5.1",
     "rewiremock": "^3.14.3",
     "source-map-support": "^0.5.19",
     "tsnodemon": "^1.2.2",

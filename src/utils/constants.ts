@@ -17,3 +17,4 @@ export const POCKET_JS_TIMEOUT_MAX = 120 // Seconds
 
 export const SESSION_TIMEOUT = 2000
 export const CHECK_TIMEOUT = 4000
+export const DEFAULT_ALTRUIST_TIMEOUT = 60000 // Milliseconds
