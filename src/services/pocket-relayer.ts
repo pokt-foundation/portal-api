@@ -631,6 +631,7 @@ export class PocketRelayer {
         origin: this.origin,
         blockchainID,
         requestID,
+        error: error.message,
       })
 
       return error
