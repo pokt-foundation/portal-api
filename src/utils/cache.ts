@@ -20,13 +20,12 @@ const ALTRUIST_URL = JSON.parse(process.env.ALTRUISTS)?.['0001']
  */
 export async function removeNodeFromSession(
   redis: Redis,
-  blockchainID: string,
+  sessionSkey: string,
   nodes: Node[],
   nodePubKey: string,
   removeChecksFromCache = false
 ): Promise<void> {
-  const hash = await hashBlockchainNodes(blockchainID, nodes, redis)
-  const sessionKey = `session-${hash}`
+  const sessionKey = `session-key-${sessionSkey}`
 
   await redis.sadd(sessionKey, nodePubKey)
   const nodesToRemoveTTL = await redis.ttl(sessionKey)
@@ -36,7 +35,7 @@ export async function removeNodeFromSession(
   }
 
   if (removeChecksFromCache) {
-    await removeChecksCache(redis, blockchainID, nodes)
+    await removeChecksCache(redis, sessionKey, nodes)
   }
 }
 /**
@@ -94,8 +93,8 @@ type NodeURLInfo = {
   serviceDomain: string
 }
 
-export async function removeChecksCache(redis: Redis, blockchainID: string, nodes: Node[]) {
-  const hash = await hashBlockchainNodes(blockchainID, nodes, redis)
+export async function removeChecksCache(redis: Redis, sessionKey: string, nodes: Node[]) {
+  const hash = await hashBlockchainNodes(sessionKey, nodes, redis)
 
   await redis.del(`sync-check-${hash}`)
   await redis.del(`chain-check-${hash}`)

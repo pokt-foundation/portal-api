@@ -620,7 +620,7 @@ export class PocketRelayer {
     let session: Session
 
     try {
-      const sessionCacheKey = `session-cached-${appPublicKey}-${blockchainID}`
+      const sessionCacheKey = `session-${appPublicKey}-${blockchainID}`
       const cachedSession = await this.redis.get(sessionCacheKey)
 
       if (cachedSession) {
@@ -663,10 +663,10 @@ export class PocketRelayer {
 
     this.session = session
     // sessionKey = "blockchain and a hash of the all the nodes in this session, sorted by public key"
-    const sessionKey = await hashBlockchainNodes(blockchainID, nodes, this.redis)
+    const { key } = session
 
     this.session = session
-    const sessionCacheKey = `session-${sessionKey}`
+    const sessionCacheKey = `session-key-${key}`
 
     const exhaustedNodes = await this.redis.smembers(sessionCacheKey)
 
@@ -675,7 +675,7 @@ export class PocketRelayer {
     }
 
     if (nodes.length === 0) {
-      logger.log('warn', `SESSION: ${sessionKey} has exhausted all node relays`, {
+      logger.log('warn', `SESSION: ${key} has exhausted all node relays`, {
         requestID,
         relayType: 'APP',
         typeID: application.id,

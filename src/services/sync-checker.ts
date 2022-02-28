@@ -48,13 +48,13 @@ export class SyncChecker {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
     const syncAllowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
 
-    const sessionHash = await hashBlockchainNodes(blockchainID, session.nodes, this.redis)
+    const { key } = session
 
     const syncedNodes: Node[] = []
     let syncedNodesList: string[] = []
 
     // Value is an array of node public keys that have passed sync checks for this session in the past 5 minutes
-    const syncedNodesKey = `sync-check-${sessionHash}`
+    const syncedNodesKey = `sync-check-${key}`
     const syncedNodesCached = await this.redis.get(syncedNodesKey)
 
     const cached = Boolean(syncedNodesCached)
@@ -93,7 +93,7 @@ export class SyncChecker {
       relayer,
       pocketAAT,
       pocketConfiguration,
-      sessionHash,
+      key,
       session
     )
 
@@ -110,7 +110,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
-        sessionHash,
+        sessionHash: key,
       })
       errorState = true
     }
@@ -136,7 +136,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
-        sessionHash,
+        sessionHash: key,
       })
       errorState = true
     } else {
@@ -160,7 +160,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
-        sessionHash,
+        sessionHash: key,
       })
       errorState = true
     }
@@ -181,7 +181,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
-        sessionHash,
+        sessionHash: key,
       })
 
       if (errorState) {
@@ -197,7 +197,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
-        sessionHash,
+        sessionHash: key,
       })
 
       // If altruist height > 0, get the percent of nodes above altruist's block height
@@ -220,7 +220,7 @@ export class SyncChecker {
             error: '',
             elapsedTime: '',
             origin: this.origin,
-            sessionHash,
+            sessionHash: key,
           }
         )
 
@@ -270,7 +270,7 @@ export class SyncChecker {
             origin: this.origin,
             serviceURL,
             serviceDomain,
-            sessionHash,
+            sessionHash: key,
           }
         )
 
@@ -297,7 +297,7 @@ export class SyncChecker {
           origin: this.origin,
           serviceURL,
           serviceDomain,
-          sessionHash,
+          sessionHash: key,
         })
 
         this.metricsRecorder
@@ -338,7 +338,7 @@ export class SyncChecker {
       elapsedTime: '',
       blockchainID,
       origin: this.origin,
-      sessionHash,
+      sessionHash: key,
     })
     await this.redis.set(
       syncedNodesKey,
@@ -550,7 +550,7 @@ export class SyncChecker {
       })
 
       if (relay instanceof EvidenceSealedError) {
-        await removeNodeFromSession(this.redis, blockchainID, nodes, node.publicKey, true)
+        await removeNodeFromSession(this.redis, session.key, nodes, node.publicKey, true)
       }
 
       if (
@@ -559,7 +559,7 @@ export class SyncChecker {
         relay instanceof OutOfSyncRequestError
       ) {
         await removeSessionCache(this.redis, applicationPublicKey, blockchainID)
-        await removeChecksCache(this.redis, blockchainID, session.nodes)
+        await removeChecksCache(this.redis, session.key, session.nodes)
       }
 
       this.metricsRecorder

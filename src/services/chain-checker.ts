@@ -42,13 +42,13 @@ export class ChainChecker {
     pocketConfiguration,
     session,
   }: ChainIDFilterOptions): Promise<CheckResult> {
-    const sessionHash = await hashBlockchainNodes(blockchainID, session.nodes, this.redis)
+    const { key } = session
 
     const CheckedNodes: Node[] = []
     let CheckedNodesList: string[] = []
 
     // Value is an array of node public keys that have passed Chain checks for this session in the past 5 minutes
-    const checkedNodesKey = `chain-check-${sessionHash}`
+    const checkedNodesKey = `chain-check-${key}`
     const CheckedNodesCached = await this.redis.get(checkedNodesKey)
 
     const cached = Boolean(CheckedNodesCached)
@@ -86,7 +86,7 @@ export class ChainChecker {
       applicationPublicKey,
       relayer,
       pocketAAT,
-      sessionHash,
+      sessionHash: key,
       pocketConfiguration,
       session,
     }
@@ -113,7 +113,7 @@ export class ChainChecker {
             origin: this.origin,
             serviceURL,
             serviceDomain,
-            sessionHash,
+            sessionHash: key,
           }
         )
 
@@ -135,7 +135,7 @@ export class ChainChecker {
             origin: this.origin,
             serviceURL,
             serviceDomain,
-            sessionHash,
+            sessionHash: key,
           }
         )
       }
@@ -150,7 +150,7 @@ export class ChainChecker {
       elapsedTime: '',
       blockchainID,
       origin: this.origin,
-      sessionHash,
+      sessionHash: key,
     })
     await this.redis.set(
       checkedNodesKey,
@@ -322,7 +322,7 @@ export class ChainChecker {
       })
 
       if (relay instanceof EvidenceSealedError) {
-        await removeNodeFromSession(this.redis, blockchainID, nodes, node.publicKey, true)
+        await removeNodeFromSession(this.redis, session.key, nodes, node.publicKey, true)
       }
 
       if (
@@ -331,7 +331,7 @@ export class ChainChecker {
         relay instanceof OutOfSyncRequestError
       ) {
         await removeSessionCache(this.redis, applicationPublicKey, blockchainID)
-        await removeChecksCache(this.redis, blockchainID, session.nodes)
+        await removeChecksCache(this.redis, session.key, session.nodes)
       }
 
       this.metricsRecorder
