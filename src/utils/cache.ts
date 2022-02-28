@@ -14,27 +14,29 @@ const ALTRUIST_URL = JSON.parse(process.env.ALTRUISTS)?.['0001']
  * also cleans the chain/sync check cache to prevent using invalid nodes
  * @param redis cache service to use
  * @param blockchainID blockchain where session resides
- * @param sessionNodes session nodes
+ * @param nodes session nodes
  * @param nodePubKey node to remove's public key
  * @returns
  */
 export async function removeNodeFromSession(
   redis: Redis,
   blockchainID: string,
-  sessionNodes: Node[],
-  nodePubKey: string
+  nodes: Node[],
+  nodePubKey: string,
+  removeChecksFromCache = false
 ): Promise<void> {
-  const hash = await hashBlockchainNodes(blockchainID, sessionNodes, redis)
+  const hash = await hashBlockchainNodes(blockchainID, nodes, redis)
   const sessionKey = `session-${hash}`
 
   await redis.sadd(sessionKey, nodePubKey)
-  await redis.del(`sync-check-${hash}`)
-  await redis.del(`chain-check-${hash}`)
-
   const nodesToRemoveTTL = await redis.ttl(sessionKey)
 
   if (nodesToRemoveTTL < 0) {
     await redis.expire(sessionKey, 3600) // 1 hour
+  }
+
+  if (removeChecksFromCache) {
+    await removeChecksCache(redis, blockchainID, nodes)
   }
 }
 /**
@@ -78,11 +80,23 @@ export async function getNodeNetworkData(redis: Redis, publicKey: string, reques
   return nodeUrl
 }
 
-export async function removeSessionCache(redis: Redis, publicKey: string, blockchainID: string): Promise<void> {
+export async function removeSessionCache(
+  redis: Redis,
+  publicKey: string,
+  blockchainID: string,
+  removeChecks = false
+): Promise<void> {
   await redis.del(`session-cached-${publicKey}-${blockchainID}`)
 }
 
 type NodeURLInfo = {
   serviceURL: string
   serviceDomain: string
+}
+
+export async function removeChecksCache(redis: Redis, blockchainID: string, nodes: Node[]) {
+  const hash = await hashBlockchainNodes(blockchainID, nodes, redis)
+
+  await redis.del(`sync-check-${hash}`)
+  await redis.del(`chain-check-${hash}`)
 }

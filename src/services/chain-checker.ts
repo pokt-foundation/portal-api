@@ -3,13 +3,14 @@ import {
   InvalidSessionError,
   EvidenceSealedError,
   ServiceNodeNotInSessionError,
+  OutOfSyncRequestError,
 } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node } from '@pokt-foundation/pocketjs-types'
 import { Redis } from 'ioredis'
 import { Configuration, PocketAAT } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
-import { getNodeNetworkData, removeNodeFromSession, removeSessionCache } from '../utils/cache'
+import { getNodeNetworkData, removeChecksCache, removeNodeFromSession, removeSessionCache } from '../utils/cache'
 import { CHECK_TIMEOUT } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { hashBlockchainNodes } from '../utils/helpers'
@@ -320,12 +321,13 @@ export class ChainChecker {
         sessionKey: key,
       })
 
-      if (relay instanceof EvidenceSealedError) {
-        await removeNodeFromSession(this.redis, blockchainID, nodes, node.publicKey)
+      if (relay instanceof EvidenceSealedError || relay instanceof OutOfSyncRequestError) {
+        await removeNodeFromSession(this.redis, blockchainID, nodes, node.publicKey, true)
       }
 
       if (relay instanceof InvalidSessionError || relay instanceof ServiceNodeNotInSessionError) {
         await removeSessionCache(this.redis, applicationPublicKey, blockchainID)
+        await removeChecksCache(this.redis, blockchainID, session.nodes)
       }
 
       this.metricsRecorder

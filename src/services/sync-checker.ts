@@ -3,6 +3,7 @@ import {
   InvalidSessionError,
   EvidenceSealedError,
   ServiceNodeNotInSessionError,
+  OutOfSyncRequestError,
 } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node } from '@pokt-foundation/pocketjs-types'
 import axios from 'axios'
@@ -548,8 +549,8 @@ export class SyncChecker {
         sessionHash,
       })
 
-      if (relay instanceof EvidenceSealedError) {
-        await removeNodeFromSession(this.redis, blockchainID, nodes, node.publicKey)
+      if (relay instanceof EvidenceSealedError || relay instanceof OutOfSyncRequestError) {
+        await removeNodeFromSession(this.redis, blockchainID, nodes, node.publicKey, true)
       }
 
       if (relay instanceof InvalidSessionError || relay instanceof ServiceNodeNotInSessionError) {

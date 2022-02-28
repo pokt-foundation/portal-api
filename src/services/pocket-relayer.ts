@@ -625,6 +625,8 @@ export class PocketRelayer {
 
       if (cachedSession) {
         session = JSON.parse(cachedSession)
+
+        console.log('CACHED SESSION', session)
       } else {
         session = await this.relayer.getNewSession({
           chain: blockchainID,
@@ -636,12 +638,11 @@ export class PocketRelayer {
           },
         })
 
-        await this.redis.set(
-          sessionCacheKey,
-          JSON.stringify(session, (_, value) => (typeof value === 'bigint' ? value.toString() : value)),
-          'EX',
-          90
-        )
+        // TODO: Remove when sdk does it internally
+        // @ts-ignore
+        session.nodes.forEach((node) => (node.stakedTokens = node.stakedTokens.toString()))
+
+        await this.redis.set(sessionCacheKey, JSON.stringify(session), 'EX', 90)
       }
     } catch (error) {
       logger.log('error', 'ERROR obtaining a session: ' + error, {
@@ -656,10 +657,6 @@ export class PocketRelayer {
       return error
     }
     this.session = session
-
-    // TODO: Remove when sdk does it internally
-    // @ts-ignore
-    session.nodes.forEach((node) => (node.stakedTokens = node.stakedTokens.toString()))
 
     // Start the relay timer
     const relayStart = process.hrtime()
