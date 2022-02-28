@@ -11,7 +11,7 @@ import { Redis } from 'ioredis'
 import { Configuration, PocketAAT } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
-import { removeNodeFromSession, getNodeNetworkData, removeSessionCache } from '../utils/cache'
+import { removeNodeFromSession, getNodeNetworkData, removeSessionCache, removeChecksCache } from '../utils/cache'
 import { CHECK_TIMEOUT } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { hashBlockchainNodes } from '../utils/helpers'
@@ -549,12 +549,17 @@ export class SyncChecker {
         sessionHash,
       })
 
-      if (relay instanceof EvidenceSealedError || relay instanceof OutOfSyncRequestError) {
+      if (relay instanceof EvidenceSealedError) {
         await removeNodeFromSession(this.redis, blockchainID, nodes, node.publicKey, true)
       }
 
-      if (relay instanceof InvalidSessionError || relay instanceof ServiceNodeNotInSessionError) {
+      if (
+        relay instanceof InvalidSessionError ||
+        relay instanceof ServiceNodeNotInSessionError ||
+        relay instanceof OutOfSyncRequestError
+      ) {
         await removeSessionCache(this.redis, applicationPublicKey, blockchainID)
+        await removeChecksCache(this.redis, blockchainID, session.nodes)
       }
 
       this.metricsRecorder

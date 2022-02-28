@@ -321,11 +321,15 @@ export class ChainChecker {
         sessionKey: key,
       })
 
-      if (relay instanceof EvidenceSealedError || relay instanceof OutOfSyncRequestError) {
+      if (relay instanceof EvidenceSealedError) {
         await removeNodeFromSession(this.redis, blockchainID, nodes, node.publicKey, true)
       }
 
-      if (relay instanceof InvalidSessionError || relay instanceof ServiceNodeNotInSessionError) {
+      if (
+        relay instanceof InvalidSessionError ||
+        relay instanceof ServiceNodeNotInSessionError ||
+        relay instanceof OutOfSyncRequestError
+      ) {
         await removeSessionCache(this.redis, applicationPublicKey, blockchainID)
         await removeChecksCache(this.redis, blockchainID, session.nodes)
       }
