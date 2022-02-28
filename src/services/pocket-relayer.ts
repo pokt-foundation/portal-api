@@ -625,8 +625,6 @@ export class PocketRelayer {
 
       if (cachedSession) {
         session = JSON.parse(cachedSession)
-
-        console.log('CACHED SESSION', session)
       } else {
         session = await this.relayer.getNewSession({
           chain: blockchainID,
