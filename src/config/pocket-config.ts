@@ -88,6 +88,7 @@ export async function getPocketInstance(dispatchers: string[], privateKey: strin
   }
 
   return new Relayer({
+    dispatchers,
     keyManager: signer,
     provider,
   })

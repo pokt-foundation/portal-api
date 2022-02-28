@@ -864,10 +864,13 @@ export class PocketRelayer {
 
     try {
       relay = await this.relayer.relay({
+        blockchain: blockchainID,
         data,
+        method: '',
+        node,
+        path: relayPath,
         pocketAAT,
         session,
-        blockchain: blockchainID,
       })
     } catch (error) {
       relay = error

@@ -251,7 +251,6 @@ export class ChainChecker {
     applicationID,
     applicationPublicKey,
     pocketAAT,
-    pocketConfiguration,
     session,
   }: GetNodeChainLogOptions): Promise<NodeChainLog> {
     const { key, nodes } = session || {}
@@ -262,12 +261,15 @@ export class ChainChecker {
 
     try {
       relay = await relayer.relay({
-        data: chainCheck,
         blockchain: blockchainID,
+        data: chainCheck,
+        method: '',
+        path: '',
+        node,
         pocketAAT,
         session: session,
         options: {
-          retryAttemps: 1,
+          retryAttempts: 1,
           rejectSelfSignedCertificates: false,
           timeout: CHECK_TIMEOUT,
         },

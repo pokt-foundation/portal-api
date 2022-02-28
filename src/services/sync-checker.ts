@@ -487,12 +487,15 @@ export class SyncChecker {
     // TODO: Refactor try/catch to go with current flow
     try {
       relay = await relayer.relay({
-        data: syncCheckOptions.body,
         blockchain: blockchainID,
+        data: syncCheckOptions.body,
+        path: syncCheckOptions.path,
+        node,
+        method: '',
         pocketAAT,
         session,
         options: {
-          retryAttemps: 1,
+          retryAttempts: 1,
           rejectSelfSignedCertificates: false,
           timeout: CHECK_TIMEOUT,
         },
