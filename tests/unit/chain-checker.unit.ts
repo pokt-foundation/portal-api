@@ -78,7 +78,7 @@ describe('Chain checker service (unit)', () => {
     const configuration = getPocketConfigOrDefault({
       requestTimeout: 10000,
     })
-    const expectedTimeout = 4000
+    const expectedTimeout = 2000
     const newConfig = chainChecker.updateConfigurationTimeout(configuration)
 
     expect(newConfig.requestTimeOut).to.be.equal(expectedTimeout)
