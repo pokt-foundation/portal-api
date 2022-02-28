@@ -54,7 +54,7 @@ Only the steps 1 and 2 are required, steps 3 and 4 are only needed if you want t
 If you ever get an error from the API, it will be in JSON-RPC format. This is our list of custom errors for context.
 | Code | Message | Meaning | Category |
 |---|---|---|---|
-| -32050 | Relay attempts exhausted | Request failed to be served | non-standard |
+| -32603 | Internal JSON-RPC error. | Request failed to be served | non-standard |
 | -32051 | Overall timeout exceeded | Request took too long | non-standard |
 | -32052 | Invalid domain | Invalid blockchain domain | non-standard |
 | -32053 | Method cannot be served over HTTPS | We do not support WebSockets yet | non-standard |
