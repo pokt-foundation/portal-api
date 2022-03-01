@@ -2,7 +2,6 @@ import {
   Relayer,
   InvalidSessionError,
   EvidenceSealedError,
-  ServiceNodeNotInSessionError,
   OutOfSyncRequestError,
 } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
@@ -12,7 +11,7 @@ import { Configuration } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { removeNodeFromSession, getNodeNetworkData, removeSessionCache, removeChecksCache } from '../utils/cache'
-import { CHECK_TIMEOUT } from '../utils/constants'
+import { CHECK_TIMEOUT, PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { CheckResult, RelayResponse } from '../utils/types'
 
@@ -23,12 +22,14 @@ export class SyncChecker {
   metricsRecorder: MetricsRecorder
   defaultSyncAllowance: number
   origin: string
+  sessionErrors: number
 
   constructor(redis: Redis, metricsRecorder: MetricsRecorder, defaultSyncAllowance: number, origin: string) {
     this.redis = redis
     this.metricsRecorder = metricsRecorder
     this.defaultSyncAllowance = defaultSyncAllowance
     this.origin = origin
+    this.sessionErrors = 0
   }
 
   async consensusFilter({
@@ -95,6 +96,26 @@ export class SyncChecker {
       key,
       session
     )
+
+    // Check for percentange of check session errors to determined if session should be
+    // removed, as pocket nodes might get out of sync during session rollovers and
+    // return they incorrectly do not belong to the current session
+    const nodeErrorsToNodesRatio = this.sessionErrors / nodes.length
+
+    if (nodeErrorsToNodesRatio >= PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION) {
+      logger.log('warn', 'SESSION: whole session removed from cache due to errors:', {
+        requestID,
+        typeID: applicationID,
+        blockchainID,
+        origin: this.origin,
+        sessionKey: session.key,
+        sessionBlockHeight: session.blockHeight,
+        sessionPublicKey: session.header.applicationPubKey,
+      })
+
+      await removeSessionCache(this.redis, pocketAAT.applicationPublicKey, blockchainID)
+      await removeChecksCache(this.redis, session.key, session.nodes)
+    }
 
     let errorState = false
 
@@ -423,7 +444,6 @@ export class SyncChecker {
           applicationPublicKey,
           relayer,
           pocketAAT,
-          pocketConfiguration,
           sessionHash,
           pocketSession
         )
@@ -474,7 +494,6 @@ export class SyncChecker {
     applicationPublicKey: string,
     relayer: Relayer,
     pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration,
     sessionHash: string,
     session?: Session
   ): Promise<NodeSyncLog> {
@@ -552,13 +571,8 @@ export class SyncChecker {
         await removeNodeFromSession(this.redis, session.key, nodes, node.publicKey, true)
       }
 
-      if (
-        relay instanceof InvalidSessionError ||
-        relay instanceof ServiceNodeNotInSessionError ||
-        relay instanceof OutOfSyncRequestError
-      ) {
-        await removeSessionCache(this.redis, pocketAAT.applicationPublicKey, blockchainID)
-        await removeChecksCache(this.redis, session.key, session.nodes)
+      if (relay instanceof InvalidSessionError || relay instanceof OutOfSyncRequestError) {
+        this.sessionErrors++
       }
 
       this.metricsRecorder

@@ -2,7 +2,6 @@ import {
   Relayer,
   InvalidSessionError,
   EvidenceSealedError,
-  ServiceNodeNotInSessionError,
   OutOfSyncRequestError,
 } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
@@ -11,7 +10,7 @@ import { Configuration } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { getNodeNetworkData, removeChecksCache, removeNodeFromSession, removeSessionCache } from '../utils/cache'
-import { CHECK_TIMEOUT } from '../utils/constants'
+import { CHECK_TIMEOUT, PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { CheckResult, RelayResponse } from '../utils/types'
 
@@ -21,11 +20,13 @@ export class ChainChecker {
   redis: Redis
   metricsRecorder: MetricsRecorder
   origin: string
+  sessionErrors: number
 
   constructor(redis: Redis, metricsRecorder: MetricsRecorder, origin: string) {
     this.redis = redis
     this.metricsRecorder = metricsRecorder
     this.origin = origin
+    this.sessionErrors = 0
   }
 
   async chainIDFilter({
@@ -90,6 +91,26 @@ export class ChainChecker {
       session,
     }
     const nodeChainLogs = await this.getNodeChainLogs(options)
+
+    // Check for percentange of check session errors to determined if session should be
+    // removed, as pocket nodes might get out of sync during session rollovers and
+    // return they incorrectly do not belong to the current session
+    const nodeErrorsToNodesRatio = this.sessionErrors / nodes.length
+
+    if (nodeErrorsToNodesRatio >= PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION) {
+      logger.log('warn', 'SESSION: whole session removed from cache due to errors:', {
+        requestID,
+        typeID: applicationID,
+        blockchainID,
+        origin: this.origin,
+        sessionKey: session.key,
+        sessionBlockHeight: session.blockHeight,
+        sessionPublicKey: session.header.applicationPubKey,
+      })
+
+      await removeSessionCache(this.redis, pocketAAT.applicationPublicKey, blockchainID)
+      await removeChecksCache(this.redis, session.key, session.nodes)
+    }
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
     for (const nodeChainLog of nodeChainLogs) {
@@ -324,13 +345,8 @@ export class ChainChecker {
         await removeNodeFromSession(this.redis, session.key, nodes, node.publicKey, true)
       }
 
-      if (
-        relay instanceof InvalidSessionError ||
-        relay instanceof ServiceNodeNotInSessionError ||
-        relay instanceof OutOfSyncRequestError
-      ) {
-        await removeSessionCache(this.redis, pocketAAT.applicationPublicKey, blockchainID)
-        await removeChecksCache(this.redis, session.key, session.nodes)
+      if (relay instanceof InvalidSessionError || relay instanceof OutOfSyncRequestError) {
+        this.sessionErrors++
       }
 
       this.metricsRecorder
