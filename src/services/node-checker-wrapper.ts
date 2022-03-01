@@ -85,7 +85,6 @@ export class NodeCheckerWrapper {
   }: FilterParams<T>): Promise<NodeCheckResponse<T>[]> {
     const filteredNodes: NodeCheckResponse<T>[] = []
     // TODO: Use session again
-    const { sessionNodes } = pocketSession
     const sessionHash = await hashBlockchainNodes(blockchainID, [], this.redis)
 
     for (const [idx, check] of checksResult.entries()) {

@@ -1,10 +1,10 @@
 import { Relayer } from '@pokt-foundation/pocketjs-relayer'
-import { Session, Node } from '@pokt-foundation/pocketjs-types'
+import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
 import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
 import { JSONObject } from '@loopback/context'
-import { PocketAAT, Configuration, HTTPMethod } from '@pokt-network/pocket-js'
+import { Configuration, HTTPMethod } from '@pokt-network/pocket-js'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
 import { Applications } from '../models'
@@ -23,7 +23,7 @@ import {
   checkSecretKey,
   SecretKeyDetails,
 } from '../utils/enforcements'
-import { getApplicationPublicKey, hashBlockchainNodes } from '../utils/helpers'
+import { getApplicationPublicKey } from '../utils/helpers'
 import { parseJSONRPCError, parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
 import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
@@ -598,29 +598,26 @@ export class PocketRelayer {
       )
     }
 
-    const aatParams: [string, string, string, string] =
+    const pocketAAT: PocketAAT =
       this.aatPlan === AatPlans.FREEMIUM
-        ? [
-            application?.gatewayAAT?.version,
-            application?.freeTierAAT?.clientPublicKey,
-            application?.freeTierAAT?.applicationPublicKey,
-            application?.freeTierAAT?.applicationSignature,
-          ]
-        : [
-            application?.gatewayAAT?.version,
-            application?.gatewayAAT?.clientPublicKey,
-            application?.gatewayAAT?.applicationPublicKey,
-            application?.gatewayAAT?.applicationSignature,
-          ]
-
-    // Checks pass; create AAT
-    const pocketAAT = new PocketAAT(...aatParams)
+        ? {
+            version: application?.gatewayAAT?.version,
+            clientPublicKey: application?.freeTierAAT?.clientPublicKey,
+            applicationPublicKey: application?.freeTierAAT?.applicationPublicKey,
+            applicationSignature: application?.freeTierAAT?.applicationSignature,
+          }
+        : {
+            version: application?.gatewayAAT?.version,
+            clientPublicKey: application?.gatewayAAT?.clientPublicKey,
+            applicationPublicKey: application?.gatewayAAT?.applicationPublicKey,
+            applicationSignature: application?.gatewayAAT?.applicationSignature,
+          }
 
     // Pull the session so we can get a list of nodes and cherry pick which one to use
     let session: Session
 
     try {
-      const sessionCacheKey = `session-${appPublicKey}-${blockchainID}`
+      const sessionCacheKey = `session-cached-${application?.gatewayAAT.applicationPublicKey}-${blockchainID}`
       const cachedSession = await this.redis.get(sessionCacheKey)
 
       if (cachedSession) {

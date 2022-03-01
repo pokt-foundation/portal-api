@@ -5,15 +5,14 @@ import {
   ServiceNodeNotInSessionError,
   OutOfSyncRequestError,
 } from '@pokt-foundation/pocketjs-relayer'
-import { Session, Node } from '@pokt-foundation/pocketjs-types'
+import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
 import { Redis } from 'ioredis'
-import { Configuration, PocketAAT } from '@pokt-network/pocket-js'
+import { Configuration } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { getNodeNetworkData, removeChecksCache, removeNodeFromSession, removeSessionCache } from '../utils/cache'
 import { CHECK_TIMEOUT } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
-import { hashBlockchainNodes } from '../utils/helpers'
 import { CheckResult, RelayResponse } from '../utils/types'
 
 const logger = require('../services/logger')
@@ -330,7 +329,7 @@ export class ChainChecker {
         relay instanceof ServiceNodeNotInSessionError ||
         relay instanceof OutOfSyncRequestError
       ) {
-        await removeSessionCache(this.redis, applicationPublicKey, blockchainID)
+        await removeSessionCache(this.redis, pocketAAT.applicationPublicKey, blockchainID)
         await removeChecksCache(this.redis, session.key, session.nodes)
       }
 

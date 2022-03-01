@@ -63,6 +63,7 @@ export type DispatchNewSessionRequest = {
 
 // TODO: Remove once is implemented within pocket-js-slim
 export type RelayResponse = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   response: any
   relayProof: {
     entropy: number

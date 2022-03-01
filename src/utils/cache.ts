@@ -3,7 +3,6 @@ import axios, { AxiosError } from 'axios'
 import extractDomain from 'extract-domain'
 import { Redis } from 'ioredis'
 import { getAddressFromPublicKey } from 'pocket-tools'
-import { hashBlockchainNodes } from './helpers'
 
 const logger = require('../services/logger')
 
@@ -79,12 +78,7 @@ export async function getNodeNetworkData(redis: Redis, publicKey: string, reques
   return nodeUrl
 }
 
-export async function removeSessionCache(
-  redis: Redis,
-  publicKey: string,
-  blockchainID: string,
-  removeChecks = false
-): Promise<void> {
+export async function removeSessionCache(redis: Redis, publicKey: string, blockchainID: string): Promise<void> {
   await redis.del(`session-cached-${publicKey}-${blockchainID}`)
 }
 
@@ -94,8 +88,6 @@ type NodeURLInfo = {
 }
 
 export async function removeChecksCache(redis: Redis, sessionKey: string, nodes: Node[]) {
-  const hash = await hashBlockchainNodes(sessionKey, nodes, redis)
-
-  await redis.del(`sync-check-${hash}`)
-  await redis.del(`chain-check-${hash}`)
+  await redis.del(`sync-check-${sessionKey}`)
+  await redis.del(`chain-check-${sessionKey}`)
 }
