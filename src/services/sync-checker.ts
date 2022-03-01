@@ -103,7 +103,7 @@ export class SyncChecker {
     const nodeErrorsToNodesRatio = this.sessionErrors / nodes.length
 
     if (nodeErrorsToNodesRatio >= PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION) {
-      logger.log('warn', 'SESSION: whole session removed from cache due to errors:', {
+      logger.log('warn', 'SESSION: whole session removed from cache due to errors', {
         requestID,
         typeID: applicationID,
         blockchainID,
