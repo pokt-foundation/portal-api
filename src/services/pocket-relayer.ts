@@ -625,7 +625,7 @@ export class PocketRelayer {
       } else {
         session = await this.relayer.getNewSession({
           chain: blockchainID,
-          applicationPubKey: appPublicKey,
+          applicationPubKey: application?.gatewayAAT.applicationPublicKey,
           options: {
             retryAttempts: 3,
             rejectSelfSignedCertificates: false,
