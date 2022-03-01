@@ -623,6 +623,13 @@ export class PocketRelayer {
       if (cachedSession) {
         session = JSON.parse(cachedSession)
       } else {
+        logger.log('info', 'call to dispatcher to obtain session', {
+          requestID,
+          blockchainID,
+          gatewayPublicKey: application?.gatewayAAT.applicationPublicKey,
+          typeID: application.id,
+        })
+
         session = await this.relayer.getNewSession({
           chain: blockchainID,
           applicationPubKey: application?.gatewayAAT.applicationPublicKey,
@@ -637,7 +644,7 @@ export class PocketRelayer {
         // @ts-ignore
         session.nodes.forEach((node) => (node.stakedTokens = node.stakedTokens.toString()))
 
-        await this.redis.set(sessionCacheKey, JSON.stringify(session), 'EX', 90)
+        await this.redis.set(sessionCacheKey, JSON.stringify(session), 'EX', 120)
       }
     } catch (error) {
       logger.log('error', 'ERROR obtaining a session: ' + error, {
