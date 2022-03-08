@@ -33,6 +33,7 @@ export class ChainChecker {
     pocketAAT,
     pocketConfiguration,
     pocketSession,
+    path,
   }: ChainIDFilterOptions): Promise<CheckResult> {
     const sessionHash = await hashBlockchainNodes(blockchainID, pocketSession.sessionNodes, this.redis)
 
@@ -193,6 +194,7 @@ export class ChainChecker {
     sessionHash,
     pocketConfiguration,
     pocketSession,
+    path,
   }: GetNodesChainLogsOptions): Promise<NodeChainLog[]> {
     const nodeChainLogs: NodeChainLog[] = []
     const promiseStack: Promise<NodeChainLog>[] = []
@@ -219,6 +221,7 @@ export class ChainChecker {
         sessionHash,
         pocketConfiguration,
         pocketSession,
+        path,
       }
 
       promiseStack.push(this.getNodeChainLog(options))
@@ -269,6 +272,7 @@ export class ChainChecker {
     pocketAAT,
     pocketConfiguration,
     pocketSession,
+    path,
   }: GetNodeChainLogOptions): Promise<NodeChainLog> {
     const { sessionKey, sessionNodes } = pocketSession || {}
     // Pull the current block from each node using the blockchain's chainCheck as the relay
@@ -281,7 +285,7 @@ export class ChainChecker {
       this.updateConfigurationTimeout(pocketConfiguration),
       undefined,
       'POST' as HTTPMethod,
-      undefined,
+      path,
       node,
       false,
       undefined
@@ -433,7 +437,7 @@ export class ChainChecker {
       pocketConfiguration.maxDispatchers,
       pocketConfiguration.maxSessions,
       pocketConfiguration.consensusNodeCount,
-      4000,
+      2000,
       pocketConfiguration.acceptDisputedResponses,
       pocketConfiguration.sessionBlockFrequency,
       pocketConfiguration.blockTime,
@@ -460,6 +464,7 @@ interface BaseChainLogOptions {
   pocketConfiguration: Configuration
   sessionHash: string
   pocketSession: Session
+  path?: string
 }
 
 interface GetNodesChainLogsOptions extends BaseChainLogOptions {
@@ -482,4 +487,5 @@ export type ChainIDFilterOptions = {
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
   pocketSession: Session
+  path?: string
 }

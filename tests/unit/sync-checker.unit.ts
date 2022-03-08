@@ -161,7 +161,7 @@ describe('Sync checker service (unit)', () => {
   it('updates the configuration request timeout to one already set', () => {
     const configuration = getPocketConfigOrDefault({ requestTimeout: 10200 })
 
-    const expectedTimeout = 4000
+    const expectedTimeout = 2000
 
     const newConfig = syncChecker.updateConfigurationTimeout(configuration)
 

@@ -67,7 +67,7 @@ export class SyncChecker {
     const syncLock = await this.redis.get('lock-' + syncedNodesKey)
 
     if (syncLock) {
-      return { nodes, cached }
+      return { nodes: [], cached }
     } else {
       // Set lock as this thread checks the sync with 60 second ttl.
       // If any major errors happen below, it will retry the sync check every 60 seconds.
@@ -664,7 +664,7 @@ export class SyncChecker {
       pocketConfiguration.maxDispatchers,
       pocketConfiguration.maxSessions,
       pocketConfiguration.consensusNodeCount,
-      4000,
+      2000,
       pocketConfiguration.acceptDisputedResponses,
       pocketConfiguration.sessionBlockFrequency,
       pocketConfiguration.blockTime,
