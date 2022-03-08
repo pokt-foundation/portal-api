@@ -97,7 +97,14 @@ export class Blockchains extends Entity {
   @property({
     type: 'number',
   })
-  logLimitBlocks?: number;
+  logLimitBlocks?: number
+
+  @property({
+    type: 'string',
+    required: false,
+    default: '',
+  })
+  path?: string;
 
   // Indexer property to allow additional data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

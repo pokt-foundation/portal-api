@@ -165,6 +165,7 @@ export class PocketRelayer {
       blockchainID,
       blockchainChainID,
       blockchainLogLimitBlocks,
+      blockchainPath,
     } = await loadBlockchain(
       this.host,
       this.redis,
@@ -177,6 +178,8 @@ export class PocketRelayer {
       })
       throw e
     })
+
+    relayPath = !relayPath && blockchainPath ? blockchainPath : relayPath
 
     const { preferredNodeAddress } = stickinessOptions
     const nodeSticker = new NodeSticker(
@@ -252,6 +255,7 @@ export class PocketRelayer {
             blockchainSyncCheck,
             blockchainIDCheck,
             blockchainChainID,
+            blockchainPath,
             nodeSticker,
             appPublicKey,
             blockchainSyncBackup: String(this.altruists[blockchainID]),
@@ -388,10 +392,9 @@ export class PocketRelayer {
       let axiosConfig: AxiosRequestConfig = {}
 
       // Add relay path to URL
-      const altruistURL =
-        relayPath === undefined || relayPath === ''
-          ? (this.altruists[blockchainID] as string)
-          : `${this.altruists[blockchainID]}${relayPath}`
+      const altruistURL = (relayPath = !relayPath
+        ? (this.altruists[blockchainID] as string)
+        : `${this.altruists[blockchainID]}${relayPath}`)
 
       // Remove user/pass from the altruist URL
       const redactedAltruistURL = String(this.altruists[blockchainID])?.replace(/[\w]*:\/\/[^\/]*@/g, '')
@@ -532,6 +535,7 @@ export class PocketRelayer {
     blockchainIDCheck,
     blockchainID,
     blockchainChainID,
+    blockchainPath,
     nodeSticker,
     appPublicKey,
   }: {
@@ -549,6 +553,7 @@ export class PocketRelayer {
     blockchainIDCheck: string
     blockchainID: string
     blockchainChainID: string
+    blockchainPath: string
     nodeSticker: NodeSticker
     appPublicKey: string
   }): Promise<RelayResponse | Error> {
@@ -665,6 +670,7 @@ export class PocketRelayer {
         pocket: this.pocket,
         pocketConfiguration: this.pocketConfiguration,
         pocketSession,
+        path: blockchainPath,
       }
 
       chainCheckPromise = this.chainChecker.chainIDFilter(chainIDOptions)
