@@ -53,10 +53,6 @@
       "value": 10000
     },
     {
-      "key": "NODE_TLS_REJECT_UNAUTHORIZED",
-      "value": 0
-    },
-    {
       "key": "AAT_PLAN",
       "value": "premium"
     },
