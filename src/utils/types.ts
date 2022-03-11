@@ -11,6 +11,7 @@ export type BlockchainDetails = {
   blockchainIDCheck: string
   blockchainSyncCheck: SyncCheckOptions
   blockchainLogLimitBlocks: number
+  blockchainPath: string
 }
 
 export type SendRelayOptions = {

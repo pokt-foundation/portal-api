@@ -63,6 +63,7 @@ export async function loadBlockchain(
   let blockchainID = ''
   let blockchainChainID = ''
   let blockchainLogLimitBlocks = defaultLogLimitBlocks
+  let blockchainPath = ''
   const blockchainSyncCheck = {} as SyncCheckOptions
 
   const blockchain = blockchainFilter.blockchainAliases.find((alias: string) => {
@@ -100,6 +101,11 @@ export async function loadBlockchain(
     blockchainLogLimitBlocks = defaultLogLimitBlocks
   }
 
+  // Default path when required by a blockchain
+  if (blockchainFilter.path) {
+    blockchainPath = blockchainFilter.path
+  }
+
   return Promise.resolve({
     blockchain,
     blockchainEnforceResult,
@@ -108,5 +114,6 @@ export async function loadBlockchain(
     blockchainID,
     blockchainChainID,
     blockchainLogLimitBlocks,
+    blockchainPath,
   } as BlockchainDetails)
 }

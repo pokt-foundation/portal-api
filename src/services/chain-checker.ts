@@ -41,6 +41,7 @@ export class ChainChecker {
     pocketAAT,
     pocketConfiguration,
     session,
+    path,
   }: ChainIDFilterOptions): Promise<CheckResult> {
     const { key } = session
 
@@ -198,6 +199,7 @@ export class ChainChecker {
     sessionHash,
     pocketConfiguration,
     session,
+    path,
   }: GetNodesChainLogsOptions): Promise<NodeChainLog[]> {
     const nodeChainLogs: NodeChainLog[] = []
     const promiseStack: Promise<NodeChainLog>[] = []
@@ -224,6 +226,7 @@ export class ChainChecker {
         sessionHash,
         pocketConfiguration,
         session,
+        path,
       }
 
       promiseStack.push(this.getNodeChainLog(options))
@@ -273,6 +276,7 @@ export class ChainChecker {
     applicationPublicKey,
     pocketAAT,
     session,
+    path,
   }: GetNodeChainLogOptions): Promise<NodeChainLog> {
     const { key, nodes } = session || {}
     // Pull the current block from each node using the blockchain's chainCheck as the relay
@@ -285,7 +289,7 @@ export class ChainChecker {
         blockchain: blockchainID,
         data: chainCheck,
         method: '',
-        path: '',
+        path,
         node,
         pocketAAT,
         session: session,
@@ -440,6 +444,7 @@ interface BaseChainLogOptions {
   pocketConfiguration: Configuration
   sessionHash: string
   session: Session
+  path?: string
 }
 
 interface GetNodesChainLogsOptions extends BaseChainLogOptions {
@@ -462,4 +467,5 @@ export type ChainIDFilterOptions = {
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
   session: Session
+  path?: string
 }
