@@ -62,7 +62,7 @@ export class ChainChecker {
     const ChainLock = await this.redis.get('lock-' + checkedNodesKey)
 
     if (ChainLock) {
-      return { nodes, cached }
+      return { nodes: [], cached }
     } else {
       // Set lock as this thread checks the Chain with 60 second ttl.
       // If any major errors happen below, it will retry the Chain check every 60 seconds.

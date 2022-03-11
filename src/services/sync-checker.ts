@@ -157,10 +157,8 @@ export class SyncChecker {
       errorState = true
     }
 
-    let isAltruistTrustworthy: boolean
-
-    // Consult altruist for sync source of truth
-    let altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
+    // Query altruist for sync source of truth
+    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
 
     if (altruistBlockHeight === 0 || isNaN(altruistBlockHeight)) {
       // Failure to find sync from consensus and altruist
@@ -195,11 +193,7 @@ export class SyncChecker {
       // If altruist height > 0, get the percent of nodes above altruist's block height
       const nodesAheadAltruist = this.nodesAheadAltruist(altruistBlockHeight, nodeSyncLogs)
 
-      // Altruist needs to be ahead of more than 80% of the nodes
-      // to be considered trustworthy
-      isAltruistTrustworthy = !(nodesAheadAltruist > 0.8)
-
-      if (!isAltruistTrustworthy) {
+      if (nodesAheadAltruist > 0.5) {
         logger.log(
           'info',
           `SYNC CHECK ALTRUIST FAILURE: ${nodesAheadAltruist * 100}% of the synced nodes are ahead of altruist`,
@@ -209,24 +203,13 @@ export class SyncChecker {
             blockchainID,
             typeID: '',
             serviceNode: 'ALTRUIST',
-            error: '',
+            error: 'ALTRUIST BEHIND',
             elapsedTime: '',
             origin: this.origin,
             sessionHash,
           }
         )
-
-        // Since we don't trust altruist, let's overwrite its block height
-        altruistBlockHeight = highestNodeBlockHeight
       }
-    }
-
-    const isBlockHeightTooFar = highestNodeBlockHeight > altruistBlockHeight + syncAllowance
-
-    // If altruist is trustworthy...
-    // Make sure nodes aren't running too far ahead of altruist
-    if (isAltruistTrustworthy && isBlockHeightTooFar) {
-      highestNodeBlockHeight = altruistBlockHeight
     }
 
     // Go through nodes and add all nodes that are current or within allowance -- this allows for block processing times
@@ -236,18 +219,9 @@ export class SyncChecker {
       // Record the node's blockheight with the allowed variance
       const correctedNodeBlockHeight = nodeSyncLog.blockHeight + syncAllowance
 
-      // This allows for nodes to be slightly ahead but within allowance
-      const maximumBlockHeight = isAltruistTrustworthy
-        ? altruistBlockHeight + syncAllowance
-        : highestNodeBlockHeight + syncAllowance
-
       const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, nodeSyncLog.node.publicKey, requestID)
 
-      if (
-        nodeSyncLog.blockHeight <= maximumBlockHeight &&
-        correctedNodeBlockHeight >= highestNodeBlockHeight &&
-        correctedNodeBlockHeight >= altruistBlockHeight
-      ) {
+      if (correctedNodeBlockHeight >= altruistBlockHeight && correctedNodeBlockHeight >= highestNodeBlockHeight) {
         logger.log(
           'info',
           'SYNC CHECK IN-SYNC: ' + nodeSyncLog.node.publicKey + ' height: ' + nodeSyncLog.blockHeight,
