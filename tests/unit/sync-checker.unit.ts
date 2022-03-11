@@ -740,48 +740,6 @@ describe('Sync checker service (unit)', () => {
       expect(expectedLog).to.be.true()
     })
 
-    it('pass session sync check excluding nodes that are too ahead of altruist', async () => {
-      const nodes = DEFAULT_NODES
-
-      const altruistHeightResult = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c7b" }' // 17435771
-
-      axiosMock.onPost(ALTRUIST_URL['0021']).reply(200, altruistHeightResult)
-
-      const firstNodeAhead = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0cdf" }' // 17435871
-      const secondNodeAhead = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0ce0" }' // 17435872
-
-      pocketMock.relayResponse[blockchains['0021'].syncCheckOptions.body] = [
-        firstNodeAhead,
-        secondNodeAhead,
-        altruistHeightResult,
-        altruistHeightResult,
-        altruistHeightResult,
-      ]
-
-      const pocketClient = pocketMock.object()
-
-      const { nodes: syncedNodes } = await syncChecker.consensusFilter({
-        nodes,
-        requestID: '1234',
-        blockchainID: blockchains['0021'].hash,
-        syncCheckOptions: blockchains['0021'].syncCheckOptions,
-        pocket: pocketClient,
-        applicationID: '',
-        applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0021'],
-        pocketAAT: undefined,
-        pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
-      })
-
-      expect(syncedNodes).to.have.length(3)
-    })
-
     it('fails agreement of three highest nodes', async () => {
       const nodes = DEFAULT_NODES
 
