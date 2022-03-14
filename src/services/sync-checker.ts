@@ -193,7 +193,9 @@ export class SyncChecker {
       })
 
       // If altruist height > 0, get the percent of nodes above altruist's block height
-      const nodesAheadAltruist = this.nodesAheadAltruist(altruistBlockHeight, nodeSyncLogs)
+      const { totalNodesAhead, totalNodes } = this.nodesAheadAltruist(altruistBlockHeight, nodeSyncLogs)
+
+      const nodesAheadAltruist = totalNodesAhead / totalNodes
 
       // Altruist needs to be ahead of more than 50% of the nodes
       isAltruistTrustworthy = !(nodesAheadAltruist >= 0.5)
@@ -201,7 +203,7 @@ export class SyncChecker {
       if (!isAltruistTrustworthy) {
         logger.log(
           'info',
-          `SYNC CHECK ALTRUIST FAILURE: ${nodesAheadAltruist * 100}% of the synced nodes are ahead of altruist`,
+          `SYNC CHECK ALTRUIST FAILURE: ${totalNodesAhead} out of ${totalNodes} the synced nodes are ahead of altruist`,
           {
             requestID: requestID,
             relayType: '',
@@ -681,7 +683,10 @@ export class SyncChecker {
   }
 
   // Calculates the percentage of nodes that is already of altruist (e.g. 20/24)
-  nodesAheadAltruist(altruistBlockHeight: number, nodeSyncLogs: NodeSyncLog[]): number {
+  nodesAheadAltruist(
+    altruistBlockHeight: number,
+    nodeSyncLogs: NodeSyncLog[]
+  ): { totalNodesAhead: number; totalNodes: number } {
     let totalNodesAhead = 0
     let totalNodes = 0
 
@@ -695,7 +700,7 @@ export class SyncChecker {
       }
     }
 
-    return totalNodesAhead / totalNodes
+    return { totalNodesAhead, totalNodes }
   }
 }
 
