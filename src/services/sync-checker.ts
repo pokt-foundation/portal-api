@@ -195,9 +195,8 @@ export class SyncChecker {
       // If altruist height > 0, get the percent of nodes above altruist's block height
       const nodesAheadAltruist = this.nodesAheadAltruist(altruistBlockHeight, nodeSyncLogs)
 
-      // Altruist needs to be ahead of more than 80% of the nodes
-      // to be considered trustworthy
-      isAltruistTrustworthy = !(nodesAheadAltruist > 0.8)
+      // Altruist needs to be ahead of more than 50% of the nodes
+      isAltruistTrustworthy = !(nodesAheadAltruist >= 0.5)
 
       if (!isAltruistTrustworthy) {
         logger.log(
