@@ -682,7 +682,7 @@ export class SyncChecker {
     return blockHexToDecimal(rawHeight)
   }
 
-  // Calculates the percentage of nodes that is already of altruist (e.g. 20/24)
+  // Counts the amount of nodes ahead and total valid nodes in session
   nodesAheadAltruist(
     altruistBlockHeight: number,
     nodeSyncLogs: NodeSyncLog[]
