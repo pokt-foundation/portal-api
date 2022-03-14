@@ -203,7 +203,7 @@ export class SyncChecker {
       if (!isAltruistTrustworthy) {
         logger.log(
           'info',
-          `SYNC CHECK ALTRUIST FAILURE: ${totalNodesAhead} out of ${totalNodes} the synced nodes are ahead of altruist`,
+          `SYNC CHECK ALTRUIST FAILURE: ${totalNodesAhead} out of ${totalNodes} synced nodes are ahead of altruist`,
           {
             requestID: requestID,
             relayType: '',
