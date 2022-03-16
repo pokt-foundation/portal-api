@@ -45,40 +45,6 @@ services:
     networks:
       - pocket
 
-  ## Replicas require persistance, disabled for now
-
-  # cache-replica:
-  #   image: 'redis:alpine'
-  #   container_name: cache-replica
-  #   command: redis-server --slaveof cache 6379
-  #   ports:
-  #     - '6379'
-  #   depends_on:
-  #     - cache
-  #   environment:
-  #     - REDIS_REPLICATION_MODE=slave
-  #     - REDIS_MASTER_HOST=cache
-  #     - REDIS_MASTER_PORT_NUMBER=6379
-  #     - ALLOW_EMPTY_PASSWORD=yes
-  #   networks:
-  #     - pocket
-
-  # cache-replica-2:
-  #   image: 'redis:alpine'
-  #   container_name: cache-replica-2
-  #   command: redis-server --slaveof cache 6379
-  #   ports:
-  #     - '6379'
-  #   depends_on:
-  #     - cache
-  #   environment:
-  #     - REDIS_REPLICATION_MODE=slave
-  #     - REDIS_MASTER_HOST=cache
-  #     - REDIS_MASTER_PORT_NUMBER=6379
-  #     - ALLOW_EMPTY_PASSWORD=yes
-  #   networks:
-  #     - pocket
-
   metricsdb:
     container_name: metricsdb
     image: timescale/timescaledb:2.0.2-pg12
