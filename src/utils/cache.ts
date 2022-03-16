@@ -7,7 +7,7 @@ import { hashBlockchainNodes } from './helpers'
 
 const logger = require('../services/logger')
 
-const MAINNET_ALTRUIST_URL = String(process.env.POKT_MAINNET_NODE)
+const MAINNET_ALTRUIST_URL = String(process.env.POKT_MAINNET_NODE_URL)
 
 /**
  * Removes node from cached session, following calls within the same session,

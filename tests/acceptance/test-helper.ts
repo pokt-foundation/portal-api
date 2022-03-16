@@ -39,7 +39,7 @@ export const DUMMY_ENV = {
     "000A": "https://user:pass@backups.example.org:18553",
     "0041": "https://user:pass@backups.example.org:18082"
   }`,
-  POKT_MAINNET_NODE: 'https://user:pass@backups.example.org:18081',
+  POKT_MAINNET_NODE_URL: 'https://user:pass@backups.example.org:18081',
   POCKET_SESSION_BLOCK_FREQUENCY: 4,
   POCKET_BLOCK_TIME: 1038000,
   POCKET_RELAY_RETRIES: '0',
