@@ -127,27 +127,36 @@ export class V1Controller {
     })
     rawData: object
   ): Promise<string | ErrorObject> {
-    const parsedRawData = parseRawData(rawData)
-    const rpcID = parseRPCID(parsedRawData)
+    let rpcID = 1
 
-    const { blockchain, blockchainRedirect } = await loadBlockchain(
-      this.host,
-      this.redis,
-      this.blockchainsRepository,
-      this.defaultLogLimitBlocks,
-      rpcID
-    ).catch((e) => {
-      logger.log('error', `Incorrect blockchain: ${this.host}`, {
+    try {
+      const parsedRawData = parseRawData(rawData)
+
+      rpcID = parseRPCID(parsedRawData)
+
+      const { blockchain, blockchainRedirect } = await loadBlockchain(
+        this.host,
+        this.redis,
+        this.blockchainsRepository,
+        this.defaultLogLimitBlocks,
+        rpcID
+      )
+
+      if (blockchainRedirect) {
+        // Modify the host using the stored blockchain name in DB
+        this.pocketRelayer.host = blockchain
+        this.host = blockchain
+        return await this.loadBalancerRelay(blockchainRedirect.loadBalancerID, rawData)
+      }
+    } catch (e) {
+      logger.log('error', 'LOAD BALANCER RELAY ERROR: ' + JSON.stringify(e), {
+        requestID: this.requestID,
+        error: e,
+        relayType: 'LB',
+        serviceNode: '',
         origin: this.origin,
+        trace: e.stack,
       })
-      throw e
-    })
-
-    if (blockchainRedirect) {
-      // Modify the host using the stored blockchain name in DB
-      this.pocketRelayer.host = blockchain
-      this.host = blockchain
-      return this.loadBalancerRelay(blockchainRedirect.loadBalancerID, rawData)
     }
 
     return jsonrpc.error(rpcID, new jsonrpc.JsonRpcError('Invalid domain', -32052)) as ErrorObject
@@ -226,12 +235,7 @@ export class V1Controller {
           this.blockchainsRepository,
           this.defaultLogLimitBlocks,
           reqRPCID
-        ).catch((e) => {
-          logger.log('error', `Incorrect blockchain: ${this.host}`, {
-            origin: this.origin,
-          })
-          throw e
-        })
+        )
 
         if (blockchainRedirect) {
           const originalLoadBalancer = { ...loadBalancer }
