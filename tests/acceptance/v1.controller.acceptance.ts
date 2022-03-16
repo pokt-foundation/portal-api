@@ -8,83 +8,12 @@ import { BlockchainsRepository } from '../../src/repositories/blockchains.reposi
 import { LoadBalancersRepository } from '../../src/repositories/load-balancers.repository'
 import { gatewayTestDB } from '../fixtures/test.datasource'
 import { MockRelayResponse, PocketMock } from '../mocks/pocketjs'
-import { setupApplication, DUMMY_ENV } from './test-helper'
+import { setupApplication } from './test-helper'
 
 const logger = require('../../src/services/logger')
 
 // Must be the same one from the test environment on ./test-helper.ts
 const DB_ENCRYPTION_KEY = '00000000000000000000000000000000'
-
-// Might not actually reflect real-world values
-const BLOCKCHAINS = [
-  {
-    hash: '0001',
-    ticker: 'POKT',
-    networkID: 'mainnet',
-    network: 'POKT-mainnet',
-    description: 'Pocket Network Mainnet',
-    index: 1,
-    blockchain: 'mainnet',
-    blockchainAliases: ['mainnet'],
-    active: true,
-    enforceResult: 'JSON',
-    nodeCount: 1,
-    chainID: '21',
-  },
-  {
-    hash: '0021',
-    ticker: 'ETH',
-    networkID: '1',
-    network: 'ETH-1',
-    description: 'Ethereum Mainnet',
-    index: 2,
-    blockchain: 'eth-mainnet',
-    blockchainAliases: ['eth-mainnet'],
-    active: true,
-    enforceResult: 'JSON',
-    nodeCount: 1,
-    chainID: '100',
-    chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
-    syncCheckOptions: {
-      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
-      resultKey: 'result',
-      allowance: 5,
-      path: '',
-    },
-  },
-  {
-    hash: '0040',
-    ticker: 'ETHS',
-    networkID: '1',
-    network: 'ETH-1S',
-    description: 'Ethereum Mainnet String',
-    index: 3,
-    blockchain: 'eth-mainnet-string',
-    blockchainAliases: ['eth-mainnet-string'],
-    active: true,
-    nodeCount: 1,
-    chainID: '64',
-  },
-  {
-    hash: '0041',
-    ticker: 'ETHX',
-    networkID: '1',
-    network: 'ETH-2',
-    description: 'Ethereum Mainnet X',
-    index: 2,
-    blockchain: 'eth-mainnet-x',
-    blockchainAliases: ['eth-mainnet-x'],
-    active: true,
-    enforceResult: 'JSON',
-    nodeCount: 1,
-    chainID: '137',
-    syncCheckOptions: {
-      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
-      resultKey: 'result',
-      allowance: 5,
-    },
-  },
-]
 
 const APPLICATION = {
   id: 'sd9fj31d714kgos42e68f9gh',
@@ -130,6 +59,92 @@ const GIGASTAKE_FOLLOWER_IDS = {
   app: 'asassd9sd0ffjdcusue2fidisss',
   lb: 'df9f9f9gdklkwotn5o3ixuso3od',
 }
+
+// Might not actually reflect real-world values
+const BLOCKCHAINS = [
+  {
+    hash: '0001',
+    ticker: 'POKT',
+    networkID: 'mainnet',
+    network: 'POKT-mainnet',
+    description: 'Pocket Network Mainnet',
+    index: 1,
+    blockchain: 'mainnet',
+    blockchainAliases: ['mainnet'],
+    active: true,
+    enforceResult: 'JSON',
+    nodeCount: 1,
+    chainID: '21',
+    altruist: 'https://user:pass@backups.example.org:18081',
+    redirect: {
+      domain: 'mainnet.example.com',
+      loadBalancerID: GIGASTAKE_LEADER_IDS.lb,
+    },
+  },
+  {
+    hash: '0021',
+    ticker: 'ETH',
+    networkID: '1',
+    network: 'ETH-1',
+    description: 'Ethereum Mainnet',
+    index: 2,
+    blockchain: 'eth-mainnet',
+    blockchainAliases: ['eth-mainnet'],
+    active: true,
+    enforceResult: 'JSON',
+    nodeCount: 1,
+    chainID: '100',
+    chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
+    syncCheckOptions: {
+      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+      resultKey: 'result',
+      allowance: 5,
+      path: '',
+    },
+    altruist: 'https://user:pass@backups.example.org:18545',
+    redirect: {
+      domain: 'eth-mainnet',
+      loadBalancerID: 'gt4a1s9rfrebaf8g31bsdc04',
+    },
+  },
+  {
+    hash: '0040',
+    ticker: 'ETHS',
+    networkID: '1',
+    network: 'ETH-1S',
+    description: 'Ethereum Mainnet String',
+    index: 3,
+    blockchain: 'eth-mainnet-string',
+    blockchainAliases: ['eth-mainnet-string'],
+    active: true,
+    nodeCount: 1,
+    chainID: '64',
+  },
+  {
+    hash: '0041',
+    ticker: 'ETHX',
+    networkID: '1',
+    network: 'ETH-2',
+    description: 'Ethereum Mainnet X',
+    index: 2,
+    blockchain: 'eth-mainnet-x',
+    blockchainAliases: ['eth-mainnet-x'],
+    active: true,
+    enforceResult: 'JSON',
+    nodeCount: 1,
+    chainID: '137',
+    syncCheckOptions: {
+      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+      resultKey: 'result',
+      allowance: 5,
+    },
+    altruist: 'https://user:pass@backups.example.org:18082',
+    redirect: {
+      domain: 'eth-mainnet-x',
+      loadBalancerID: 'gt4a1s9rfrebaf8g31bsdc04',
+    },
+  },
+]
 
 const APPLICATIONS = [
   APPLICATION,
@@ -224,8 +239,6 @@ const LOAD_BALANCERS = [
   },
 ]
 
-const ALTRUISTS = JSON.parse(DUMMY_ENV.ALTRUISTS)
-
 describe('V1 controller (acceptance)', () => {
   let app: PocketGatewayApplication
   let client: Client
@@ -259,11 +272,11 @@ describe('V1 controller (acceptance)', () => {
     }
 
     axiosMock
-      .onPost(ALTRUISTS['0041'], { method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .onPost(BLOCKCHAINS['0041']?.altruist, { method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .reply(200, relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'])
 
     axiosMock
-      .onPost(ALTRUISTS['0021'], { method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .onPost(BLOCKCHAINS['0021']?.altruist, { method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .reply(200, relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'])
 
     pocketMock = new PocketMock(undefined, undefined, undefined)
@@ -621,7 +634,7 @@ describe('V1 controller (acceptance)', () => {
     ;({ app, client } = await setupApplication(pocket))
 
     axiosMock
-      .onPost(ALTRUISTS['0041'], { method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .onPost(BLOCKCHAINS['0041']?.altruist, { method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .reply(200, '<html>503 Service Unavailable</html>')
 
     const response = await client
@@ -638,10 +651,7 @@ describe('V1 controller (acceptance)', () => {
   it('redirects empty path with specific load balancer', async () => {
     const pocket = pocketMock.object()
 
-    ;({ app, client } = await setupApplication(pocket, {
-      REDIRECTS:
-        '[{"domain": "eth-mainnet-x", "blockchain": "eth-mainnet-x", "loadBalancerID" : "gt4a1s9rfrebaf8g31bsdc04"}]',
-    }))
+    ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
       .post('/')
@@ -655,23 +665,10 @@ describe('V1 controller (acceptance)', () => {
     expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
   })
 
-  it("app doesn't initialize when no redirects are set", async () => {
-    const pocket = pocketMock.object()
-
-    await expect(
-      setupApplication(pocket, {
-        REDIRECTS: '',
-      })
-    ).to.rejectedWith(Error)
-  })
-
   it('fails on invalid redirect load balancer', async () => {
     const pocket = pocketMock.object()
 
-    ;({ app, client } = await setupApplication(pocket, {
-      REDIRECTS:
-        '[{"domain": "eth-mainnet", "blockchain": "eth-mainnet", "loadBalancerID" : "gt4a1s9rfrebaf8g31bsdc04"}]',
-    }))
+    ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
       .post('/')
@@ -922,16 +919,7 @@ describe('V1 controller (acceptance)', () => {
 
     const pocket = pocketMock.object()
 
-    ;({ app, client } = await setupApplication(pocket, {
-      REDIRECTS: JSON.stringify([
-        {
-          domain: 'mainnet.example.com',
-          blockchain: 'mainnet',
-          loadBalancerID: GIGASTAKE_LEADER_IDS.lb,
-          blockchainAliases: ['mainnet'],
-        },
-      ]),
-    }))
+    ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
       .post(`/v1/lb/${GIGASTAKE_FOLLOWER_IDS.lb}`)
