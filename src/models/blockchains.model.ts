@@ -25,6 +25,21 @@ class SyncCheckOptions {
   allowance?: number
 }
 
+@model()
+class BlockchainRedirect {
+  @property({
+    type: 'string',
+    required: true,
+  })
+  domain: string
+
+  @property({
+    type: 'string',
+    required: true,
+  })
+  loadBalancerID: string
+}
+
 @model({ settings: { strict: false } })
 export class Blockchains extends Entity {
   @property({
@@ -104,7 +119,17 @@ export class Blockchains extends Entity {
     required: false,
     default: '',
   })
-  path?: string;
+  path?: string
+
+  @property({
+    type: 'string',
+  })
+  altruist?: string
+
+  @property({
+    type: 'object',
+  })
+  redirect?: BlockchainRedirect;
 
   // Indexer property to allow additional data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
