@@ -65,7 +65,7 @@ export async function loadBlockchain(
   let blockchainLogLimitBlocks = defaultLogLimitBlocks
   let blockchainPath = ''
   let blockchainAltruist = ''
-  let blockchainRedirect = {} as BlockchainRedirect
+  let blockchainRedirects = [] as BlockchainRedirect[]
   const blockchainSyncCheck = {} as SyncCheckOptions
 
   const blockchain = blockchainFilter.blockchainAliases.find((alias: string) => {
@@ -114,8 +114,8 @@ export async function loadBlockchain(
   }
 
   // Redirects
-  if (blockchainFilter.redirect) {
-    blockchainRedirect = blockchainFilter.redirect
+  if (blockchainFilter.redirects) {
+    blockchainRedirects = blockchainFilter.redirects
   }
 
   return Promise.resolve({
@@ -128,6 +128,6 @@ export async function loadBlockchain(
     blockchainLogLimitBlocks,
     blockchainPath,
     blockchainAltruist,
-    blockchainRedirect,
+    blockchainRedirects,
   } as BlockchainDetails)
 }

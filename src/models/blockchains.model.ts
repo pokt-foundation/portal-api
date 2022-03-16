@@ -31,6 +31,12 @@ class BlockchainRedirect {
     type: 'string',
     required: true,
   })
+  alias: string
+
+  @property({
+    type: 'string',
+    required: true,
+  })
   domain: string
 
   @property({
@@ -129,7 +135,7 @@ export class Blockchains extends Entity {
   @property({
     type: 'object',
   })
-  redirect?: BlockchainRedirect;
+  redirects?: BlockchainRedirect[];
 
   // Indexer property to allow additional data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

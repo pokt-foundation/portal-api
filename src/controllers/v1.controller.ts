@@ -134,7 +134,7 @@ export class V1Controller {
 
       rpcID = parseRPCID(parsedRawData)
 
-      const { blockchain, blockchainRedirect } = await loadBlockchain(
+      const { blockchainRedirects } = await loadBlockchain(
         this.host,
         this.redis,
         this.blockchainsRepository,
@@ -142,11 +142,11 @@ export class V1Controller {
         rpcID
       )
 
-      if (blockchainRedirect) {
+      for (const redirect of blockchainRedirects) {
         // Modify the host using the stored blockchain name in DB
-        this.pocketRelayer.host = blockchain
-        this.host = blockchain
-        return await this.loadBalancerRelay(blockchainRedirect.loadBalancerID, rawData)
+        this.pocketRelayer.host = redirect.alias
+        this.host = redirect.alias
+        return await this.loadBalancerRelay(redirect.loadBalancerID, rawData)
       }
     } catch (e) {
       logger.log('error', 'LOAD BALANCER RELAY ERROR: ' + JSON.stringify(e), {
@@ -229,7 +229,7 @@ export class V1Controller {
       // Is this LB marked for gigastakeRedirect?
       // Temporary: will be removed when live
       if (gigastakeOptions.gigastaked) {
-        const { blockchainRedirect } = await loadBlockchain(
+        const { blockchainRedirects } = await loadBlockchain(
           this.host,
           this.redis,
           this.blockchainsRepository,
@@ -237,10 +237,12 @@ export class V1Controller {
           reqRPCID
         )
 
-        if (blockchainRedirect) {
+        if (blockchainRedirects) {
           const originalLoadBalancer = { ...loadBalancer }
 
-          loadBalancer = await this.fetchLoadBalancer(blockchainRedirect.loadBalancerID, filter)
+          const redirect = blockchainRedirects.find((rdr) => this.host.toLowerCase().includes(rdr.alias))
+
+          loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
 
           if (!loadBalancer?.id) {
             throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('GS load balancer not found', -32054))

@@ -12,7 +12,7 @@ export type BlockchainDetails = {
   blockchainLogLimitBlocks: number
   blockchainPath: string
   blockchainAltruist: string
-  blockchainRedirect: BlockchainRedirect
+  blockchainRedirects: BlockchainRedirect[]
 }
 
 export type SendRelayOptions = {
@@ -64,6 +64,7 @@ export type DispatchNewSessionRequest = {
 }
 
 export type BlockchainRedirect = {
+  alias: string
   domain: string
   loadBalancerID: string
 }
