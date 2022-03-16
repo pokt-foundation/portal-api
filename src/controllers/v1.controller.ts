@@ -237,7 +237,7 @@ export class V1Controller {
           reqRPCID
         )
 
-        if (blockchainRedirects) {
+        if (blockchainRedirects.length > 0) {
           const originalLoadBalancer = { ...loadBalancer }
 
           const redirect = blockchainRedirects.find((rdr) => this.host.toLowerCase().includes(rdr.alias))
