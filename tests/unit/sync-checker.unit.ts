@@ -20,12 +20,6 @@ const EVM_RELAY_RESPONSE = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c9c" }
 const SOLANA_RELAY_RESPONSE = '{"jsonrpc":"2.0","result":85377210,"id":1}'
 const POCKET_RELAY_RESPONSE = '{"height":35758}'
 
-const ALTRUIST_URL = {
-  '0021': 'https://eth-mainnet:pass@backups.example.org:18081',
-  '0006': 'https://solana:pass@backups.example.org:18081',
-  '0001': 'https://pocket:pass@backups.example.org:18081',
-}
-
 const blockchains = {
   '0021': {
     hash: '0021',
@@ -45,6 +39,7 @@ const blockchains = {
       path: '',
       allowance: 5,
     },
+    altruist: 'https://eth-mainnet:pass@backups.example.org:18081',
   },
   '0006': {
     hash: '0006',
@@ -63,6 +58,7 @@ const blockchains = {
       path: '',
       allowance: 2,
     },
+    altruist: 'https://solana:pass@backups.example.org:18081',
   },
   '0001': {
     hash: '0001',
@@ -81,6 +77,7 @@ const blockchains = {
       path: '/v1/query/height',
       allowance: 2,
     },
+    altruist: 'https://pocket:pass@backups.example.org:18081',
   },
 }
 
@@ -128,13 +125,13 @@ describe('Sync checker service (unit)', () => {
 
     //// Add responses to axios mock
     axiosMock
-      .onPost(ALTRUIST_URL['0021'].concat(blockchains['0021'].syncCheckOptions.path))
+      .onPost(blockchains['0021']?.altruist.concat(blockchains['0021'].syncCheckOptions.path))
       .reply(200, EVM_RELAY_RESPONSE)
     axiosMock
-      .onPost(ALTRUIST_URL['0006'].concat(blockchains['0006'].syncCheckOptions.path))
+      .onPost(blockchains['0006']?.altruist.concat(blockchains['0006'].syncCheckOptions.path))
       .reply(200, SOLANA_RELAY_RESPONSE)
     axiosMock
-      .onPost(ALTRUIST_URL['0001'].concat(blockchains['0001'].syncCheckOptions.path))
+      .onPost(blockchains['0001']?.altruist.concat(blockchains['0001'].syncCheckOptions.path))
       .reply(200, POCKET_RELAY_RESPONSE)
 
     await redis.flushall()
@@ -257,20 +254,20 @@ describe('Sync checker service (unit)', () => {
 
       const blockHeight = await syncChecker.getSyncFromAltruist(
         blockchains['0021'].syncCheckOptions,
-        ALTRUIST_URL['0021']
+        blockchains['0021']?.altruist
       )
 
       expect(blockHeight).to.be.equal(expectedBlockHeight)
     })
 
     it('fails retrieving sync from altruist', async () => {
-      axiosMock.onPost(ALTRUIST_URL['0021']).networkError()
+      axiosMock.onPost(blockchains['0021']?.altruist).networkError()
 
       const expectedBlockHeight = 0
 
       const blockHeight = await syncChecker.getSyncFromAltruist(
         blockchains['0021'].syncCheckOptions,
-        ALTRUIST_URL['0021']
+        blockchains['0021']?.altruist
       )
 
       expect(blockHeight).to.be.equal(expectedBlockHeight)
@@ -322,7 +319,7 @@ describe('Sync checker service (unit)', () => {
           pocket: pocketClient,
           applicationID: '',
           applicationPublicKey: '',
-          blockchainSyncBackup: ALTRUIST_URL['0021'],
+          blockchainSyncBackup: blockchains['0021']?.altruist,
           pocketAAT: undefined,
           pocketConfiguration,
           pocketSession: (await pocketClient.sessionManager.getCurrentSession(
@@ -349,7 +346,7 @@ describe('Sync checker service (unit)', () => {
           pocket: pocketClient,
           applicationID: '',
           applicationPublicKey: '',
-          blockchainSyncBackup: ALTRUIST_URL['0021'],
+          blockchainSyncBackup: blockchains['0021']?.altruist,
           pocketAAT: undefined,
           pocketConfiguration,
           pocketSession: (await pocketClient.sessionManager.getCurrentSession(
@@ -382,7 +379,7 @@ describe('Sync checker service (unit)', () => {
           pocket: pocketClient,
           applicationID: '',
           applicationPublicKey: '',
-          blockchainSyncBackup: ALTRUIST_URL['0006'],
+          blockchainSyncBackup: blockchains['0006']?.altruist,
           pocketAAT: undefined,
           pocketConfiguration,
           pocketSession: (await pocketClient.sessionManager.getCurrentSession(
@@ -409,7 +406,7 @@ describe('Sync checker service (unit)', () => {
           pocket: pocketClient,
           applicationID: '',
           applicationPublicKey: '',
-          blockchainSyncBackup: ALTRUIST_URL['0006'],
+          blockchainSyncBackup: blockchains['0006']?.altruist,
           pocketAAT: undefined,
           pocketConfiguration,
           pocketSession: (await pocketClient.sessionManager.getCurrentSession(
@@ -442,7 +439,7 @@ describe('Sync checker service (unit)', () => {
           pocket: pocketClient,
           applicationID: '',
           applicationPublicKey: '',
-          blockchainSyncBackup: ALTRUIST_URL['0001'],
+          blockchainSyncBackup: blockchains['0001']?.altruist,
           pocketAAT: undefined,
           pocketConfiguration,
           pocketSession: (await pocketClient.sessionManager.getCurrentSession(
@@ -469,7 +466,7 @@ describe('Sync checker service (unit)', () => {
           pocket: pocketClient,
           applicationID: '',
           applicationPublicKey: '',
-          blockchainSyncBackup: ALTRUIST_URL['0001'],
+          blockchainSyncBackup: blockchains['0001']?.altruist,
           pocketAAT: undefined,
           pocketConfiguration,
           pocketSession: (await pocketClient.sessionManager.getCurrentSession(
@@ -500,7 +497,7 @@ describe('Sync checker service (unit)', () => {
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0006'],
+        blockchainSyncBackup: blockchains['0006']?.altruist,
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
@@ -522,7 +519,7 @@ describe('Sync checker service (unit)', () => {
     })
 
     it('fails sync check due to altruist and chain error', async () => {
-      axiosMock.onPost(ALTRUIST_URL['0021']).networkError()
+      axiosMock.onPost(blockchains['0021']?.altruist).networkError()
 
       const nodes = DEFAULT_NODES
 
@@ -538,7 +535,7 @@ describe('Sync checker service (unit)', () => {
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
@@ -562,7 +559,7 @@ describe('Sync checker service (unit)', () => {
     it('passes sync check with altruist behind and >80% nodes ahead', async () => {
       const nodes = DEFAULT_NODES
 
-      axiosMock.onPost(ALTRUIST_URL['0021']).reply(200, '{ "id": 1, "jsonrpc": "2.0", "result": "0x64" }')
+      axiosMock.onPost(blockchains['0021']?.altruist).reply(200, '{ "id": 1, "jsonrpc": "2.0", "result": "0x64" }')
 
       const pocketClient = pocketMock.object()
 
@@ -574,7 +571,7 @@ describe('Sync checker service (unit)', () => {
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
@@ -610,7 +607,7 @@ describe('Sync checker service (unit)', () => {
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
@@ -625,7 +622,7 @@ describe('Sync checker service (unit)', () => {
     })
 
     it('fails session sync check, all nodes behind altruist', async () => {
-      axiosMock.onPost(ALTRUIST_URL['0021']).reply(200, '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0d00" }') // 100 blocks after the EVM_RELAY_RESPONSE
+      axiosMock.onPost(blockchains['0021']?.altruist).reply(200, '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0d00" }') // 100 blocks after the EVM_RELAY_RESPONSE
 
       const nodes = DEFAULT_NODES
 
@@ -639,7 +636,7 @@ describe('Sync checker service (unit)', () => {
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
@@ -658,7 +655,7 @@ describe('Sync checker service (unit)', () => {
 
       const altruistHeightResult = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a00c3" }' // 17432771
 
-      axiosMock.onPost(ALTRUIST_URL['0021']).reply(200, altruistHeightResult)
+      axiosMock.onPost(blockchains['0021']?.altruist).reply(200, altruistHeightResult)
 
       // Nodes ahead within allowance
       const firstNodeAhead = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a00c6" }' // 17432774
@@ -682,7 +679,7 @@ describe('Sync checker service (unit)', () => {
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
@@ -719,7 +716,7 @@ describe('Sync checker service (unit)', () => {
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
@@ -745,7 +742,7 @@ describe('Sync checker service (unit)', () => {
 
       const altruistHeightResult = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c7b" }' // 17435771
 
-      axiosMock.onPost(ALTRUIST_URL['0021']).reply(200, altruistHeightResult)
+      axiosMock.onPost(blockchains['0021']?.altruist).reply(200, altruistHeightResult)
 
       const firstNodeAhead = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0cdf" }' // 17435871
       const secondNodeAhead = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0ce0" }' // 17435872
@@ -768,7 +765,7 @@ describe('Sync checker service (unit)', () => {
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
@@ -809,7 +806,7 @@ describe('Sync checker service (unit)', () => {
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession: (await pocketClient.sessionManager.getCurrentSession(
@@ -854,7 +851,7 @@ describe('Sync checker service (unit)', () => {
         pocket: pocketClient,
         applicationID: '',
         applicationPublicKey: '',
-        blockchainSyncBackup: ALTRUIST_URL['0021'],
+        blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: undefined,
         pocketConfiguration,
         pocketSession,
