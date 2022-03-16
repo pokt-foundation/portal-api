@@ -141,7 +141,7 @@ const BLOCKCHAINS = [
     altruist: 'https://user:pass@backups.example.org:18082',
     redirect: {
       domain: 'eth-mainnet-x',
-      loadBalancerID: 'gt4a1s9rfrebaf8g31bsdc04',
+      loadBalancerID: GIGASTAKE_LEADER_IDS.lb,
     },
   },
 ]
