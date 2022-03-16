@@ -76,10 +76,13 @@ const BLOCKCHAINS = [
     nodeCount: 1,
     chainID: '21',
     altruist: 'https://user:pass@backups.example.org:18081',
-    redirect: {
-      domain: 'mainnet.example.com',
-      loadBalancerID: GIGASTAKE_LEADER_IDS.lb,
-    },
+    redirects: [
+      {
+        alias: 'mainnet',
+        domain: 'mainnet.example.com',
+        loadBalancerID: GIGASTAKE_LEADER_IDS.lb,
+      },
+    ],
   },
   {
     hash: '0021',
@@ -102,10 +105,13 @@ const BLOCKCHAINS = [
       path: '',
     },
     altruist: 'https://user:pass@backups.example.org:18545',
-    redirect: {
-      domain: 'eth-mainnet',
-      loadBalancerID: 'gt4a1s9rfrebaf8g31bsdc04',
-    },
+    redirects: [
+      {
+        alias: 'eth-mainnet',
+        domain: 'eth-mainnet',
+        loadBalancerID: 'gt4a1s9rfrebaf8g31bsdc04',
+      },
+    ],
   },
   {
     hash: '0040',
@@ -139,10 +145,13 @@ const BLOCKCHAINS = [
       allowance: 5,
     },
     altruist: 'https://user:pass@backups.example.org:18082',
-    redirect: {
-      domain: 'eth-mainnet-x',
-      loadBalancerID: GIGASTAKE_LEADER_IDS.lb,
-    },
+    redirects: [
+      {
+        alias: 'eth-mainnet-x',
+        domain: 'eth-mainnet-x',
+        loadBalancerID: GIGASTAKE_LEADER_IDS.lb,
+      },
+    ],
   },
 ]
 

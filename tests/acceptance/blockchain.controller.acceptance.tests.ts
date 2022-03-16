@@ -50,10 +50,13 @@ describe('Blockchains controller (acceptance)', () => {
         },
         logLimitBlocks: 10,
         altruist: 'https://user:pass@backups.example.org:18546',
-        redirect: {
-          domain: '',
-          loadBalancerID: '',
-        },
+        redirects: [
+          {
+            alias: '',
+            domain: '',
+            loadBalancerID: '',
+          },
+        ],
       }
     )
 
@@ -113,10 +116,13 @@ describe('Blockchains controller (acceptance)', () => {
             },
             logLimitBlocks: 10,
             altruist: 'https://user:pass@backups.example.org:18546',
-            redirect: {
-              domain: '',
-              loadBalancerID: '',
-            },
+            redirects: [
+              {
+                alias: '',
+                domain: '',
+                loadBalancerID: '',
+              },
+            ],
           }
         )
       )
