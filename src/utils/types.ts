@@ -11,6 +11,8 @@ export type BlockchainDetails = {
   blockchainSyncCheck: SyncCheckOptions
   blockchainLogLimitBlocks: number
   blockchainPath: string
+  blockchainAltruist: string
+  blockchainRedirect: BlockchainRedirect
 }
 
 export type SendRelayOptions = {
@@ -59,4 +61,9 @@ export type DispatchNewSessionRequest = {
   app_public_key: string
   chain: string
   session_height: number
+}
+
+export type BlockchainRedirect = {
+  domain: string
+  loadBalancerID: string
 }

@@ -4,7 +4,7 @@ import { Node } from '@pokt-network/pocket-js'
 
 import { BlockchainsRepository } from '../repositories'
 import { SyncCheckOptions } from '../services/sync-checker'
-import { BlockchainDetails, CheckResult } from './types'
+import { BlockchainDetails, CheckResult, BlockchainRedirect } from './types'
 
 // Fetch node client type if Ethereum based
 export async function fetchClientTypeLog(
@@ -64,6 +64,8 @@ export async function loadBlockchain(
   let blockchainChainID = ''
   let blockchainLogLimitBlocks = defaultLogLimitBlocks
   let blockchainPath = ''
+  let blockchainAltruist = ''
+  let blockchainRedirect = {} as BlockchainRedirect
   const blockchainSyncCheck = {} as SyncCheckOptions
 
   const blockchain = blockchainFilter.blockchainAliases.find((alias: string) => {
@@ -106,6 +108,16 @@ export async function loadBlockchain(
     blockchainPath = blockchainFilter.path
   }
 
+  // Blockchain's altruist node
+  if (blockchainFilter.altruist) {
+    blockchainAltruist = blockchainFilter.altruist
+  }
+
+  // Redirects
+  if (blockchainFilter.redirect) {
+    blockchainRedirect = blockchainFilter.redirect
+  }
+
   return Promise.resolve({
     blockchain,
     blockchainEnforceResult,
@@ -115,5 +127,7 @@ export async function loadBlockchain(
     blockchainChainID,
     blockchainLogLimitBlocks,
     blockchainPath,
+    blockchainAltruist,
+    blockchainRedirect,
   } as BlockchainDetails)
 }

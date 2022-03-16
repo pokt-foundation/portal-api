@@ -58,11 +58,9 @@ export class V1Controller {
     @inject('pgPool') private pgPool: PGPool,
     @inject('databaseEncryptionKey') private databaseEncryptionKey: string,
     @inject('processUID') private processUID: string,
-    @inject('altruists') private altruists: string,
     @inject('requestID') private requestID: string,
     @inject('defaultSyncAllowance') private defaultSyncAllowance: number,
     @inject('aatPlan') private aatPlan: string,
-    @inject('redirects') private redirects: string,
     @inject('defaultLogLimitBlocks') private defaultLogLimitBlocks: number,
     @inject('influxWriteAPI') private influxWriteAPI: WriteApi,
     @inject('archivalChains') private archivalChains: string[],
@@ -106,7 +104,6 @@ export class V1Controller {
       relayRetries: this.relayRetries,
       blockchainsRepository: this.blockchainsRepository,
       checkDebug: this.checkDebug(),
-      altruists: this.altruists,
       aatPlan: this.aatPlan,
       defaultLogLimitBlocks: this.defaultLogLimitBlocks,
       alwaysRedirectToAltruists: this.alwaysRedirectToAltruists,
@@ -133,13 +130,24 @@ export class V1Controller {
     const parsedRawData = parseRawData(rawData)
     const rpcID = parseRPCID(parsedRawData)
 
-    for (const redirect of JSON.parse(this.redirects)) {
-      if (this.pocketRelayer.host.toLowerCase().includes(redirect.domain, 0)) {
-        // Modify the host using the stored blockchain name from .env
-        this.pocketRelayer.host = redirect.blockchain
-        this.host = redirect.blockchain
-        return this.loadBalancerRelay(redirect.loadBalancerID, rawData)
-      }
+    const { blockchain, blockchainRedirect } = await loadBlockchain(
+      this.host,
+      this.redis,
+      this.blockchainsRepository,
+      this.defaultLogLimitBlocks,
+      rpcID
+    ).catch((e) => {
+      logger.log('error', `Incorrect blockchain: ${this.host}`, {
+        origin: this.origin,
+      })
+      throw e
+    })
+
+    if (blockchainRedirect) {
+      // Modify the host using the stored blockchain name in DB
+      this.pocketRelayer.host = blockchain
+      this.host = blockchain
+      return this.loadBalancerRelay(blockchainRedirect.loadBalancerID, rawData)
     }
 
     return jsonrpc.error(rpcID, new jsonrpc.JsonRpcError('Invalid domain', -32052)) as ErrorObject
@@ -212,12 +220,23 @@ export class V1Controller {
       // Is this LB marked for gigastakeRedirect?
       // Temporary: will be removed when live
       if (gigastakeOptions.gigastaked) {
-        const redirect = JSON.parse(this.redirects).find((rdr) => this.host.toLowerCase().includes(rdr.blockchain))
+        const { blockchainRedirect } = await loadBlockchain(
+          this.host,
+          this.redis,
+          this.blockchainsRepository,
+          this.defaultLogLimitBlocks,
+          reqRPCID
+        ).catch((e) => {
+          logger.log('error', `Incorrect blockchain: ${this.host}`, {
+            origin: this.origin,
+          })
+          throw e
+        })
 
-        if (redirect) {
+        if (blockchainRedirect) {
           const originalLoadBalancer = { ...loadBalancer }
 
-          loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
+          loadBalancer = await this.fetchLoadBalancer(blockchainRedirect.loadBalancerID, filter)
 
           if (!loadBalancer?.id) {
             throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('GS load balancer not found', -32054))
