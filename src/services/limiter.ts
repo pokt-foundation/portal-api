@@ -1,6 +1,5 @@
 import axios, { AxiosRequestConfig } from 'axios'
 import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
-import { JSONObject } from '@loopback/context'
 import { blockHexToDecimal } from '../utils/block'
 import { WS_ONLY_METHODS } from '../utils/constants'
 import { parseRPCID } from '../utils/parsing'
@@ -13,7 +12,7 @@ export async function enforceEVMLimits(
   blockchainID: string,
   requestID: string,
   logLimitBlocks: number,
-  altruists: JSONObject
+  altruistUrl: string
 ): Promise<void | ErrorObject> {
   const rpcID = parseRPCID(parsedRawData)
 
@@ -30,7 +29,6 @@ export async function enforceEVMLimits(
     let fromBlock: number
     let isToBlockHex = false
     let isFromBlockHex = false
-    const altruistUrl = String(altruists[blockchainID])
     const [{ fromBlock: fromBlockParam, toBlock: toBlockParam }] = parsedRawData.params as [
       { fromBlock: string; toBlock: string }
     ]
