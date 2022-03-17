@@ -131,3 +131,38 @@ export async function loadBlockchain(
     blockchainRedirects,
   } as BlockchainDetails)
 }
+
+// Get blockchain's alias by it's redirect domain
+export async function getBlockchainAliasesByDomain(
+  host: string,
+  redis: Redis,
+  blockchainsRepository: BlockchainsRepository,
+  rpcID: number
+): Promise<{ blockchainAliases: string[] }> {
+  // Load the requested blockchain
+  const cachedBlockchains = await redis.get('blockchains')
+  let blockchains
+
+  if (!cachedBlockchains) {
+    blockchains = await blockchainsRepository.find()
+    await redis.set('blockchains', JSON.stringify(blockchains), 'EX', 60)
+  } else {
+    blockchains = JSON.parse(cachedBlockchains)
+  }
+
+  const [blockchainFilter] = blockchains.filter((b: { redirects: BlockchainRedirect[] }) =>
+    b.redirects?.some((rdr) => rdr.domain.toLowerCase() === host.toLowerCase())
+  )
+
+  if (!blockchainFilter) {
+    throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError(`Unable to find a blockchain with domain: ${host}`, -32057))
+  }
+
+  let blockchainAliases: string[]
+
+  if (blockchainFilter.blockchainAliases) {
+    blockchainAliases = blockchainFilter.blockchainAliases
+  }
+
+  return Promise.resolve({ blockchainAliases })
+}
