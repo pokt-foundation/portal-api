@@ -33,12 +33,8 @@
       "value": 6379
     },
     {
-      "key": "POCKET_NETWORK_MAINNET_NODE_URL",
+      "key": "POCKET_NETWORK_NODE_URL",
       "value": "${{ secrets.POCKET_NETWORK_MAINNET_NODE_URL }}"
-    },
-    {
-      "key": "POCKET_NETWORK_TESTNET_NODE_URL",
-      "value": "${{ secrets.POCKET_NETWORK_TESTNET_NODE_URL }}"
     },
     {
       "key": "POCKET_SESSION_BLOCK_FREQUENCY",

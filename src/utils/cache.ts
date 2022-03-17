@@ -7,10 +7,7 @@ import { hashBlockchainNodes } from './helpers'
 
 const logger = require('../services/logger')
 
-const POCKET_NETWORK_NODE_URL =
-  String(process.env.REGION_NAME) === 'testnet'
-    ? String(process.env.POCKET_NETWORK_TESTNET_NODE_URL)
-    : String(process.env.POCKET_NETWORK_MAINNET_NODE_URL)
+const POCKET_NETWORK_NODE_URL = String(process.env.POCKET_NETWORK_NODE_URL)
 
 /**
  * Removes node from cached session, following calls within the same session,
