@@ -1,7 +1,6 @@
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
 import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
-import { JSONObject } from '@loopback/context'
 import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
@@ -47,7 +46,6 @@ export class PocketRelayer {
   relayRetries: number
   blockchainsRepository: BlockchainsRepository
   checkDebug: boolean
-  altruists: JSONObject
   aatPlan: string
   defaultLogLimitBlocks: number
   pocketSession: Session
@@ -71,7 +69,6 @@ export class PocketRelayer {
     relayRetries,
     blockchainsRepository,
     checkDebug,
-    altruists,
     aatPlan,
     defaultLogLimitBlocks,
     alwaysRedirectToAltruists = false,
@@ -93,7 +90,6 @@ export class PocketRelayer {
     relayRetries: number
     blockchainsRepository: BlockchainsRepository
     checkDebug: boolean
-    altruists: string
     aatPlan: string
     defaultLogLimitBlocks: number
     alwaysRedirectToAltruists?: boolean
@@ -119,9 +115,6 @@ export class PocketRelayer {
     this.defaultLogLimitBlocks = defaultLogLimitBlocks
     this.alwaysRedirectToAltruists = alwaysRedirectToAltruists
     this.dispatchers = dispatchers
-
-    // Create the array of altruist relayers as last resort
-    this.altruists = JSON.parse(altruists)
   }
 
   async sendRelay({
@@ -166,6 +159,7 @@ export class PocketRelayer {
       blockchainChainID,
       blockchainLogLimitBlocks,
       blockchainPath,
+      blockchainAltruist,
     } = await loadBlockchain(
       this.host,
       this.redis,
@@ -200,7 +194,13 @@ export class PocketRelayer {
     }
 
     const data = JSON.stringify(parsedRawData)
-    const limitation = await this.enforceLimits(parsedRawData, blockchainID, requestID, logLimitBlocks)
+    const limitation = await this.enforceLimits(
+      parsedRawData,
+      blockchainID,
+      requestID,
+      logLimitBlocks,
+      blockchainAltruist
+    )
 
     if (limitation instanceof ErrorObject) {
       logger.log('error', `LIMITATION ERROR ${blockchainID} req: ${data}`, {
@@ -215,7 +215,7 @@ export class PocketRelayer {
       return limitation
     }
     const method = parseMethod(parsedRawData)
-    const fallbackAvailable = this.altruists[blockchainID] !== undefined ? true : false
+    const fallbackAvailable = blockchainAltruist !== undefined ? true : false
 
     try {
       if (!this.alwaysRedirectToAltruists) {
@@ -258,7 +258,7 @@ export class PocketRelayer {
             blockchainPath,
             nodeSticker,
             appPublicKey,
-            blockchainSyncBackup: String(this.altruists[blockchainID]),
+            blockchainSyncBackup: String(blockchainAltruist),
           })
 
           if (!(relayResponse instanceof Error)) {
@@ -392,12 +392,10 @@ export class PocketRelayer {
       let axiosConfig: AxiosRequestConfig = {}
 
       // Add relay path to URL
-      const altruistURL = (relayPath = !relayPath
-        ? (this.altruists[blockchainID] as string)
-        : `${this.altruists[blockchainID]}${relayPath}`)
+      const altruistURL = (relayPath = !relayPath ? blockchainAltruist : `${blockchainAltruist}${relayPath}`)
 
       // Remove user/pass from the altruist URL
-      const redactedAltruistURL = String(this.altruists[blockchainID])?.replace(/[\w]*:\/\/[^\/]*@/g, '')
+      const redactedAltruistURL = String(blockchainAltruist)?.replace(/[\w]*:\/\/[^\/]*@/g, '')
 
       if (httpMethod === 'POST') {
         axiosConfig = {
@@ -888,12 +886,13 @@ export class PocketRelayer {
     parsedRawData: Record<string, any>,
     blockchainID: string,
     requestID: string,
-    logLimitBlocks: number
+    logLimitBlocks: number,
+    altruist: string
   ): Promise<void | ErrorObject> {
     let limiterResponse: Promise<void | ErrorObject>
 
     if (blockchainID === '0021') {
-      limiterResponse = enforceEVMLimits(parsedRawData, blockchainID, requestID, logLimitBlocks, this.altruists)
+      limiterResponse = enforceEVMLimits(parsedRawData, blockchainID, requestID, logLimitBlocks, altruist)
     }
 
     return limiterResponse
