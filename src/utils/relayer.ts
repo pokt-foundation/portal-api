@@ -151,7 +151,7 @@ export async function getBlockchainAliasesByDomain(
   }
 
   const [blockchainFilter] = blockchains.filter((b: { redirects: BlockchainRedirect[] }) =>
-    b.redirects.some((rdr) => rdr.domain.toLowerCase() === host.toLowerCase())
+    b.redirects?.some((rdr) => rdr.domain.toLowerCase() === host.toLowerCase())
   )
 
   if (!blockchainFilter) {
