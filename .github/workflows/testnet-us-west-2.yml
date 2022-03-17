@@ -36,6 +36,7 @@ jobs:
           envkey_REDIRECTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_REDIRECTS }}
           envkey_REDIS_ENDPOINT: gateway-new-testnet-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REDIS_PORT: 6379
+          envkey_POCKET_NETWORK_NODE_URL: ${{ secrets.POCKET_NETWORK_TESTNET_NODE_URL }}
           envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
           envkey_POCKET_BLOCK_TIME: 900000
           envkey_POCKET_RELAY_RETRIES: 5
