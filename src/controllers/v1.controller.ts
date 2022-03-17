@@ -17,7 +17,7 @@ import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
 import { checkWhitelist } from '../utils/enforcements'
 import { parseRawData, parseRPCID } from '../utils/parsing'
-import { loadBlockchain } from '../utils/relayer'
+import { getBlockchainAliasesByDomain, loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
 const logger = require('../services/logger')
 
@@ -134,6 +134,17 @@ export class V1Controller {
 
       rpcID = parseRPCID(parsedRawData)
 
+      // Since we only have non-gateway url, let's fetch a blockchain that contains this domain
+      const { blockchainAliases } = await getBlockchainAliasesByDomain(
+        this.host,
+        this.redis,
+        this.blockchainsRepository,
+        rpcID
+      )
+
+      // Any alias works to load a specific blockchain
+      this.host = `${blockchainAliases[0]}.gateway.pokt.network`
+
       const { blockchainRedirects } = await loadBlockchain(
         this.host,
         this.redis,
@@ -143,10 +154,12 @@ export class V1Controller {
       )
 
       for (const redirect of blockchainRedirects) {
-        // Modify the host using the stored blockchain name in DB
-        this.pocketRelayer.host = redirect.alias
-        this.host = redirect.alias
-        return await this.loadBalancerRelay(redirect.loadBalancerID, rawData)
+        if (this.pocketRelayer.host.toLowerCase().includes(redirect.domain)) {
+          // Modify the host using the stored blockchain name in DB
+          this.pocketRelayer.host = redirect.alias
+          this.host = redirect.alias
+          return await this.loadBalancerRelay(redirect.loadBalancerID, rawData)
+        }
       }
     } catch (e) {
       logger.log('error', 'LOAD BALANCER RELAY ERROR: ' + JSON.stringify(e), {
