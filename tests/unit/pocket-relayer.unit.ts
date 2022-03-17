@@ -54,6 +54,7 @@ const BLOCKCHAINS = [
       allowance: 5,
     } as SyncCheckOptions,
     logLimitBlocks: 10000,
+    altruist: 'https://user:pass@backups.example.org:18082',
   },
   {
     hash: '0021',
@@ -77,6 +78,7 @@ const BLOCKCHAINS = [
       path: '/v1/query/height',
     } as SyncCheckOptions,
     logLimitBlocks: 10000,
+    altruist: 'https://user:pass@backups.example.org:18545',
   },
   {
     hash: '0040',
@@ -95,13 +97,9 @@ const BLOCKCHAINS = [
       resultKey: 'result',
     } as SyncCheckOptions,
     logLimitBlocks: 10000,
+    altruist: 'https://user:pass@backups.example.org:18553',
   },
 ]
-
-const ALTRUISTS = {
-  '0021': 'https://user:pass@backups.example.org:18081',
-  '0040': 'https://user:pass@backups.example.org:18081',
-}
 
 const APPLICATION = {
   id: 'sd9fj31d714kgos42e68f9gh',
@@ -184,7 +182,6 @@ describe('Pocket relayer service (unit)', () => {
       relayRetries: 0,
       blockchainsRepository: blockchainRepository,
       checkDebug: true,
-      altruists: '{}',
       aatPlan: AatPlans.FREEMIUM,
       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -311,7 +308,6 @@ describe('Pocket relayer service (unit)', () => {
       relayRetries: 0,
       blockchainsRepository: blockchainRepository,
       checkDebug: true,
-      altruists: '{}',
       aatPlan: AatPlans.FREEMIUM,
       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -352,7 +348,6 @@ describe('Pocket relayer service (unit)', () => {
       relayRetries: 0,
       blockchainsRepository: blockchainRepository,
       checkDebug: true,
-      altruists: '{}',
       aatPlan: AatPlans.FREEMIUM,
       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -491,7 +486,6 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
         blockchainsRepository: blockchainRepository,
         checkDebug: true,
-        altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -546,7 +540,6 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
         blockchainsRepository: blockchainRepository,
         checkDebug: true,
-        altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -598,7 +591,6 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
         blockchainsRepository: blockchainRepository,
         checkDebug: true,
-        altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -651,7 +643,6 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
         blockchainsRepository: blockchainRepository,
         checkDebug: true,
-        altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -704,7 +695,6 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
         blockchainsRepository: blockchainRepository,
         checkDebug: true,
-        altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -772,7 +762,6 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
         blockchainsRepository: blockchainRepository,
         checkDebug: true,
-        altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -873,7 +862,6 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
         blockchainsRepository: blockchainRepository,
         checkDebug: true,
-        altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -965,7 +953,6 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
         blockchainsRepository: blockchainRepository,
         checkDebug: true,
-        altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -1019,7 +1006,6 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
         blockchainsRepository: blockchainRepository,
         checkDebug: true,
-        altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -1076,7 +1062,6 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
         blockchainsRepository: blockchainRepository,
         checkDebug: true,
-        altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -1132,7 +1117,6 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
         blockchainsRepository: blockchainRepository,
         checkDebug: true,
-        altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -1157,7 +1141,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })) as ErrorObject
 
-      expect(relayResponse.error.message).to.match(/You cannot query logs for more than/)
+      expect(relayResponse.error.message).to.match(/Try again with a explicit block number/)
     })
 
     it('should return an error if `eth_getLogs` call uses "latest" on block params (no altruist)', async () => {
@@ -1184,7 +1168,6 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
         blockchainsRepository: blockchainRepository,
         checkDebug: true,
-        altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -1209,7 +1192,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })) as ErrorObject
 
-      expect(relayResponse.error.message).to.match(/Please use an explicit block number instead of/)
+      expect(relayResponse.error.message).to.match(/Try again with a explicit block number/)
     })
 
     it('should succeed if `eth_getLogs` call is within permitted blocks range (no altruist)', async () => {
@@ -1242,13 +1225,12 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
         blockchainsRepository: blockchainRepository,
         checkDebug: true,
-        altruists: '{}',
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
       })
 
-      const relayResponse = await poktRelayer.sendRelay({
+      const relayResponse = (await poktRelayer.sendRelay({
         rawData,
         relayPath: '',
         httpMethod: HTTPMethod.POST,
@@ -1262,9 +1244,10 @@ describe('Pocket relayer service (unit)', () => {
           preferredNodeAddress: '',
         },
         relayRetries: 0,
-      })
+      })) as ErrorObject
 
-      expect(relayResponse).to.be.deepEqual(JSON.parse(mock.relayResponse[rawData] as string))
+      expect(relayResponse.error.message).to.match(/Try again with a explicit block number/)
+      // expect(relayResponse).to.be.deepEqual(JSON.parse(mock.relayResponse[rawData] as string))
     })
 
     it('relay requesting a preferred node should use that one if available with rpcID', async () => {
@@ -1306,7 +1289,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
         blockchainsRepository: blockchainRepository,
         checkDebug: false,
-        altruists: '{}',
+
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -1388,7 +1371,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
         blockchainsRepository: blockchainRepository,
         checkDebug: false,
-        altruists: '{}',
+
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -1468,7 +1451,6 @@ describe('Pocket relayer service (unit)', () => {
           relayRetries: 0,
           blockchainsRepository: blockchainRepository,
           checkDebug: true,
-          altruists: '{}',
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
           dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -1530,7 +1512,6 @@ describe('Pocket relayer service (unit)', () => {
           relayRetries: 0,
           blockchainsRepository: blockchainRepository,
           checkDebug: true,
-          altruists: '{}',
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
           dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -1591,7 +1572,6 @@ describe('Pocket relayer service (unit)', () => {
           relayRetries: 0,
           blockchainsRepository: blockchainRepository,
           checkDebug: true,
-          altruists: '{}',
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
           dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -1658,7 +1638,6 @@ describe('Pocket relayer service (unit)', () => {
           relayRetries: 0,
           blockchainsRepository: blockchainRepository,
           checkDebug: true,
-          altruists: JSON.stringify(ALTRUISTS),
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
           dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -1670,7 +1649,7 @@ describe('Pocket relayer service (unit)', () => {
       it('sends a relay post request to an altruist node when no session nodes are available', async () => {
         const axiosRelayResponse = JSON.parse(pocketMock.relayResponse[rawData] as string)
 
-        axiosMock.onPost(ALTRUISTS['0021']).reply(200, axiosRelayResponse)
+        axiosMock.onPost(BLOCKCHAINS['0021']?.altruist).reply(200, axiosRelayResponse)
 
         const altruistRelayer = getAltruistRelayer()
 
@@ -1696,7 +1675,7 @@ describe('Pocket relayer service (unit)', () => {
       it('sends a relay get request to an altruist node when no session nodes are available', async () => {
         const axiosRelayResponse = JSON.parse(pocketMock.relayResponse[rawData] as string)
 
-        axiosMock.onGet(ALTRUISTS['0021']).reply(200, axiosRelayResponse)
+        axiosMock.onGet(BLOCKCHAINS['0021']?.altruist).reply(200, axiosRelayResponse)
 
         const altruistRelayer = getAltruistRelayer()
 
@@ -1722,7 +1701,7 @@ describe('Pocket relayer service (unit)', () => {
       it('fails after receiving a string response from altruists', async () => {
         const stringResponse = '<html>503 Service Unavailable</html>'
 
-        axiosMock.onGet(ALTRUISTS['0021']).reply(200, stringResponse)
+        axiosMock.onGet(BLOCKCHAINS['0021']?.altruist).reply(200, stringResponse)
 
         const altruistRelayer = getAltruistRelayer()
 
@@ -1750,7 +1729,7 @@ describe('Pocket relayer service (unit)', () => {
       })
 
       it('returns timeout error when fallback fails', async () => {
-        axiosMock.onGet(ALTRUISTS['0021']).reply(500, {})
+        axiosMock.onGet(BLOCKCHAINS['0021']?.altruist).reply(500, {})
 
         const altruistRelayer = getAltruistRelayer()
 
@@ -1789,7 +1768,7 @@ describe('Pocket relayer service (unit)', () => {
         rawData =
           '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
 
-        axiosMock.onPost(ALTRUISTS['0021'], blockNumberData).reply(200, blockNumberRespose)
+        axiosMock.onPost(BLOCKCHAINS['0021']?.altruist, blockNumberData).reply(200, blockNumberRespose)
 
         const relayResponse = (await altruistRelayer.sendRelay({
           rawData,
@@ -1825,8 +1804,8 @@ describe('Pocket relayer service (unit)', () => {
 
         const altruistRelayer = getAltruistRelayer(mockRelayResponse)
 
-        axiosMock.onPost(ALTRUISTS['0021'], blockNumberData).reply(200, blockNumberRespose)
-        axiosMock.onPost(ALTRUISTS['0021'], JSON.parse(rawData)).reply(200, mockRelayResponse)
+        axiosMock.onPost(BLOCKCHAINS['0021']?.altruist, blockNumberData).reply(200, blockNumberRespose)
+        axiosMock.onPost(BLOCKCHAINS['0021']?.altruist, JSON.parse(rawData)).reply(200, mockRelayResponse)
 
         const relayResponse = await altruistRelayer.sendRelay({
           rawData,
@@ -1866,8 +1845,8 @@ describe('Pocket relayer service (unit)', () => {
           pocketMock.relayResponse[rawData] = mockRelayResponse
         }
 
-        axiosMock.onPost(ALTRUISTS['0040'], blockNumberData).reply(200, blockNumberRespose)
-        axiosMock.onPost(ALTRUISTS['0040'], JSON.parse(rawData)).reply(200, mockRelayResponse)
+        axiosMock.onPost(BLOCKCHAINS['0040']?.altruist, blockNumberData).reply(200, blockNumberRespose)
+        axiosMock.onPost(BLOCKCHAINS['0040']?.altruist, JSON.parse(rawData)).reply(200, mockRelayResponse)
 
         const poktRelayer = new PocketRelayer({
           host: 'eth-mainnet-string',
@@ -1886,7 +1865,6 @@ describe('Pocket relayer service (unit)', () => {
           relayRetries: 0,
           blockchainsRepository: blockchainRepository,
           checkDebug: true,
-          altruists: JSON.stringify(ALTRUISTS),
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: 0,
         }) as PocketRelayer
@@ -1922,7 +1900,7 @@ describe('Pocket relayer service (unit)', () => {
         rawData =
           '{"jsonrpc":"2.0","method":"eth_newFilter","params":[{"topics": ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"]}],"id":1}'
 
-        axiosMock.onPost(ALTRUISTS['0021'], JSON.parse(rawData)).reply(200, newFilterResponse)
+        axiosMock.onPost(BLOCKCHAINS['0021']?.altruist, JSON.parse(rawData)).reply(200, newFilterResponse)
 
         const relayResponse = (await altruistRelayer.sendRelay({
           rawData,
