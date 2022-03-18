@@ -1,3 +1,4 @@
+// import assert from 'assert'
 // import axios from 'axios'
 // import MockAdapter from 'axios-mock-adapter'
 // import RedisMock from 'ioredis-mock'
@@ -53,6 +54,7 @@
 //       allowance: 5,
 //     } as SyncCheckOptions,
 //     logLimitBlocks: 10000,
+//     altruist: 'https://user:pass@backups.example.org:18082',
 //   },
 //   {
 //     hash: '0021',
@@ -76,6 +78,7 @@
 //       path: '/v1/query/height',
 //     } as SyncCheckOptions,
 //     logLimitBlocks: 10000,
+//     altruist: 'https://user:pass@backups.example.org:18545',
 //   },
 //   {
 //     hash: '0040',
@@ -94,13 +97,9 @@
 //       resultKey: 'result',
 //     } as SyncCheckOptions,
 //     logLimitBlocks: 10000,
+//     altruist: 'https://user:pass@backups.example.org:18553',
 //   },
 // ]
-
-// const ALTRUISTS = {
-//   '0021': 'https://user:pass@backups.example.org:18081',
-//   '0040': 'https://user:pass@backups.example.org:18081',
-// }
 
 // const APPLICATION = {
 //   id: 'sd9fj31d714kgos42e68f9gh',
@@ -183,7 +182,6 @@
 //       relayRetries: 0,
 //       blockchainsRepository: blockchainRepository,
 //       checkDebug: true,
-//       altruists: '{}',
 //       aatPlan: AatPlans.FREEMIUM,
 //       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //       dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -310,7 +308,6 @@
 //       relayRetries: 0,
 //       blockchainsRepository: blockchainRepository,
 //       checkDebug: true,
-//       altruists: '{}',
 //       aatPlan: AatPlans.FREEMIUM,
 //       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //       dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -351,7 +348,6 @@
 //       relayRetries: 0,
 //       blockchainsRepository: blockchainRepository,
 //       checkDebug: true,
-//       altruists: '{}',
 //       aatPlan: AatPlans.FREEMIUM,
 //       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //       dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -490,7 +486,6 @@
 //         relayRetries: 0,
 //         blockchainsRepository: blockchainRepository,
 //         checkDebug: true,
-//         altruists: '{}',
 //         aatPlan: AatPlans.FREEMIUM,
 //         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -545,7 +540,6 @@
 //         relayRetries: 0,
 //         blockchainsRepository: blockchainRepository,
 //         checkDebug: true,
-//         altruists: '{}',
 //         aatPlan: AatPlans.FREEMIUM,
 //         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -581,7 +575,7 @@
 //       const pocket = mock.object()
 
 //       const poktRelayer = new PocketRelayer({
-//         host: 'eth-mainnet-string',
+//         host: 'eth-mainnet',
 //         origin: '',
 //         userAgent: '',
 //         ipAddress: '',
@@ -597,14 +591,13 @@
 //         relayRetries: 0,
 //         blockchainsRepository: blockchainRepository,
 //         checkDebug: true,
-//         altruists: '{}',
 //         aatPlan: AatPlans.FREEMIUM,
 //         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //         dispatchers: DUMMY_ENV.DISPATCH_URL,
 //       })
 
-//       try {
-//         await poktRelayer.sendRelay({
+//       await assert.rejects(
+//         poktRelayer.sendRelay({
 //           rawData,
 //           relayPath: '',
 //           httpMethod: HTTPMethod.POST,
@@ -618,11 +611,12 @@
 //             preferredNodeAddress: '',
 //           },
 //           relayRetries: 0,
-//         })
-//       } catch (error) {
-//         expect(error).to.be.instanceOf(ErrorObject)
-//         expect(error.error.message).to.be.equal('Service Node returned an invalid response')
-//       }
+//         }),
+//         (e: ErrorObject) => {
+//           assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
+//           return true
+//         }
+//       )
 //     })
 
 //     it('throws an error when provided timeout is exceeded', async () => {
@@ -649,29 +643,32 @@
 //         relayRetries: 0,
 //         blockchainsRepository: blockchainRepository,
 //         checkDebug: true,
-//         altruists: '{}',
 //         aatPlan: AatPlans.FREEMIUM,
 //         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //         dispatchers: DUMMY_ENV.DISPATCH_URL,
 //       })
 
-//       const relayResponse = await poktRelayer.sendRelay({
-//         rawData,
-//         relayPath: '',
-//         httpMethod: HTTPMethod.POST,
-//         application: APPLICATION as unknown as Applications,
-//         requestID: '1234',
-//         requestTimeOut: 0,
-//         overallTimeOut: 1,
-//         relayRetries: 1,
-//         stickinessOptions: {
-//           stickiness: false,
-//           duration: 0,
-//           preferredNodeAddress: '',
-//         },
-//       })
-
-//       expect(relayResponse).to.be.instanceOf(ErrorObject)
+//       await assert.rejects(
+//         poktRelayer.sendRelay({
+//           rawData,
+//           relayPath: '',
+//           httpMethod: HTTPMethod.POST,
+//           application: APPLICATION as unknown as Applications,
+//           requestID: '1234',
+//           requestTimeOut: 0,
+//           overallTimeOut: 1,
+//           relayRetries: 1,
+//           stickinessOptions: {
+//             stickiness: false,
+//             duration: 0,
+//             preferredNodeAddress: '',
+//           },
+//         }),
+//         (e: ErrorObject) => {
+//           assert.strictEqual(e.error.message, 'Overall Timeout exceeded: 1')
+//           return true
+//         }
+//       )
 //     })
 
 //     it('returns relay error on successful relay response that returns error', async () => {
@@ -698,29 +695,32 @@
 //         relayRetries: 0,
 //         blockchainsRepository: blockchainRepository,
 //         checkDebug: true,
-//         altruists: '{}',
 //         aatPlan: AatPlans.FREEMIUM,
 //         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //         dispatchers: DUMMY_ENV.DISPATCH_URL,
 //       })
 
-//       const relayResponse = await poktRelayer.sendRelay({
-//         rawData,
-//         relayPath: '',
-//         httpMethod: HTTPMethod.POST,
-//         application: APPLICATION as unknown as Applications,
-//         requestID: '1234',
-//         requestTimeOut: undefined,
-//         overallTimeOut: undefined,
-//         stickinessOptions: {
-//           stickiness: false,
-//           duration: 0,
-//           preferredNodeAddress: '',
-//         },
-//         relayRetries: 0,
-//       })
-
-//       expect(relayResponse).to.be.instanceOf(ErrorObject)
+//       await assert.rejects(
+//         poktRelayer.sendRelay({
+//           rawData,
+//           relayPath: '',
+//           httpMethod: HTTPMethod.POST,
+//           application: APPLICATION as unknown as Applications,
+//           requestID: '1234',
+//           requestTimeOut: undefined,
+//           overallTimeOut: undefined,
+//           stickinessOptions: {
+//             stickiness: false,
+//             duration: 0,
+//             preferredNodeAddress: '',
+//           },
+//           relayRetries: 0,
+//         }),
+//         (e: ErrorObject) => {
+//           assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
+//           return true
+//         }
+//       )
 //     })
 
 //     it('Fails relay due to all nodes in session running out of relays, subsequent relays should not attempt to perform checks', async () => {
@@ -762,29 +762,32 @@
 //         relayRetries: 0,
 //         blockchainsRepository: blockchainRepository,
 //         checkDebug: true,
-//         altruists: '{}',
 //         aatPlan: AatPlans.FREEMIUM,
 //         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //         dispatchers: DUMMY_ENV.DISPATCH_URL,
 //       })
 
-//       const relayResponse = await poktRelayer.sendRelay({
-//         rawData,
-//         relayPath: '',
-//         httpMethod: HTTPMethod.POST,
-//         application: APPLICATION as unknown as Applications,
-//         requestID: '1234',
-//         requestTimeOut: undefined,
-//         overallTimeOut: undefined,
-//         stickinessOptions: {
-//           stickiness: false,
-//           duration: 0,
-//           preferredNodeAddress: '',
-//         },
-//         relayRetries: 0,
-//       })
-
-//       expect(relayResponse).to.be.instanceOf(ErrorObject)
+//       await assert.rejects(
+//         poktRelayer.sendRelay({
+//           rawData,
+//           relayPath: '',
+//           httpMethod: HTTPMethod.POST,
+//           application: APPLICATION as unknown as Applications,
+//           requestID: '1234',
+//           requestTimeOut: undefined,
+//           overallTimeOut: undefined,
+//           stickinessOptions: {
+//             stickiness: false,
+//             duration: 0,
+//             preferredNodeAddress: '',
+//           },
+//           relayRetries: 0,
+//         }),
+//         (e: ErrorObject) => {
+//           assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
+//           return true
+//         }
+//       )
 
 //       let removedNodes = await redis.smembers(sessionKey)
 
@@ -794,23 +797,27 @@
 //       expect(syncCherckerSpy.callCount).to.be.equal(1)
 
 //       // Subsequent calls should not go to sync or chain checker
-//       const secondRelayResponse = await poktRelayer.sendRelay({
-//         rawData,
-//         relayPath: '',
-//         httpMethod: HTTPMethod.POST,
-//         application: APPLICATION as unknown as Applications,
-//         requestID: '1234',
-//         requestTimeOut: undefined,
-//         overallTimeOut: undefined,
-//         stickinessOptions: {
-//           stickiness: false,
-//           duration: 0,
-//           preferredNodeAddress: '',
-//         },
-//         relayRetries: 0,
-//       })
-
-//       expect(secondRelayResponse).to.be.instanceOf(ErrorObject)
+//       await assert.rejects(
+//         poktRelayer.sendRelay({
+//           rawData,
+//           relayPath: '',
+//           httpMethod: HTTPMethod.POST,
+//           application: APPLICATION as unknown as Applications,
+//           requestID: '1234',
+//           requestTimeOut: undefined,
+//           overallTimeOut: undefined,
+//           stickinessOptions: {
+//             stickiness: false,
+//             duration: 0,
+//             preferredNodeAddress: '',
+//           },
+//           relayRetries: 0,
+//         }),
+//         (e: ErrorObject) => {
+//           assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
+//           return true
+//         }
+//       )
 
 //       removedNodes = await redis.smembers(sessionKey)
 
@@ -855,29 +862,32 @@
 //         relayRetries: 0,
 //         blockchainsRepository: blockchainRepository,
 //         checkDebug: true,
-//         altruists: '{}',
 //         aatPlan: AatPlans.FREEMIUM,
 //         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //         dispatchers: DUMMY_ENV.DISPATCH_URL,
 //       })
 
-//       const relayResponse = await poktRelayer.sendRelay({
-//         rawData,
-//         relayPath: '',
-//         httpMethod: HTTPMethod.POST,
-//         application: APPLICATION as unknown as Applications,
-//         requestID: '1234',
-//         requestTimeOut: undefined,
-//         overallTimeOut: undefined,
-//         stickinessOptions: {
-//           stickiness: false,
-//           duration: 0,
-//           preferredNodeAddress: '',
-//         },
-//         relayRetries: 0,
-//       })
-
-//       expect(relayResponse).to.be.instanceOf(ErrorObject)
+//       await assert.rejects(
+//         poktRelayer.sendRelay({
+//           rawData,
+//           relayPath: '',
+//           httpMethod: HTTPMethod.POST,
+//           application: APPLICATION as unknown as Applications,
+//           requestID: '1234',
+//           requestTimeOut: undefined,
+//           overallTimeOut: undefined,
+//           stickinessOptions: {
+//             stickiness: false,
+//             duration: 0,
+//             preferredNodeAddress: '',
+//           },
+//           relayRetries: 0,
+//         }),
+//         (e: ErrorObject) => {
+//           assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
+//           return true
+//         }
+//       )
 
 //       let removedNodes = await redis.smembers(sessionKey)
 
@@ -887,23 +897,27 @@
 //       expect(syncCherckerSpy.callCount).to.be.equal(1)
 
 //       // Subsequent calls should go to sync or chain checker
-//       const secondRelayResponse = await poktRelayer.sendRelay({
-//         rawData,
-//         relayPath: '',
-//         httpMethod: HTTPMethod.POST,
-//         application: APPLICATION as unknown as Applications,
-//         requestID: '1234',
-//         requestTimeOut: undefined,
-//         overallTimeOut: undefined,
-//         stickinessOptions: {
-//           stickiness: false,
-//           duration: 0,
-//           preferredNodeAddress: '',
-//         },
-//         relayRetries: 0,
-//       })
-
-//       expect(secondRelayResponse).to.be.instanceOf(ErrorObject)
+//       await assert.rejects(
+//         poktRelayer.sendRelay({
+//           rawData,
+//           relayPath: '',
+//           httpMethod: HTTPMethod.POST,
+//           application: APPLICATION as unknown as Applications,
+//           requestID: '1234',
+//           requestTimeOut: undefined,
+//           overallTimeOut: undefined,
+//           stickinessOptions: {
+//             stickiness: false,
+//             duration: 0,
+//             preferredNodeAddress: '',
+//           },
+//           relayRetries: 0,
+//         }),
+//         (e: ErrorObject) => {
+//           assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
+//           return true
+//         }
+//       )
 
 //       removedNodes = await redis.smembers(sessionKey)
 
@@ -939,7 +953,6 @@
 //         relayRetries: 0,
 //         blockchainsRepository: blockchainRepository,
 //         checkDebug: true,
-//         altruists: '{}',
 //         aatPlan: AatPlans.FREEMIUM,
 //         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -993,29 +1006,32 @@
 //         relayRetries: 0,
 //         blockchainsRepository: blockchainRepository,
 //         checkDebug: true,
-//         altruists: '{}',
 //         aatPlan: AatPlans.FREEMIUM,
 //         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //         dispatchers: DUMMY_ENV.DISPATCH_URL,
 //       })
 
-//       const relayResponse = await poktRelayer.sendRelay({
-//         rawData,
-//         relayPath: '',
-//         httpMethod: HTTPMethod.POST,
-//         application: APPLICATION as unknown as Applications,
-//         requestID: '1234',
-//         requestTimeOut: undefined,
-//         overallTimeOut: undefined,
-//         stickinessOptions: {
-//           stickiness: false,
-//           duration: 0,
-//           preferredNodeAddress: '',
-//         },
-//         relayRetries: 0,
-//       })
-
-//       expect(relayResponse).to.be.instanceOf(ErrorObject)
+//       await assert.rejects(
+//         poktRelayer.sendRelay({
+//           rawData,
+//           relayPath: '',
+//           httpMethod: HTTPMethod.POST,
+//           application: APPLICATION as unknown as Applications,
+//           requestID: '1234',
+//           requestTimeOut: undefined,
+//           overallTimeOut: undefined,
+//           stickinessOptions: {
+//             stickiness: false,
+//             duration: 0,
+//             preferredNodeAddress: '',
+//           },
+//           relayRetries: 0,
+//         }),
+//         (e: ErrorObject) => {
+//           assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
+//           return true
+//         }
+//       )
 
 //       expect(mockChainCheckerSpy.callCount).to.be.equal(1)
 //       expect(syncCherckerSpy.callCount).to.be.equal(1)
@@ -1046,29 +1062,32 @@
 //         relayRetries: 0,
 //         blockchainsRepository: blockchainRepository,
 //         checkDebug: true,
-//         altruists: '{}',
 //         aatPlan: AatPlans.FREEMIUM,
 //         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //         dispatchers: DUMMY_ENV.DISPATCH_URL,
 //       })
 
-//       const relayResponse = await poktRelayer.sendRelay({
-//         rawData,
-//         relayPath: '',
-//         httpMethod: HTTPMethod.POST,
-//         application: APPLICATION as unknown as Applications,
-//         requestID: '1234',
-//         requestTimeOut: undefined,
-//         overallTimeOut: undefined,
-//         stickinessOptions: {
-//           stickiness: false,
-//           duration: 0,
-//           preferredNodeAddress: '',
-//         },
-//         relayRetries: 0,
-//       })
-
-//       expect(relayResponse).to.be.instanceOf(ErrorObject)
+//       await assert.rejects(
+//         poktRelayer.sendRelay({
+//           rawData,
+//           relayPath: '',
+//           httpMethod: HTTPMethod.POST,
+//           application: APPLICATION as unknown as Applications,
+//           requestID: '1234',
+//           requestTimeOut: undefined,
+//           overallTimeOut: undefined,
+//           stickinessOptions: {
+//             stickiness: false,
+//             duration: 0,
+//             preferredNodeAddress: '',
+//           },
+//           relayRetries: 0,
+//         }),
+//         (e: ErrorObject) => {
+//           assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
+//           return true
+//         }
+//       )
 
 //       expect(mockChainCheckerSpy.callCount).to.be.equal(1)
 //       expect(syncCherckerSpy.callCount).to.be.equal(1)
@@ -1098,7 +1117,6 @@
 //         relayRetries: 0,
 //         blockchainsRepository: blockchainRepository,
 //         checkDebug: true,
-//         altruists: '{}',
 //         aatPlan: AatPlans.FREEMIUM,
 //         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -1123,7 +1141,7 @@
 //         relayRetries: 0,
 //       })) as ErrorObject
 
-//       expect(relayResponse.error.message).to.match(/You cannot query logs for more than/)
+//       expect(relayResponse.error.message).to.match(/Try again with a explicit block number/)
 //     })
 
 //     it('should return an error if `eth_getLogs` call uses "latest" on block params (no altruist)', async () => {
@@ -1150,7 +1168,6 @@
 //         relayRetries: 0,
 //         blockchainsRepository: blockchainRepository,
 //         checkDebug: true,
-//         altruists: '{}',
 //         aatPlan: AatPlans.FREEMIUM,
 //         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -1175,7 +1192,7 @@
 //         relayRetries: 0,
 //       })) as ErrorObject
 
-//       expect(relayResponse.error.message).to.match(/Please use an explicit block number instead of/)
+//       expect(relayResponse.error.message).to.match(/Try again with a explicit block number/)
 //     })
 
 //     it('should succeed if `eth_getLogs` call is within permitted blocks range (no altruist)', async () => {
@@ -1208,13 +1225,12 @@
 //         relayRetries: 0,
 //         blockchainsRepository: blockchainRepository,
 //         checkDebug: true,
-//         altruists: '{}',
 //         aatPlan: AatPlans.FREEMIUM,
 //         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //         dispatchers: DUMMY_ENV.DISPATCH_URL,
 //       })
 
-//       const relayResponse = await poktRelayer.sendRelay({
+//       const relayResponse = (await poktRelayer.sendRelay({
 //         rawData,
 //         relayPath: '',
 //         httpMethod: HTTPMethod.POST,
@@ -1228,9 +1244,10 @@
 //           preferredNodeAddress: '',
 //         },
 //         relayRetries: 0,
-//       })
+//       })) as ErrorObject
 
-//       expect(relayResponse).to.be.deepEqual(JSON.parse(mock.relayResponse[rawData] as string))
+//       expect(relayResponse.error.message).to.match(/Try again with a explicit block number/)
+//       // expect(relayResponse).to.be.deepEqual(JSON.parse(mock.relayResponse[rawData] as string))
 //     })
 
 //     it('relay requesting a preferred node should use that one if available with rpcID', async () => {
@@ -1272,7 +1289,7 @@
 //         relayRetries: 0,
 //         blockchainsRepository: blockchainRepository,
 //         checkDebug: false,
-//         altruists: '{}',
+
 //         aatPlan: AatPlans.FREEMIUM,
 //         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -1354,7 +1371,7 @@
 //         relayRetries: 0,
 //         blockchainsRepository: blockchainRepository,
 //         checkDebug: false,
-//         altruists: '{}',
+
 //         aatPlan: AatPlans.FREEMIUM,
 //         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //         dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -1434,14 +1451,13 @@
 //           relayRetries: 0,
 //           blockchainsRepository: blockchainRepository,
 //           checkDebug: true,
-//           altruists: '{}',
 //           aatPlan: AatPlans.FREEMIUM,
 //           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //           dispatchers: DUMMY_ENV.DISPATCH_URL,
 //         })
 
-//         try {
-//           await poktRelayer.sendRelay({
+//         await assert.rejects(
+//           poktRelayer.sendRelay({
 //             rawData,
 //             relayPath: '',
 //             httpMethod: HTTPMethod.POST,
@@ -1455,11 +1471,12 @@
 //               preferredNodeAddress: '',
 //             },
 //             relayRetries: 0,
-//           })
-//         } catch (error) {
-//           expect(error).to.be.instanceOf(ErrorObject)
-//           expect(error.error.message).to.be.equal('SecretKey does not match')
-//         }
+//           }),
+//           (e: ErrorObject) => {
+//             assert.strictEqual(e.error.message, 'SecretKey does not match')
+//             return true
+//           }
+//         )
 //       })
 
 //       it('returns forbidden when origins checks fail', async () => {
@@ -1495,14 +1512,13 @@
 //           relayRetries: 0,
 //           blockchainsRepository: blockchainRepository,
 //           checkDebug: true,
-//           altruists: '{}',
 //           aatPlan: AatPlans.FREEMIUM,
 //           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //           dispatchers: DUMMY_ENV.DISPATCH_URL,
 //         })
 
-//         try {
-//           await poktRelayer.sendRelay({
+//         await assert.rejects(
+//           poktRelayer.sendRelay({
 //             rawData,
 //             relayPath: '',
 //             httpMethod: HTTPMethod.POST,
@@ -1516,11 +1532,12 @@
 //               preferredNodeAddress: '',
 //             },
 //             relayRetries: 0,
-//           })
-//         } catch (error) {
-//           expect(error).to.be.instanceOf(ErrorObject)
-//           expect(error.error.message).to.be.equal('Whitelist Origin check failed: ' + invalidOrigin)
-//         }
+//           }),
+//           (e: ErrorObject) => {
+//             assert.strictEqual(e.error.message, 'Whitelist Origin check failed: ' + invalidOrigin)
+//             return true
+//           }
+//         )
 //       })
 
 //       it('returns forbidden when user agent checks fail', async () => {
@@ -1555,14 +1572,13 @@
 //           relayRetries: 0,
 //           blockchainsRepository: blockchainRepository,
 //           checkDebug: true,
-//           altruists: '{}',
 //           aatPlan: AatPlans.FREEMIUM,
 //           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //           dispatchers: DUMMY_ENV.DISPATCH_URL,
 //         })
 
-//         try {
-//           await poktRelayer.sendRelay({
+//         await assert.rejects(
+//           poktRelayer.sendRelay({
 //             rawData,
 //             relayPath: '',
 //             httpMethod: HTTPMethod.POST,
@@ -1576,11 +1592,12 @@
 //               preferredNodeAddress: '',
 //             },
 //             relayRetries: 0,
-//           })
-//         } catch (error) {
-//           expect(error).to.be.instanceOf(ErrorObject)
-//           expect(error.error.message).to.be.equal(`Whitelist User Agent check failed: ${invalidUserAgent}`)
-//         }
+//           }),
+//           (e: ErrorObject) => {
+//             assert.strictEqual(e.error.message, `Whitelist User Agent check failed: ${invalidUserAgent}`)
+//             return true
+//           }
+//         )
 //       })
 //     })
 
@@ -1621,7 +1638,6 @@
 //           relayRetries: 0,
 //           blockchainsRepository: blockchainRepository,
 //           checkDebug: true,
-//           altruists: JSON.stringify(ALTRUISTS),
 //           aatPlan: AatPlans.FREEMIUM,
 //           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
 //           dispatchers: DUMMY_ENV.DISPATCH_URL,
@@ -1633,7 +1649,7 @@
 //       it('sends a relay post request to an altruist node when no session nodes are available', async () => {
 //         const axiosRelayResponse = JSON.parse(pocketMock.relayResponse[rawData] as string)
 
-//         axiosMock.onPost(ALTRUISTS['0021']).reply(200, axiosRelayResponse)
+//         axiosMock.onPost(BLOCKCHAINS['0021']?.altruist).reply(200, axiosRelayResponse)
 
 //         const altruistRelayer = getAltruistRelayer()
 
@@ -1659,7 +1675,7 @@
 //       it('sends a relay get request to an altruist node when no session nodes are available', async () => {
 //         const axiosRelayResponse = JSON.parse(pocketMock.relayResponse[rawData] as string)
 
-//         axiosMock.onGet(ALTRUISTS['0021']).reply(200, axiosRelayResponse)
+//         axiosMock.onGet(BLOCKCHAINS['0021']?.altruist).reply(200, axiosRelayResponse)
 
 //         const altruistRelayer = getAltruistRelayer()
 
@@ -1682,55 +1698,62 @@
 //         expect(relayResponse).to.be.deepEqual(axiosRelayResponse)
 //       })
 
-//       it('returns a string response from altruists', async () => {
-//         const stringResponse = 'a string response'
+//       it('fails after receiving a string response from altruists', async () => {
+//         const stringResponse = '<html>503 Service Unavailable</html>'
 
-//         axiosMock.onGet(ALTRUISTS['0021']).reply(200, stringResponse)
+//         axiosMock.onGet(BLOCKCHAINS['0021']?.altruist).reply(200, stringResponse)
 
 //         const altruistRelayer = getAltruistRelayer()
 
-//         const relayResponse = await altruistRelayer.sendRelay({
-//           rawData,
-//           relayPath: '',
-//           httpMethod: HTTPMethod.GET,
-//           application: APPLICATION as unknown as Applications,
-//           requestID: '1234',
-//           requestTimeOut: undefined,
-//           overallTimeOut: undefined,
-//           stickinessOptions: {
-//             stickiness: false,
-//             duration: 0,
-//             preferredNodeAddress: '',
-//           },
-
-//           relayRetries: 0,
-//         })
-
-//         expect(JSON.parse(relayResponse as string)).to.be.deepEqual(stringResponse)
+//         await assert.rejects(
+//           altruistRelayer.sendRelay({
+//             rawData,
+//             relayPath: '',
+//             httpMethod: HTTPMethod.POST,
+//             application: APPLICATION as unknown as Applications,
+//             requestID: '1234',
+//             requestTimeOut: undefined,
+//             overallTimeOut: undefined,
+//             stickinessOptions: {
+//               stickiness: false,
+//               duration: 0,
+//               preferredNodeAddress: '',
+//             },
+//             relayRetries: 0,
+//           }),
+//           (e: ErrorObject) => {
+//             assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
+//             return true
+//           }
+//         )
 //       })
 
 //       it('returns timeout error when fallback fails', async () => {
-//         axiosMock.onGet(ALTRUISTS['0021']).reply(500, {})
+//         axiosMock.onGet(BLOCKCHAINS['0021']?.altruist).reply(500, {})
 
 //         const altruistRelayer = getAltruistRelayer()
 
-//         const relayResponse = await altruistRelayer.sendRelay({
-//           rawData,
-//           relayPath: '',
-//           httpMethod: HTTPMethod.GET,
-//           application: APPLICATION as unknown as Applications,
-//           requestID: '1234',
-//           requestTimeOut: undefined,
-//           overallTimeOut: undefined,
-//           stickinessOptions: {
-//             stickiness: false,
-//             duration: 0,
-//             preferredNodeAddress: '',
-//           },
-//           relayRetries: 0,
-//         })
-
-//         expect(relayResponse).to.be.instanceOf(ErrorObject)
+//         await assert.rejects(
+//           altruistRelayer.sendRelay({
+//             rawData,
+//             relayPath: '',
+//             httpMethod: HTTPMethod.POST,
+//             application: APPLICATION as unknown as Applications,
+//             requestID: '1234',
+//             requestTimeOut: undefined,
+//             overallTimeOut: undefined,
+//             stickinessOptions: {
+//               stickiness: false,
+//               duration: 0,
+//               preferredNodeAddress: '',
+//             },
+//             relayRetries: 0,
+//           }),
+//           (e: ErrorObject) => {
+//             assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
+//             return true
+//           }
+//         )
 //       })
 
 //       it('should return an error if exceeded eth_getLogs max blocks range (using latest)', async () => {
@@ -1745,7 +1768,7 @@
 //         rawData =
 //           '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
 
-//         axiosMock.onPost(ALTRUISTS['0021'], blockNumberData).reply(200, blockNumberRespose)
+//         axiosMock.onPost(BLOCKCHAINS['0021']?.altruist, blockNumberData).reply(200, blockNumberRespose)
 
 //         const relayResponse = (await altruistRelayer.sendRelay({
 //           rawData,
@@ -1781,8 +1804,8 @@
 
 //         const altruistRelayer = getAltruistRelayer(mockRelayResponse)
 
-//         axiosMock.onPost(ALTRUISTS['0021'], blockNumberData).reply(200, blockNumberRespose)
-//         axiosMock.onPost(ALTRUISTS['0021'], JSON.parse(rawData)).reply(200, mockRelayResponse)
+//         axiosMock.onPost(BLOCKCHAINS['0021']?.altruist, blockNumberData).reply(200, blockNumberRespose)
+//         axiosMock.onPost(BLOCKCHAINS['0021']?.altruist, JSON.parse(rawData)).reply(200, mockRelayResponse)
 
 //         const relayResponse = await altruistRelayer.sendRelay({
 //           rawData,
@@ -1822,8 +1845,8 @@
 //           pocketMock.relayResponse[rawData] = mockRelayResponse
 //         }
 
-//         axiosMock.onPost(ALTRUISTS['0040'], blockNumberData).reply(200, blockNumberRespose)
-//         axiosMock.onPost(ALTRUISTS['0040'], JSON.parse(rawData)).reply(200, mockRelayResponse)
+//         axiosMock.onPost(BLOCKCHAINS['0040']?.altruist, blockNumberData).reply(200, blockNumberRespose)
+//         axiosMock.onPost(BLOCKCHAINS['0040']?.altruist, JSON.parse(rawData)).reply(200, mockRelayResponse)
 
 //         const poktRelayer = new PocketRelayer({
 //           host: 'eth-mainnet-string',
@@ -1842,7 +1865,6 @@
 //           relayRetries: 0,
 //           blockchainsRepository: blockchainRepository,
 //           checkDebug: true,
-//           altruists: JSON.stringify(ALTRUISTS),
 //           aatPlan: AatPlans.FREEMIUM,
 //           defaultLogLimitBlocks: 0,
 //         }) as PocketRelayer
@@ -1863,7 +1885,7 @@
 //           relayRetries: 0,
 //         })
 
-//         expect(JSON.parse(relayResponse as string)).to.be.deepEqual(JSON.parse(mockRelayResponse as string))
+//         expect(relayResponse).to.be.deepEqual(JSON.parse(mockRelayResponse as string))
 //       })
 
 //       it('should return an error if relay method requires WebSockets', async () => {
@@ -1878,7 +1900,7 @@
 //         rawData =
 //           '{"jsonrpc":"2.0","method":"eth_newFilter","params":[{"topics": ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"]}],"id":1}'
 
-//         axiosMock.onPost(ALTRUISTS['0021'], JSON.parse(rawData)).reply(200, newFilterResponse)
+//         axiosMock.onPost(BLOCKCHAINS['0021']?.altruist, JSON.parse(rawData)).reply(200, newFilterResponse)
 
 //         const relayResponse = (await altruistRelayer.sendRelay({
 //           rawData,

@@ -6,7 +6,7 @@ import { getAddressFromPublicKey } from 'pocket-tools'
 
 const logger = require('../services/logger')
 
-const ALTRUIST_URL = JSON.parse(process.env.ALTRUISTS)?.['0001']
+const POCKET_NETWORK_NODE_URL = String(process.env.POCKET_NETWORK_NODE_URL)
 
 /**
  * Removes node from cached session, following calls within the same session,
@@ -63,7 +63,7 @@ export async function getNodeNetworkData(redis: Redis, publicKey: string, reques
 
   try {
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    const { service_url } = (await axios.post(`${ALTRUIST_URL}/v1/query/node`, { address })).data
+    const { service_url } = (await axios.post(`${POCKET_NETWORK_NODE_URL}/v1/query/node`, { address })).data
 
     nodeUrl = { serviceURL: service_url, serviceDomain: extractDomain(service_url) }
 

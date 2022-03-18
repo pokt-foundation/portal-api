@@ -56,14 +56,12 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       REDIS_PORT,
       PSQL_CONNECTION,
       DISPATCH_URL,
-      ALTRUISTS,
       POCKET_SESSION_BLOCK_FREQUENCY,
       POCKET_BLOCK_TIME,
       POCKET_RELAY_RETRIES,
       DEFAULT_SYNC_ALLOWANCE,
       DEFAULT_LOG_LIMIT_BLOCKS,
       AAT_PLAN,
-      REDIRECTS,
       COMMIT_HASH,
       INFLUX_URL,
       INFLUX_TOKEN,
@@ -74,7 +72,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     const environment: string = NODE_ENV || 'production'
     const dispatchURL: string = DISPATCH_URL || ''
-    const altruists: string = ALTRUISTS || ''
     const clientPrivateKey: string = GATEWAY_CLIENT_PRIVATE_KEY || ''
     const clientPassphrase: string = GATEWAY_CLIENT_PASSPHRASE || ''
     const pocketSessionBlockFrequency: string = POCKET_SESSION_BLOCK_FREQUENCY || ''
@@ -84,7 +81,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const defaultSyncAllowance: number = parseInt(DEFAULT_SYNC_ALLOWANCE) || -1
     const defaultLogLimitBlocks: number = parseInt(DEFAULT_LOG_LIMIT_BLOCKS) || 10000
     const aatPlan = AAT_PLAN || AatPlans.PREMIUM
-    const redirects: string | object[] = REDIRECTS || ''
     const commitHash: string | string = COMMIT_HASH || ''
     const influxURL: string = INFLUX_URL || ''
     const influxToken: string = INFLUX_TOKEN || ''
@@ -121,11 +117,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('relayer').to(pocket)
     this.bind('pocketConfiguration').to(configuration)
     this.bind('relayRetries').to(parseInt(relayRetries))
-    this.bind('altruists').to(altruists)
     this.bind('logger').to(logger)
     this.bind('defaultSyncAllowance').to(defaultSyncAllowance)
     this.bind('defaultLogLimitBlocks').to(defaultLogLimitBlocks)
-    this.bind('redirects').to(redirects)
     this.bind('alwaysRedirectToAltruists').to(alwaysRedirectToAltruists)
 
     // Load Redis for cache

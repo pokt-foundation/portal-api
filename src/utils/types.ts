@@ -12,6 +12,8 @@ export type BlockchainDetails = {
   blockchainSyncCheck: SyncCheckOptions
   blockchainLogLimitBlocks: number
   blockchainPath: string
+  blockchainAltruist: string
+  blockchainRedirects: BlockchainRedirect[]
 }
 
 export type SendRelayOptions = {
@@ -81,4 +83,10 @@ export type RelayResponse = {
     requestHash: string
   }
   serviceNode: Node
+}
+
+export type BlockchainRedirect = {
+  alias: string
+  domain: string
+  loadBalancerID: string
 }

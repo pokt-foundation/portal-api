@@ -19,12 +19,6 @@
 // const POCKET_RELAY_RESPONSE = '{"height":35758}'
 // const DEFAULT_SYNC_ALLOWANCE = 5
 
-// const ALTRUIST_URL = {
-//   '0021': 'https://eth-mainnet:pass@backups.example.org:18081',
-//   '0006': 'https://solana:pass@backups.example.org:18081',
-//   '0001': 'https://pocket:pass@backups.example.org:18081',
-// }
-
 // const blockchains = {
 //   '0021': {
 //     hash: '0021',
@@ -41,8 +35,10 @@
 //     syncCheckOptions: {
 //       body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
 //       resultKey: 'result',
-//       allowance: 2,
+//       path: '',
+//       allowance: 5,
 //     },
+//     altruist: 'https://eth-mainnet:pass@backups.example.org:18081',
 //   },
 //   '0006': {
 //     hash: '0006',
@@ -58,8 +54,10 @@
 //     syncCheckOptions: {
 //       body: '{"jsonrpc": "2.0", "id": 1, "method": "getSlot"}',
 //       resultKey: 'result',
+//       path: '',
 //       allowance: 2,
 //     },
+//     altruist: 'https://solana:pass@backups.example.org:18081',
 //   },
 //   '0001': {
 //     hash: '0001',
@@ -78,6 +76,7 @@
 //       path: '/v1/query/height',
 //       allowance: 2,
 //     },
+//     altruist: 'https://pocket:pass@backups.example.org:18081',
 //   },
 // }
 
@@ -133,10 +132,10 @@
 //     axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
 //       service_url: 'https://localhost:443',
 //     })
-//     axiosMock.onPost(ALTRUIST_URL['0021']).reply(200, EVM_RELAY_RESPONSE)
-//     axiosMock.onPost(ALTRUIST_URL['0006']).reply(200, SOLANA_RELAY_RESPONSE)
+//     axiosMock.onPost(blockchains['0021']?.altruist).reply(200, EVM_RELAY_RESPONSE)
+//     axiosMock.onPost(blockchains['0006']?.altruist).reply(200, SOLANA_RELAY_RESPONSE)
 //     axiosMock
-//       .onPost(`${ALTRUIST_URL['0001']}${blockchains['0001'].syncCheckOptions.path}`)
+//       .onPost(`${blockchains['0001']?.altruist}${blockchains['0001'].syncCheckOptions.path}`)
 //       .reply(200, POCKET_RELAY_RESPONSE)
 
 //     await redis.flushall()
@@ -156,20 +155,20 @@
 
 //       const blockHeight = await syncChecker['getSyncFromAltruist'](
 //         blockchains['0021'].syncCheckOptions,
-//         ALTRUIST_URL['0021']
+//         blockchains['0021']?.altruist
 //       )
 
 //       expect(blockHeight).to.be.equal(expectedBlockHeight)
 //     })
 
 //     it('fails retrieving sync from altruist', async () => {
-//       axiosMock.onPost(ALTRUIST_URL['0021']).networkError()
+//       axiosMock.onPost(blockchains['0021']?.altruist).networkError()
 
 //       const expectedBlockHeight = 0
 
 //       const blockHeight = await syncChecker['getSyncFromAltruist'](
 //         blockchains['0021'].syncCheckOptions,
-//         ALTRUIST_URL['0021']
+//         blockchains['0021']?.altruist
 //       )
 
 //       expect(blockHeight).to.be.equal(expectedBlockHeight)
@@ -190,7 +189,7 @@
 //         pocketAAT: undefined,
 //         pocketConfiguration,
 //         pocketSession,
-//         blockchainSyncBackup: ALTRUIST_URL['0021'],
+//         blockchainSyncBackup: blockchains['0021']?.altruist,
 //         applicationID: '1234',
 //         applicationPublicKey: '5678',
 //         requestID: 'abcd',
@@ -209,7 +208,7 @@
 //         pocketAAT: undefined,
 //         pocketConfiguration,
 //         pocketSession,
-//         blockchainSyncBackup: ALTRUIST_URL['0021'],
+//         blockchainSyncBackup: blockchains['0021']?.altruist,
 //         applicationID: '1234',
 //         applicationPublicKey: '5678',
 //         requestID: 'abcd',
@@ -232,7 +231,7 @@
 //         pocketAAT: undefined,
 //         pocketConfiguration,
 //         pocketSession,
-//         blockchainSyncBackup: ALTRUIST_URL['0006'],
+//         blockchainSyncBackup: blockchains['0006']?.altruist,
 //         applicationID: '1234',
 //         applicationPublicKey: '5678',
 //         requestID: 'abcd',
@@ -251,7 +250,7 @@
 //         pocketAAT: undefined,
 //         pocketConfiguration,
 //         pocketSession,
-//         blockchainSyncBackup: ALTRUIST_URL['0006'],
+//         blockchainSyncBackup: blockchains['0006']?.altruist,
 //         applicationID: '1234',
 //         applicationPublicKey: '5678',
 //         requestID: 'abcd',
@@ -273,7 +272,7 @@
 //         pocketAAT: undefined,
 //         pocketConfiguration,
 //         pocketSession,
-//         blockchainSyncBackup: ALTRUIST_URL['0001'],
+//         blockchainSyncBackup: blockchains['0001']?.altruist,
 //         applicationID: '1234',
 //         applicationPublicKey: '5678',
 //         requestID: 'abcd',
@@ -292,7 +291,7 @@
 //         pocketAAT: undefined,
 //         pocketConfiguration,
 //         pocketSession,
-//         blockchainSyncBackup: ALTRUIST_URL['0001'],
+//         blockchainSyncBackup: blockchains['0001']?.altruist,
 //         applicationID: '1234',
 //         applicationPublicKey: '5678',
 //         requestID: 'abcd',
@@ -314,7 +313,7 @@
 //         pocketAAT: undefined,
 //         pocketConfiguration,
 //         pocketSession,
-//         blockchainSyncBackup: ALTRUIST_URL['0006'],
+//         blockchainSyncBackup: blockchains['0006']?.altruist,
 //         applicationID: '1234',
 //         applicationPublicKey: '5678',
 //         requestID: 'abcd',
@@ -331,7 +330,7 @@
 //     })
 
 //     it('fails sync check due to altruist and chain error', async () => {
-//       axiosMock.onPost(ALTRUIST_URL['0021']).networkError()
+//       axiosMock.onPost(blockchains['0021']?.altruist).networkError()
 
 //       const nodes = DEFAULT_NODES
 
@@ -344,7 +343,7 @@
 //         pocketAAT: undefined,
 //         pocketConfiguration,
 //         pocketSession,
-//         blockchainSyncBackup: ALTRUIST_URL['0021'],
+//         blockchainSyncBackup: blockchains['0021']?.altruist,
 //         applicationID: '1234',
 //         applicationPublicKey: '5678',
 //         requestID: 'abcd',
@@ -372,7 +371,7 @@
 //         pocketAAT: undefined,
 //         pocketConfiguration,
 //         pocketSession,
-//         blockchainSyncBackup: ALTRUIST_URL['0021'],
+//         blockchainSyncBackup: blockchains['0021']?.altruist,
 //         applicationID: '1234',
 //         applicationPublicKey: '5678',
 //         requestID: 'abcd',
@@ -382,7 +381,7 @@
 //     })
 
 //     it('pass session sync check but fails due to behind altruist', async () => {
-//       axiosMock.onPost(ALTRUIST_URL['0021']).reply(200, '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0d00" }') // 100 blocks after the EVM_RELAY_RESPONSE
+//       axiosMock.onPost(blockchains['0021']?.altruist).reply(200, '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0d00" }') // 100 blocks after the EVM_RELAY_RESPONSE
 
 //       const nodes = DEFAULT_NODES
 
@@ -393,7 +392,7 @@
 //         pocketAAT: undefined,
 //         pocketConfiguration,
 //         pocketSession,
-//         blockchainSyncBackup: ALTRUIST_URL['0021'],
+//         blockchainSyncBackup: blockchains['0021']?.altruist,
 //         applicationID: '1234',
 //         applicationPublicKey: '5678',
 //         requestID: 'abcd',
@@ -429,7 +428,7 @@
 //         pocketAAT: undefined,
 //         pocketConfiguration,
 //         pocketSession,
-//         blockchainSyncBackup: ALTRUIST_URL['0021'],
+//         blockchainSyncBackup: blockchains['0021']?.altruist,
 //         applicationID: '1234',
 //         applicationPublicKey: '5678',
 //         requestID: 'abcd',
@@ -475,7 +474,7 @@
 //         pocketAAT: undefined,
 //         pocketConfiguration,
 //         pocketSession,
-//         blockchainSyncBackup: ALTRUIST_URL['0021'],
+//         blockchainSyncBackup: blockchains['0021']?.altruist,
 //         applicationID: '1234',
 //         applicationPublicKey: '5678',
 //         requestID: 'abcd',
@@ -513,7 +512,7 @@
 //         pocketAAT: undefined,
 //         pocketConfiguration,
 //         pocketSession,
-//         blockchainSyncBackup: ALTRUIST_URL['0021'],
+//         blockchainSyncBackup: blockchains['0021']?.altruist,
 //         applicationID: '1234',
 //         applicationPublicKey: '5678',
 //         requestID: 'abcd',
