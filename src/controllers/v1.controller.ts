@@ -17,7 +17,7 @@ import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
 import { checkWhitelist } from '../utils/enforcements'
 import { parseRawData, parseRPCID } from '../utils/parsing'
-import { loadBlockchain } from '../utils/relayer'
+import { getBlockchainAliasesByDomain, loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
 const logger = require('../services/logger')
 
@@ -58,11 +58,9 @@ export class V1Controller {
     @inject('pgPool') private pgPool: PGPool,
     @inject('databaseEncryptionKey') private databaseEncryptionKey: string,
     @inject('processUID') private processUID: string,
-    @inject('altruists') private altruists: string,
     @inject('requestID') private requestID: string,
     @inject('defaultSyncAllowance') private defaultSyncAllowance: number,
     @inject('aatPlan') private aatPlan: string,
-    @inject('redirects') private redirects: string,
     @inject('defaultLogLimitBlocks') private defaultLogLimitBlocks: number,
     @inject('influxWriteAPI') private influxWriteAPI: WriteApi,
     @inject('archivalChains') private archivalChains: string[],
@@ -106,7 +104,6 @@ export class V1Controller {
       relayRetries: this.relayRetries,
       blockchainsRepository: this.blockchainsRepository,
       checkDebug: this.checkDebug(),
-      altruists: this.altruists,
       aatPlan: this.aatPlan,
       defaultLogLimitBlocks: this.defaultLogLimitBlocks,
       alwaysRedirectToAltruists: this.alwaysRedirectToAltruists,
@@ -130,16 +127,49 @@ export class V1Controller {
     })
     rawData: object
   ): Promise<string | ErrorObject> {
-    const parsedRawData = parseRawData(rawData)
-    const rpcID = parseRPCID(parsedRawData)
+    let rpcID = 1
 
-    for (const redirect of JSON.parse(this.redirects)) {
-      if (this.pocketRelayer.host.toLowerCase().includes(redirect.domain, 0)) {
-        // Modify the host using the stored blockchain name from .env
-        this.pocketRelayer.host = redirect.blockchain
-        this.host = redirect.blockchain
-        return this.loadBalancerRelay(redirect.loadBalancerID, rawData)
+    try {
+      const parsedRawData = parseRawData(rawData)
+
+      rpcID = parseRPCID(parsedRawData)
+
+      // Since we only have non-gateway url, let's fetch a blockchain that contains this domain
+      const { blockchainAliases } = await getBlockchainAliasesByDomain(
+        this.host,
+        this.redis,
+        this.blockchainsRepository,
+        rpcID
+      )
+
+      // Any alias works to load a specific blockchain
+      this.host = `${blockchainAliases[0]}.gateway.pokt.network`
+
+      const { blockchainRedirects } = await loadBlockchain(
+        this.host,
+        this.redis,
+        this.blockchainsRepository,
+        this.defaultLogLimitBlocks,
+        rpcID
+      )
+
+      for (const redirect of blockchainRedirects) {
+        if (this.pocketRelayer.host.toLowerCase().includes(redirect.domain)) {
+          // Modify the host using the stored blockchain name in DB
+          this.pocketRelayer.host = redirect.alias
+          this.host = redirect.alias
+          return await this.loadBalancerRelay(redirect.loadBalancerID, rawData)
+        }
       }
+    } catch (e) {
+      logger.log('error', 'LOAD BALANCER RELAY ERROR: ' + JSON.stringify(e), {
+        requestID: this.requestID,
+        error: e,
+        relayType: 'LB',
+        serviceNode: '',
+        origin: this.origin,
+        trace: e.stack,
+      })
     }
 
     return jsonrpc.error(rpcID, new jsonrpc.JsonRpcError('Invalid domain', -32052)) as ErrorObject
@@ -212,10 +242,18 @@ export class V1Controller {
       // Is this LB marked for gigastakeRedirect?
       // Temporary: will be removed when live
       if (gigastakeOptions.gigastaked) {
-        const redirect = JSON.parse(this.redirects).find((rdr) => this.host.toLowerCase().includes(rdr.blockchain))
+        const { blockchainRedirects } = await loadBlockchain(
+          this.host,
+          this.redis,
+          this.blockchainsRepository,
+          this.defaultLogLimitBlocks,
+          reqRPCID
+        )
 
-        if (redirect) {
+        if (blockchainRedirects.length > 0) {
           const originalLoadBalancer = { ...loadBalancer }
+
+          const redirect = blockchainRedirects.find((rdr) => this.host.toLowerCase().includes(rdr.alias))
 
           loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
 
