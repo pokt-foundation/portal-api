@@ -407,7 +407,7 @@ export class V1Controller {
 
       reqRPCID = parseRPCID(parsedRawData)
 
-      const application = await this.fetchApplication(id, filter)
+      let application = await this.fetchApplication(id, filter)
 
       if (!application?.id) {
         logger.log('error', 'Application not found', {
@@ -431,9 +431,17 @@ export class V1Controller {
         ? await this.checkClientStickiness(rawData, stickyKeyPrefix, stickyOrigins, this.origin)
         : DEFAULT_STICKINESS_APP_PARAMS
 
+      const gigastakeApp = await this.getGigastakeApp(filter, '', reqRPCID)
+
+      if (gigastakeApp) {
+        gigastakeApp.gatewaySettings = application.gatewaySettings
+
+        application = gigastakeApp
+      }
+
       const sendRelayOptions: SendRelayOptions = {
         rawData,
-        application: await this.getGigastakeApp(undefined, '', rpcID),
+        application,
         relayPath: this.relayPath,
         httpMethod: this.httpMethod,
         requestID: this.requestID,
@@ -683,12 +691,10 @@ export class V1Controller {
       rpcID
     )
 
-    if (blockchainRedirects.length < 0) {
+    if (blockchainRedirects.length < 1) {
       return undefined
     }
     const redirect = blockchainRedirects.find((rdr) => this.host.toLowerCase().includes(rdr.alias))
-
-    console.log('REDIRECT', redirect)
 
     const loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
     if (!loadBalancer?.id) {
