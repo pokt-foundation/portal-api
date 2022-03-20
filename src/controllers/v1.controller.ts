@@ -143,6 +143,7 @@ export class V1Controller {
       )
 
       // Any alias works to load a specific blockchain
+      // TODO: Move URL to ENV
       this.host = `${blockchainAliases[0]}.gateway.pokt.network`
 
       const { blockchainRedirects } = await loadBlockchain(
@@ -419,6 +420,9 @@ export class V1Controller {
         throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('Application not found', -32056))
       }
 
+      const applicationID = application.id
+      const applicationPublicKey = application.gatewayAAT.applicationPublicKey
+
       const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =
         application?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
       const stickyKeyPrefix = stickiness && !useRPCID ? application?.id : ''
@@ -429,7 +433,7 @@ export class V1Controller {
 
       const sendRelayOptions: SendRelayOptions = {
         rawData,
-        application,
+        application: await this.getGigastakeApp(undefined, '', rpcID),
         relayPath: this.relayPath,
         httpMethod: this.httpMethod,
         requestID: this.requestID,
@@ -442,6 +446,8 @@ export class V1Controller {
           relaysLimit,
           stickyOrigins,
         },
+        applicationID,
+        applicationPublicKey,
       }
 
       return await this.pocketRelayer.sendRelay(sendRelayOptions)
@@ -666,5 +672,41 @@ export class V1Controller {
       return true
     }
     return false
+  }
+
+  async getGigastakeApp(filter: FilterExcludingWhere, preferredApplicationID = '', rpcID = 0): Promise<Applications> {
+    const { blockchainRedirects } = await loadBlockchain(
+      this.host,
+      this.redis,
+      this.blockchainsRepository,
+      this.defaultLogLimitBlocks,
+      rpcID
+    )
+
+    if (blockchainRedirects.length < 0) {
+      return undefined
+    }
+    const redirect = blockchainRedirects.find((rdr) => this.host.toLowerCase().includes(rdr.alias))
+
+    console.log('REDIRECT', redirect)
+
+    const loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
+    if (!loadBalancer?.id) {
+      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('GS load balancer not found', -32054))
+    }
+
+    const application = await this.fetchLoadBalancerApplication(
+      loadBalancer.id,
+      loadBalancer.applicationIDs,
+      preferredApplicationID,
+      filter,
+      rpcID
+    )
+
+    if (!application?.id) {
+      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('No application found in the load balancer', -32055))
+    }
+
+    return application
   }
 }
