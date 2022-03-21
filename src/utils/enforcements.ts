@@ -1,6 +1,6 @@
 import { Decryptor } from 'strong-cryptor'
 import { Applications } from '../models'
-import { isEVMError } from './evm'
+import { isEVMError } from './errors'
 
 export function checkEnforcementJSON(test: string): boolean {
   if (!test || test.length === 0) {
@@ -72,9 +72,7 @@ export function isRelayError(payload: string): boolean {
   return payload.includes('{"error"')
 }
 
-export function isUserError(payload: string): boolean {
+export function isUserError(payload: string, blockchain?: string): boolean {
   // TODO: Non-evm errors
-  const evmException: boolean = isEVMError(payload)
-
-  return evmException
+  return isEVMError(payload)
 }
