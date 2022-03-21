@@ -506,7 +506,7 @@ export class SyncChecker {
       })
 
       if (relay instanceof EvidenceSealedError) {
-        await removeNodeFromSession(this.redis, session.key, nodes, node.publicKey, true, requestID, blockchainID)
+        await removeNodeFromSession(this.redis, session, node.publicKey, true, requestID, blockchainID)
       }
 
       if (relay instanceof InvalidSessionError || relay instanceof OutOfSyncRequestError) {

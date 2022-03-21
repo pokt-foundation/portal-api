@@ -110,9 +110,10 @@ export class NodeCheckerWrapper {
           sessionHash,
         })
 
-        if (errorMsg === MAX_RELAYS_ERROR) {
-          await removeNodeFromSession(this.redis, blockchainID, [], node.publicKey)
-        }
+        // TODO: Fix
+        // if (errorMsg === MAX_RELAYS_ERROR) {
+        //   await removeNodeFromSession()
+        // }
 
         if (typeof error === 'object') {
           errorMsg = JSON.stringify(error)

@@ -353,7 +353,7 @@ export class CherryPicker {
           serviceNode,
           sessionKey,
         })
-        await removeNodeFromSession(this.redis, blockchainID, nodes, serviceNode)
+        await removeNodeFromSession(this.redis, pocketSession, serviceNode, true, '', blockchainID)
       }
     }
   }

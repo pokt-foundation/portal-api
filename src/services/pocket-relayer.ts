@@ -915,15 +915,7 @@ export class PocketRelayer {
     } else if (relay instanceof Error) {
       // Remove node from session if error is due to max relays allowed reached
       if (relay instanceof EvidenceSealedError) {
-        await removeNodeFromSession(
-          this.redis,
-          blockchainID,
-          session.nodes,
-          node.publicKey,
-          true,
-          requestID,
-          blockchainID
-        )
+        await removeNodeFromSession(this.redis, session, node.publicKey, true, requestID, blockchainID)
       }
       return new RelayError(relay.message, 500, node?.publicKey)
       // ConsensusNode

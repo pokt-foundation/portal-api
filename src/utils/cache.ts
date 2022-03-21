@@ -1,4 +1,4 @@
-import { Node } from '@pokt-foundation/pocketjs-types'
+import { Node, Session } from '@pokt-foundation/pocketjs-types'
 import { Redis } from 'ioredis'
 
 const logger = require('../services/logger')
@@ -14,14 +14,13 @@ const logger = require('../services/logger')
  */
 export async function removeNodeFromSession(
   redis: Redis,
-  sessionKey: string,
-  nodes: Node[],
+  { key, nodes }: Session,
   nodePubKey: string,
   removeChecksFromCache = false,
   requestID?: string,
   blockchainID?: string
 ): Promise<void> {
-  const sessionCacheKey = `session-key-${sessionKey}`
+  const sessionCacheKey = `session-key-${key}`
 
   await redis.sadd(sessionCacheKey, nodePubKey)
   const nodesToRemoveTTL = await redis.ttl(sessionCacheKey)
@@ -31,14 +30,14 @@ export async function removeNodeFromSession(
   }
 
   logger.log('warn', 'Exhausted node removed', {
-    sessionKey: sessionKey,
+    sessionKey: key,
     serviceNode: nodePubKey,
     requestID,
     blockchainID,
   })
 
   if (removeChecksFromCache) {
-    await removeChecksCache(redis, sessionKey, nodes)
+    await removeChecksCache(redis, key, nodes)
   }
 }
 
