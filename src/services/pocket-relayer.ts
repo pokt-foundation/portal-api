@@ -702,7 +702,6 @@ export class PocketRelayer {
         chainCheck: blockchainIDCheck,
         chainID: parseInt(blockchainChainID),
         relayer: this.relayer,
-        pocketConfiguration: this.pocketConfiguration,
         session,
         path: blockchainPath,
       }
@@ -828,6 +827,8 @@ export class PocketRelayer {
     }
 
     let node: Node
+
+    console.log('KLK -=-', nodeSticker.preferredNodeAddress)
 
     if (nodeSticker.preferredNodeAddress) {
       node = await nodeSticker.getStickyNode(nodes, exhaustedNodes)
