@@ -386,8 +386,6 @@ describe('V1 controller (acceptance)', () => {
   })
 
   it('fails on request with invalid authorization header', async () => {
-    await applicationsRepository.deleteAll()
-
     const encryptor = new Encryptor({ key: DB_ENCRYPTION_KEY })
     const key = 'encrypt123456789120encrypt123456789120'
     const encryptedKey = encryptor.encrypt(key)
@@ -421,8 +419,6 @@ describe('V1 controller (acceptance)', () => {
   })
 
   it('fails on request with invalid origin', async () => {
-    await applicationsRepository.deleteAll()
-
     const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
 
     appWithSecurity.gatewaySettings = {
@@ -452,13 +448,12 @@ describe('V1 controller (acceptance)', () => {
   })
 
   it('success relay with correct secret key, origin and userAgent security', async () => {
-    await applicationsRepository.deleteAll()
-
+    const appID = 'applicationID12235'
     const encryptor = new Encryptor({ key: DB_ENCRYPTION_KEY })
     const key = 'encrypt123456789120encrypt123456789120'
     const encryptedKey = encryptor.encrypt(key)
 
-    const appWithSecurity = { ...APPLICATION }
+    const appWithSecurity = { ...APPLICATION, id: appID }
 
     appWithSecurity.gatewaySettings = {
       secretKey: encryptedKey,
@@ -474,7 +469,7 @@ describe('V1 controller (acceptance)', () => {
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh')
+      .post(`/v1/${appID}`)
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet-x')
