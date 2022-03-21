@@ -26,7 +26,6 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'INFLUX_TOKEN',
     'INFLUX_ORG',
     'DISPATCH_URL',
-    'POCKET_NETWORK_NODE_URL',
     'POCKET_SESSION_BLOCK_FREQUENCY',
     'POCKET_BLOCK_TIME',
     'POCKET_RELAY_RETRIES',

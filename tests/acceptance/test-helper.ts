@@ -21,7 +21,6 @@ export const DUMMY_ENV = {
   INFLUX_TOKEN: 'abcde',
   INFLUX_ORG: 'myorg',
   DISPATCH_URL: 'https://node1.dispatcher.pokt.network/',
-  POCKET_NETWORK_NODE_URL: 'https://user:pass@backups.example.org:18081',
   POCKET_SESSION_BLOCK_FREQUENCY: 4,
   POCKET_BLOCK_TIME: 1038000,
   POCKET_RELAY_RETRIES: '0',
