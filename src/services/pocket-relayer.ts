@@ -212,7 +212,6 @@ export class PocketRelayer {
         relayType: 'APP',
         error: `${parsedRawData.method} method limitations exceeded.`,
         typeID: application.id,
-        serviceNode: '',
         origin: this.origin,
       })
       return limitation
@@ -235,7 +234,6 @@ export class PocketRelayer {
               requestID,
               relayType: 'APP',
               typeID: application.id,
-              serviceNode: '',
             })
             throw new ErrorObject(
               rpcID,
@@ -297,7 +295,7 @@ export class PocketRelayer {
                 applicationID,
                 applicationPublicKey,
                 blockchainID,
-                serviceNode: '-',
+                serviceNode: relay.serviceNode.publicKey,
                 relayStart,
                 result: 200,
                 bytes: Buffer.byteLength(relay.response, 'utf8'),
@@ -317,7 +315,7 @@ export class PocketRelayer {
                   requestID,
                   relayType: 'APP',
                   typeID: application.id,
-                  serviceNode: '-',
+                  serviceNode: relay.serviceNode.publicKey,
                 })
               })
 
@@ -400,7 +398,6 @@ export class PocketRelayer {
         relayType: 'APP',
         typeID: application.id,
         error: e,
-        serviceNode: '',
         origin: this.origin,
         trace: e.stack,
       })
@@ -686,7 +683,6 @@ export class PocketRelayer {
         requestID,
         relayType: 'APP',
         typeID: application.id,
-        serviceNode: '',
         blockchainID,
         origin: this.origin,
       })

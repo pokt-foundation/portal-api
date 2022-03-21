@@ -1,7 +1,7 @@
 import { Node, Session } from '@pokt-foundation/pocketjs-types'
 import { Redis } from 'ioredis'
 import { Applications } from '../models'
-import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
+import { removeNodeFromSession } from '../utils/cache'
 
 const logger = require('../services/logger')
 
@@ -349,13 +349,9 @@ export class CherryPicker {
       await this.redis.set(key, ++timeoutCounter, 'EX', 60 * 60 * 2) // 2 Hours
 
       if (timeoutCounter >= TIMEOUT_LIMIT) {
-        const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, serviceNode)
-
         logger.log('warn', `removed archival node from session due to timeouts: ${serviceNode}`, {
           serviceNode,
           sessionKey,
-          serviceURL,
-          serviceDomain,
         })
         await removeNodeFromSession(this.redis, blockchainID, nodes, serviceNode)
       }

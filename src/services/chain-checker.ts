@@ -5,11 +5,12 @@ import {
   OutOfSyncRequestError,
 } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
+import extractDomain from 'extract-domain'
 import { Redis } from 'ioredis'
 import { Configuration } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
-import { getNodeNetworkData, removeChecksCache, removeNodeFromSession, removeSessionCache } from '../utils/cache'
+import { removeChecksCache, removeNodeFromSession, removeSessionCache } from '../utils/cache'
 import { CHECK_TIMEOUT, PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { CheckResult, RelayResponse } from '../utils/types'
@@ -115,28 +116,20 @@ export class ChainChecker {
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
     for (const nodeChainLog of nodeChainLogs) {
-      // const relayStart = process.hrtime()
+      const { node, chainID: nodeChainID } = nodeChainLog
+      const { serviceUrl: serviceURL } = node
+      const serviceDomain = extractDomain(serviceURL)
 
-      const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, nodeChainLog.node.publicKey, requestID)
-
-      if (nodeChainLog.chainID === chainID) {
-        logger.log(
-          'info',
-          'CHAIN CHECK SUCCESS: ' + nodeChainLog.node.publicKey + ' chainID: ' + nodeChainLog.chainID,
-          {
-            requestID: requestID,
-            relayType: '',
-            typeID: '',
-            serviceNode: nodeChainLog.node.publicKey,
-            error: '',
-            elapsedTime: '',
-            blockchainID,
-            origin: this.origin,
-            serviceURL,
-            serviceDomain,
-            sessionKey,
-          }
-        )
+      if (nodeChainID === chainID) {
+        logger.log('info', 'CHAIN CHECK SUCCESS: ' + node.publicKey + ' chainID: ' + nodeChainID, {
+          requestID: requestID,
+          serviceNode: node.publicKey,
+          blockchainID,
+          origin: this.origin,
+          serviceURL,
+          serviceDomain,
+          sessionKey,
+        })
 
         // Correct chain: add to nodes list
         CheckedNodes.push(nodeChainLog.node)
@@ -147,11 +140,7 @@ export class ChainChecker {
           'CHAIN CHECK FAILURE: ' + nodeChainLog.node.publicKey + ' chainID: ' + nodeChainLog.chainID,
           {
             requestID: requestID,
-            relayType: '',
-            typeID: '',
             serviceNode: nodeChainLog.node.publicKey,
-            error: '',
-            elapsedTime: '',
             blockchainID,
             origin: this.origin,
             serviceURL,
@@ -164,11 +153,6 @@ export class ChainChecker {
 
     logger.log('info', 'CHAIN CHECK COMPLETE: ' + CheckedNodes.length + ' nodes on chain', {
       requestID: requestID,
-      relayType: '',
-      typeID: '',
-      serviceNode: '',
-      error: '',
-      elapsedTime: '',
       blockchainID,
       origin: this.origin,
       sessionKey,
@@ -279,6 +263,9 @@ export class ChainChecker {
     path,
   }: GetNodeChainLogOptions): Promise<NodeChainLog> {
     const { key, nodes } = session || {}
+    const { serviceUrl: serviceURL } = node
+    const serviceDomain = extractDomain(serviceURL)
+
     // Pull the current block from each node using the blockchain's chainCheck as the relay
     const relayStart = process.hrtime()
 
@@ -303,8 +290,6 @@ export class ChainChecker {
       relay = error
     }
 
-    const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
-
     if (!(relay instanceof Error) && checkEnforcementJSON(relay.response)) {
       const payload = JSON.parse(relay.response)
 
@@ -316,11 +301,7 @@ export class ChainChecker {
 
       logger.log('info', 'CHAIN CHECK RESULT: ' + JSON.stringify(nodeChainLog), {
         requestID: requestID,
-        relayType: '',
-        typeID: '',
         serviceNode: node.publicKey,
-        error: '',
-        elapsedTime: '',
         blockchainID,
         origin: this.origin,
         serviceURL,
@@ -333,11 +314,7 @@ export class ChainChecker {
     } else if (relay instanceof Error) {
       logger.log('error', 'CHAIN CHECK ERROR: ' + JSON.stringify(relay), {
         requestID: requestID,
-        relayType: '',
-        typeID: '',
         serviceNode: node.publicKey,
-        error: '',
-        elapsedTime: '',
         blockchainID,
         origin: this.origin,
         serviceURL,
@@ -382,11 +359,7 @@ export class ChainChecker {
     } else {
       logger.log('error', 'CHAIN CHECK ERROR UNHANDLED: ' + JSON.stringify(relay), {
         requestID: requestID,
-        relayType: '',
-        typeID: '',
         serviceNode: node.publicKey,
-        error: '',
-        elapsedTime: '',
         blockchainID,
         origin: this.origin,
         serviceURL,

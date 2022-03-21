@@ -6,11 +6,12 @@ import {
 } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
 import axios from 'axios'
+import extractDomain from 'extract-domain'
 import { Redis } from 'ioredis'
 import { Configuration } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
-import { removeNodeFromSession, getNodeNetworkData, removeSessionCache, removeChecksCache } from '../utils/cache'
+import { removeNodeFromSession, removeSessionCache, removeChecksCache } from '../utils/cache'
 import { CHECK_TIMEOUT, PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { CheckResult, RelayResponse } from '../utils/types'
@@ -121,12 +122,7 @@ export class SyncChecker {
     if (nodes.length > 2 && nodeSyncLogs.length <= 2) {
       logger.log('error', 'SYNC CHECK ERROR: fewer than 3 nodes returned sync', {
         requestID: requestID,
-        relayType: '',
         blockchainID,
-        typeID: '',
-        serviceNode: '',
-        error: '',
-        elapsedTime: '',
         origin: this.origin,
         sessionKey,
       })
@@ -147,12 +143,7 @@ export class SyncChecker {
     ) {
       logger.log('error', 'SYNC CHECK ERROR: top synced node result is invalid ' + JSON.stringify(nodeSyncLogs), {
         requestID: requestID,
-        relayType: '',
         blockchainID,
-        typeID: '',
-        serviceNode: '',
-        error: '',
-        elapsedTime: '',
         origin: this.origin,
         sessionKey,
       })
@@ -171,12 +162,7 @@ export class SyncChecker {
     ) {
       logger.log('error', 'SYNC CHECK ERROR: three highest nodes could not agree on sync', {
         requestID: requestID,
-        relayType: '',
         blockchainID,
-        typeID: '',
-        serviceNode: '',
-        error: '',
-        elapsedTime: '',
         origin: this.origin,
         sessionKey,
       })
@@ -192,12 +178,8 @@ export class SyncChecker {
       // Failure to find sync from consensus and altruist
       logger.log('info', 'SYNC CHECK ALTRUIST FAILURE: ' + altruistBlockHeight, {
         requestID: requestID,
-        relayType: '',
         blockchainID,
-        typeID: '',
         serviceNode: 'ALTRUIST',
-        error: '',
-        elapsedTime: '',
         origin: this.origin,
         sessionKey,
       })
@@ -208,12 +190,8 @@ export class SyncChecker {
     } else {
       logger.log('info', 'SYNC CHECK ALTRUIST CHECK: ' + altruistBlockHeight, {
         requestID: requestID,
-        relayType: '',
         blockchainID,
-        typeID: '',
         serviceNode: 'ALTRUIST',
-        error: '',
-        elapsedTime: '',
         origin: this.origin,
         sessionKey,
       })
@@ -232,12 +210,8 @@ export class SyncChecker {
           `SYNC CHECK ALTRUIST FAILURE: ${totalNodesAhead} out of ${totalNodes} synced nodes are ahead of altruist`,
           {
             requestID: requestID,
-            relayType: '',
             blockchainID,
-            typeID: '',
             serviceNode: 'ALTRUIST',
-            error: '',
-            elapsedTime: '',
             origin: this.origin,
             sessionKey,
           }
@@ -258,61 +232,46 @@ export class SyncChecker {
 
     // Go through nodes and add all nodes that are current or within allowance -- this allows for block processing times
     for (const nodeSyncLog of nodeSyncLogs) {
+      const { node, blockHeight } = nodeSyncLog
+      const { serviceUrl: serviceURL } = node
+      const serviceDomain = extractDomain(serviceURL)
+
       const relayStart = process.hrtime()
 
       // Record the node's blockheight with the allowed variance
-      const correctedNodeBlockHeight = nodeSyncLog.blockHeight + syncAllowance
+      const correctedNodeBlockHeight = blockHeight + syncAllowance
 
       // This allows for nodes to be slightly ahead but within allowance
       const maximumBlockHeight = isAltruistTrustworthy
         ? altruistBlockHeight + syncAllowance
         : highestNodeBlockHeight + syncAllowance
 
-      const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, nodeSyncLog.node.publicKey, requestID)
-
       if (
         nodeSyncLog.blockHeight <= maximumBlockHeight &&
         correctedNodeBlockHeight >= highestNodeBlockHeight &&
         correctedNodeBlockHeight >= altruistBlockHeight
       ) {
-        logger.log(
-          'info',
-          'SYNC CHECK IN-SYNC: ' + nodeSyncLog.node.publicKey + ' height: ' + nodeSyncLog.blockHeight,
-          {
-            requestID: requestID,
-            relayType: '',
-            blockchainID,
-            typeID: '',
-            serviceNode: nodeSyncLog.node.publicKey,
-            error: '',
-            elapsedTime: '',
-            origin: this.origin,
-            serviceURL,
-            serviceDomain,
-            sessionKey,
-          }
-        )
+        logger.log('info', 'SYNC CHECK IN-SYNC: ' + node.publicKey + ' height: ' + blockHeight, {
+          requestID: requestID,
+          blockchainID,
+          serviceNode: node.publicKey,
+          origin: this.origin,
+          serviceURL: node,
+          serviceDomain,
+          sessionKey,
+        })
 
         // Erase failure mark
-        await this.redis.set(
-          blockchainID + '-' + nodeSyncLog.node.publicKey + '-failure',
-          'false',
-          'EX',
-          60 * 60 * 24 * 30
-        )
+        await this.redis.set(blockchainID + '-' + node.publicKey + '-failure', 'false', 'EX', 60 * 60 * 24 * 30)
 
         // In-sync: add to nodes list
-        syncedNodes.push(nodeSyncLog.node)
-        syncedNodesList.push(nodeSyncLog.node.publicKey)
+        syncedNodes.push(node)
+        syncedNodesList.push(node.publicKey)
       } else {
-        logger.log('info', 'SYNC CHECK BEHIND: ' + nodeSyncLog.node.publicKey + ' height: ' + nodeSyncLog.blockHeight, {
+        logger.log('info', 'SYNC CHECK BEHIND: ' + node.publicKey + ' height: ' + nodeSyncLog.blockHeight, {
           requestID: requestID,
-          relayType: '',
           blockchainID,
-          typeID: '',
-          serviceNode: nodeSyncLog.node.publicKey,
-          error: '',
-          elapsedTime: '',
+          serviceNode: node.publicKey,
           origin: this.origin,
           serviceURL,
           serviceDomain,
@@ -325,13 +284,13 @@ export class SyncChecker {
             applicationID: applicationID,
             applicationPublicKey: applicationPublicKey,
             blockchainID,
-            serviceNode: nodeSyncLog.node.publicKey,
+            serviceNode: node.publicKey,
             relayStart,
             result: 500,
             bytes: Buffer.byteLength('OUT OF SYNC', 'utf8'),
             fallback: false,
             method: 'synccheck',
-            error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${highestNodeBlockHeight} - altruist block height: ${altruistBlockHeight} - nodes height: ${nodeSyncLog.blockHeight} - sync allowance: ${syncAllowance}`,
+            error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${highestNodeBlockHeight} - altruist block height: ${altruistBlockHeight} - nodes height: ${blockHeight} - sync allowance: ${syncAllowance}`,
             code: undefined,
             origin: this.origin,
             data: undefined,
@@ -342,7 +301,7 @@ export class SyncChecker {
               requestID: requestID,
               relayType: 'APP',
               typeID: applicationID,
-              serviceNode: nodeSyncLog.node.publicKey,
+              serviceNode: node.publicKey,
             })
           })
       }
@@ -350,11 +309,6 @@ export class SyncChecker {
 
     logger.log('info', 'SYNC CHECK COMPLETE: ' + syncedNodes.length + ' nodes in sync', {
       requestID: requestID,
-      relayType: '',
-      typeID: '',
-      serviceNode: '',
-      error: '',
-      elapsedTime: '',
       blockchainID,
       origin: this.origin,
       sessionKey,
@@ -395,12 +349,8 @@ export class SyncChecker {
       return 0
     } catch (e) {
       logger.log('error', e.message, {
-        requestID: '',
         relayType: 'FALLBACK',
-        typeID: '',
         serviceNode: 'fallback:' + redactedAltruistURL,
-        error: '',
-        elapsedTime: '',
         origin: this.origin,
       })
     }
@@ -493,6 +443,9 @@ export class SyncChecker {
     session: Session
   ): Promise<NodeSyncLog> {
     const { nodes } = session || {}
+    const { serviceUrl: serviceURL } = node
+    const serviceDomain = extractDomain(serviceURL)
+
     // Pull the current block from each node using the blockchain's syncCheck as the relay
     const relayStart = process.hrtime()
 
@@ -518,8 +471,6 @@ export class SyncChecker {
       relay = error
     }
 
-    const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
-
     if (!(relay instanceof Error) && checkEnforcementJSON(relay.response)) {
       const payload = JSON.parse(relay.response) // object that may not include 'resultKey'
 
@@ -534,11 +485,7 @@ export class SyncChecker {
 
       logger.log('info', 'SYNC CHECK RESULT: ' + JSON.stringify(nodeSyncLog), {
         requestID: requestID,
-        relayType: '',
-        typeID: '',
         serviceNode: node.publicKey,
-        error: '',
-        elapsedTime: '',
         blockchainID,
         origin: this.origin,
         serviceURL,
@@ -550,11 +497,7 @@ export class SyncChecker {
     } else if (relay instanceof Error) {
       logger.log('error', 'SYNC CHECK ERROR: ' + JSON.stringify(relay), {
         requestID: requestID,
-        relayType: '',
-        typeID: '',
         serviceNode: node.publicKey,
-        error: '',
-        elapsedTime: '',
         blockchainID,
         origin: this.origin,
         serviceURL,
@@ -599,11 +542,7 @@ export class SyncChecker {
     } else {
       logger.log('error', 'SYNC CHECK ERROR UNHANDLED: ' + JSON.stringify(relay), {
         requestID: requestID,
-        relayType: '',
-        typeID: '',
         serviceNode: node.publicKey,
-        error: '',
-        elapsedTime: '',
         blockchainID,
         origin: this.origin,
         serviceURL,

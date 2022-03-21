@@ -1,13 +1,13 @@
 import process from 'process'
 import { Session } from '@pokt-foundation/pocketjs-types'
 import { Logger } from 'ajv'
+import extractDomain from 'extract-domain'
 import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
 
 import pgFormat from 'pg-format'
 import { Point, WriteApi } from '@influxdata/influxdb-client'
 
-import { getNodeNetworkData } from '../utils/cache'
 import { BLOCK_TIMING_ERROR } from '../utils/constants'
 import { CherryPicker } from './cherry-picker'
 const os = require('os')
@@ -87,6 +87,18 @@ export class MetricsRecorder {
     try {
       const { key: sessionKey } = session || {}
 
+      let serviceURL = ''
+      let serviceDomain = ''
+
+      if (session) {
+        const node = session.nodes.find((n) => n.publicKey === serviceNode)
+        if (node) {
+          serviceURL = node.serviceUrl
+          // @ts-ignore
+          serviceDomain = extractDomain(serviceURL)
+        }
+      }
+
       // Might come empty
       applicationPublicKey = applicationPublicKey || 'no_public_key'
 
@@ -100,16 +112,6 @@ export class MetricsRecorder {
 
       if (fallback) {
         fallbackTag = ' FALLBACK'
-      }
-
-      let serviceURL = ''
-      let serviceDomain = ''
-
-      if (serviceNode && !fallback) {
-        const node = await getNodeNetworkData(this.redis, serviceNode, requestID)
-
-        serviceURL = node.serviceURL
-        serviceDomain = node.serviceDomain
       }
 
       // Parse value if coming as BigInt
