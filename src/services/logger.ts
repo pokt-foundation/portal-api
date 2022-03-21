@@ -61,7 +61,7 @@ const consoleFormat = printf(
     sticky = 'NONE',
     gigastakeAppID = '',
   }: Log) => {
-    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${serviceURL}] [${serviceDomain}] [${sessionKey}] [${sessionKey}] [${error}] [${elapsedTime}] [${blockchainID}] [${origin}] [sticky: ${sticky}] [${gigastakeAppID}] ${message}`
+    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${serviceURL}] [${serviceDomain}] [${sessionKey}] [${error}] [${elapsedTime}] [${blockchainID}] [${origin}] [sticky: ${sticky}] [${gigastakeAppID}] ${message}`
   }
 )
 
