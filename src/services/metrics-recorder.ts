@@ -86,8 +86,7 @@ export class MetricsRecorder {
     sessionBlockHeight?: number | BigInt
   }): Promise<void> {
     try {
-      const { nodes } = session || {}
-      const sessionHash = await hashBlockchainNodes(blockchainID, nodes, this.redis)
+      const { key: sessionKey } = session || {}
 
       // Might come empty
       applicationPublicKey = applicationPublicKey || 'no_public_key'
@@ -130,7 +129,7 @@ export class MetricsRecorder {
           error: '',
           origin,
           blockchainID,
-          sessionHash,
+          sessionKey,
           sticky,
           sessionBlockHeight,
         })
@@ -147,7 +146,7 @@ export class MetricsRecorder {
           error,
           origin,
           blockchainID,
-          sessionHash,
+          sessionKey,
           sticky,
           sessionBlockHeight,
         })
@@ -164,7 +163,7 @@ export class MetricsRecorder {
           error,
           origin,
           blockchainID,
-          sessionHash,
+          sessionKey,
           sticky,
           sessionBlockHeight,
         })
