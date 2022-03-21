@@ -9,7 +9,6 @@ import { Point, WriteApi } from '@influxdata/influxdb-client'
 
 import { getNodeNetworkData } from '../utils/cache'
 import { BLOCK_TIMING_ERROR } from '../utils/constants'
-import { hashBlockchainNodes } from '../utils/helpers'
 import { CherryPicker } from './cherry-picker'
 const os = require('os')
 const logger = require('../services/logger')

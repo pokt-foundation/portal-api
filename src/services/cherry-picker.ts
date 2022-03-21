@@ -2,7 +2,6 @@ import { Node, Session } from '@pokt-foundation/pocketjs-types'
 import { Redis } from 'ioredis'
 import { Applications } from '../models'
 import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
-import { hashBlockchainNodes } from '../utils/helpers'
 
 const logger = require('../services/logger')
 
