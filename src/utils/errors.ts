@@ -4,7 +4,7 @@ export const EVM_ERROR_CODES = [
   // JSON RPC Standard errors
   '-32',
   // Execution reverted error
-  '-3',
+  '3',
 ]
 
 // EVM clients rely on JsonRpc standard, so we check for those errors.
