@@ -14,27 +14,24 @@ const logger = require('../services/logger')
  */
 export async function removeNodeFromSession(
   redis: Redis,
-  sessionkey: string,
+  sessionKey: string,
   nodes: Node[],
   nodePubKey: string,
   removeChecksFromCache = false,
   requestID?: string,
   blockchainID?: string
 ): Promise<void> {
-  const sessionKey = `session-key-${sessionkey}`
+  const sessionCacheKey = `session-key-${sessionKey}`
 
-  await redis.sadd(sessionKey, nodePubKey)
-  const nodesToRemoveTTL = await redis.ttl(sessionKey)
+  await redis.sadd(sessionCacheKey, nodePubKey)
+  const nodesToRemoveTTL = await redis.ttl(sessionCacheKey)
 
   if (nodesToRemoveTTL < 0) {
-    await redis.expire(sessionKey, 3600) // 1 hour
+    await redis.expire(sessionCacheKey, 3600) // 1 hour
   }
 
-  /*
-  RE-ENABLE LOGS to check which nodes are getting removed
-  */
   logger.log('warn', 'Exhausted node removed', {
-    sessionKey,
+    sessionKey: sessionKey,
     serviceNode: nodePubKey,
     requestID,
     blockchainID,
