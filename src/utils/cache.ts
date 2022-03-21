@@ -38,7 +38,7 @@ export async function removeNodeFromSession(
   /*
   RE-ENABLE LOGS to check which nodes are getting removed
   */
-  logger.warn('info', 'Exhausted node removed', {
+  logger.log('warn', 'Exhausted node removed', {
     sessionKey,
     serviceNode: nodePubKey,
     requestID,
