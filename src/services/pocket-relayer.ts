@@ -24,7 +24,6 @@ import {
 } from '../utils/enforcements'
 import { getApplicationPublicKey } from '../utils/helpers'
 import { parseJSONRPCError, parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
-import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
 import { CheckResult, RelayResponse, SendRelayOptions } from '../utils/types'
 import { enforceEVMLimits } from './limiter'
@@ -61,7 +60,6 @@ export class PocketRelayer {
     userAgent,
     ipAddress,
     relayer,
-    pocketConfiguration,
     cherryPicker,
     metricsRecorder,
     syncChecker,
@@ -82,7 +80,6 @@ export class PocketRelayer {
     userAgent: string
     ipAddress: string
     relayer: Relayer
-    pocketConfiguration: Configuration
     cherryPicker: CherryPicker
     metricsRecorder: MetricsRecorder
     syncChecker: SyncChecker
@@ -103,7 +100,6 @@ export class PocketRelayer {
     this.userAgent = userAgent
     this.ipAddress = ipAddress
     this.relayer = relayer
-    this.pocketConfiguration = pocketConfiguration
     this.cherryPicker = cherryPicker
     this.metricsRecorder = metricsRecorder
     this.syncChecker = syncChecker
@@ -850,13 +846,6 @@ export class PocketRelayer {
       })
     }
 
-    // Adjust Pocket Configuration for a custom requestTimeOut
-    let relayConfiguration = this.pocketConfiguration
-
-    if (requestTimeOut) {
-      relayConfiguration = updateConfiguration(this.pocketConfiguration, requestTimeOut)
-    }
-
     // TODO: Refactor try/catch to go with current flow
     let relay: RelayResponse | Error
 
@@ -875,12 +864,6 @@ export class PocketRelayer {
     }
 
     if (this.checkDebug) {
-      logger.log('debug', JSON.stringify(relayConfiguration), {
-        requestID,
-        relayType: 'APP',
-        typeID: application.id,
-        serviceNode: node?.publicKey,
-      })
       logger.log('debug', JSON.stringify(relay), {
         requestID,
         relayType: 'APP',
