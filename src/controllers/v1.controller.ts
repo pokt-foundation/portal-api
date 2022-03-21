@@ -435,7 +435,6 @@ export class V1Controller {
 
       if (gigastakeApp) {
         gigastakeApp.gatewaySettings = application.gatewaySettings
-
         application = gigastakeApp
       }
 
