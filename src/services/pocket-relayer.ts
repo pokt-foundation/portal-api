@@ -306,8 +306,7 @@ export class PocketRelayer {
                 origin: this.origin,
                 data,
                 session: this.session,
-                // TODO: Add servicerPublicKey again once is implemented on sdk
-                // sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relayResponse.proof.servicerPubKey),
+                sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relay.serviceNode.publicKey),
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
               })
               .catch(function log(e) {
