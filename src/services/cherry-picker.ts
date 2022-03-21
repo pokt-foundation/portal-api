@@ -94,7 +94,7 @@ export class CherryPicker {
     nodes: Node[],
     blockchain: string,
     requestID: string,
-    sessionCacheKey: string
+    sessionKey: string
   ): Promise<Node> {
     const rawNodes = {} as { [nodePublicKey: string]: Node }
     const rawNodeIDs = [] as string[]
@@ -117,7 +117,7 @@ export class CherryPicker {
     // logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
     //   requestID: requestID,
     //   blockchainID: blockchain,
-    //   sessionHash: sessionCacheKey,
+    //   sessionKey: sessionKey,
     // })
 
     // Iterate through sorted logs and form in to a weighted list
@@ -330,7 +330,6 @@ export class CherryPicker {
   ): Promise<void> {
     // TODO: Improve naming
     const { key: sessionKey, nodes } = pocketSession || {}
-    const sessionHash = await hashBlockchainNodes(blockchainID, nodes, this.redis)
 
     // FIXME: This is not a reliable way on asserting whether is a service node,
     // an issue was created on pocket-tools for a 'isPublicKey' function. Once is
@@ -340,7 +339,7 @@ export class CherryPicker {
     }
 
     let timeoutCounter = 0
-    const key = `node-${serviceNode}-${sessionHash}-timeout`
+    const key = `node-${serviceNode}-${sessionKey}-timeout`
     const timeoutCounterCached = await this.redis.get(key)
 
     if (timeoutCounterCached) {
@@ -358,7 +357,6 @@ export class CherryPicker {
           sessionKey,
           serviceURL,
           serviceDomain,
-          sessionHash,
         })
         await removeNodeFromSession(this.redis, blockchainID, nodes, serviceNode)
       }

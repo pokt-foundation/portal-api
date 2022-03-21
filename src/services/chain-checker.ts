@@ -43,13 +43,13 @@ export class ChainChecker {
     session,
     path,
   }: ChainIDFilterOptions): Promise<CheckResult> {
-    const { key } = session
+    const { key: sessionKey } = session
 
     const CheckedNodes: Node[] = []
     let CheckedNodesList: string[] = []
 
     // Value is an array of node public keys that have passed Chain checks for this session in the past 5 minutes
-    const checkedNodesKey = `chain-check-${key}`
+    const checkedNodesKey = `chain-check-${sessionKey}`
     const CheckedNodesCached = await this.redis.get(checkedNodesKey)
 
     const cached = Boolean(CheckedNodesCached)
@@ -87,7 +87,7 @@ export class ChainChecker {
       applicationPublicKey,
       relayer,
       pocketAAT,
-      sessionHash: key,
+      sessionKey,
       pocketConfiguration,
       session,
     }
@@ -134,7 +134,7 @@ export class ChainChecker {
             origin: this.origin,
             serviceURL,
             serviceDomain,
-            sessionHash: key,
+            sessionKey,
           }
         )
 
@@ -156,7 +156,7 @@ export class ChainChecker {
             origin: this.origin,
             serviceURL,
             serviceDomain,
-            sessionHash: key,
+            sessionKey,
           }
         )
       }
@@ -171,7 +171,7 @@ export class ChainChecker {
       elapsedTime: '',
       blockchainID,
       origin: this.origin,
-      sessionHash: key,
+      sessionKey,
     })
     await this.redis.set(
       checkedNodesKey,
@@ -196,7 +196,7 @@ export class ChainChecker {
     applicationPublicKey,
     relayer,
     pocketAAT,
-    sessionHash,
+    sessionKey,
     pocketConfiguration,
     session,
     path,
@@ -223,7 +223,7 @@ export class ChainChecker {
         applicationPublicKey,
         relayer,
         pocketAAT,
-        sessionHash,
+        sessionKey,
         pocketConfiguration,
         session,
         path,
@@ -442,7 +442,7 @@ interface BaseChainLogOptions {
   relayer: Relayer
   pocketAAT: PocketAAT
   pocketConfiguration: Configuration
-  sessionHash: string
+  sessionKey: string
   session: Session
   path?: string
 }

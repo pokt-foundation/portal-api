@@ -24,7 +24,6 @@ interface Log {
   serviceURL: string
   serviceDomain: string
   sessionKey: string
-  sessionHash: string
   sticky: string
   gigastakeAppID: string
 }
@@ -59,11 +58,10 @@ const consoleFormat = printf(
     serviceURL = '',
     serviceDomain = '',
     sessionKey = '',
-    sessionHash = '',
     sticky = 'NONE',
     gigastakeAppID = '',
   }: Log) => {
-    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${serviceURL}] [${serviceDomain}] [${sessionKey}] [${sessionHash}] [${error}] [${elapsedTime}] [${blockchainID}] [${origin}] [sticky: ${sticky}] [${gigastakeAppID}] ${message}`
+    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${serviceURL}] [${serviceDomain}] [${sessionKey}] [${sessionKey}] [${error}] [${elapsedTime}] [${blockchainID}] [${origin}] [sticky: ${sticky}] [${gigastakeAppID}] ${message}`
   }
 )
 

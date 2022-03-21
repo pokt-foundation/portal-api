@@ -48,13 +48,13 @@ export class SyncChecker {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
     const syncAllowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
 
-    const { key } = session
+    const { key: sessionKey } = session
 
     const syncedNodes: Node[] = []
     let syncedNodesList: string[] = []
 
     // Value is an array of node public keys that have passed sync checks for this session in the past 5 minutes
-    const syncedNodesKey = `sync-check-${key}`
+    const syncedNodesKey = `sync-check-${sessionKey}`
     const syncedNodesCached = await this.redis.get(syncedNodesKey)
 
     const cached = Boolean(syncedNodesCached)
@@ -92,8 +92,6 @@ export class SyncChecker {
       applicationPublicKey,
       relayer,
       pocketAAT,
-      pocketConfiguration,
-      key,
       session
     )
 
@@ -130,7 +128,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
-        sessionHash: key,
+        sessionKey,
       })
       errorState = true
     }
@@ -156,7 +154,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
-        sessionHash: key,
+        sessionKey,
       })
       errorState = true
     } else {
@@ -180,7 +178,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
-        sessionHash: key,
+        sessionKey,
       })
       errorState = true
     }
@@ -201,7 +199,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
-        sessionHash: key,
+        sessionKey,
       })
 
       if (errorState) {
@@ -217,7 +215,7 @@ export class SyncChecker {
         error: '',
         elapsedTime: '',
         origin: this.origin,
-        sessionHash: key,
+        sessionKey,
       })
 
       // If altruist height > 0, get the percent of nodes above altruist's block height
@@ -241,7 +239,7 @@ export class SyncChecker {
             error: '',
             elapsedTime: '',
             origin: this.origin,
-            sessionHash: key,
+            sessionKey,
           }
         )
 
@@ -291,7 +289,7 @@ export class SyncChecker {
             origin: this.origin,
             serviceURL,
             serviceDomain,
-            sessionHash: key,
+            sessionKey,
           }
         )
 
@@ -318,7 +316,7 @@ export class SyncChecker {
           origin: this.origin,
           serviceURL,
           serviceDomain,
-          sessionHash: key,
+          sessionKey,
         })
 
         this.metricsRecorder
@@ -359,7 +357,7 @@ export class SyncChecker {
       elapsedTime: '',
       blockchainID,
       origin: this.origin,
-      sessionHash: key,
+      sessionKey,
     })
     await this.redis.set(
       syncedNodesKey,
@@ -418,9 +416,7 @@ export class SyncChecker {
     applicationPublicKey: string,
     relayer: Relayer,
     pocketAAT: PocketAAT,
-    pocketConfiguration: Configuration,
-    sessionHash: string,
-    pocketSession: Session
+    session: Session
   ): Promise<NodeSyncLog[]> {
     const nodeSyncLogs: NodeSyncLog[] = []
     const promiseStack: Promise<NodeSyncLog>[] = []
@@ -445,8 +441,7 @@ export class SyncChecker {
           applicationPublicKey,
           relayer,
           pocketAAT,
-          sessionHash,
-          pocketSession
+          session
         )
       )
     }
@@ -495,8 +490,7 @@ export class SyncChecker {
     applicationPublicKey: string,
     relayer: Relayer,
     pocketAAT: PocketAAT,
-    sessionHash: string,
-    session?: Session
+    session: Session
   ): Promise<NodeSyncLog> {
     const { nodes } = session || {}
     // Pull the current block from each node using the blockchain's syncCheck as the relay
@@ -549,7 +543,7 @@ export class SyncChecker {
         origin: this.origin,
         serviceURL,
         serviceDomain,
-        sessionHash,
+        sessionKey: session.key,
       })
       // Success
       return nodeSyncLog
@@ -565,7 +559,7 @@ export class SyncChecker {
         origin: this.origin,
         serviceURL,
         serviceDomain,
-        sessionHash,
+        sessionKey: session.key,
       })
 
       if (relay instanceof EvidenceSealedError) {
@@ -614,7 +608,7 @@ export class SyncChecker {
         origin: this.origin,
         serviceURL,
         serviceDomain,
-        sessionHash,
+        sessionKey: session.key,
       })
 
       this.metricsRecorder
