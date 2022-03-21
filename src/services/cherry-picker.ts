@@ -328,7 +328,7 @@ export class CherryPicker {
     pocketSession?: Session
   ): Promise<void> {
     // TODO: Improve naming
-    const { key: sessionKey, nodes } = pocketSession || {}
+    const { key: sessionKey } = pocketSession || {}
 
     // FIXME: This is not a reliable way on asserting whether is a service node,
     // an issue was created on pocket-tools for a 'isPublicKey' function. Once is

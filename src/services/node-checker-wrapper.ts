@@ -1,7 +1,5 @@
 import { Redis } from 'ioredis'
 import { Pocket, Node, PocketAAT, Configuration, Session } from '@pokt-network/pocket-js'
-import { removeNodeFromSession } from '../utils/cache'
-import { MAX_RELAYS_ERROR } from '../utils/constants'
 import { hashBlockchainNodes } from '../utils/helpers'
 import { MetricsRecorder } from './metrics-recorder'
 import { ArchivalCheck, ChainCheck, Check, NodeChecker, NodeCheckResponse, SyncCheck } from './node-checker'

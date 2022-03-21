@@ -442,7 +442,6 @@ export class SyncChecker {
     pocketAAT: PocketAAT,
     session: Session
   ): Promise<NodeSyncLog> {
-    const { nodes } = session || {}
     const { serviceUrl: serviceURL } = node
     const serviceDomain = extractDomain(serviceURL)
 

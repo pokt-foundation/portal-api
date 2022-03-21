@@ -262,7 +262,7 @@ export class ChainChecker {
     session,
     path,
   }: GetNodeChainLogOptions): Promise<NodeChainLog> {
-    const { key, nodes } = session || {}
+    const { key } = session || {}
     const { serviceUrl: serviceURL } = node
     const serviceDomain = extractDomain(serviceURL)
 
