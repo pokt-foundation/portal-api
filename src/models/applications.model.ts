@@ -63,7 +63,19 @@ export class Applications extends Entity {
     required: false,
     defautl: {},
   })
-  stickinessOptions?: StickinessOptions;
+  stickinessOptions?: StickinessOptions
+
+  @property({
+    type: 'object',
+    required: true,
+  })
+  gatewayAAT: GatewayAAT
+
+  @property({
+    type: 'object',
+    required: true,
+  })
+  gatewaySettings: GatewaySettings;
 
   // Define well-known properties here
 
@@ -87,4 +99,18 @@ export type PocketAccount = {
   address: string
   publicKey: string
   privateKey?: string
+}
+
+type GatewayAAT = {
+  version: string
+  clientPublicKey: string
+  applicationPublicKey: string
+  applicationSignature: string
+}
+
+type GatewaySettings = {
+  whitelistOrigins: string[]
+  whitelistUserAgents: string[]
+  secretKeyRequired: boolean
+  secretKey: string
 }
