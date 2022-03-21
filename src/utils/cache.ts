@@ -19,12 +19,14 @@ const POCKET_NETWORK_NODE_URL = String(process.env.POCKET_NETWORK_NODE_URL)
  */
 export async function removeNodeFromSession(
   redis: Redis,
-  sessionSkey: string,
+  sessionkey: string,
   nodes: Node[],
   nodePubKey: string,
-  removeChecksFromCache = false
+  removeChecksFromCache = false,
+  requestID?: string,
+  blockchainID?: string
 ): Promise<void> {
-  const sessionKey = `session-key-${sessionSkey}`
+  const sessionKey = `session-key-${sessionkey}`
 
   await redis.sadd(sessionKey, nodePubKey)
   const nodesToRemoveTTL = await redis.ttl(sessionKey)
@@ -32,6 +34,16 @@ export async function removeNodeFromSession(
   if (nodesToRemoveTTL < 0) {
     await redis.expire(sessionKey, 3600) // 1 hour
   }
+
+  /*
+  RE-ENABLE LOGS to check which nodes are getting removed
+  */
+  logger.warn('info', 'Exhausted node removed', {
+    sessionKey,
+    serviceNode: nodePubKey,
+    requestID,
+    blockchainID,
+  })
 
   if (removeChecksFromCache) {
     await removeChecksCache(redis, sessionKey, nodes)
