@@ -1,7 +1,6 @@
 import axios from 'axios'
 import { Redis } from 'ioredis'
 import { Configuration, Node, Pocket, PocketAAT, Session } from '@pokt-network/pocket-js'
-import { getNodeNetworkData } from '../utils/cache'
 import { hashBlockchainNodes, measuredPromise } from '../utils/helpers'
 import { MetricsRecorder } from './metrics-recorder'
 import { NodeChecker, NodeCheckResponse, SyncCheck } from './node-checker'
@@ -197,7 +196,6 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
           output: { blockHeight },
         } = node.value.value
 
-        const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, publicKey, requestID)
         const syncedNode = syncSuccess.find(({ node: { publicKey: nodePublicKey } }) => nodePublicKey === publicKey)
 
         if (!syncedNode) {
@@ -206,8 +204,9 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
             serviceNode: publicKey,
             blockchainID,
             origin: this.origin,
-            serviceURL,
-            serviceDomain,
+            // TODO: FIX
+            serviceURL: '',
+            serviceDomain: '',
             sessionHash,
           })
 
@@ -246,8 +245,8 @@ export class PocketSyncChecker extends NodeCheckerWrapper {
           serviceNode: publicKey,
           blockchainID,
           origin: this.origin,
-          serviceURL,
-          serviceDomain,
+          serviceURL: '',
+          serviceDomain: '',
           sessionHash,
         })
 

@@ -1,6 +1,6 @@
 import { Redis } from 'ioredis'
 import { Pocket, Node, PocketAAT, Configuration, Session } from '@pokt-network/pocket-js'
-import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
+import { removeNodeFromSession } from '../utils/cache'
 import { MAX_RELAYS_ERROR } from '../utils/constants'
 import { hashBlockchainNodes } from '../utils/helpers'
 import { MetricsRecorder } from './metrics-recorder'
@@ -90,8 +90,6 @@ export class NodeCheckerWrapper {
     for (const [idx, check] of checksResult.entries()) {
       const node = nodes[idx]
 
-      const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, node.publicKey, requestID)
-
       // helps debugging
       const formattedType = checkType.replace('-', ' ').toUpperCase()
 
@@ -107,8 +105,8 @@ export class NodeCheckerWrapper {
           serviceNode: node.publicKey,
           blockchainID,
           origin: this.origin,
-          serviceURL,
-          serviceDomain,
+          serviceURL: '',
+          serviceDomain: '',
           sessionHash,
         })
 
@@ -200,8 +198,8 @@ export class NodeCheckerWrapper {
         serviceNode: node.publicKey,
         blockchainID,
         origin: this.origin,
-        serviceURL,
-        serviceDomain,
+        serviceURL: '',
+        serviceDomain: '',
         sessionHash,
       })
 
@@ -212,8 +210,8 @@ export class NodeCheckerWrapper {
           serviceNode: node.publicKey,
           blockchainID,
           origin: this.origin,
-          serviceURL,
-          serviceDomain,
+          serviceURL: '',
+          serviceDomain: '',
           sessionHash,
         })
       }
