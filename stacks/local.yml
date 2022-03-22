@@ -1,26 +1,26 @@
 version: '3.5'
 
 services:
-  # gateway:
-  #   image: pocket-network/gateway
-  #   container_name: gateway
-  #   build:
-  #     context: ..
-  #     dockerfile: ./Dockerfile
-  #   command: npm run start:watch
-  #   env_file:
-  #     - ../.env
-  #   ports:
-  #     - 3000:3000
-  #   volumes:
-  #     - '../src:/usr/src/gateway/src'
-  #     - '../dist:/usr/src/gateway/dist'
-  #   depends_on:
-  #     - db
-  #     - cache
-  #     - metricsdb
-  #   networks:
-  #     - pocket
+  gateway:
+    image: pocket-network/gateway
+    container_name: gateway
+    build:
+      context: ..
+      dockerfile: ./Dockerfile
+    command: npm run start:watch
+    env_file:
+      - ../.env
+    ports:
+      - 3000:3000
+    volumes:
+      - '../src:/usr/src/gateway/src'
+      - '../dist:/usr/src/gateway/dist'
+    depends_on:
+      - db
+      - cache
+      - metricsdb
+    networks:
+      - pocket
 
   db:
     image: mongo:5.0.6
@@ -45,6 +45,7 @@ services:
     networks:
       - pocket
 
+  # DB to store errors
   metricsdb:
     container_name: metricsdb
     image: timescale/timescaledb:2.0.2-pg12
