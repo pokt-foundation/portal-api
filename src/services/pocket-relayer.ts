@@ -637,7 +637,7 @@ export class PocketRelayer {
         // @ts-ignore
         session.nodes.forEach((node) => (node.stakedTokens = node.stakedTokens.toString()))
 
-        await this.redis.set(sessionCacheKey, JSON.stringify(session), 'EX', 120)
+        await this.redis.set(sessionCacheKey, JSON.stringify(session), 'EX', 200)
       }
     } catch (error) {
       logger.log('error', 'ERROR obtaining a session: ' + error, {
