@@ -256,7 +256,6 @@ describe('Cherry p  icker service (unit)', () => {
       await cherryPicker.updateServiceQuality(blockchain, 'appID', id, elapseTime, result)
 
       logs = await redis.get(blockchain + '-' + id + '-service')
-      console.log(logs)
       expect(JSON.parse(logs)).to.be.deepEqual(JSON.parse(expectedLogs))
     })
 
