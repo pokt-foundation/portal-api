@@ -3,7 +3,6 @@ import RedisMock from 'ioredis-mock'
 import { expect } from '@loopback/testlab'
 import { Applications } from '../../src/models'
 import { CherryPicker } from '../../src/services/cherry-picker'
-import { hashBlockchainNodes } from '../../src/utils/helpers'
 import { PocketMock } from '../mocks/pocketjs'
 
 describe('Cherry p  icker service (unit)', () => {
