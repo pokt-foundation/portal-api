@@ -77,7 +77,6 @@
     "@pokt-foundation/pocketjs-signer": "^0.0.6",
     "@pokt-foundation/pocketjs-types": "^0.0.6",
     "@pokt-foundation/pocketjs-utils": "^0.0.6",
-    "@pokt-network/pocket-js": "^0.7.0-rc",
     "assert": "^2.0.0",
     "aws-sdk": "^2.1023.0",
     "axios": "^0.25.0",

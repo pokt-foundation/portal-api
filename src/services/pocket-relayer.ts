@@ -1,9 +1,8 @@
 import { EvidenceSealedError, Relayer } from '@pokt-foundation/pocketjs-relayer'
-import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
+import { Session, Node, PocketAAT, HTTPMethod } from '@pokt-foundation/pocketjs-types'
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
 import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
-import { Configuration, HTTPMethod } from '@pokt-network/pocket-js'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
 import { Applications } from '../models'
@@ -24,7 +23,6 @@ import {
 } from '../utils/enforcements'
 import { getApplicationPublicKey } from '../utils/helpers'
 import { parseJSONRPCError, parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
-import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
 import { CheckResult, RelayResponse, SendRelayOptions } from '../utils/types'
 import { enforceEVMLimits } from './limiter'
@@ -38,7 +36,6 @@ export class PocketRelayer {
   userAgent: string
   ipAddress: string
   relayer: Relayer
-  pocketConfiguration: Configuration
   cherryPicker: CherryPicker
   metricsRecorder: MetricsRecorder
   syncChecker: SyncChecker
@@ -61,7 +58,6 @@ export class PocketRelayer {
     userAgent,
     ipAddress,
     relayer,
-    pocketConfiguration,
     cherryPicker,
     metricsRecorder,
     syncChecker,
@@ -82,7 +78,6 @@ export class PocketRelayer {
     userAgent: string
     ipAddress: string
     relayer: Relayer
-    pocketConfiguration: Configuration
     cherryPicker: CherryPicker
     metricsRecorder: MetricsRecorder
     syncChecker: SyncChecker
@@ -103,7 +98,6 @@ export class PocketRelayer {
     this.userAgent = userAgent
     this.ipAddress = ipAddress
     this.relayer = relayer
-    this.pocketConfiguration = pocketConfiguration
     this.cherryPicker = cherryPicker
     this.metricsRecorder = metricsRecorder
     this.syncChecker = syncChecker
@@ -706,7 +700,6 @@ export class PocketRelayer {
         chainCheck: blockchainIDCheck,
         chainID: parseInt(blockchainChainID),
         relayer: this.relayer,
-        pocketConfiguration: this.pocketConfiguration,
         session,
         path: blockchainPath,
       }
@@ -726,7 +719,6 @@ export class PocketRelayer {
         applicationPublicKey,
         relayer: this.relayer,
         pocketAAT: pocketAAT,
-        pocketConfiguration: this.pocketConfiguration,
         session: session,
       }
 
@@ -850,13 +842,6 @@ export class PocketRelayer {
       })
     }
 
-    // Adjust Pocket Configuration for a custom requestTimeOut
-    let relayConfiguration = this.pocketConfiguration
-
-    if (requestTimeOut) {
-      relayConfiguration = updateConfiguration(this.pocketConfiguration, requestTimeOut)
-    }
-
     // TODO: Refactor try/catch to go with current flow
     let relay: RelayResponse | Error
 
@@ -869,18 +854,15 @@ export class PocketRelayer {
         path: relayPath,
         pocketAAT,
         session,
+        options: {
+          timeout: requestTimeOut || DEFAULT_ALTRUIST_TIMEOUT,
+        },
       })
     } catch (error) {
       relay = error
     }
 
     if (this.checkDebug) {
-      logger.log('debug', JSON.stringify(relayConfiguration), {
-        requestID,
-        relayType: 'APP',
-        typeID: application.id,
-        serviceNode: node?.publicKey,
-      })
       logger.log('debug', JSON.stringify(relay), {
         requestID,
         relayType: 'APP',

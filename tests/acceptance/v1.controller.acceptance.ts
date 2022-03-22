@@ -313,7 +313,6 @@ describe('V1 controller (acceptance)', () => {
 
     relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
       '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
-    //@ts-ignore
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client

@@ -7,7 +7,6 @@ import {
 import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
 import extractDomain from 'extract-domain'
 import { Redis } from 'ioredis'
-import { Configuration } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { removeChecksCache, removeNodeFromSession, removeSessionCache } from '../utils/cache'
@@ -40,7 +39,6 @@ export class ChainChecker {
     applicationID,
     applicationPublicKey,
     pocketAAT,
-    pocketConfiguration,
     session,
     path,
   }: ChainIDFilterOptions): Promise<CheckResult> {
@@ -88,9 +86,8 @@ export class ChainChecker {
       applicationPublicKey,
       relayer,
       pocketAAT,
-      sessionKey,
-      pocketConfiguration,
       session,
+      path,
     }
     const nodeChainLogs = await this.getNodeChainLogs(options)
 
@@ -180,8 +177,6 @@ export class ChainChecker {
     applicationPublicKey,
     relayer,
     pocketAAT,
-    sessionKey,
-    pocketConfiguration,
     session,
     path,
   }: GetNodesChainLogsOptions): Promise<NodeChainLog[]> {
@@ -207,8 +202,6 @@ export class ChainChecker {
         applicationPublicKey,
         relayer,
         pocketAAT,
-        sessionKey,
-        pocketConfiguration,
         session,
         path,
       }
@@ -414,8 +407,6 @@ interface BaseChainLogOptions {
   applicationPublicKey: string
   relayer: Relayer
   pocketAAT: PocketAAT
-  pocketConfiguration: Configuration
-  sessionKey: string
   session: Session
   path?: string
 }
@@ -438,7 +429,6 @@ export type ChainIDFilterOptions = {
   applicationID: string
   applicationPublicKey: string
   pocketAAT: PocketAAT
-  pocketConfiguration: Configuration
   session: Session
   path?: string
 }
