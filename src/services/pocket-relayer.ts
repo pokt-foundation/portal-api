@@ -1,9 +1,8 @@
 import { EvidenceSealedError, Relayer } from '@pokt-foundation/pocketjs-relayer'
-import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
+import { Session, Node, PocketAAT, HTTPMethod } from '@pokt-foundation/pocketjs-types'
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
 import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
-import { Configuration, HTTPMethod } from '@pokt-network/pocket-js'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
 import { Applications } from '../models'
@@ -37,7 +36,6 @@ export class PocketRelayer {
   userAgent: string
   ipAddress: string
   relayer: Relayer
-  pocketConfiguration: Configuration
   cherryPicker: CherryPicker
   metricsRecorder: MetricsRecorder
   syncChecker: SyncChecker
@@ -721,7 +719,6 @@ export class PocketRelayer {
         applicationPublicKey,
         relayer: this.relayer,
         pocketAAT: pocketAAT,
-        pocketConfiguration: this.pocketConfiguration,
         session: session,
       }
 
