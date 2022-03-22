@@ -8,7 +8,6 @@ import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
 import axios from 'axios'
 import extractDomain from 'extract-domain'
 import { Redis } from 'ioredis'
-import { Configuration } from '@pokt-network/pocket-js'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { removeNodeFromSession, removeSessionCache, removeChecksCache } from '../utils/cache'
@@ -43,7 +42,6 @@ export class SyncChecker {
     applicationPublicKey,
     relayer,
     pocketAAT,
-    pocketConfiguration,
     session,
   }: ConsensusFilterOptions): Promise<CheckResult> {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
@@ -638,6 +636,5 @@ export type ConsensusFilterOptions = {
   applicationPublicKey: string
   relayer: Relayer
   pocketAAT: PocketAAT
-  pocketConfiguration: Configuration
   session: Session
 }
