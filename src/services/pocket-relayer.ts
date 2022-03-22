@@ -828,8 +828,6 @@ export class PocketRelayer {
 
     let node: Node
 
-    console.log('KLK -=-', nodeSticker.preferredNodeAddress)
-
     if (nodeSticker.preferredNodeAddress) {
       node = await nodeSticker.getStickyNode(nodes, exhaustedNodes)
     }
@@ -859,6 +857,9 @@ export class PocketRelayer {
         path: relayPath,
         pocketAAT,
         session,
+        options: {
+          timeout: requestTimeOut || DEFAULT_ALTRUIST_TIMEOUT,
+        },
       })
     } catch (error) {
       relay = error
