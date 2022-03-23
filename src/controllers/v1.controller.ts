@@ -417,13 +417,6 @@ export class V1Controller {
       let application = await this.fetchApplication(id, filter)
 
       if (!application?.id) {
-        logger.log('error', 'Application not found', {
-          requestID: this.requestID,
-          relayType: 'APP',
-          typeID: id,
-          serviceNode: '',
-          origin: this.origin,
-        })
         throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('Application not found', -32056))
       }
 
