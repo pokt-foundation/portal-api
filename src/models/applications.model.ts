@@ -108,7 +108,7 @@ type GatewayAAT = {
   applicationSignature: string
 }
 
-type GatewaySettings = {
+export type GatewaySettings = {
   whitelistOrigins: string[]
   whitelistUserAgents: string[]
   secretKeyRequired: boolean
