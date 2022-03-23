@@ -1,12 +1,11 @@
+import { Node } from '@pokt-foundation/pocketjs-types'
 import RedisMock from 'ioredis-mock'
 import { expect } from '@loopback/testlab'
-import { Node, Session } from '@pokt-network/pocket-js'
 import { Applications } from '../../src/models'
 import { CherryPicker } from '../../src/services/cherry-picker'
-import { hashBlockchainNodes } from '../../src/utils/helpers'
 import { PocketMock } from '../mocks/pocketjs'
 
-describe('Cherry picker service (unit)', () => {
+describe('Cherry p  icker service (unit)', () => {
   let cherryPicker: CherryPicker
   let redis: RedisMock
 
@@ -257,7 +256,6 @@ describe('Cherry picker service (unit)', () => {
       await cherryPicker.updateServiceQuality(blockchain, 'appID', id, elapseTime, result)
 
       logs = await redis.get(blockchain + '-' + id + '-service')
-      console.log(logs)
       expect(JSON.parse(logs)).to.be.deepEqual(JSON.parse(expectedLogs))
     })
 
@@ -296,36 +294,22 @@ describe('Cherry picker service (unit)', () => {
       const elapsedTime = 2.5
       const requestTimeout = 10
 
-      const pocketSession = (await new PocketMock()
-        .object()
-        .sessionManager.getCurrentSession(undefined, undefined, undefined, undefined)) as Session
+      const session = await new PocketMock().object().getNewSession(undefined)
 
-      const { sessionNodes } = pocketSession
+      await cherryPicker.updateBadNodeTimeoutQuality(blockchain, nodePublicKey, elapsedTime, requestTimeout, session)
 
-      await cherryPicker.updateBadNodeTimeoutQuality(
-        blockchain,
-        nodePublicKey,
-        elapsedTime,
-        requestTimeout,
-        pocketSession
-      )
+      const sessionCachedKey = `session-key-${session.key}`
 
-      let removedNodes = await redis.smembers(`session-${await hashBlockchainNodes(blockchain, sessionNodes, redis)}`)
+      let removedNodes = await redis.smembers(sessionCachedKey)
 
       expect(removedNodes).to.have.length(0)
 
       // Force a node removal
       for (let i = 0; i <= 20; i++) {
-        await cherryPicker.updateBadNodeTimeoutQuality(
-          blockchain,
-          nodePublicKey,
-          elapsedTime,
-          requestTimeout,
-          pocketSession
-        )
+        await cherryPicker.updateBadNodeTimeoutQuality(blockchain, nodePublicKey, elapsedTime, requestTimeout, session)
       }
 
-      removedNodes = await redis.smembers(`session-${await hashBlockchainNodes(blockchain, sessionNodes, redis)}`)
+      removedNodes = await redis.smembers(sessionCachedKey)
 
       expect(removedNodes).to.have.length(1)
     })
