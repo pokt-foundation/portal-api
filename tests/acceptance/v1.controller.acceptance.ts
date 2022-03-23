@@ -60,6 +60,12 @@ const GIGASTAKE_FOLLOWER_IDS = {
   lb: 'df9f9f9gdklkwotn5o3ixuso3od',
 }
 
+// Follower app that has restricted gateway settings
+const GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS = {
+  app: '5ifmwb6aq3frpgl9mqolike1xc',
+  lb: '0ab9z1so2g8x29xazaffse8ce',
+}
+
 // Might not actually reflect real-world values
 const BLOCKCHAINS = [
   {
@@ -109,7 +115,7 @@ const BLOCKCHAINS = [
       {
         alias: 'eth-mainnet',
         domain: 'eth-mainnet',
-        loadBalancerID: 'gt4a1s9rfrebaf8g31bsdc04',
+        loadBalancerID: GIGASTAKE_LEADER_IDS.lb,
       },
     ],
   },
@@ -236,6 +242,22 @@ const LOAD_BALANCERS = [
     name: 'gigastaked lb - follower',
     requestTimeout: 5000,
     applicationIDs: [GIGASTAKE_FOLLOWER_IDS.app],
+    logLimitBlocks: 25000,
+    gigastakeRedirect: true,
+    stickinessOptions: {
+      stickiness: true,
+      duration: 300,
+      useRPCID: false,
+      relaysLimit: 1e6,
+      stickyOrigins: ['localhost'],
+    },
+  },
+  {
+    id: GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb,
+    user: 'test@test.com',
+    name: 'gigastaked lb - follower',
+    requestTimeout: 5000,
+    applicationIDs: [GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.app],
     logLimitBlocks: 25000,
     gigastakeRedirect: true,
     stickinessOptions: {
@@ -444,6 +466,92 @@ describe('V1 controller (acceptance)', () => {
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
     expect(response.body).to.have.property('error')
     expect(response.body.error.message).to.startWith('Whitelist Origin check failed')
+  })
+
+  it('fails on gigastake relay with invalid secret key', async () => {
+    const appWithSecurity = { ...APPLICATION, id: GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.app }
+
+    appWithSecurity.gatewaySettings = {
+      secretKey: 'securekey',
+      secretKeyRequired: true,
+      whitelistOrigins: [],
+      whitelistUserAgents: [],
+    }
+
+    await applicationsRepository.create(appWithSecurity)
+
+    const pocket = pocketMock.object()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    const response = await client
+      .post(`/v1/lb/${GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb}`)
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet-x')
+      .expect(200)
+
+    expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.startWith('SecretKey does not match')
+  })
+
+  it('fails on gigastake relay with invalid origin', async () => {
+    const appWithSecurity = { ...APPLICATION, id: GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.app }
+
+    appWithSecurity.gatewaySettings = {
+      secretKey: '',
+      secretKeyRequired: false,
+      whitelistOrigins: ['https://pokt.network'],
+      whitelistUserAgents: [],
+    }
+
+    await applicationsRepository.create(appWithSecurity)
+
+    const pocket = pocketMock.object()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    const response = await client
+      .post(`/v1/lb/${GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb}`)
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet-x')
+      .set('origin', 'https://poketo.network')
+      .expect(200)
+
+    expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.startWith('Whitelist Origin check failed')
+  })
+
+  it('fails on gigastake relay with invalid user agent', async () => {
+    const appWithSecurity = { ...APPLICATION, id: GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.app }
+
+    appWithSecurity.gatewaySettings = {
+      secretKey: '',
+      secretKeyRequired: false,
+      whitelistOrigins: [],
+      whitelistUserAgents: ['Mozilla/5.0'],
+    }
+
+    await applicationsRepository.create(appWithSecurity)
+
+    const pocket = pocketMock.object()
+
+    ;({ app, client } = await setupApplication(pocket))
+
+    const response = await client
+      .post(`/v1/lb/${GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb}`)
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet-x')
+      .set('user-agent', 'Chrome')
+      .expect(200)
+
+    expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(response.body).to.have.property('error')
+    expect(response.body.error.message).to.startWith('Whitelist User Agent check failed')
   })
 
   it('success relay with correct secret key, origin and userAgent security', async () => {
