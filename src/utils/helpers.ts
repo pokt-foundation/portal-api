@@ -1,5 +1,5 @@
+import { Node } from '@pokt-foundation/pocketjs-types'
 import { Redis } from 'ioredis'
-import { Node } from '@pokt-network/pocket-js'
 import { Applications } from '../models/applications.model'
 
 // hashes a blockchain and all of the nodes given, sorted by public key

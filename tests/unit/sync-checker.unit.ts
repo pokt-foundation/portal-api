@@ -1,14 +1,11 @@
+import { EvidenceSealedError } from '@pokt-foundation/pocketjs-relayer'
 import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
 import RedisMock from 'ioredis-mock'
 import { expect, sinon } from '@loopback/testlab'
-import { Configuration, Session, RpcError } from '@pokt-network/pocket-js'
-import { getPocketConfigOrDefault } from '../../src/config/pocket-config'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { SyncChecker } from '../../src/services/sync-checker'
-import { MAX_RELAYS_ERROR } from '../../src/utils/constants'
-import { hashBlockchainNodes } from '../../src/utils/helpers'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
@@ -87,7 +84,6 @@ describe('Sync checker service (unit)', () => {
   let redis: RedisMock
   let metricsRecorder: MetricsRecorder
   let pocketMock: PocketMock
-  let pocketConfiguration: Configuration
   let axiosMock: MockAdapter
   let logSpy: sinon.SinonSpy
 
@@ -98,7 +94,6 @@ describe('Sync checker service (unit)', () => {
     cherryPicker = new CherryPicker({ redis, checkDebug: false })
     metricsRecorder = metricsRecorderMock(redis, cherryPicker)
     syncChecker = new SyncChecker(redis, metricsRecorder, DEFAULT_SYNC_ALLOWANCE, origin)
-    pocketConfiguration = getPocketConfigOrDefault()
     pocketMock = new PocketMock()
     axiosMock = new MockAdapter(axios)
   })
@@ -118,7 +113,7 @@ describe('Sync checker service (unit)', () => {
     })
 
     // Add relay responses to the Pocket mock class
-    pocketMock = new PocketMock(undefined, undefined, pocketConfiguration)
+    pocketMock = new PocketMock()
     pocketMock.relayResponse[blockchains['0021'].syncCheckOptions.body] = EVM_RELAY_RESPONSE
     pocketMock.relayResponse[blockchains['0006'].syncCheckOptions.body] = SOLANA_RELAY_RESPONSE
     pocketMock.relayResponse[blockchains['0001'].syncCheckOptions.body] = POCKET_RELAY_RESPONSE
@@ -145,31 +140,12 @@ describe('Sync checker service (unit)', () => {
     expect(syncChecker).to.be.ok()
   })
 
-  it('updates the configuration consensus to one already set', () => {
-    const configuration = getPocketConfigOrDefault({ consensusNodeCount: 9 })
-
-    const expectedConsensusCount = 5
-
-    const newConfig = syncChecker.updateConfigurationConsensus(configuration)
-
-    expect(newConfig.consensusNodeCount).to.be.equal(expectedConsensusCount)
-  })
-
-  it('updates the configuration request timeout to one already set', () => {
-    const configuration = getPocketConfigOrDefault({ requestTimeout: 10200 })
-
-    const expectedTimeout = 2000
-
-    const newConfig = syncChecker.updateConfigurationTimeout(configuration)
-
-    expect(newConfig.requestTimeOut).to.be.equal(expectedTimeout)
-  })
-
   describe('getNodeSyncLog function', () => {
     it('retrieves the sync logs of a node', async () => {
       const node = DEFAULT_NODES[0]
 
-      const pocket = pocketMock.object()
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
 
       const nodeSyncLog = await syncChecker.getNodeSyncLog(
         node,
@@ -178,10 +154,9 @@ describe('Sync checker service (unit)', () => {
         blockchains['0021'].hash,
         '',
         '',
-        pocket,
+        relayer,
         undefined,
-        pocketConfiguration,
-        undefined
+        session
       )
 
       const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
@@ -196,7 +171,8 @@ describe('Sync checker service (unit)', () => {
 
       pocketMock.fail = true
 
-      const pocket = pocketMock.object()
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
 
       const nodeSyncLog = await syncChecker.getNodeSyncLog(
         node,
@@ -205,10 +181,9 @@ describe('Sync checker service (unit)', () => {
         blockchains['0021'].hash,
         '',
         '',
-        pocket,
+        relayer,
         undefined,
-        pocketConfiguration,
-        undefined
+        session
       )
 
       const expectedBlockHeight = 0
@@ -225,7 +200,8 @@ describe('Sync checker service (unit)', () => {
       pocketMock.relayResponse[blockchains['0021'].syncCheckOptions.body] =
         'method":eth_blockNumber","id":,"jsonrpc""2.0"}'
 
-      const pocket = pocketMock.object()
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
 
       const nodeSyncLog = await syncChecker.getNodeSyncLog(
         node,
@@ -234,10 +210,9 @@ describe('Sync checker service (unit)', () => {
         blockchains['0021'].hash,
         '',
         '',
-        pocket,
+        relayer,
         undefined,
-        pocketConfiguration,
-        undefined
+        session
       )
 
       const expectedBlockHeight = 0
@@ -277,7 +252,8 @@ describe('Sync checker service (unit)', () => {
   it('Retrieve the sync logs of a all the nodes in a pocket session', async () => {
     const nodes = DEFAULT_NODES
 
-    const pocketClient = pocketMock.object()
+    const relayer = pocketMock.object()
+    const session = await relayer.getNewSession(undefined)
 
     const nodeLogs = await syncChecker.getNodeSyncLogs(
       nodes,
@@ -286,11 +262,9 @@ describe('Sync checker service (unit)', () => {
       blockchains['0021'].hash,
       '',
       '',
-      pocketClient,
+      relayer,
       undefined,
-      pocketConfiguration,
-      '',
-      undefined
+      session
     )
 
     const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
@@ -305,7 +279,8 @@ describe('Sync checker service (unit)', () => {
     it('performs an EVM-sync check successfully', async () => {
       const nodes = DEFAULT_NODES
 
-      const pocketClient = pocketMock.object()
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
 
       const redisGetSpy = sinon.spy(redis, 'get')
       const redisSetSpy = sinon.spy(redis, 'set')
@@ -316,25 +291,19 @@ describe('Sync checker service (unit)', () => {
           requestID: '1234',
           blockchainID: blockchains['0021'].hash,
           syncCheckOptions: blockchains['0021'].syncCheckOptions,
-          pocket: pocketClient,
+          relayer,
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0021']?.altruist,
           pocketAAT: undefined,
-          pocketConfiguration,
-          pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-            undefined,
-            undefined,
-            undefined,
-            undefined
-          )) as Session,
+          session,
         })
       ).nodes
 
       expect(syncedNodes).to.have.length(5)
 
-      expect(redisGetSpy.callCount).to.be.equal(13)
-      expect(redisSetSpy.callCount).to.be.equal(13)
+      expect(redisGetSpy.callCount).to.be.equal(2)
+      expect(redisSetSpy.callCount).to.be.equal(7)
 
       // Subsequent calls should retrieve results from redis instead
       syncedNodes = (
@@ -343,29 +312,24 @@ describe('Sync checker service (unit)', () => {
           requestID: '1234',
           blockchainID: blockchains['0021'].hash,
           syncCheckOptions: blockchains['0021'].syncCheckOptions,
-          pocket: pocketClient,
+          relayer,
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0021']?.altruist,
           pocketAAT: undefined,
-          pocketConfiguration,
-          pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-            undefined,
-            undefined,
-            undefined,
-            undefined
-          )) as Session,
+          session,
         })
       ).nodes
 
-      expect(redisGetSpy.callCount).to.be.equal(15)
-      expect(redisSetSpy.callCount).to.be.equal(13)
+      expect(redisGetSpy.callCount).to.be.equal(3)
+      expect(redisSetSpy.callCount).to.be.equal(7)
     })
 
     it('performs a non-EVM (Solana) sync check successfully', async () => {
       const nodes = DEFAULT_NODES
 
-      const pocketClient = pocketMock.object()
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
 
       const redisGetSpy = sinon.spy(redis, 'get')
       const redisSetSpy = sinon.spy(redis, 'set')
@@ -376,25 +340,19 @@ describe('Sync checker service (unit)', () => {
           requestID: '1234',
           blockchainID: blockchains['0006'].hash,
           syncCheckOptions: blockchains['0006'].syncCheckOptions,
-          pocket: pocketClient,
+          relayer,
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0006']?.altruist,
           pocketAAT: undefined,
-          pocketConfiguration,
-          pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-            undefined,
-            undefined,
-            undefined,
-            undefined
-          )) as Session,
+          session,
         })
       ).nodes
 
       expect(syncedNodes).to.have.length(5)
 
-      expect(redisGetSpy.callCount).to.be.equal(13)
-      expect(redisSetSpy.callCount).to.be.equal(13)
+      expect(redisGetSpy.callCount).to.be.equal(2)
+      expect(redisSetSpy.callCount).to.be.equal(7)
 
       // Subsequent calls should retrieve results from redis instead
       syncedNodes = (
@@ -403,29 +361,24 @@ describe('Sync checker service (unit)', () => {
           requestID: '1234',
           blockchainID: blockchains['0006'].hash,
           syncCheckOptions: blockchains['0006'].syncCheckOptions,
-          pocket: pocketClient,
+          relayer,
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0006']?.altruist,
           pocketAAT: undefined,
-          pocketConfiguration,
-          pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-            undefined,
-            undefined,
-            undefined,
-            undefined
-          )) as Session,
+          session,
         })
       ).nodes
 
-      expect(redisGetSpy.callCount).to.be.equal(15)
-      expect(redisSetSpy.callCount).to.be.equal(13)
+      expect(redisGetSpy.callCount).to.be.equal(3)
+      expect(redisSetSpy.callCount).to.be.equal(7)
     })
 
     it('performs a non-EVM (Pocket) sync check successfully', async () => {
       const nodes = DEFAULT_NODES
 
-      const pocketClient = pocketMock.object()
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
 
       const redisGetSpy = sinon.spy(redis, 'get')
       const redisSetSpy = sinon.spy(redis, 'set')
@@ -436,25 +389,19 @@ describe('Sync checker service (unit)', () => {
           requestID: '1234',
           blockchainID: blockchains['0001'].hash,
           syncCheckOptions: blockchains['0001'].syncCheckOptions,
-          pocket: pocketClient,
+          relayer,
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0001']?.altruist,
           pocketAAT: undefined,
-          pocketConfiguration,
-          pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-            undefined,
-            undefined,
-            undefined,
-            undefined
-          )) as Session,
+          session,
         })
       ).nodes
 
       expect(syncedNodes).to.have.length(5)
 
-      expect(redisGetSpy.callCount).to.be.equal(13)
-      expect(redisSetSpy.callCount).to.be.equal(13)
+      expect(redisGetSpy.callCount).to.be.equal(2)
+      expect(redisSetSpy.callCount).to.be.equal(7)
 
       // Subsequent calls should retrieve results from redis instead
       syncedNodes = (
@@ -463,29 +410,24 @@ describe('Sync checker service (unit)', () => {
           requestID: '1234',
           blockchainID: blockchains['0001'].hash,
           syncCheckOptions: blockchains['0001'].syncCheckOptions,
-          pocket: pocketClient,
+          relayer,
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0001']?.altruist,
           pocketAAT: undefined,
-          pocketConfiguration,
-          pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-            undefined,
-            undefined,
-            undefined,
-            undefined
-          )) as Session,
+          session,
         })
       ).nodes
 
-      expect(redisGetSpy.callCount).to.be.equal(15)
-      expect(redisSetSpy.callCount).to.be.equal(13)
+      expect(redisGetSpy.callCount).to.be.equal(3)
+      expect(redisSetSpy.callCount).to.be.equal(7)
     })
 
     it('fails a sync check due to wrong result key (evm/non-evm)', async () => {
       const nodes = DEFAULT_NODES
 
-      const pocketClient = pocketMock.object()
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
 
       blockchains['0006'].syncCheckOptions.resultKey = 'height' // should be 'result'
 
@@ -494,18 +436,12 @@ describe('Sync checker service (unit)', () => {
         requestID: '1234',
         blockchainID: blockchains['0006'].hash,
         syncCheckOptions: blockchains['0006'].syncCheckOptions,
-        pocket: pocketClient,
+        relayer,
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0006']?.altruist,
         pocketAAT: undefined,
-        pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
+        session,
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -525,25 +461,20 @@ describe('Sync checker service (unit)', () => {
 
       pocketMock.fail = true
 
-      const pocketClient = pocketMock.object()
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
 
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
         syncCheckOptions: blockchains['0021'].syncCheckOptions,
-        pocket: pocketClient,
+        relayer,
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: undefined,
-        pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
+        session,
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -561,25 +492,20 @@ describe('Sync checker service (unit)', () => {
 
       axiosMock.onPost(blockchains['0021']?.altruist).reply(200, '{ "id": 1, "jsonrpc": "2.0", "result": "0x64" }')
 
-      const pocketClient = pocketMock.object()
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
 
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
         syncCheckOptions: blockchains['0021'].syncCheckOptions,
-        pocket: pocketClient,
+        relayer,
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: undefined,
-        pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
+        session,
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -597,25 +523,20 @@ describe('Sync checker service (unit)', () => {
 
       pocketMock.fail = true
 
-      const pocketClient = pocketMock.object()
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
 
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
         syncCheckOptions: blockchains['0021'].syncCheckOptions,
-        pocket: pocketClient,
+        relayer,
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: undefined,
-        pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
+        session,
       })
 
       expect(syncedNodes).to.have.length(0)
@@ -626,25 +547,20 @@ describe('Sync checker service (unit)', () => {
 
       const nodes = DEFAULT_NODES
 
-      const pocketClient = pocketMock.object()
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
 
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
         syncCheckOptions: blockchains['0021'].syncCheckOptions,
-        pocket: pocketClient,
+        relayer,
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: undefined,
-        pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
+        session,
       })
 
       expect(syncedNodes).to.have.length(0)
@@ -669,73 +585,64 @@ describe('Sync checker service (unit)', () => {
         altruistHeightResult,
       ]
 
-      const pocketClient = pocketMock.object()
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
 
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
         syncCheckOptions: blockchains['0021'].syncCheckOptions,
-        pocket: pocketClient,
+        relayer,
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: undefined,
-        pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
+        session,
       })
 
       expect(syncedNodes).to.have.length(5)
     })
 
-    it('penalize node failing sync check', async () => {
-      const nodes = DEFAULT_NODES
+    // TODO: Enable when challenge is implemented
+    // it('penalize node failing sync check', async () => {
+    //   const nodes = DEFAULT_NODES
 
-      const penalizedNode = '{ "id": 1, "jsonrpc": "2.0", "result": "0x1aa38c" }'
+    //   const penalizedNode = '{ "id": 1, "jsonrpc": "2.0", "result": "0x1aa38c" }'
 
-      pocketMock.relayResponse[blockchains['0021'].syncCheckOptions.body] = [
-        EVM_RELAY_RESPONSE,
-        EVM_RELAY_RESPONSE,
-        EVM_RELAY_RESPONSE,
-        EVM_RELAY_RESPONSE,
-        penalizedNode,
-      ]
+    //   pocketMock.relayResponse[blockchains['0021'].syncCheckOptions.body] = [
+    //     EVM_RELAY_RESPONSE,
+    //     EVM_RELAY_RESPONSE,
+    //     EVM_RELAY_RESPONSE,
+    //     EVM_RELAY_RESPONSE,
+    //     penalizedNode,
+    //   ]
 
-      const pocketClient = pocketMock.object()
+    //   const relayer = pocketMock.object()
+    //   const session = await relayer.getNewSession(undefined)
 
-      const { nodes: syncedNodes } = await syncChecker.consensusFilter({
-        nodes,
-        requestID: '1234',
-        blockchainID: blockchains['0021'].hash,
-        syncCheckOptions: blockchains['0021'].syncCheckOptions,
-        pocket: pocketClient,
-        applicationID: '',
-        applicationPublicKey: '',
-        blockchainSyncBackup: blockchains['0021']?.altruist,
-        pocketAAT: undefined,
-        pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
-      })
+    //   const { nodes: syncedNodes } = await syncChecker.consensusFilter({
+    //     nodes,
+    //     requestID: '1234',
+    //     blockchainID: blockchains['0021'].hash,
+    //     syncCheckOptions: blockchains['0021'].syncCheckOptions,
+    //     relayer,
+    //     applicationID: '',
+    //     applicationPublicKey: '',
+    //     blockchainSyncBackup: blockchains['0021']?.altruist,
+    //     pocketAAT: undefined,
+    //     session,
+    //   })
 
-      expect(syncedNodes).to.have.length(4)
+    //   expect(syncedNodes).to.have.length(4)
 
-      const expectedLog = logSpy.calledWith(
-        'info',
-        sinon.match((arg: string) => arg.startsWith('SYNC CHECK CHALLENGE'))
-      )
+    //   const expectedLog = logSpy.calledWith(
+    //     'info',
+    //     sinon.match((arg: string) => arg.startsWith('SYNC CHECK CHALLENGE'))
+    //   )
 
-      expect(expectedLog).to.be.true()
-    })
+    //   expect(expectedLog).to.be.true()
+    // })
 
     it('pass session sync check excluding nodes that are too ahead of altruist', async () => {
       const nodes = DEFAULT_NODES
@@ -755,25 +662,20 @@ describe('Sync checker service (unit)', () => {
         altruistHeightResult,
       ]
 
-      const pocketClient = pocketMock.object()
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
 
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
         syncCheckOptions: blockchains['0021'].syncCheckOptions,
-        pocket: pocketClient,
+        relayer,
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: undefined,
-        pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
+        session,
       })
 
       expect(syncedNodes).to.have.length(3)
@@ -796,25 +698,20 @@ describe('Sync checker service (unit)', () => {
         thirdHighestNode,
       ]
 
-      const pocketClient = pocketMock.object()
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
 
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
         syncCheckOptions: blockchains['0021'].syncCheckOptions,
-        pocket: pocketClient,
+        relayer,
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: undefined,
-        pocketConfiguration,
-        pocketSession: (await pocketClient.sessionManager.getCurrentSession(
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        )) as Session,
+        session,
       })
 
       expect(syncedNodes).to.have.length(1)
@@ -832,36 +729,27 @@ describe('Sync checker service (unit)', () => {
         EVM_RELAY_RESPONSE,
         EVM_RELAY_RESPONSE,
         EVM_RELAY_RESPONSE,
-        new RpcError('90', MAX_RELAYS_ERROR),
+        new EvidenceSealedError(0, 'error'),
       ]
-      const pocketClient = pocketMock.object()
-
-      const pocketSession = (await pocketClient.sessionManager.getCurrentSession(
-        undefined,
-        undefined,
-        undefined,
-        undefined
-      )) as Session
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
 
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
         blockchainID: blockchains['0021'].hash,
         syncCheckOptions: blockchains['0021'].syncCheckOptions,
-        pocket: pocketClient,
+        relayer,
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: undefined,
-        pocketConfiguration,
-        pocketSession,
+        session,
       })
 
       expect(syncedNodes).to.have.length(4)
 
-      const removedNode = await redis.smembers(
-        `session-${await hashBlockchainNodes(blockchains['0021'].hash, pocketSession.sessionNodes, redis)}`
-      )
+      const removedNode = await redis.smembers(`session-key-${session.key}`)
 
       expect(removedNode).to.have.length(1)
     })

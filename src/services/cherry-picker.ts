@@ -1,8 +1,7 @@
+import { Node, Session } from '@pokt-foundation/pocketjs-types'
 import { Redis } from 'ioredis'
-import { Node, Session } from '@pokt-network/pocket-js'
 import { Applications } from '../models'
-import { getNodeNetworkData, removeNodeFromSession } from '../utils/cache'
-import { hashBlockchainNodes } from '../utils/helpers'
+import { removeNodeFromSession } from '../utils/cache'
 
 const logger = require('../services/logger')
 
@@ -94,7 +93,7 @@ export class CherryPicker {
     nodes: Node[],
     blockchain: string,
     requestID: string,
-    sessionCacheKey: string
+    sessionKey: string
   ): Promise<Node> {
     const rawNodes = {} as { [nodePublicKey: string]: Node }
     const rawNodeIDs = [] as string[]
@@ -117,7 +116,7 @@ export class CherryPicker {
     // logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
     //   requestID: requestID,
     //   blockchainID: blockchain,
-    //   sessionHash: sessionCacheKey,
+    //   sessionKey: sessionKey,
     // })
 
     // Iterate through sorted logs and form in to a weighted list
@@ -328,8 +327,8 @@ export class CherryPicker {
     requestTimeout: number | undefined,
     pocketSession?: Session
   ): Promise<void> {
-    const { sessionKey, sessionNodes } = pocketSession || {}
-    const sessionHash = await hashBlockchainNodes(blockchainID, sessionNodes, this.redis)
+    // TODO: Improve naming
+    const { key: sessionKey } = pocketSession || {}
 
     // FIXME: This is not a reliable way on asserting whether is a service node,
     // an issue was created on pocket-tools for a 'isPublicKey' function. Once is
@@ -339,7 +338,7 @@ export class CherryPicker {
     }
 
     let timeoutCounter = 0
-    const key = `node-${serviceNode}-${sessionHash}-timeout`
+    const key = `node-${serviceNode}-${sessionKey}-timeout`
     const timeoutCounterCached = await this.redis.get(key)
 
     if (timeoutCounterCached) {
@@ -350,16 +349,11 @@ export class CherryPicker {
       await this.redis.set(key, ++timeoutCounter, 'EX', 60 * 60 * 2) // 2 Hours
 
       if (timeoutCounter >= TIMEOUT_LIMIT) {
-        const { serviceURL, serviceDomain } = await getNodeNetworkData(this.redis, serviceNode)
-
         logger.log('warn', `removed archival node from session due to timeouts: ${serviceNode}`, {
           serviceNode,
           sessionKey,
-          serviceURL,
-          serviceDomain,
-          sessionHash,
         })
-        await removeNodeFromSession(this.redis, blockchainID, sessionNodes, serviceNode)
+        await removeNodeFromSession(this.redis, pocketSession, serviceNode, true, '', blockchainID)
       }
     }
   }

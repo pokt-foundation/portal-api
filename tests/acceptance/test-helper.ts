@@ -1,10 +1,9 @@
+import { Relayer } from '@pokt-foundation/pocketjs-relayer'
 import RedisMock from 'ioredis-mock'
 import rewiremock from 'rewiremock'
 import { createRestAppClient, givenHttpServerConfig, Client } from '@loopback/testlab'
-import { Pocket } from '@pokt-network/pocket-js'
 
 import { PocketGatewayApplication } from '../../src/application'
-import { DEFAULT_POCKET_CONFIG } from '../../src/config/pocket-config'
 import { gatewayTestDB } from '../fixtures/test.datasource'
 
 export const DUMMY_ENV = {
@@ -21,7 +20,6 @@ export const DUMMY_ENV = {
   INFLUX_TOKEN: 'abcde',
   INFLUX_ORG: 'myorg',
   DISPATCH_URL: 'https://node1.dispatcher.pokt.network/',
-  POCKET_NETWORK_NODE_URL: 'https://user:pass@backups.example.org:18081',
   POCKET_SESSION_BLOCK_FREQUENCY: 4,
   POCKET_BLOCK_TIME: 1038000,
   POCKET_RELAY_RETRIES: '0',
@@ -35,12 +33,12 @@ export const DUMMY_ENV = {
   AWS_REGION: 'test',
 }
 
-export async function setupApplication(pocket?: Pocket, envs?: object): Promise<AppWithClient> {
+export async function setupApplication(pocket?: Relayer, envs?: object): Promise<AppWithClient> {
   const restConfig = givenHttpServerConfig()
 
   const appWithMock = rewiremock.proxy(() => require('../../src/application'), {
     ioredis: RedisMock,
-    ...(pocket && { './config/pocket-config': { getPocketInstance: () => pocket, DEFAULT_POCKET_CONFIG } }),
+    ...(pocket && { './config/pocket-config': { getPocketInstance: () => pocket } }),
   })
 
   const appEnvs = envs ? { ...DUMMY_ENV, ...envs } : { ...DUMMY_ENV }

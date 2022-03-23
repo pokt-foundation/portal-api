@@ -1,13 +1,13 @@
+import { Relayer } from '@pokt-foundation/pocketjs-relayer'
+import { HTTPMethod } from '@pokt-foundation/pocketjs-types'
 import { Redis } from 'ioredis'
 import jsonrpc, { ErrorObject, JsonRpcError } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
 import { FilterExcludingWhere, repository } from '@loopback/repository'
 import { get, param, post, requestBody } from '@loopback/rest'
-import { Configuration, HTTPMethod, Pocket } from '@pokt-network/pocket-js'
 import { WriteApi } from '@influxdata/influxdb-client'
-
-import { Applications, LoadBalancers } from '../models'
+import { Applications, GatewaySettings, LoadBalancers } from '../models'
 import { StickinessOptions } from '../models/load-balancers.model'
 import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from '../repositories'
 import { ChainChecker } from '../services/chain-checker'
@@ -52,8 +52,7 @@ export class V1Controller {
     @inject('httpMethod') private httpMethod: HTTPMethod,
     @inject('relayPath') private relayPath: string,
     @inject('relayRetries') private relayRetries: number,
-    @inject('pocketInstance') private pocket: Pocket,
-    @inject('pocketConfiguration') private pocketConfiguration: Configuration,
+    @inject('relayer') private relayer: Relayer,
     @inject('redisInstance') private redis: Redis,
     @inject('pgPool') private pgPool: PGPool,
     @inject('databaseEncryptionKey') private databaseEncryptionKey: string,
@@ -92,8 +91,7 @@ export class V1Controller {
       origin: this.origin,
       userAgent: this.userAgent,
       ipAddress: this.ipAddress,
-      pocket: this.pocket,
-      pocketConfiguration: this.pocketConfiguration,
+      relayer: this.relayer,
       cherryPicker: this.cherryPicker,
       metricsRecorder: this.metricsRecorder,
       syncChecker: this.syncChecker,
@@ -143,6 +141,7 @@ export class V1Controller {
       )
 
       // Any alias works to load a specific blockchain
+      // TODO: Move URL to ENV
       this.host = `${blockchainAliases[0]}.gateway.pokt.network`
 
       const { blockchainRedirects } = await loadBlockchain(
@@ -232,11 +231,13 @@ export class V1Controller {
         originalAppID: string | undefined
         originalAppPK: string | undefined
         stickinessOptions: StickinessOptions | undefined
+        gatewaySettings: GatewaySettings | undefined
       } = {
         gigastaked: loadBalancer.gigastakeRedirect || false,
         originalAppID: undefined,
         originalAppPK: undefined,
         stickinessOptions: undefined,
+        gatewaySettings: undefined,
       }
 
       // Is this LB marked for gigastakeRedirect?
@@ -274,6 +275,7 @@ export class V1Controller {
             ? originalApp.freeTierApplicationAccount?.publicKey
             : originalApp.publicPocketAccount?.publicKey
           gigastakeOptions.stickinessOptions = originalApp?.stickinessOptions
+          gigastakeOptions.gatewaySettings = originalApp?.gatewaySettings
         }
       }
 
@@ -301,6 +303,10 @@ export class V1Controller {
 
       if (!application?.id) {
         throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('No application found in the load balancer', -32055))
+      }
+
+      if (gigastakeOptions?.gatewaySettings) {
+        application.gatewaySettings = gigastakeOptions.gatewaySettings
       }
 
       const options: SendRelayOptions = {
@@ -406,18 +412,14 @@ export class V1Controller {
 
       reqRPCID = parseRPCID(parsedRawData)
 
-      const application = await this.fetchApplication(id, filter)
+      let application = await this.fetchApplication(id, filter)
 
       if (!application?.id) {
-        logger.log('error', 'Application not found', {
-          requestID: this.requestID,
-          relayType: 'APP',
-          typeID: id,
-          serviceNode: '',
-          origin: this.origin,
-        })
         throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('Application not found', -32056))
       }
+
+      const applicationID = application.id
+      const applicationPublicKey = application.gatewayAAT.applicationPublicKey
 
       const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =
         application?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
@@ -426,6 +428,13 @@ export class V1Controller {
       const { preferredNodeAddress, rpcID } = stickiness
         ? await this.checkClientStickiness(rawData, stickyKeyPrefix, stickyOrigins, this.origin)
         : DEFAULT_STICKINESS_APP_PARAMS
+
+      const gigastakeApp = await this.getGigastakeApp(filter, '', reqRPCID)
+
+      if (gigastakeApp) {
+        gigastakeApp.gatewaySettings = application.gatewaySettings
+        application = gigastakeApp
+      }
 
       const sendRelayOptions: SendRelayOptions = {
         rawData,
@@ -442,6 +451,8 @@ export class V1Controller {
           relaysLimit,
           stickyOrigins,
         },
+        applicationID,
+        applicationPublicKey,
       }
 
       return await this.pocketRelayer.sendRelay(sendRelayOptions)
@@ -666,5 +677,39 @@ export class V1Controller {
       return true
     }
     return false
+  }
+
+  async getGigastakeApp(filter: FilterExcludingWhere, preferredApplicationID = '', rpcID = 0): Promise<Applications> {
+    const { blockchainRedirects } = await loadBlockchain(
+      this.host,
+      this.redis,
+      this.blockchainsRepository,
+      this.defaultLogLimitBlocks,
+      rpcID
+    )
+
+    if (blockchainRedirects.length < 1) {
+      return undefined
+    }
+    const redirect = blockchainRedirects.find((rdr) => this.host.toLowerCase().includes(rdr.alias))
+
+    const loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
+    if (!loadBalancer?.id) {
+      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('GS load balancer not found', -32054))
+    }
+
+    const application = await this.fetchLoadBalancerApplication(
+      loadBalancer.id,
+      loadBalancer.applicationIDs,
+      preferredApplicationID,
+      filter,
+      rpcID
+    )
+
+    if (!application?.id) {
+      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('No application found in the load balancer', -32055))
+    }
+
+    return application
   }
 }
