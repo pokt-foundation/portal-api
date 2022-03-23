@@ -475,8 +475,8 @@ describe('V1 controller (acceptance)', () => {
     appWithSecurity.gatewaySettings = {
       secretKey: 'securekey',
       secretKeyRequired: true,
-      whitelistOrigins: ['https://pokt.network'],
-      whitelistUserAgents: ['Mozilla/5.0'],
+      whitelistOrigins: [],
+      whitelistUserAgents: [],
     }
 
     await applicationsRepository.create(appWithSecurity)
@@ -490,8 +490,6 @@ describe('V1 controller (acceptance)', () => {
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet-x')
-      .set('origin', 'https://pokt.network')
-      .set('user-agent', 'Mozilla/5.0')
       .expect(200)
 
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
