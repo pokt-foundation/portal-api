@@ -429,8 +429,12 @@ export class V1Controller {
         ? await this.checkClientStickiness(rawData, stickyKeyPrefix, stickyOrigins, this.origin)
         : DEFAULT_STICKINESS_APP_PARAMS
 
-      const gigastakeApp = await this.getGigastakeApp(filter, '', reqRPCID)
-
+      let gigastakeApp: Applications
+      try {
+        gigastakeApp = await this.getGigastakeApp(filter, '', reqRPCID)
+      } catch {
+        // App chain doesn't have gigastake  available, Do nothing
+      }
       if (gigastakeApp) {
         gigastakeApp.gatewaySettings = application.gatewaySettings
         application = gigastakeApp
