@@ -2,7 +2,6 @@ import crypto from 'crypto'
 import os from 'os'
 import path from 'path'
 import process from 'process'
-import { URL } from 'url'
 import Redis from 'ioredis'
 import pg from 'pg'
 import { BootMixin } from '@loopback/boot'
@@ -10,11 +9,10 @@ import { ApplicationConfig } from '@loopback/core'
 import { RepositoryMixin } from '@loopback/repository'
 import { RestApplication, HttpErrors } from '@loopback/rest'
 import { ServiceMixin } from '@loopback/service-proxy'
-import { Configuration } from '@pokt-network/pocket-js'
 import { InfluxDB } from '@influxdata/influxdb-client'
 
 import AatPlans from './config/aat-plans.json'
-import { DEFAULT_POCKET_CONFIG, getPocketInstance } from './config/pocket-config'
+import { getPocketInstance } from './config/pocket-config'
 import { GatewaySequence } from './sequence'
 import { POCKET_JS_INSTANCE_TIMEOUT_KEY, POCKET_JS_TIMEOUT_MAX, POCKET_JS_TIMEOUT_MIN } from './utils/constants'
 import { getRandomInt } from './utils/helpers'
@@ -57,8 +55,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       REDIS_PORT,
       PSQL_CONNECTION,
       DISPATCH_URL,
-      POCKET_SESSION_BLOCK_FREQUENCY,
-      POCKET_BLOCK_TIME,
       POCKET_RELAY_RETRIES,
       DEFAULT_SYNC_ALLOWANCE,
       DEFAULT_LOG_LIMIT_BLOCKS,
@@ -75,8 +71,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const dispatchURL: string = DISPATCH_URL || ''
     const clientPrivateKey: string = GATEWAY_CLIENT_PRIVATE_KEY || ''
     const clientPassphrase: string = GATEWAY_CLIENT_PASSPHRASE || ''
-    const pocketSessionBlockFrequency: string = POCKET_SESSION_BLOCK_FREQUENCY || ''
-    const pocketBlockTime: string = POCKET_BLOCK_TIME || ''
     const relayRetries: string = POCKET_RELAY_RETRIES || ''
     const databaseEncryptionKey: string = DATABASE_ENCRYPTION_KEY || ''
     const defaultSyncAllowance: number = parseInt(DEFAULT_SYNC_ALLOWANCE) || -1
@@ -93,31 +87,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
     }
 
-    const dispatchers = []
+    const dispatchers = dispatchURL.indexOf(',') ? dispatchURL.split(',') : [dispatchURL]
 
-    if (dispatchURL.indexOf(',')) {
-      const dispatcherArray = dispatchURL.split(',')
-
-      dispatcherArray.forEach(function (dispatcher) {
-        dispatchers.push(new URL(dispatcher))
-      })
-    } else {
-      dispatchers.push(new URL(dispatchURL))
-    }
-
-    const configuration = new Configuration(
-      DEFAULT_POCKET_CONFIG.maxDispatchers,
-      DEFAULT_POCKET_CONFIG.maxSessions,
-      DEFAULT_POCKET_CONFIG.consensusNodeCount,
-      DEFAULT_POCKET_CONFIG.requestTimeout,
-      DEFAULT_POCKET_CONFIG.acceptDisputedResponses,
-      parseInt(pocketSessionBlockFrequency),
-      parseInt(pocketBlockTime),
-      DEFAULT_POCKET_CONFIG.validateRelayResponses,
-      DEFAULT_POCKET_CONFIG.rejectSelfSignedCertificates,
-      DEFAULT_POCKET_CONFIG.useLegacyTxCodec
-    )
-    const pocket = await getPocketInstance(dispatchers, configuration, clientPrivateKey, clientPassphrase)
+    const pocket = await getPocketInstance(dispatchers, clientPrivateKey)
 
     this.bind('clientPrivateKey').to(clientPrivateKey)
     this.bind('clientPassphrase').to(clientPassphrase)
@@ -125,8 +97,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     // Well doing so for some reason injects service nodes urls instead of the dispatcher urls and
     // those change per request, so let's keep it this way until loopback figures it out.
     this.bind('dispatchURL').to(dispatchURL)
-    this.bind('pocketInstance').to(pocket)
-    this.bind('pocketConfiguration').to(configuration)
+    this.bind('relayer').to(pocket)
     this.bind('relayRetries').to(parseInt(relayRetries))
     this.bind('logger').to(logger)
     this.bind('defaultSyncAllowance').to(defaultSyncAllowance)

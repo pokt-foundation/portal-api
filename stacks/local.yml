@@ -45,6 +45,7 @@ services:
     networks:
       - pocket
 
+  # DB to store errors
   metricsdb:
     container_name: metricsdb
     image: timescale/timescaledb:2.0.2-pg12

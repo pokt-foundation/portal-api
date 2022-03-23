@@ -1,7 +1,8 @@
+import { EvidenceSealedError, Relayer } from '@pokt-foundation/pocketjs-relayer'
+import { Session, Node, PocketAAT, HTTPMethod } from '@pokt-foundation/pocketjs-types'
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import { Redis } from 'ioredis'
-import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
-import { PocketAAT, Session, RelayResponse, Pocket, Configuration, HTTPMethod, Node } from '@pokt-network/pocket-js'
+import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
 import { Applications } from '../models'
@@ -11,7 +12,7 @@ import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { removeNodeFromSession } from '../utils/cache'
-import { DEFAULT_ALTRUIST_TIMEOUT, MAX_RELAYS_ERROR } from '../utils/constants'
+import { SESSION_TIMEOUT, DEFAULT_ALTRUIST_TIMEOUT } from '../utils/constants'
 import {
   checkEnforcementJSON,
   isRelayError,
@@ -20,13 +21,13 @@ import {
   checkSecretKey,
   SecretKeyDetails,
 } from '../utils/enforcements'
-import { getApplicationPublicKey, hashBlockchainNodes } from '../utils/helpers'
+import { getApplicationPublicKey } from '../utils/helpers'
 import { parseJSONRPCError, parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
-import { updateConfiguration } from '../utils/pocket'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
-import { CheckResult, SendRelayOptions } from '../utils/types'
+import { CheckResult, RelayResponse, SendRelayOptions } from '../utils/types'
 import { enforceEVMLimits } from './limiter'
 import { NodeSticker } from './node-sticker'
+
 const logger = require('../services/logger')
 
 export class PocketRelayer {
@@ -34,8 +35,7 @@ export class PocketRelayer {
   origin: string
   userAgent: string
   ipAddress: string
-  pocket: Pocket
-  pocketConfiguration: Configuration
+  relayer: Relayer
   cherryPicker: CherryPicker
   metricsRecorder: MetricsRecorder
   syncChecker: SyncChecker
@@ -48,7 +48,7 @@ export class PocketRelayer {
   checkDebug: boolean
   aatPlan: string
   defaultLogLimitBlocks: number
-  pocketSession: Session
+  session: Session
   alwaysRedirectToAltruists: boolean
   dispatchers: string
 
@@ -57,8 +57,7 @@ export class PocketRelayer {
     origin,
     userAgent,
     ipAddress,
-    pocket,
-    pocketConfiguration,
+    relayer,
     cherryPicker,
     metricsRecorder,
     syncChecker,
@@ -78,8 +77,7 @@ export class PocketRelayer {
     origin: string
     userAgent: string
     ipAddress: string
-    pocket: Pocket
-    pocketConfiguration: Configuration
+    relayer: Relayer
     cherryPicker: CherryPicker
     metricsRecorder: MetricsRecorder
     syncChecker: SyncChecker
@@ -99,8 +97,7 @@ export class PocketRelayer {
     this.origin = origin
     this.userAgent = userAgent
     this.ipAddress = ipAddress
-    this.pocket = pocket
-    this.pocketConfiguration = pocketConfiguration
+    this.relayer = relayer
     this.cherryPicker = cherryPicker
     this.metricsRecorder = metricsRecorder
     this.syncChecker = syncChecker
@@ -137,11 +134,11 @@ export class PocketRelayer {
 
     // Actual application's public key
     // TODO: Simplify public key logic once the database discrepancies are fixed
-    const appPublicKey = getApplicationPublicKey(application)
+    const applicationPubKey = getApplicationPublicKey(application)
 
     // ID/Public key of dummy application in case is coming from a gigastake load balancer,
     // used only for metrics.
-    applicationPublicKey = applicationPublicKey ? applicationPublicKey : appPublicKey
+    applicationPublicKey = applicationPublicKey ? applicationPublicKey : applicationPubKey
     applicationID = applicationID ? applicationID : application.id
 
     // This converts the raw data into formatted JSON then back to a string for relaying.
@@ -209,7 +206,6 @@ export class PocketRelayer {
         relayType: 'APP',
         error: `${parsedRawData.method} method limitations exceeded.`,
         typeID: application.id,
-        serviceNode: '',
         origin: this.origin,
       })
       return limitation
@@ -232,7 +228,6 @@ export class PocketRelayer {
               requestID,
               relayType: 'APP',
               typeID: application.id,
-              serviceNode: '',
             })
             throw new ErrorObject(
               rpcID,
@@ -241,7 +236,7 @@ export class PocketRelayer {
           }
 
           // Send this relay attempt
-          const relayResponse = await this._sendRelay({
+          const relay = await this._sendRelay({
             data,
             relayPath,
             httpMethod,
@@ -257,17 +252,31 @@ export class PocketRelayer {
             blockchainChainID,
             blockchainPath,
             nodeSticker,
-            appPublicKey,
+            appPublicKey: applicationPubKey,
             blockchainSyncBackup: String(blockchainAltruist),
           })
 
-          if (!(relayResponse instanceof Error)) {
+          // TODO: Remove references of relayResponse and change for pocketjs v2 Response object
+          if (!(relay instanceof Error)) {
+            // Even if the relay is successful, we could get an invalid response from servide node.
+            // We attempt to parse the service node response using jsonrpc-lite lib.
+
+            const parsedRelayResponse = jsonrpc.parse(relay.response as string) as IParsedObject
+
+            // If the parsing goes wrong, we get a response with 'invalid' type and the following message.
+            // We could get 'invalid' and not a parse error, hence we check both.
+            if (parsedRelayResponse.type === 'invalid' && parsedRelayResponse.payload.message === 'Parse error') {
+              throw new ErrorObject(
+                rpcID,
+                new jsonrpc.JsonRpcError('Service Node returned an invalid response', -32065)
+              )
+            }
             // Check for user error to bubble these up to the API
             let userErrorMessage = ''
             let userErrorCode = ''
 
-            if (isUserError(relayResponse.payload)) {
-              const userError = parseJSONRPCError(relayResponse.payload)
+            if (isUserError(relay.response)) {
+              const userError = parseJSONRPCError(relay.response)
 
               userErrorMessage = userError.message
               userErrorCode = userError.code !== 0 ? String(userError.code) : ''
@@ -280,18 +289,18 @@ export class PocketRelayer {
                 applicationID,
                 applicationPublicKey,
                 blockchainID,
-                serviceNode: relayResponse.proof.servicerPubKey,
+                serviceNode: relay.serviceNode.publicKey,
                 relayStart,
                 result: 200,
-                bytes: Buffer.byteLength(relayResponse.payload, 'utf8'),
+                bytes: Buffer.byteLength(relay.response, 'utf8'),
                 fallback: false,
                 method: method,
                 error: userErrorMessage,
                 code: userErrorCode,
                 origin: this.origin,
                 data,
-                pocketSession: this.pocketSession,
-                sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relayResponse.proof.servicerPubKey),
+                session: this.session,
+                sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relay.serviceNode.publicKey),
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
               })
               .catch(function log(e) {
@@ -299,35 +308,36 @@ export class PocketRelayer {
                   requestID,
                   relayType: 'APP',
                   typeID: application.id,
-                  serviceNode: relayResponse.proof.servicerPubKey,
+                  serviceNode: relay.serviceNode.publicKey,
                 })
               })
 
             // Clear error log
-            await this.redis.del(blockchainID + '-' + relayResponse.proof.servicerPubKey + '-errors')
+            // TODO: Implement servicerPubKey and uncomment
+            // await this.redis.del(blockchainID + '-' + relayResponse.proof.servicerPubKey + '-errors')
 
             // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
             if (
               blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
               blockchainEnforceResult.toLowerCase() === 'json' // the check is for JSON
             ) {
-              return JSON.parse(relayResponse.payload)
+              return JSON.parse(relay.response)
             }
-            return relayResponse.payload
-          } else if (relayResponse instanceof RelayError) {
+            return relay.response
+          } else if (relay instanceof RelayError) {
             // Record failure metric, retry if possible or fallback
             // Increment error log
-            await this.redis.incr(blockchainID + '-' + relayResponse.servicer_node + '-errors')
-            await this.redis.expire(blockchainID + '-' + relayResponse.servicer_node + '-errors', 3600)
+            await this.redis.incr(blockchainID + '-' + relay.servicer_node + '-errors')
+            await this.redis.expire(blockchainID + '-' + relay.servicer_node + '-errors', 3600)
 
-            let error = relayResponse.message
+            let error = relay.message
 
-            if (typeof relayResponse.message === 'object') {
-              error = JSON.stringify(relayResponse.message)
+            if (typeof relay.message === 'object') {
+              error = JSON.stringify(relay.message)
             }
 
             // If sticky and is over error threshold, remove stickiness
-            const sticky = await NodeSticker.stickyRelayResult(preferredNodeAddress, relayResponse.servicer_node)
+            const sticky = await NodeSticker.stickyRelayResult(preferredNodeAddress, relay.servicer_node)
 
             if (sticky === 'SUCCESS') {
               const errorCount = await nodeSticker.increaseErrorCount()
@@ -343,17 +353,18 @@ export class PocketRelayer {
                 applicationID,
                 applicationPublicKey,
                 blockchainID,
-                serviceNode: relayResponse.servicer_node,
+                serviceNode: relay.servicer_node,
                 relayStart,
                 result: 500,
-                bytes: Buffer.byteLength(relayResponse.message, 'utf8'),
+                bytes: Buffer.byteLength(relay.message, 'utf8'),
                 fallback: false,
                 method,
                 error,
-                code: String(relayResponse.code),
+                code: String(relay.code),
                 origin: this.origin,
                 data,
-                pocketSession: this.pocketSession,
+                // TODO: Add pocket session again
+                session: this.session,
                 sticky,
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
               })
@@ -362,7 +373,7 @@ export class PocketRelayer {
                   requestID,
                   relayType: 'APP',
                   typeID: application.id,
-                  serviceNode: relayResponse.servicer_node,
+                  serviceNode: relay.servicer_node,
                 })
               })
           }
@@ -380,7 +391,6 @@ export class PocketRelayer {
         relayType: 'APP',
         typeID: application.id,
         error: e,
-        serviceNode: '',
         origin: this.origin,
         trace: e.stack,
       })
@@ -468,7 +478,7 @@ export class PocketRelayer {
               code: undefined,
               origin: this.origin,
               data,
-              pocketSession: this.pocketSession,
+              session: this.session,
               gigastakeAppID: applicationID !== application.id ? application.id : undefined,
             })
             .catch(function log(e) {
@@ -581,54 +591,79 @@ export class PocketRelayer {
       )
     }
 
-    const aatParams: [string, string, string, string] =
+    const pocketAAT: PocketAAT =
       this.aatPlan === AatPlans.FREEMIUM
-        ? [
-            application?.gatewayAAT?.version,
-            application?.freeTierAAT?.clientPublicKey,
-            application?.freeTierAAT?.applicationPublicKey,
-            application?.freeTierAAT?.applicationSignature,
-          ]
-        : [
-            application?.gatewayAAT?.version,
-            application?.gatewayAAT?.clientPublicKey,
-            application?.gatewayAAT?.applicationPublicKey,
-            application?.gatewayAAT?.applicationSignature,
-          ]
-
-    // Checks pass; create AAT
-    const pocketAAT = new PocketAAT(...aatParams)
+        ? {
+            version: application?.gatewayAAT?.version,
+            clientPublicKey: application?.freeTierAAT?.clientPublicKey,
+            applicationPublicKey: application?.freeTierAAT?.applicationPublicKey,
+            applicationSignature: application?.freeTierAAT?.applicationSignature,
+          }
+        : {
+            version: application?.gatewayAAT?.version,
+            clientPublicKey: application?.gatewayAAT?.clientPublicKey,
+            applicationPublicKey: application?.gatewayAAT?.applicationPublicKey,
+            applicationSignature: application?.gatewayAAT?.applicationSignature,
+          }
 
     // Pull the session so we can get a list of nodes and cherry pick which one to use
-    const pocketSession = await this.pocket.sessionManager.getCurrentSession(
-      pocketAAT,
-      blockchainID,
-      this.updateConfigurationTimeout(this.pocketConfiguration),
-      2
-    )
+    let session: Session
 
-    if (pocketSession instanceof Error) {
-      logger.log('error', 'ERROR obtaining a session: ' + pocketSession.message, {
+    try {
+      const sessionCacheKey = `session-cached-${application?.gatewayAAT.applicationPublicKey}-${blockchainID}`
+      const cachedSession = await this.redis.get(sessionCacheKey)
+
+      if (cachedSession) {
+        session = JSON.parse(cachedSession)
+      } else {
+        logger.log('info', 'call to dispatcher to obtain session', {
+          requestID,
+          blockchainID,
+          gatewayPublicKey: application?.gatewayAAT.applicationPublicKey,
+          typeID: application.id,
+        })
+
+        session = await this.relayer.getNewSession({
+          chain: blockchainID,
+          applicationPubKey: application?.gatewayAAT.applicationPublicKey,
+          options: {
+            retryAttempts: 3,
+            rejectSelfSignedCertificates: false,
+            timeout: SESSION_TIMEOUT,
+          },
+        })
+
+        // TODO: Remove when sdk does it internally
+        // @ts-ignore
+        session.nodes.forEach((node) => (node.stakedTokens = node.stakedTokens.toString()))
+
+        await this.redis.set(sessionCacheKey, JSON.stringify(session), 'EX', 200)
+      }
+    } catch (error) {
+      logger.log('error', 'ERROR obtaining a session: ' + error, {
         relayType: 'APP',
         typeID: application.id,
         origin: this.origin,
         blockchainID,
         requestID,
+        error: error.message,
       })
 
-      return pocketSession
+      return error
     }
+    this.session = session
+
     // Start the relay timer
     const relayStart = process.hrtime()
 
-    let nodes: Node[] = pocketSession.sessionNodes
+    let nodes: Node[] = session.nodes
 
-    this.pocketSession = pocketSession
+    this.session = session
     // sessionKey = "blockchain and a hash of the all the nodes in this session, sorted by public key"
-    const sessionKey = await hashBlockchainNodes(blockchainID, nodes, this.redis)
+    const { key } = session
 
-    this.pocketSession = pocketSession
-    const sessionCacheKey = `session-${sessionKey}`
+    this.session = session
+    const sessionCacheKey = `session-key-${key}`
 
     const exhaustedNodes = await this.redis.smembers(sessionCacheKey)
 
@@ -637,11 +672,10 @@ export class PocketRelayer {
     }
 
     if (nodes.length === 0) {
-      logger.log('warn', `SESSION: ${sessionKey} has exhausted all node relays`, {
+      logger.log('warn', `SESSION: ${key} has exhausted all node relays`, {
         requestID,
         relayType: 'APP',
         typeID: application.id,
-        serviceNode: '',
         blockchainID,
         origin: this.origin,
       })
@@ -660,14 +694,13 @@ export class PocketRelayer {
         nodes,
         requestID,
         blockchainID,
-        pocketAAT,
+        pocketAAT: pocketAAT,
         applicationID,
         applicationPublicKey,
         chainCheck: blockchainIDCheck,
         chainID: parseInt(blockchainChainID),
-        pocket: this.pocket,
-        pocketConfiguration: this.pocketConfiguration,
-        pocketSession,
+        relayer: this.relayer,
+        session,
         path: blockchainPath,
       }
 
@@ -684,10 +717,9 @@ export class PocketRelayer {
         blockchainSyncBackup,
         applicationID,
         applicationPublicKey,
-        pocket: this.pocket,
-        pocketAAT,
-        pocketConfiguration: this.pocketConfiguration,
-        pocketSession,
+        relayer: this.relayer,
+        pocketAAT: pocketAAT,
+        session: session,
       }
 
       syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
@@ -721,7 +753,7 @@ export class PocketRelayer {
             code: undefined,
             origin: this.origin,
             data,
-            pocketSession,
+            session: this.session,
             gigastakeAppID: applicationID !== application.id ? application.id : undefined,
           })
           .catch(function log(e) {
@@ -760,7 +792,7 @@ export class PocketRelayer {
             code: undefined,
             origin: this.origin,
             data,
-            pocketSession,
+            session: this.session,
             gigastakeAppID: applicationID !== application.id ? application.id : undefined,
           })
           .catch(function log(e) {
@@ -798,11 +830,11 @@ export class PocketRelayer {
     }
 
     if (!node) {
-      node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID, sessionCacheKey)
+      node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID, key)
     }
 
     if (this.checkDebug) {
-      logger.log('debug', JSON.stringify(pocketSession), {
+      logger.log('debug', JSON.stringify(session), {
         requestID,
         relayType: 'APP',
         typeID: application.id,
@@ -810,35 +842,28 @@ export class PocketRelayer {
       })
     }
 
-    // Adjust Pocket Configuration for a custom requestTimeOut
-    let relayConfiguration = this.pocketConfiguration
+    // TODO: Refactor try/catch to go with current flow
+    let relay: RelayResponse | Error
 
-    if (requestTimeOut) {
-      relayConfiguration = updateConfiguration(this.pocketConfiguration, requestTimeOut)
+    try {
+      relay = await this.relayer.relay({
+        blockchain: blockchainID,
+        data,
+        method: '',
+        node,
+        path: relayPath,
+        pocketAAT,
+        session,
+        options: {
+          timeout: requestTimeOut || DEFAULT_ALTRUIST_TIMEOUT,
+        },
+      })
+    } catch (error) {
+      relay = error
     }
 
-    // Send relay and process return: RelayResponse, RpcError, ConsensusNode, or undefined
-    const relayResponse = await this.pocket.sendRelay(
-      data,
-      blockchainID,
-      pocketAAT,
-      relayConfiguration,
-      undefined,
-      httpMethod,
-      relayPath,
-      node,
-      undefined,
-      requestID
-    )
-
     if (this.checkDebug) {
-      logger.log('debug', JSON.stringify(relayConfiguration), {
-        requestID,
-        relayType: 'APP',
-        typeID: application.id,
-        serviceNode: node?.publicKey,
-      })
-      logger.log('debug', JSON.stringify(relayResponse), {
+      logger.log('debug', JSON.stringify(relay), {
         requestID,
         relayType: 'APP',
         typeID: application.id,
@@ -847,7 +872,7 @@ export class PocketRelayer {
     }
 
     // Success
-    if (relayResponse instanceof RelayResponse) {
+    if (!(relay instanceof Error)) {
       // First, check for the format of the result; Pocket Nodes will return relays that include
       // erroneous results like "invalid host specified" when the node is configured incorrectly.
       // Those results are still marked as 200:success.
@@ -856,24 +881,24 @@ export class PocketRelayer {
       if (
         blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
         blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON // and
-        (!checkEnforcementJSON(relayResponse.payload) || // the relay response is not valid JSON // or
-          (isRelayError(relayResponse.payload) && !isUserError(relayResponse.payload))) // check if the payload indicates relay error, not a user error
+        (!checkEnforcementJSON(relay.response) || // the relay response is not valid JSON // or
+          (isRelayError(relay.response) && !isUserError(relay.response))) // check if the payload indicates relay error, not a user error
       ) {
         // then this result is invalid
-        return new RelayError(relayResponse.payload, 503, relayResponse.proof.servicerPubKey)
+        return new RelayError(relay.response, 503, node.publicKey)
       } else {
         await nodeSticker.setStickinessKey(application.id, node.address, this.origin)
 
         // Success
-        return relayResponse
+        return relay
       }
       // Error
-    } else if (relayResponse instanceof Error) {
+    } else if (relay instanceof Error) {
       // Remove node from session if error is due to max relays allowed reached
-      if (relayResponse.message === MAX_RELAYS_ERROR) {
-        await removeNodeFromSession(this.redis, blockchainID, (pocketSession as Session).sessionNodes, node.publicKey)
+      if (relay instanceof EvidenceSealedError) {
+        await removeNodeFromSession(this.redis, session, node.publicKey, true, requestID, blockchainID)
       }
-      return new RelayError(relayResponse.message, 500, node?.publicKey)
+      return new RelayError(relay.message, 500, node?.publicKey)
       // ConsensusNode
     } else {
       // TODO: ConsensusNode is a possible return
@@ -896,20 +921,5 @@ export class PocketRelayer {
     }
 
     return limiterResponse
-  }
-
-  updateConfigurationTimeout(pocketConfiguration: Configuration): Configuration {
-    return new Configuration(
-      pocketConfiguration.maxDispatchers,
-      pocketConfiguration.maxSessions,
-      pocketConfiguration.consensusNodeCount,
-      4000,
-      pocketConfiguration.acceptDisputedResponses,
-      pocketConfiguration.sessionBlockFrequency,
-      pocketConfiguration.blockTime,
-      pocketConfiguration.maxSessionRefreshRetries,
-      pocketConfiguration.validateRelayResponses,
-      pocketConfiguration.rejectSelfSignedCertificates
-    )
   }
 }

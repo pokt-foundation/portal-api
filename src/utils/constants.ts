@@ -14,4 +14,9 @@ export const WS_ONLY_METHODS = [
 export const POCKET_JS_INSTANCE_TIMEOUT_KEY = 'pocket-js-timeout'
 export const POCKET_JS_TIMEOUT_MIN = 60 // Seconds
 export const POCKET_JS_TIMEOUT_MAX = 120 // Seconds
+
+export const SESSION_TIMEOUT = 2000
+export const CHECK_TIMEOUT = 4000
 export const DEFAULT_ALTRUIST_TIMEOUT = 60000 // Milliseconds
+
+export const PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION = 0.7
