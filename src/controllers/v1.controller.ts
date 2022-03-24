@@ -259,7 +259,10 @@ export class V1Controller {
           loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
 
           if (!loadBalancer?.id) {
-            throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('GS load balancer not found', -32054))
+            throw new ErrorObject(
+              reqRPCID,
+              new jsonrpc.JsonRpcError(`GS (${redirect.alias}) load balancer not found`, -32054)
+            )
           }
 
           const originalApp = await this.fetchLoadBalancerApplication(
@@ -695,11 +698,13 @@ export class V1Controller {
     if (blockchainRedirects.length < 1) {
       return undefined
     }
+
     const redirect = blockchainRedirects.find((rdr) => this.host.toLowerCase().includes(rdr.alias))
 
     const loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
+
     if (!loadBalancer?.id) {
-      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('GS load balancer not found', -32054))
+      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError(`GS (${redirect.alias}) load balancer not found`, -32054))
     }
 
     const application = await this.fetchLoadBalancerApplication(
