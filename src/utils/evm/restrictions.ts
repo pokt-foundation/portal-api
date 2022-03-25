@@ -13,7 +13,7 @@ export async function enforceEVMRestrictions(
   requestID: string,
   rpcID: number,
   logLimitBlocks: number,
-  altruistUrl: string
+  altruistURL: string
 ): Promise<ErrorObject | void> {
   const method = parseMethod(parsedRawData)
 
@@ -30,6 +30,6 @@ export async function enforceEVMRestrictions(
   } else if (application?.gatewaySettings?.whitelistContracts?.length > 0) {
     return enforceContractWhitelist(rpcID, parsedRawData, application?.gatewaySettings?.whitelistContracts)
   } else if (method === 'eth_getLogs') {
-    return enforceGetLogs(rpcID, parsedRawData, blockchainID, requestID, logLimitBlocks, altruistUrl)
+    return enforceGetLogs(rpcID, parsedRawData, blockchainID, requestID, logLimitBlocks, altruistURL)
   }
 }

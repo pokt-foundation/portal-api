@@ -11,7 +11,7 @@ export async function enforceGetLogs(
   blockchainID: string,
   requestID: string,
   logLimitBlocks: number,
-  altruistUrl: string
+  altruistURL: string
 ): Promise<ErrorObject | void> {
   let toBlock: number
   let fromBlock: number
@@ -30,7 +30,7 @@ export async function enforceGetLogs(
     isFromBlockHex = true
   }
 
-  if ((toBlock !== 0 || fromBlock !== 0) && altruistUrl) {
+  if ((toBlock !== 0 || fromBlock !== 0) && altruistURL) {
     // Altruist
     // TODO: use a generic getHeightFromAltruist function to fetch altruist block height
     const rawData = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] })
@@ -38,7 +38,7 @@ export async function enforceGetLogs(
     try {
       const axiosConfig = {
         method: 'POST',
-        url: altruistUrl,
+        url: altruistURL,
         data: rawData,
         headers: { 'Content-Type': 'application/json' },
       } as AxiosRequestConfig
@@ -54,7 +54,7 @@ export async function enforceGetLogs(
         fromBlock = latestBlock
       }
     } catch (e) {
-      logger.log('error', `(eth_getLogs) Altruist unavailable: (${altruistUrl})`, {
+      logger.log('error', `(eth_getLogs) Altruist unavailable: (${altruistURL})`, {
         blockchainID,
         requestID,
       })
