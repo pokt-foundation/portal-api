@@ -1,6 +1,6 @@
 import { Relayer } from '@pokt-foundation/pocketjs-relayer'
 import { HTTPMethod } from '@pokt-foundation/pocketjs-types'
-import { Redis } from 'ioredis'
+import * as cacheManager from 'cache-manager'
 import jsonrpc, { ErrorObject, JsonRpcError } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
@@ -53,7 +53,8 @@ export class V1Controller {
     @inject('relayPath') private relayPath: string,
     @inject('relayRetries') private relayRetries: number,
     @inject('relayer') private relayer: Relayer,
-    @inject('redisInstance') private redis: Redis,
+
+    @inject('redisInstance') private redis: cacheManager.Cache,
     @inject('pgPool') private pgPool: PGPool,
     @inject('databaseEncryptionKey') private databaseEncryptionKey: string,
     @inject('processUID') private processUID: string,
@@ -220,7 +221,7 @@ export class V1Controller {
 
       reqRPCID = parseRPCID(parsedRawData)
 
-      let loadBalancer = await this.fetchLoadBalancer(id, filter)
+      let loadBalancer = await this.getCachedLoadBalancer(id, filter)
 
       if (!loadBalancer?.id) {
         throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('Load balancer not found', -32054))
@@ -256,7 +257,7 @@ export class V1Controller {
 
           const redirect = blockchainRedirects.find((rdr) => this.host.toLowerCase().includes(rdr.alias))
 
-          loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
+          loadBalancer = await this.getCachedLoadBalancer(redirect.loadBalancerID, filter)
 
           if (!loadBalancer?.id) {
             throw new ErrorObject(
@@ -352,6 +353,8 @@ export class V1Controller {
 
         return e
       }
+
+      console.log(e)
 
       if (e instanceof SyntaxError && e.message.includes('JSON')) {
         return jsonrpc.error(reqRPCID, new JsonRpcError('The request body is not proper JSON', -32066))
@@ -476,6 +479,8 @@ export class V1Controller {
         return e
       }
 
+      console.log(e)
+
       if (e instanceof SyntaxError && e.message.includes('JSON')) {
         return jsonrpc.error(reqRPCID, new JsonRpcError('The request body is not proper JSON', -32066))
       }
@@ -587,7 +592,7 @@ export class V1Controller {
 
       const clientStickyKey = `${keyPrefix}-${this.ipAddress}-${blockchainID}`
       const clientStickyAppNodeRaw = await this.redis.get(clientStickyKey)
-      const clientStickyAppNode = JSON.parse(clientStickyAppNodeRaw)
+      const clientStickyAppNode = JSON.parse(clientStickyAppNodeRaw as string)
 
       if (clientStickyAppNode?.applicationID && clientStickyAppNode?.nodeAddress) {
         return {
@@ -600,21 +605,27 @@ export class V1Controller {
     return { preferredApplicationID: '', preferredNodeAddress: '', rpcID }
   }
 
-  // Pull LoadBalancer records from redis then DB
-  async fetchLoadBalancer(id: string, filter: FilterExcludingWhere | undefined): Promise<LoadBalancers | undefined> {
-    const cachedLoadBalancer = await this.redis.get(id)
+  async getLoadBalancer(id: string, filter: FilterExcludingWhere | undefined): Promise<LoadBalancers | undefined> {
+    try {
+      const loadBalancer = await this.loadBalancersRepository.findById(id, filter)
 
-    if (!cachedLoadBalancer) {
-      try {
-        const loadBalancer = await this.loadBalancersRepository.findById(id, filter)
-
-        await this.redis.set(id, JSON.stringify(loadBalancer), 'EX', 60)
-        return new LoadBalancers(loadBalancer)
-      } catch (e) {
-        return undefined
-      }
+      await this.redis.set(id, JSON.stringify(loadBalancer), { ttl: 60 })
+      return new LoadBalancers(loadBalancer)
+    } catch (e) {
+      return undefined
     }
-    return new LoadBalancers(JSON.parse(cachedLoadBalancer))
+  }
+
+  // Pull LoadBalancer records from cache manager
+  async getCachedLoadBalancer(
+    id: string,
+    filter: FilterExcludingWhere | undefined
+  ): Promise<LoadBalancers | undefined> {
+    const cachedLoadBalancer = await this.redis.wrap(id, () => {
+      return this.getLoadBalancer(id, filter)
+    })
+
+    return new LoadBalancers(cachedLoadBalancer)
   }
 
   // Pull Application records from redis then DB
@@ -625,13 +636,13 @@ export class V1Controller {
       try {
         const application = await this.applicationsRepository.findById(id, filter)
 
-        await this.redis.set(id, JSON.stringify(application), 'EX', 60)
+        await this.redis.set(id, JSON.stringify(application), { ttl: 60 })
         return new Applications(application)
       } catch (e) {
         return undefined
       }
     }
-    return new Applications(JSON.parse(cachedApplication))
+    return new Applications(JSON.parse(cachedApplication as string))
   }
 
   // Pull a random Load Balancer Application from redis then DB
@@ -654,9 +665,9 @@ export class V1Controller {
           verifiedIDs.push(application.id)
         }
       }
-      await this.redis.set('applicationIDs-' + id, JSON.stringify(verifiedIDs), 'EX', 60)
+      await this.redis.set('applicationIDs-' + id, JSON.stringify(verifiedIDs), { ttl: 60 })
     } else {
-      verifiedIDs = JSON.parse(cachedLoadBalancerApplicationIDs)
+      verifiedIDs = JSON.parse(cachedLoadBalancerApplicationIDs as string)
     }
 
     // Sanity check; make sure applications are configured for this LB
@@ -701,7 +712,7 @@ export class V1Controller {
 
     const redirect = blockchainRedirects.find((rdr) => this.host.toLowerCase().includes(rdr.alias))
 
-    const loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
+    const loadBalancer = await this.getCachedLoadBalancer(redirect.loadBalancerID, filter)
 
     if (!loadBalancer?.id) {
       throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError(`GS (${redirect.alias}) load balancer not found`, -32054))

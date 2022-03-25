@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import os from 'os'
 import path from 'path'
 import process from 'process'
+import * as cacheManager from 'cache-manager'
 import Redis from 'ioredis'
 import pg from 'pg'
 import { BootMixin } from '@loopback/boot'
@@ -14,10 +15,6 @@ import { InfluxDB } from '@influxdata/influxdb-client'
 import AatPlans from './config/aat-plans.json'
 import { getPocketInstance } from './config/pocket-config'
 import { GatewaySequence } from './sequence'
-import { POCKET_JS_INSTANCE_TIMEOUT_KEY, POCKET_JS_TIMEOUT_MAX, POCKET_JS_TIMEOUT_MIN } from './utils/constants'
-import { getRandomInt } from './utils/helpers'
-
-const cacheManager = require('cache-manager')
 const redisStore = require('cache-manager-ioredis')
 const logger = require('./services/logger')
 
@@ -116,7 +113,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       port: parseInt(redisPort),
     }
 
-    const redis =
+    const redis: cacheManager.Cache =
       environment === 'production'
         ? cacheManager.caching({
             store: redisStore,
@@ -130,23 +127,19 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
                 },
               },
             },
+            max: 100,
+            ttl: 10,
           })
         : cacheManager.caching({
             store: redisStore,
             redisInstance: new Redis(redisConfig.port, redisConfig.host, {
               keyPrefix: `${commitHash}-`,
             }),
+            max: 100,
+            ttl: 10,
           })
 
     this.bind('redisInstance').to(redis)
-
-    // Avoid updating the pocketjs instance right away on boot
-    await redis.set(
-      POCKET_JS_INSTANCE_TIMEOUT_KEY,
-      'true',
-      'EX',
-      getRandomInt(POCKET_JS_TIMEOUT_MIN, POCKET_JS_TIMEOUT_MAX)
-    )
 
     // New metrics postgres for error recording
     const psqlConnection: string = PSQL_CONNECTION || ''

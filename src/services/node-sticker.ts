@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
 import { Node } from '@pokt-foundation/pocketjs-types'
-import { Redis } from 'ioredis'
+import * as cacheManager from 'cache-manager'
 import { getAddressFromPublicKey } from 'pocket-tools'
 import { checkWhitelist } from '../utils/enforcements'
 import { StickinessOptions } from '../utils/types'
@@ -22,7 +21,7 @@ export class NodeSticker {
   stickyOrigins?: string[]
   rpcIDThreshold: number
 
-  redis: Redis
+  redis: cacheManager.Cache
   blockchainID: string
   ipAddress: string
   data?: string | object
@@ -47,7 +46,7 @@ export class NodeSticker {
     }: StickinessOptions,
     blockchainID: string,
     ipAddress: string,
-    redis: Redis,
+    redis: cacheManager.Cache,
     data?: string | object,
     requestID?: string,
     typeID?: string
@@ -159,7 +158,9 @@ export class NodeSticker {
       const nextRequest = await this.redis.get(this.clientStickyKey)
 
       if (!nextRequest) {
-        await this.redis.set(this.clientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', this.duration)
+        await this.redis.set(this.clientStickyKey, JSON.stringify({ applicationID, nodeAddress }), {
+          ttl: this.duration,
+        })
       }
 
       if (relayLimiter && this.relaysLimit) {
@@ -174,7 +175,7 @@ export class NodeSticker {
           const clientStickyKey = this.buildClientStickyKey((this.nextRPCID + i).toString())
 
           keySets.push(
-            this.redis.set(clientStickyKey, JSON.stringify({ applicationID, nodeAddress }), 'EX', this.duration)
+            this.redis.set(clientStickyKey, JSON.stringify({ applicationID, nodeAddress }), { ttl: this.duration })
           )
         }
 

@@ -6,8 +6,8 @@ import {
 } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
 import axios from 'axios'
+import * as cacheManager from 'cache-manager'
 import extractDomain from 'extract-domain'
-import { Redis } from 'ioredis'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { removeNodeFromSession, removeSessionCache, removeChecksCache } from '../utils/cache'
@@ -18,13 +18,18 @@ import { CheckResult, RelayResponse } from '../utils/types'
 const logger = require('../services/logger')
 
 export class SyncChecker {
-  redis: Redis
+  redis: cacheManager.Cache
   metricsRecorder: MetricsRecorder
   defaultSyncAllowance: number
   origin: string
   sessionErrors: number
 
-  constructor(redis: Redis, metricsRecorder: MetricsRecorder, defaultSyncAllowance: number, origin: string) {
+  constructor(
+    redis: cacheManager.Cache,
+    metricsRecorder: MetricsRecorder,
+    defaultSyncAllowance: number,
+    origin: string
+  ) {
     this.redis = redis
     this.metricsRecorder = metricsRecorder
     this.defaultSyncAllowance = defaultSyncAllowance
@@ -59,7 +64,7 @@ export class SyncChecker {
     const cached = Boolean(syncedNodesCached)
 
     if (cached) {
-      syncedNodesList = JSON.parse(syncedNodesCached)
+      syncedNodesList = JSON.parse(syncedNodesCached as string)
       for (const node of nodes) {
         if (syncedNodesList.includes(node.publicKey)) {
           syncedNodes.push(node)
@@ -78,7 +83,7 @@ export class SyncChecker {
     } else {
       // Set lock as this thread checks the sync with 60 second ttl.
       // If any major errors happen below, it will retry the sync check every 60 seconds.
-      await this.redis.set('lock-' + syncedNodesKey, 'true', 'EX', 60)
+      await this.redis.set('lock-' + syncedNodesKey, 'true', { ttl: 60 })
     }
 
     // Fires all 5 sync checks synchronously then assembles the results
@@ -260,7 +265,7 @@ export class SyncChecker {
         })
 
         // Erase failure mark
-        await this.redis.set(blockchainID + '-' + node.publicKey + '-failure', 'false', 'EX', 60 * 60 * 24 * 30)
+        await this.redis.set(blockchainID + '-' + node.publicKey + '-failure', 'false', { ttl: 60 * 60 * 24 * 30 })
 
         // In-sync: add to nodes list
         syncedNodes.push(node)
@@ -311,12 +316,9 @@ export class SyncChecker {
       origin: this.origin,
       sessionKey,
     })
-    await this.redis.set(
-      syncedNodesKey,
-      JSON.stringify(syncedNodesList),
-      'EX',
-      syncedNodes.length > 0 ? 300 : 30 // will retry sync check every 30 seconds if no nodes are in sync
-    )
+    await this.redis.set(syncedNodesKey, JSON.stringify(syncedNodesList), {
+      ttl: syncedNodes.length > 0 ? 300 : 30, // will retry sync check every 30 seconds if no nodes are in sync
+    })
 
     // TODO: Implement consensus challenge
     // If one or more nodes of this session are not in sync, fire a consensus relay with the same check.

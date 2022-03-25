@@ -1,5 +1,5 @@
 import { Node } from '@pokt-foundation/pocketjs-types'
-import { Redis } from 'ioredis'
+import * as cacheManager from 'cache-manager'
 import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
 
 import { BlockchainsRepository } from '../repositories'
@@ -8,13 +8,11 @@ import { BlockchainDetails, CheckResult, BlockchainRedirect } from './types'
 
 // Fetch node client type if Ethereum based
 export async function fetchClientTypeLog(
-  redis: Redis,
+  redis: cacheManager.Cache,
   blockchainID: string,
   id: string | undefined
 ): Promise<string | null> {
-  const clientTypeLog = await redis.get(`${blockchainID}-${id}-clientType`)
-
-  return clientTypeLog
+  return redis.get(`${blockchainID}-${id}-clientType`)
 }
 
 export function isCheckPromiseResolved(promise: PromiseSettledResult<CheckResult>): boolean {
@@ -31,7 +29,7 @@ export function filterCheckedNodes(syncCheckNodes: Node[], chainCheckedNodes: No
 // Load requested blockchain by parsing the URL
 export async function loadBlockchain(
   host: string,
-  redis: Redis,
+  redis: cacheManager.Cache,
   blockchainsRepository: BlockchainsRepository,
   defaultLogLimitBlocks: number,
   rpcID: number
@@ -42,9 +40,9 @@ export async function loadBlockchain(
 
   if (!cachedBlockchains) {
     blockchains = await blockchainsRepository.find()
-    await redis.set('blockchains', JSON.stringify(blockchains), 'EX', 60)
+    await redis.set('blockchains', JSON.stringify(blockchains), { ttl: 60 })
   } else {
-    blockchains = JSON.parse(cachedBlockchains)
+    blockchains = JSON.parse(cachedBlockchains as string)
   }
 
   // Split off the first part of the request's host and check for matches
@@ -135,7 +133,7 @@ export async function loadBlockchain(
 // Get blockchain's alias by it's redirect domain
 export async function getBlockchainAliasesByDomain(
   host: string,
-  redis: Redis,
+  redis: cacheManager.Cache,
   blockchainsRepository: BlockchainsRepository,
   rpcID: number
 ): Promise<{ blockchainAliases: string[] }> {
@@ -145,9 +143,9 @@ export async function getBlockchainAliasesByDomain(
 
   if (!cachedBlockchains) {
     blockchains = await blockchainsRepository.find()
-    await redis.set('blockchains', JSON.stringify(blockchains), 'EX', 60)
+    await redis.set('blockchains', JSON.stringify(blockchains), { ttl: 60 })
   } else {
-    blockchains = JSON.parse(cachedBlockchains)
+    blockchains = JSON.parse(cachedBlockchains as string)
   }
 
   const [blockchainFilter] = blockchains.filter((b: { redirects: BlockchainRedirect[] }) =>

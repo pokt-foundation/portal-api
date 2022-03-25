@@ -1,9 +1,13 @@
 import { Node } from '@pokt-foundation/pocketjs-types'
-import { Redis } from 'ioredis'
+import * as cacheManager from 'cache-manager'
 import { Applications } from '../models/applications.model'
 
 // hashes a blockchain and all of the nodes given, sorted by public key
-export async function hashBlockchainNodes(blockchainID: string, nodes: Node[] = [], redis: Redis): Promise<string> {
+export async function hashBlockchainNodes(
+  blockchainID: string,
+  nodes: Node[] = [],
+  redis: cacheManager.Cache
+): Promise<string> {
   const sortedNodes = nodes.sort((a, b) => (a.publicKey > b.publicKey ? 1 : b.publicKey > a.publicKey ? -1 : 0))
 
   const sortedNodesStr = JSON.stringify(sortedNodes, (k, v) => (k !== 'publicKey' ? v : undefined))
@@ -15,10 +19,10 @@ export async function hashBlockchainNodes(blockchainID: string, nodes: Node[] = 
 
   if (!blockchainHash) {
     blockchainHash = `${blockchainID}-${calculateHash()}`
-    await redis.set(blockchainHashKey, blockchainHash, 'EX', 300)
+    await redis.set(blockchainHashKey, blockchainHash, { ttl: 300 })
   }
 
-  return blockchainHash
+  return blockchainHash as string
 }
 
 interface MeasuredPromise<T> {

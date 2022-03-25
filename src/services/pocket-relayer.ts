@@ -1,7 +1,7 @@
 import { EvidenceSealedError, Relayer } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT, HTTPMethod } from '@pokt-foundation/pocketjs-types'
 import axios, { AxiosRequestConfig, Method } from 'axios'
-import { Redis } from 'ioredis'
+import * as cacheManager from 'cache-manager'
 import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
@@ -40,7 +40,7 @@ export class PocketRelayer {
   metricsRecorder: MetricsRecorder
   syncChecker: SyncChecker
   chainChecker: ChainChecker
-  redis: Redis
+  redis: cacheManager.Cache
   databaseEncryptionKey: string
   secretKey: string
   relayRetries: number
@@ -82,7 +82,7 @@ export class PocketRelayer {
     metricsRecorder: MetricsRecorder
     syncChecker: SyncChecker
     chainChecker: ChainChecker
-    redis: Redis
+    redis: cacheManager.Cache
     databaseEncryptionKey: string
     secretKey: string
     relayRetries: number
@@ -614,7 +614,7 @@ export class PocketRelayer {
       const cachedSession = await this.redis.get(sessionCacheKey)
 
       if (cachedSession) {
-        session = JSON.parse(cachedSession)
+        session = JSON.parse(cachedSession as string)
       } else {
         logger.log('info', 'call to dispatcher to obtain session', {
           requestID,
@@ -637,7 +637,7 @@ export class PocketRelayer {
         // @ts-ignore
         session.nodes.forEach((node) => (node.stakedTokens = node.stakedTokens.toString()))
 
-        await this.redis.set(sessionCacheKey, JSON.stringify(session), 'EX', 200)
+        await this.redis.set(sessionCacheKey, JSON.stringify(session), { ttl: 200 })
       }
     } catch (error) {
       logger.log('error', 'ERROR obtaining a session: ' + error, {

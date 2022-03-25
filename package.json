@@ -77,6 +77,8 @@
     "@pokt-foundation/pocketjs-signer": "^0.0.6",
     "@pokt-foundation/pocketjs-types": "^0.0.6",
     "@pokt-foundation/pocketjs-utils": "^0.0.6",
+    "@types/cache-manager": "^3.4.3",
+    "@types/cache-manager-ioredis": "^2.0.2",
     "assert": "^2.0.0",
     "aws-sdk": "^2.1023.0",
     "axios": "^0.25.0",

@@ -1,8 +1,8 @@
 import process from 'process'
 import { Session } from '@pokt-foundation/pocketjs-types'
 import { Logger } from 'ajv'
+import * as cacheManager from 'cache-manager'
 import extractDomain from 'extract-domain'
-import { Redis } from 'ioredis'
 import { Pool as PGPool } from 'pg'
 
 import pgFormat from 'pg-format'
@@ -14,7 +14,7 @@ const os = require('os')
 const logger = require('../services/logger')
 
 export class MetricsRecorder {
-  redis: Redis
+  redis: cacheManager.Cache
   influxWriteAPI: WriteApi
   pgPool: PGPool
   cherryPicker: CherryPicker
@@ -27,7 +27,7 @@ export class MetricsRecorder {
     cherryPicker,
     processUID,
   }: {
-    redis: Redis
+    redis: cacheManager.Cache
     influxWriteAPI: WriteApi
     pgPool: PGPool
     cherryPicker: CherryPicker

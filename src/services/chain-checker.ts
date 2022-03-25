@@ -5,8 +5,8 @@ import {
   OutOfSyncRequestError,
 } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
+import * as cacheManager from 'cache-manager'
 import extractDomain from 'extract-domain'
-import { Redis } from 'ioredis'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { removeChecksCache, removeNodeFromSession, removeSessionCache } from '../utils/cache'
@@ -17,12 +17,12 @@ import { CheckResult, RelayResponse } from '../utils/types'
 const logger = require('../services/logger')
 
 export class ChainChecker {
-  redis: Redis
+  redis: cacheManager.Cache
   metricsRecorder: MetricsRecorder
   origin: string
   sessionErrors: number
 
-  constructor(redis: Redis, metricsRecorder: MetricsRecorder, origin: string) {
+  constructor(redis: cacheManager.Cache, metricsRecorder: MetricsRecorder, origin: string) {
     this.redis = redis
     this.metricsRecorder = metricsRecorder
     this.origin = origin
@@ -54,7 +54,7 @@ export class ChainChecker {
     const cached = Boolean(CheckedNodesCached)
 
     if (cached) {
-      CheckedNodesList = JSON.parse(CheckedNodesCached)
+      CheckedNodesList = JSON.parse(CheckedNodesCached as string)
       for (const node of nodes) {
         if (CheckedNodesList.includes(node.publicKey)) {
           CheckedNodes.push(node)
@@ -73,7 +73,7 @@ export class ChainChecker {
     } else {
       // Set lock as this thread checks the Chain with 60 second ttl.
       // If any major errors happen below, it will retry the Chain check every 60 seconds.
-      await this.redis.set('lock-' + checkedNodesKey, 'true', 'EX', 60)
+      await this.redis.set('lock-' + checkedNodesKey, 'true', { ttl: 60 })
     }
 
     // Fires all Chain checks Chainhronously then assembles the results
@@ -154,12 +154,9 @@ export class ChainChecker {
       origin: this.origin,
       sessionKey,
     })
-    await this.redis.set(
-      checkedNodesKey,
-      JSON.stringify(CheckedNodesList),
-      'EX',
-      CheckedNodes.length > 0 ? 600 : 30 // will retry Chain check every 30 seconds if no nodes are in Chain
-    )
+    await this.redis.set(checkedNodesKey, JSON.stringify(CheckedNodesList), {
+      ttl: CheckedNodes.length > 0 ? 600 : 30, // will retry Chain check every 30 seconds if no nodes are in Chain
+    })
 
     // TODO: Implement Consensus challenge
     // If one or more nodes of this session are not in Chain, fire a consensus relay with the same check.
