@@ -5,7 +5,7 @@ import { Applications } from '../../src/models'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { PocketMock } from '../mocks/pocketjs'
 
-describe('Cherry p  icker service (unit)', () => {
+describe('Cherry picker service (unit)', () => {
   let cherryPicker: CherryPicker
   let redis: RedisMock
 
