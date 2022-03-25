@@ -12,7 +12,7 @@ import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { removeNodeFromSession } from '../utils/cache'
-import { SESSION_TIMEOUT, DEFAULT_ALTRUIST_TIMEOUT } from '../utils/constants'
+import { SESSION_TIMEOUT, DEFAULT_ALTRUIST_TIMEOUT, EVM_CHAINS } from '../utils/constants'
 import {
   checkEnforcementJSON,
   isRelayError,
@@ -21,11 +21,11 @@ import {
   checkSecretKey,
   SecretKeyDetails,
 } from '../utils/enforcements'
+import { enforceEVMRestrictions } from '../utils/evm/restrictions'
 import { getApplicationPublicKey } from '../utils/helpers'
 import { parseJSONRPCError, parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
 import { CheckResult, RelayResponse, SendRelayOptions } from '../utils/types'
-import { enforceEVMLimits } from './limiter'
 import { NodeSticker } from './node-sticker'
 
 const logger = require('../services/logger')
@@ -190,27 +190,32 @@ export class PocketRelayer {
       logLimitBlocks = blockchainLogLimitBlocks
     }
 
-    const data = JSON.stringify(parsedRawData)
-    const limitation = await this.enforceLimits(
+    const method = parseMethod(parsedRawData)
+
+    const restriction = await this.enforceRestrictions(
+      application,
       parsedRawData,
       blockchainID,
       requestID,
+      rpcID,
       logLimitBlocks,
       blockchainAltruist
     )
 
-    if (limitation instanceof ErrorObject) {
-      logger.log('error', `LIMITATION ERROR ${blockchainID} req: ${data}`, {
+    const data = JSON.stringify(parsedRawData)
+
+    if (restriction instanceof ErrorObject) {
+      logger.log('error', `RESTRICTION ERROR ${blockchainID} req: ${data}`, {
         blockchainID,
         requestID,
         relayType: 'APP',
-        error: `${parsedRawData.method} method limitations exceeded.`,
+        error: `${restriction.serialize()}`,
         typeID: application.id,
         origin: this.origin,
       })
-      return limitation
+      return restriction
     }
-    const method = parseMethod(parsedRawData)
+
     const fallbackAvailable = blockchainAltruist !== undefined ? true : false
 
     try {
@@ -906,20 +911,56 @@ export class PocketRelayer {
     }
   }
 
-  async enforceLimits(
+  async enforceRestrictions(
+    application: Applications,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     parsedRawData: Record<string, any>,
     blockchainID: string,
     requestID: string,
+    rpcID: number,
     logLimitBlocks: number,
     altruist: string
   ): Promise<void | ErrorObject> {
-    let limiterResponse: Promise<void | ErrorObject>
+    let response: Promise<void | ErrorObject>
 
-    if (blockchainID === '0021') {
-      limiterResponse = enforceEVMLimits(parsedRawData, blockchainID, requestID, logLimitBlocks, altruist)
+    // Do nothing if chain is non-EVM
+    if (!EVM_CHAINS.includes(blockchainID)) {
+      return
     }
 
-    return limiterResponse
+    // Is it a bundled transaction?
+    if (parsedRawData instanceof Array) {
+      for (const rawData of parsedRawData) {
+        response = enforceEVMRestrictions(
+          application,
+          rawData,
+          blockchainID,
+          requestID,
+          rpcID,
+          logLimitBlocks,
+          altruist
+        )
+
+        // If any of the bundled tx triggers a restriction, return
+        if (response instanceof ErrorObject) {
+          return response
+        }
+      }
+    } else {
+      // Non-bundled tx
+      response = enforceEVMRestrictions(
+        application,
+        parsedRawData,
+        blockchainID,
+        requestID,
+        rpcID,
+        logLimitBlocks,
+        altruist
+      )
+    }
+
+    // TODO: Non-EVM restrictions
+
+    return response
   }
 }
