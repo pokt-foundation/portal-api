@@ -11,6 +11,26 @@ export const WS_ONLY_METHODS = [
   'newBlockFilter',
 ]
 
+export const EVM_CHAINS = [
+  '0021',
+  '0022',
+  '0028',
+  '0026',
+  '0024',
+  '0025',
+  '0023',
+  '0046',
+  '0027',
+  '0003',
+  '0004',
+  '0012',
+  '000C',
+  '0040',
+  '0A40',
+  '0009',
+  '000B',
+]
+
 export const POCKET_JS_INSTANCE_TIMEOUT_KEY = 'pocket-js-timeout'
 export const POCKET_JS_TIMEOUT_MIN = 60 // Seconds
 export const POCKET_JS_TIMEOUT_MAX = 120 // Seconds
