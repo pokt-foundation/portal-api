@@ -923,7 +923,7 @@ export class PocketRelayer {
   ): Promise<void | ErrorObject> {
     let response: Promise<void | ErrorObject>
 
-    // Do nothing if chain is non-EVM
+    // Do not check for restrictions if chain is non-EVM
     if (!EVM_CHAINS.includes(blockchainID)) {
       return
     }
