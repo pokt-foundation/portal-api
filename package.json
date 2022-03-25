@@ -80,6 +80,8 @@
     "assert": "^2.0.0",
     "aws-sdk": "^2.1023.0",
     "axios": "^0.25.0",
+    "cache-manager": "^3.6.0",
+    "cache-manager-ioredis": "^2.1.0",
     "datadog-winston": "^1.5.1",
     "dd-trace": "^2.0.0",
     "dotenv": "^15.0.0",

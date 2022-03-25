@@ -16,6 +16,9 @@ import { getPocketInstance } from './config/pocket-config'
 import { GatewaySequence } from './sequence'
 import { POCKET_JS_INSTANCE_TIMEOUT_KEY, POCKET_JS_TIMEOUT_MAX, POCKET_JS_TIMEOUT_MIN } from './utils/constants'
 import { getRandomInt } from './utils/helpers'
+
+const cacheManager = require('cache-manager')
+const redisStore = require('cache-manager-ioredis')
 const logger = require('./services/logger')
 
 require('log-timestamp')
@@ -115,14 +118,24 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     const redis =
       environment === 'production'
-        ? new Redis.Cluster([redisConfig], {
-            scaleReads: 'slave',
-            redisOptions: {
-              keyPrefix: `${commitHash}-`,
+        ? cacheManager.caching({
+            store: redisStore,
+            clusterConfig: {
+              nodes: [redisConfig],
+              options: {
+                scaleReads: 'slave',
+                maxRedirections: 16,
+                redisOptions: {
+                  keyPrefix: `${commitHash}-`,
+                },
+              },
             },
           })
-        : new Redis(redisConfig.port, redisConfig.host, {
-            keyPrefix: `${commitHash}-`,
+        : cacheManager.caching({
+            store: redisStore,
+            redisInstance: new Redis(redisConfig.port, redisConfig.host, {
+              keyPrefix: `${commitHash}-`,
+            }),
           })
 
     this.bind('redisInstance').to(redis)
