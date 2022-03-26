@@ -29,65 +29,9 @@ export class CherryPicker {
     this.archivalChains = archivalChains || []
   }
 
-  // Record the latency and success rate of each application, 15 minute TTL
-  // When selecting an application, pull the stats for each application in the load balancer
-  // Rank and weight them for application choice
-  async cherryPickApplication(
-    loadBalancerID: string,
-    applications: Array<string>,
-    blockchain: string,
-    requestID: string
-  ): Promise<string> {
-    let sortedLogs = [] as ServiceLog[]
-
-    for (const application of applications) {
-      const rawServiceLog = await this.fetchRawServiceLog(blockchain, application)
-
-      sortedLogs.push(await this.createUnsortedLog(application, blockchain, rawServiceLog!))
-    }
-
-    // Sort application logs by highest success rate, then by lowest latency
-    sortedLogs = this.sortLogs(sortedLogs, requestID, 'LB', loadBalancerID)
-
-    // Iterate through sorted logs and form in to a weighted list
-    // 50 failures per 5 minutes allowed on apps (all 5 nodes failed 3 times)
-    let rankedItems = await this.rankItems(blockchain, sortedLogs, 50)
-
-    // If we have no applications left because all are failures, ¯\_(ツ)_/¯
-    if (rankedItems.length === 0) {
-      logger.log('warn', 'Cherry picking failure -- apps', {
-        requestID: requestID,
-        relayType: 'LB',
-        typeID: loadBalancerID,
-        serviceNode: '',
-        blockchainID: blockchain,
-      })
-      rankedItems = applications
-    }
-
-    const selectedApplication = Math.floor(Math.random() * rankedItems.length)
-    const application = rankedItems[selectedApplication]
-
-    if (this.checkDebug) {
-      logger.log('info', 'Number of weighted applications for selection: ' + rankedItems.length, {
-        requestID: requestID,
-        relayType: 'LB',
-        typeID: loadBalancerID,
-        blockchainID: blockchain,
-      })
-      logger.log('info', 'Selected ' + selectedApplication + ' : ' + application, {
-        requestID: requestID,
-        relayType: 'LB',
-        typeID: loadBalancerID,
-        blockchainID: blockchain,
-      })
-    }
-    return application
-  }
-
   // Record the latency and success rate of each node, 1 hour TTL
   // When selecting a node, pull the stats for each node in the session
-  // Rank and weight them for node choice
+  // Rank and weight them for node choice.
   async cherryPickNode(
     application: Applications,
     nodes: Node[],
@@ -102,9 +46,23 @@ export class CherryPicker {
     for (const node of nodes) {
       rawNodes[node.publicKey] = node
       rawNodeIDs.push(node.publicKey)
-      const rawServiceLog = await this.fetchRawServiceLog(blockchain, node.publicKey)
+    }
 
-      sortedLogs.push(await this.createUnsortedLog(node.publicKey, blockchain, rawServiceLog!))
+    // Pull all service & failure & error logs
+    const rawServiceLogs = await this.fetchRawLogs(blockchain, rawNodeIDs, 'service')
+    const rawFailureLogs = await this.fetchRawLogs(blockchain, rawNodeIDs, 'failure')
+    const rawErrorLogs = await this.fetchRawLogs(blockchain, rawNodeIDs, 'errors')
+
+    for (const node of nodes) {
+      sortedLogs.push(
+        await this.createUnsortedLog(
+          node.publicKey,
+          blockchain,
+          rawServiceLogs[node.publicKey]!,
+          rawFailureLogs[node.publicKey]!,
+          rawErrorLogs[node.publicKey]!
+        )
+      )
     }
 
     // Sort node logs by highest success rate, then by lowest latency
@@ -113,11 +71,11 @@ export class CherryPicker {
     /*
     RE-ENABLE LOGS to examine cherry picker behaviour
     */
-    // logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
-    //   requestID: requestID,
-    //   blockchainID: blockchain,
-    //   sessionKey: sessionKey,
-    // })
+    logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
+      requestID: requestID,
+      blockchainID: blockchain,
+      sessionKey: sessionKey,
+    })
 
     // Iterate through sorted logs and form in to a weighted list
     let rankedItems = await this.rankItems(blockchain, sortedLogs, 50)
@@ -154,6 +112,24 @@ export class CherryPicker {
       })
     }
     return node
+  }
+
+  // Fetch app/node's service or failure logs from redis
+  async fetchRawLogs(blockchain: string, rawNodeIDs: string[], logType: string): Promise<{ [id: string]: string }> {
+    const rawServiceLogs: { [id: string]: string } = {}
+
+    const redisKeys = rawNodeIDs.map(function (rawNodeID) {
+      return `${blockchain}-${rawNodeID}-${logType}`
+    })
+
+    const rawRedisLogs = await this.redis.mget(redisKeys)
+
+    let logCount = 0
+    rawNodeIDs.forEach((rawNodeID) => {
+      rawServiceLogs[rawNodeID] = rawRedisLogs[logCount]
+      logCount++
+    })
+    return rawServiceLogs
   }
 
   // Fetch app/node's service log from redis
@@ -423,7 +399,13 @@ export class CherryPicker {
     return rankedItems
   }
 
-  async createUnsortedLog(id: string, blockchain: string, rawServiceLog: string): Promise<ServiceLog> {
+  async createUnsortedLog(
+    id: string,
+    blockchain: string,
+    rawServiceLog: string,
+    rawFailureLog: string,
+    rawErrorLog: string
+  ): Promise<ServiceLog> {
     // Default values mean that an App/Node hasn't had a relay in the past hour gets a
     // Success rate of 1; this boosts it into the primary group so it gets tested
     let attempts = 0
@@ -432,18 +414,13 @@ export class CherryPicker {
     let weightedSuccessLatency = 0
     let failure = false
 
-    // Check here to see if it was shelved the last time it was in a session
-    // If so, mark it in the service log
-    const failureLog = await this.fetchRawFailureLog(blockchain, id)
-
-    // Pull the error log to see how many errors in a row; if > 5, mark as failure
-    let errorLog = await this.redis.get(blockchain + '-' + id + '-errors')
-
-    if (!errorLog) {
-      errorLog = '0'
+    if (!rawErrorLog) {
+      rawErrorLog = '0'
     }
 
-    failure = failureLog === 'true' || parseInt(errorLog) > 50
+    // Check here to see if it was shelved the last time it was in a session
+    // If so, mark it in the service log
+    failure = rawFailureLog === 'true' || parseInt(rawErrorLog) > 50
 
     if (rawServiceLog) {
       const parsedLog = JSON.parse(rawServiceLog)
