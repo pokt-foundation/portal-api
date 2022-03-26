@@ -5,7 +5,7 @@ import { Applications } from '../../src/models'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { PocketMock } from '../mocks/pocketjs'
 
-describe('Cherry p  icker service (unit)', () => {
+describe('Cherry picker service (unit)', () => {
   let cherryPicker: CherryPicker
   let redis: RedisMock
 
@@ -62,7 +62,7 @@ describe('Cherry p  icker service (unit)', () => {
       // Basic already logged, logged only with error rates, set as failure
       // with and without recover
       await redis.set(
-        blockchain + '-' + nodes[0].publicKey + '-service',
+        `{${blockchain}}-${nodes[0].publicKey}-service`,
         JSON.stringify({
           results: { '200': 1, '500': 2 },
           weightedSuccessLatency: '1.79778',
@@ -71,7 +71,7 @@ describe('Cherry p  icker service (unit)', () => {
         120
       )
       await redis.set(
-        blockchain + '-' + nodes[1].publicKey + '-service',
+        `{${blockchain}}-${nodes[1].publicKey}-service`,
         JSON.stringify({
           results: { '200': 4 },
           weightedSuccessLatency: '0.57491',
@@ -80,7 +80,7 @@ describe('Cherry p  icker service (unit)', () => {
         120
       )
       await redis.set(
-        blockchain + '-' + nodes[2].publicKey + '-service',
+        `{${blockchain}}-${nodes[2].publicKey}-service`,
         JSON.stringify({
           results: { '500': 6 },
           weightedSuccessLatency: '2.57491',
@@ -88,8 +88,8 @@ describe('Cherry p  icker service (unit)', () => {
         'EX',
         120
       )
-      await redis.set(blockchain + '-' + nodes[4].publicKey + '-failure', 'true', 'EX', 120)
-      await redis.set(blockchain + '-' + nodes[0].publicKey + '-failure', 'true', 'EX', 120)
+      await redis.set(`{${blockchain}}-${nodes[4].publicKey}-failure`, 'true', 'EX', 120)
+      await redis.set(`{${blockchain}}-${nodes[0].publicKey}-failure`, 'true', 'EX', 120)
 
       // @ts-ignore
       const node = await cherryPicker.cherryPickNode(app, nodes, blockchain, '34sfDg', '')
@@ -98,12 +98,12 @@ describe('Cherry p  icker service (unit)', () => {
       expect(node).to.be.Object()
 
       // Previously marked node as failure should be cleaned
-      const cleanedNode = await redis.get(blockchain + '-' + nodes[0].publicKey + '-failure')
+      const cleanedNode = await redis.get(`{${blockchain}}-${nodes[0].publicKey}-failure`)
 
       expect(cleanedNode).to.to.be.equal('false')
 
       // Node should continue flagged as failure
-      const failureNode = await redis.get(blockchain + '-' + nodes[4].publicKey + '-failure')
+      const failureNode = await redis.get(`{${blockchain}}-${nodes[4].publicKey}-failure`)
 
       expect(failureNode).to.be.equal('true')
     })
@@ -146,7 +146,7 @@ describe('Cherry p  icker service (unit)', () => {
 
       for (const node of nodes) {
         await redis.set(
-          blockchain + '-' + node.publicKey + '-service',
+          `{${blockchain}}-${node.publicKey}-service`,
           JSON.stringify({
             results: { '500': 4 },
             weightedSuccessLatency: '1',
@@ -154,7 +154,7 @@ describe('Cherry p  icker service (unit)', () => {
           'EX',
           120
         )
-        await redis.set(blockchain + '-' + node.publicKey + '-failure', 'true', 'EX', 120)
+        await redis.set(`{${blockchain}}-${node.publicKey}-failure`, 'true', 'EX', 120)
       }
 
       // @ts-ignore
@@ -165,7 +165,7 @@ describe('Cherry p  icker service (unit)', () => {
 
       // All nodes should continue being failures
       for (const node of nodes) {
-        const failureNode = await redis.get(blockchain + '-' + node.publicKey + '-failure')
+        const failureNode = await redis.get(`{${blockchain}}-${node.publicKey}-failure`)
 
         expect(failureNode).to.be.equal('true')
       }
@@ -183,7 +183,7 @@ describe('Cherry p  icker service (unit)', () => {
         failure: false,
       }
 
-      const serviceLog = await cherryPicker.createUnsortedLog('fd4f41fe0f04a20226', '0027', '')
+      const serviceLog = await cherryPicker.createUnsortedLog('fd4f41fe0f04a20226', '0027', '', '', '')
 
       expect(serviceLog).to.be.deepEqual(expectedServiceLog)
     })
@@ -200,7 +200,7 @@ describe('Cherry p  icker service (unit)', () => {
         failure: false,
       }
 
-      const serviceLog = await cherryPicker.createUnsortedLog('fd4f41fe0f04a20226', '0027', rawLog)
+      const serviceLog = await cherryPicker.createUnsortedLog('fd4f41fe0f04a20226', '0027', rawLog, '', '')
 
       expect(serviceLog).to.be.deepEqual(expectedServiceLog)
     })
@@ -220,16 +220,16 @@ describe('Cherry p  icker service (unit)', () => {
         failure: false,
       }
 
-      await redis.set(blockchain + '-' + id + '-failure', true, 'EX', 60)
-      failureNode = await redis.get(blockchain + '-' + id + '-failure')
+      await redis.set(`{${blockchain}}-${id}-failure`, true, 'EX', 60)
+      failureNode = await redis.get(`{${blockchain}}-${id}-failure`)
 
       expect(failureNode).to.be.equal('true')
 
-      const serviceLog = await cherryPicker.createUnsortedLog('fd4f41fe0f04a20226', '0027', rawLog)
+      const serviceLog = await cherryPicker.createUnsortedLog('fd4f41fe0f04a20226', '0027', rawLog, failureNode, '')
 
       expect(serviceLog).to.be.deepEqual(expectedServiceLog)
 
-      failureNode = await redis.get(blockchain + '-' + id + '-failure')
+      failureNode = await redis.get(`{${blockchain}}-${id}-failure`)
       expect(failureNode).to.be.equal('false')
     })
   })
@@ -250,12 +250,12 @@ describe('Cherry p  icker service (unit)', () => {
       let logs: string
 
       // no values set for the service yet
-      logs = await redis.get(blockchain + '-' + id + '-service')
+      logs = await redis.get(`{${blockchain}}-${id}-service`)
       expect(logs).to.be.null()
 
       await cherryPicker.updateServiceQuality(blockchain, 'appID', id, elapseTime, result)
 
-      logs = await redis.get(blockchain + '-' + id + '-service')
+      logs = await redis.get(`{${blockchain}}-${id}-service`)
       expect(JSON.parse(logs)).to.be.deepEqual(JSON.parse(expectedLogs))
     })
 
@@ -273,17 +273,17 @@ describe('Cherry p  icker service (unit)', () => {
         },
       })
 
-      await redis.set(blockchain + '-' + id + '-relayTimingLog', JSON.stringify([0.245, 0.255, 0.265]), 'EX', 60)
+      await redis.set(`{${blockchain}}-${id}-relayTimingLog`, JSON.stringify([0.245, 0.255, 0.265]), 'EX', 60)
 
       await redis.set(
-        blockchain + '-' + id + '-service',
+        `{${blockchain}}-${id}-service`,
         '{"results":{"200":24,"500":2},"medianSuccessLatency":"0.145","weightedSuccessLatency":"1.79778"}',
         'EX',
         60
       )
 
       await cherryPicker.updateServiceQuality(blockchain, 'appID', id, elapseTime, result)
-      const logs = await redis.get(blockchain + '-' + id + '-service')
+      const logs = await redis.get(`{${blockchain}}-${id}-service`)
 
       expect(JSON.parse(logs)).to.be.deepEqual(JSON.parse(expectedLogs))
     })
@@ -482,7 +482,7 @@ describe('Cherry p  icker service (unit)', () => {
     expect(sortedKeys).to.not.containDeep([failureItem.id])
 
     // Failure node should be set as that on redis
-    const isFailureNodeCached = await redis.get(blockchain + '-' + failureItem.id + '-failure')
+    const isFailureNodeCached = await redis.get(`{${blockchain}}-${failureItem.id}-failure`)
 
     expect(isFailureNodeCached).to.be.equal('true')
   })
