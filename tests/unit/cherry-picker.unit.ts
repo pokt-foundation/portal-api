@@ -183,7 +183,7 @@ describe('Cherry p  icker service (unit)', () => {
         failure: false,
       }
 
-      const serviceLog = await cherryPicker.createUnsortedLog('fd4f41fe0f04a20226', '0027', '')
+      const serviceLog = await cherryPicker.createUnsortedLog('fd4f41fe0f04a20226', '0027', '', '', '')
 
       expect(serviceLog).to.be.deepEqual(expectedServiceLog)
     })
@@ -200,7 +200,7 @@ describe('Cherry p  icker service (unit)', () => {
         failure: false,
       }
 
-      const serviceLog = await cherryPicker.createUnsortedLog('fd4f41fe0f04a20226', '0027', rawLog)
+      const serviceLog = await cherryPicker.createUnsortedLog('fd4f41fe0f04a20226', '0027', rawLog, '', '')
 
       expect(serviceLog).to.be.deepEqual(expectedServiceLog)
     })
@@ -225,7 +225,7 @@ describe('Cherry p  icker service (unit)', () => {
 
       expect(failureNode).to.be.equal('true')
 
-      const serviceLog = await cherryPicker.createUnsortedLog('fd4f41fe0f04a20226', '0027', rawLog)
+      const serviceLog = await cherryPicker.createUnsortedLog('fd4f41fe0f04a20226', '0027', rawLog, '', '')
 
       expect(serviceLog).to.be.deepEqual(expectedServiceLog)
 
