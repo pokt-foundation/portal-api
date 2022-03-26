@@ -102,9 +102,14 @@ export class CherryPicker {
     for (const node of nodes) {
       rawNodes[node.publicKey] = node
       rawNodeIDs.push(node.publicKey)
-      const rawServiceLog = await this.fetchRawServiceLog(blockchain, node.publicKey)
+    }
 
-      sortedLogs.push(await this.createUnsortedLog(node.publicKey, blockchain, rawServiceLog!))
+    // Pull all service & failure logs
+    const rawServiceLogs = await this.fetchRawServiceLogs(blockchain, rawNodeIDs)
+
+    for (const node of nodes) {
+      console.log(`SERVICE LOG FOUND: ${rawServiceLogs[node.publicKey]}`)
+      sortedLogs.push(await this.createUnsortedLog(node.publicKey, blockchain, rawServiceLogs[node.publicKey]!))
     }
 
     // Sort node logs by highest success rate, then by lowest latency
@@ -154,6 +159,26 @@ export class CherryPicker {
       })
     }
     return node
+  }
+
+  // Fetch app/node's service log from redis
+  async fetchRawServiceLogs(blockchain: string, rawNodeIDs: string[]): Promise<{ [id: string]: string }> {
+    const redisKeys = [] as string[]
+    const rawServiceLogs = {} as { [id: string]: string }
+
+    rawNodeIDs.forEach(async (rawNodeID) => {
+      redisKeys.push(blockchain + '-' + rawNodeID + '-service')
+    })
+
+    const rawRedisLogs = await this.redis.mget(redisKeys)
+    console.log(rawRedisLogs)
+
+    let logCount = 0
+    rawNodeIDs.forEach(async (rawNodeID) => {
+      rawServiceLogs[rawNodeID] = rawRedisLogs[logCount]
+      logCount++
+    })
+    return rawServiceLogs
   }
 
   // Fetch app/node's service log from redis
