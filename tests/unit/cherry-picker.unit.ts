@@ -62,7 +62,7 @@ describe('Cherry picker service (unit)', () => {
       // Basic already logged, logged only with error rates, set as failure
       // with and without recover
       await redis.set(
-        blockchain + '-' + nodes[0].publicKey + '-service',
+        `{${blockchain}}-${nodes[0].publicKey}-service`,
         JSON.stringify({
           results: { '200': 1, '500': 2 },
           weightedSuccessLatency: '1.79778',
@@ -71,7 +71,7 @@ describe('Cherry picker service (unit)', () => {
         120
       )
       await redis.set(
-        blockchain + '-' + nodes[1].publicKey + '-service',
+        `{${blockchain}}-${nodes[1].publicKey}-service`,
         JSON.stringify({
           results: { '200': 4 },
           weightedSuccessLatency: '0.57491',
@@ -80,7 +80,7 @@ describe('Cherry picker service (unit)', () => {
         120
       )
       await redis.set(
-        blockchain + '-' + nodes[2].publicKey + '-service',
+        `{${blockchain}}-${nodes[2].publicKey}-service`,
         JSON.stringify({
           results: { '500': 6 },
           weightedSuccessLatency: '2.57491',
@@ -88,8 +88,8 @@ describe('Cherry picker service (unit)', () => {
         'EX',
         120
       )
-      await redis.set(blockchain + '-' + nodes[4].publicKey + '-failure', 'true', 'EX', 120)
-      await redis.set(blockchain + '-' + nodes[0].publicKey + '-failure', 'true', 'EX', 120)
+      await redis.set(`{${blockchain}}-${nodes[4].publicKey}-failure`, 'true', 'EX', 120)
+      await redis.set(`{${blockchain}}-${nodes[0].publicKey}-failure`, 'true', 'EX', 120)
 
       // @ts-ignore
       const node = await cherryPicker.cherryPickNode(app, nodes, blockchain, '34sfDg', '')
@@ -98,12 +98,12 @@ describe('Cherry picker service (unit)', () => {
       expect(node).to.be.Object()
 
       // Previously marked node as failure should be cleaned
-      const cleanedNode = await redis.get(blockchain + '-' + nodes[0].publicKey + '-failure')
+      const cleanedNode = await redis.get(`{${blockchain}}-${nodes[0].publicKey}-failure`)
 
       expect(cleanedNode).to.to.be.equal('false')
 
       // Node should continue flagged as failure
-      const failureNode = await redis.get(blockchain + '-' + nodes[4].publicKey + '-failure')
+      const failureNode = await redis.get(`{${blockchain}}-${nodes[4].publicKey}-failure`)
 
       expect(failureNode).to.be.equal('true')
     })
@@ -146,7 +146,7 @@ describe('Cherry picker service (unit)', () => {
 
       for (const node of nodes) {
         await redis.set(
-          blockchain + '-' + node.publicKey + '-service',
+          `{${blockchain}}-${node.publicKey}-service`,
           JSON.stringify({
             results: { '500': 4 },
             weightedSuccessLatency: '1',
@@ -154,7 +154,7 @@ describe('Cherry picker service (unit)', () => {
           'EX',
           120
         )
-        await redis.set(blockchain + '-' + node.publicKey + '-failure', 'true', 'EX', 120)
+        await redis.set(`{${blockchain}}-${node.publicKey}-failure`, 'true', 'EX', 120)
       }
 
       // @ts-ignore
@@ -165,7 +165,7 @@ describe('Cherry picker service (unit)', () => {
 
       // All nodes should continue being failures
       for (const node of nodes) {
-        const failureNode = await redis.get(blockchain + '-' + node.publicKey + '-failure')
+        const failureNode = await redis.get(`{${blockchain}}-${node.publicKey}-failure`)
 
         expect(failureNode).to.be.equal('true')
       }
@@ -273,7 +273,7 @@ describe('Cherry picker service (unit)', () => {
         },
       })
 
-      await redis.set(blockchain + '-' + id + '-relayTimingLog', JSON.stringify([0.245, 0.255, 0.265]), 'EX', 60)
+      await redis.set(`{${blockchain}}-${id}-relayTimingLog`, JSON.stringify([0.245, 0.255, 0.265]), 'EX', 60)
 
       await redis.set(
         `{${blockchain}}-${id}-service`,
@@ -482,7 +482,7 @@ describe('Cherry picker service (unit)', () => {
     expect(sortedKeys).to.not.containDeep([failureItem.id])
 
     // Failure node should be set as that on redis
-    const isFailureNodeCached = await redis.get(blockchain + '-' + failureItem.id + '-failure')
+    const isFailureNodeCached = await redis.get(`{${blockchain}}-${failureItem.id}-failure`)
 
     expect(isFailureNodeCached).to.be.equal('true')
   })
