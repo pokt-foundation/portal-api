@@ -125,7 +125,7 @@ export class CherryPicker {
     const rawRedisLogs = await this.redis.mget(redisKeys)
 
     let logCount = 0
-    rawNodeIDs.forEach(async (rawNodeID) => {
+    rawNodeIDs.forEach(rawNodeID => {
       rawServiceLogs[rawNodeID] = rawRedisLogs[logCount]
       logCount++
     })
