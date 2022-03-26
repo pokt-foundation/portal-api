@@ -119,7 +119,7 @@ export class CherryPicker {
     const rawServiceLogs: { [id: string]: string } = {}
 
     const redisKeys = rawNodeIDs.map(function (rawNodeID) {
-      return `${blockchain}-${rawNodeID}-${logType}`
+      return `{${blockchain}}-${rawNodeID}-${logType}`
     })
 
     const rawRedisLogs = await this.redis.mget(redisKeys)
@@ -134,14 +134,14 @@ export class CherryPicker {
 
   // Fetch app/node's service log from redis
   async fetchRawServiceLog(blockchain: string, id: string | undefined): Promise<string | null> {
-    const rawServiceLog = await this.redis.get(blockchain + '-' + id + '-service')
+    const rawServiceLog = await this.redis.get(`{${blockchain}}-${id}-service`)
 
     return rawServiceLog
   }
 
   // Fetch app/node's overall failure true/false log from redis
   async fetchRawFailureLog(blockchain: string, id: string | undefined): Promise<string | null> {
-    const rawFailureLog = await this.redis.get(blockchain + '-' + id + '-failure')
+    const rawFailureLog = await this.redis.get(`{${blockchain}}-${id}-failure`)
 
     return rawFailureLog
   }
@@ -149,7 +149,7 @@ export class CherryPicker {
   // Record app & node service quality in redis for future selection weight
   // { id: { results: { 200: x, 500: y, ... }, weightedSuccessLatency: z }
   async updateServiceQuality(
-    blockchainID: string,
+    blockchain: string,
     applicationID: string,
     serviceNode: string,
     elapsedTime: number,
@@ -158,12 +158,11 @@ export class CherryPicker {
     pocketSession?: Session
   ): Promise<void> {
     // Removed while load balancer cherry picking is off
-    // await this._updateServiceQuality(blockchainID, applicationID, elapsedTime, result, 300, timeout, pocketSession)
-    await this._updateServiceQuality(blockchainID, serviceNode, elapsedTime, result, 300, timeout, pocketSession)
+    await this._updateServiceQuality(blockchain, serviceNode, elapsedTime, result, 300, timeout, pocketSession)
   }
 
   async _updateServiceQuality(
-    blockchainID: string,
+    blockchain: string,
     id: string,
     elapsedTime: number,
     result: number,
@@ -173,11 +172,11 @@ export class CherryPicker {
   ): Promise<void> {
     // Fetch and update the relay timing log; the raw list of elapsed relay times
     let relayTimingLog = []
-    const rawRelayTimingLog = await this.redis.get(blockchainID + '-' + id + '-relayTimingLog')
+    const rawRelayTimingLog = await this.redis.get(`{${blockchain}}-${id}-relayTimingLog`)
 
     // If no timing log is found, set a blank one to guarantee 5 minute expiry
     if (!rawRelayTimingLog) {
-      await this.redis.set(blockchainID + '-' + id + '-relayTimingLog', '[]', 'EX', 300)
+      await this.redis.set(`{${blockchain}}-${id}-relayTimingLog`, '[]', 'EX', 300)
     } else {
       relayTimingLog = JSON.parse(rawRelayTimingLog)
     }
@@ -187,14 +186,14 @@ export class CherryPicker {
       relayTimingLog.push(elapsedTime)
       relayTimingLog = this.reduceArray(relayTimingLog.sort((a, b) => a - b))
 
-      await this.redis.set(blockchainID + '-' + id + '-relayTimingLog', JSON.stringify(relayTimingLog), 'KEEPTTL')
+      await this.redis.set(`{${blockchain}}-${id}-relayTimingLog`, JSON.stringify(relayTimingLog), 'KEEPTTL')
     }
 
     // Bucket the relay timing log into quantiles
     const bucketedServiceQuality = this.bucketArray(relayTimingLog)
 
     // Pull the full service log including weighted latency and success rate
-    const serviceLog = await this.fetchRawServiceLog(blockchainID, id)
+    const serviceLog = await this.fetchRawServiceLog(blockchain, id)
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let serviceQuality: { results: any; medianSuccessLatency: string; weightedSuccessLatency: string }
@@ -231,7 +230,7 @@ export class CherryPicker {
           ).toFixed(5)
         }
       } else {
-        await this.updateBadNodeTimeoutQuality(blockchainID, id, elapsedTime, timeout, pocketSession)
+        await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, pocketSession)
       }
     } else {
       // No current logs found for this period
@@ -239,7 +238,7 @@ export class CherryPicker {
 
       if (result !== 200) {
         elapsedTime = 0
-        await this.updateBadNodeTimeoutQuality(blockchainID, id, elapsedTime, timeout, pocketSession)
+        await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, pocketSession)
       }
       serviceQuality = {
         results: results,
@@ -248,7 +247,7 @@ export class CherryPicker {
       }
     }
 
-    await this.redis.set(blockchainID + '-' + id + '-service', JSON.stringify(serviceQuality), 'EX', ttl)
+    await this.redis.set(`{${blockchain}}-${id}-service`, JSON.stringify(serviceQuality), 'EX', ttl)
   }
 
   reduceArray(raw: number[]): number[] {
@@ -297,7 +296,7 @@ export class CherryPicker {
    * @returns
    */
   async updateBadNodeTimeoutQuality(
-    blockchainID: string,
+    blockchain: string,
     serviceNode: string,
     elapsedTime: number,
     requestTimeout: number | undefined,
@@ -309,7 +308,7 @@ export class CherryPicker {
     // FIXME: This is not a reliable way on asserting whether is a service node,
     // an issue was created on pocket-tools for a 'isPublicKey' function. Once is
     // implemented, replace with the function.
-    if (this.archivalChains.indexOf(blockchainID) < 0 || serviceNode.length !== 64) {
+    if (this.archivalChains.indexOf(blockchain) < 0 || serviceNode.length !== 64) {
       return
     }
 
@@ -329,7 +328,7 @@ export class CherryPicker {
           serviceNode,
           sessionKey,
         })
-        await removeNodeFromSession(this.redis, pocketSession, serviceNode, true, '', blockchainID)
+        await removeNodeFromSession(this.redis, pocketSession, serviceNode, true, '', blockchain)
       }
     }
   }
@@ -388,7 +387,7 @@ export class CherryPicker {
           // Once a node has performed well enough in a session, check to see if it is marked
           // If so, erase the scarlet letter
           if (!sortedLog.failure) {
-            await this.redis.set(blockchain + '-' + sortedLog.id + '-failure', 'true', 'EX', 300)
+            await this.redis.set(`{${blockchain}}-${sortedLog.id}-failure`, 'true', 'EX', 300)
           }
         }
       }
@@ -435,7 +434,7 @@ export class CherryPicker {
         // If previously marked as failure, erase that
         if (failure) {
           failure = false
-          await this.redis.set(blockchain + '-' + id + '-failure', 'false', 'EX', 60 * 60 * 24 * 30)
+          await this.redis.set(`{${blockchain}}-${id}-failure`, 'false', 'EX', 60 * 60 * 24 * 30)
         }
         successRate = parsedLog.results['200'] / attempts
         medianSuccessLatency = parseFloat(parseFloat(parsedLog.medianSuccessLatency).toFixed(5))
