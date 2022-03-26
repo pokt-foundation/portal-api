@@ -54,7 +54,6 @@ export class CherryPicker {
     const rawErrorLogs = await this.fetchRawLogs(blockchain, rawNodeIDs, 'errors')
 
     for (const node of nodes) {
-      console.log(`SERVICE LOG FOUND: ${rawServiceLogs[node.publicKey]}`)
       sortedLogs.push(
         await this.createUnsortedLog(
           node.publicKey,
@@ -72,11 +71,11 @@ export class CherryPicker {
     /*
     RE-ENABLE LOGS to examine cherry picker behaviour
     */
-    // logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
-    //   requestID: requestID,
-    //   blockchainID: blockchain,
-    //   sessionKey: sessionKey,
-    // })
+    logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
+      requestID: requestID,
+      blockchainID: blockchain,
+      sessionKey: sessionKey,
+    })
 
     // Iterate through sorted logs and form in to a weighted list
     let rankedItems = await this.rankItems(blockchain, sortedLogs, 50)
