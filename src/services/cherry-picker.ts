@@ -116,7 +116,7 @@ export class CherryPicker {
 
   // Fetch app/node's service or failure logs from redis
   async fetchRawLogs(blockchain: string, rawNodeIDs: string[], logType: string): Promise<{ [id: string]: string }> {
-    const rawServiceLogs = {} as { [id: string]: string }
+    const rawServiceLogs: { [id: string]: string } = {}
 
     const redisKeys = rawNodeIDs.map(function (rawNodeID) {
       return `${blockchain}-${rawNodeID}-${logType}`
