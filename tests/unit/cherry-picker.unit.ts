@@ -5,7 +5,7 @@ import { Applications } from '../../src/models'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { PocketMock } from '../mocks/pocketjs'
 
-describe('Cherry p  icker service (unit)', () => {
+describe('Cherry picker service (unit)', () => {
   let cherryPicker: CherryPicker
   let redis: RedisMock
 
@@ -225,7 +225,7 @@ describe('Cherry p  icker service (unit)', () => {
 
       expect(failureNode).to.be.equal('true')
 
-      const serviceLog = await cherryPicker.createUnsortedLog('fd4f41fe0f04a20226', '0027', rawLog, '', '')
+      const serviceLog = await cherryPicker.createUnsortedLog('fd4f41fe0f04a20226', '0027', rawLog, failureNode, '')
 
       expect(serviceLog).to.be.deepEqual(expectedServiceLog)
 
