@@ -31,7 +31,7 @@ export class CherryPicker {
 
   // Record the latency and success rate of each node, 1 hour TTL
   // When selecting a node, pull the stats for each node in the session
-  // Rank and weight them for node choice
+  // Rank and weight them for node choice.
   async cherryPickNode(
     application: Applications,
     nodes: Node[],
@@ -125,7 +125,7 @@ export class CherryPicker {
     const rawRedisLogs = await this.redis.mget(redisKeys)
 
     let logCount = 0
-    rawNodeIDs.forEach(rawNodeID => {
+    rawNodeIDs.forEach((rawNodeID) => {
       rawServiceLogs[rawNodeID] = rawRedisLogs[logCount]
       logCount++
     })
