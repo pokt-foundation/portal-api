@@ -18,6 +18,9 @@ const TIMEOUT_VARIANCE = 2
 // variable per chain. Measured in seconds.
 const EXPECTED_SUCCESS_LATENCY = 0.1
 
+// This multiplier is tested to produce a curve that adequately punishes slow nodes
+const WEIGHT_MULTIPLIER = 17
+
 export class CherryPicker {
   checkDebug: boolean
   redis: Redis
@@ -344,9 +347,6 @@ export class CherryPicker {
     let weightFactor = 10
     let previousNodeLatency = 0
 
-    // This multiplier is tested to produce a curve that adequately punishes slow nodes
-    const weightMultiplier = 15
-
     for (const sortedLog of sortedLogs) {
       let latencyDifference = 0
 
@@ -359,7 +359,7 @@ export class CherryPicker {
       // far off this node's average elapsedTime is from the fastest node.
       // Previously this value was hardcoded 2 in the first bucket
       if (latencyDifference) {
-        weightFactor = weightFactor - Math.round(latencyDifference * weightMultiplier)
+        weightFactor = weightFactor - Math.round(latencyDifference * WEIGHT_MULTIPLIER)
 
         if (weightFactor <= 0) {
           weightFactor = 1
