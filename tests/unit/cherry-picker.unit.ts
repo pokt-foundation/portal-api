@@ -220,8 +220,8 @@ describe('Cherry picker service (unit)', () => {
         failure: false,
       }
 
-      await redis.set(blockchain + '-' + id + '-failure', true, 'EX', 60)
-      failureNode = await redis.get(blockchain + '-' + id + '-failure')
+      await redis.set(`{${blockchain}}-${id}-failure`, true, 'EX', 60)
+      failureNode = await redis.get(`{${blockchain}}-${id}-failure`)
 
       expect(failureNode).to.be.equal('true')
 
@@ -229,7 +229,7 @@ describe('Cherry picker service (unit)', () => {
 
       expect(serviceLog).to.be.deepEqual(expectedServiceLog)
 
-      failureNode = await redis.get(blockchain + '-' + id + '-failure')
+      failureNode = await redis.get(`{${blockchain}}-${id}-failure`)
       expect(failureNode).to.be.equal('false')
     })
   })
@@ -250,12 +250,12 @@ describe('Cherry picker service (unit)', () => {
       let logs: string
 
       // no values set for the service yet
-      logs = await redis.get(blockchain + '-' + id + '-service')
+      logs = await redis.get(`{${blockchain}}-${id}-service`)
       expect(logs).to.be.null()
 
       await cherryPicker.updateServiceQuality(blockchain, 'appID', id, elapseTime, result)
 
-      logs = await redis.get(blockchain + '-' + id + '-service')
+      logs = await redis.get(`{${blockchain}}-${id}-service`)
       expect(JSON.parse(logs)).to.be.deepEqual(JSON.parse(expectedLogs))
     })
 
@@ -276,14 +276,14 @@ describe('Cherry picker service (unit)', () => {
       await redis.set(blockchain + '-' + id + '-relayTimingLog', JSON.stringify([0.245, 0.255, 0.265]), 'EX', 60)
 
       await redis.set(
-        blockchain + '-' + id + '-service',
+        `{${blockchain}}-${id}-service`,
         '{"results":{"200":24,"500":2},"medianSuccessLatency":"0.145","weightedSuccessLatency":"1.79778"}',
         'EX',
         60
       )
 
       await cherryPicker.updateServiceQuality(blockchain, 'appID', id, elapseTime, result)
-      const logs = await redis.get(blockchain + '-' + id + '-service')
+      const logs = await redis.get(`{${blockchain}}-${id}-service`)
 
       expect(JSON.parse(logs)).to.be.deepEqual(JSON.parse(expectedLogs))
     })
