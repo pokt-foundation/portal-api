@@ -7,25 +7,25 @@ import {
 import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
 import axios from 'axios'
 import extractDomain from 'extract-domain'
-import { Redis } from 'ioredis'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { removeNodeFromSession, removeSessionCache, removeChecksCache } from '../utils/cache'
 import { CHECK_TIMEOUT, PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { CheckResult, RelayResponse } from '../utils/types'
+import { Cache } from './cache'
 
 const logger = require('../services/logger')
 
 export class SyncChecker {
-  redis: Redis
+  cache: Cache
   metricsRecorder: MetricsRecorder
   defaultSyncAllowance: number
   origin: string
   sessionErrors: number
 
-  constructor(redis: Redis, metricsRecorder: MetricsRecorder, defaultSyncAllowance: number, origin: string) {
-    this.redis = redis
+  constructor(cache: Cache, metricsRecorder: MetricsRecorder, defaultSyncAllowance: number, origin: string) {
+    this.cache = cache
     this.metricsRecorder = metricsRecorder
     this.defaultSyncAllowance = defaultSyncAllowance
     this.origin = origin
@@ -54,7 +54,7 @@ export class SyncChecker {
 
     // Value is an array of node public keys that have passed sync checks for this session in the past 5 minutes
     const syncedNodesKey = `sync-check-${sessionKey}`
-    const syncedNodesCached = await this.redis.get(syncedNodesKey)
+    const syncedNodesCached = await this.cache.get(syncedNodesKey)
 
     const cached = Boolean(syncedNodesCached)
 
@@ -71,14 +71,14 @@ export class SyncChecker {
 
     // Cache is stale, start a new cache fill
     // First check cache lock key; if lock key exists, return full node set
-    const syncLock = await this.redis.get('lock-' + syncedNodesKey)
+    const syncLock = await this.cache.get('lock-' + syncedNodesKey)
 
     if (syncLock) {
       return { nodes: [], cached }
     } else {
       // Set lock as this thread checks the sync with 60 second ttl.
       // If any major errors happen below, it will retry the sync check every 60 seconds.
-      await this.redis.set('lock-' + syncedNodesKey, 'true', 'EX', 60)
+      await this.cache.set('lock-' + syncedNodesKey, 'true', 'EX', 60)
     }
 
     // Fires all 5 sync checks synchronously then assembles the results
@@ -110,8 +110,8 @@ export class SyncChecker {
         sessionPublicKey: session.header.applicationPubKey,
       })
 
-      await removeSessionCache(this.redis, pocketAAT.applicationPublicKey, blockchainID)
-      await removeChecksCache(this.redis, session.key, session.nodes)
+      await removeSessionCache(this.cache, pocketAAT.applicationPublicKey, blockchainID)
+      await removeChecksCache(this.cache, session.key, session.nodes)
     }
 
     let errorState = false
@@ -260,7 +260,7 @@ export class SyncChecker {
         })
 
         // Erase failure mark
-        await this.redis.set(blockchainID + '-' + node.publicKey + '-failure', 'false', 'EX', 60 * 60 * 24 * 30)
+        await this.cache.set(blockchainID + '-' + node.publicKey + '-failure', 'false', 'EX', 60 * 60 * 24 * 30)
 
         // In-sync: add to nodes list
         syncedNodes.push(node)
@@ -311,7 +311,7 @@ export class SyncChecker {
       origin: this.origin,
       sessionKey,
     })
-    await this.redis.set(
+    await this.cache.set(
       syncedNodesKey,
       JSON.stringify(syncedNodesList),
       'EX',
@@ -503,7 +503,7 @@ export class SyncChecker {
       })
 
       if (relay instanceof EvidenceSealedError) {
-        await removeNodeFromSession(this.redis, session, node.publicKey, true, requestID, blockchainID)
+        await removeNodeFromSession(this.cache, session, node.publicKey, true, requestID, blockchainID)
       }
 
       if (relay instanceof InvalidSessionError || relay instanceof OutOfSyncRequestError) {

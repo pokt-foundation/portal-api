@@ -3,6 +3,7 @@ import { Redis } from 'ioredis'
 import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
 
 import { BlockchainsRepository } from '../repositories'
+import { Cache } from '../services/cache'
 import { SyncCheckOptions } from '../services/sync-checker'
 import { BlockchainDetails, CheckResult, BlockchainRedirect } from './types'
 
@@ -31,18 +32,18 @@ export function filterCheckedNodes(syncCheckNodes: Node[], chainCheckedNodes: No
 // Load requested blockchain by parsing the URL
 export async function loadBlockchain(
   host: string,
-  redis: Redis,
+  cache: Cache,
   blockchainsRepository: BlockchainsRepository,
   defaultLogLimitBlocks: number,
   rpcID: number
 ): Promise<BlockchainDetails> {
   // Load the requested blockchain
-  const cachedBlockchains = await redis.get('blockchains')
+  const cachedBlockchains = await cache.get('blockchains')
   let blockchains
 
   if (!cachedBlockchains) {
     blockchains = await blockchainsRepository.find()
-    await redis.set('blockchains', JSON.stringify(blockchains), 'EX', 60)
+    await cache.set('blockchains', JSON.stringify(blockchains), 'EX', 60)
   } else {
     blockchains = JSON.parse(cachedBlockchains)
   }
@@ -135,7 +136,7 @@ export async function loadBlockchain(
 // Get blockchain's alias by it's redirect domain
 export async function getBlockchainAliasesByDomain(
   host: string,
-  redis: Redis,
+  redis: Cache,
   blockchainsRepository: BlockchainsRepository,
   rpcID: number
 ): Promise<{ blockchainAliases: string[] }> {

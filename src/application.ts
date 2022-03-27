@@ -14,6 +14,7 @@ import { InfluxDB } from '@influxdata/influxdb-client'
 import AatPlans from './config/aat-plans.json'
 import { getPocketInstance } from './config/pocket-config'
 import { GatewaySequence } from './sequence'
+import { Cache } from './services/cache'
 const logger = require('./services/logger')
 
 require('log-timestamp')
@@ -123,7 +124,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
             keyPrefix: `${commitHash}-`,
           })
 
-    this.bind('redisInstance').to(redis)
+    const cache = new Cache(redis as Redis.Redis)
+
+    this.bind('cache').to(cache)
 
     // New metrics postgres for error recording
     const psqlConnection: string = PSQL_CONNECTION || ''

@@ -1,6 +1,5 @@
 import { Relayer } from '@pokt-foundation/pocketjs-relayer'
 import { HTTPMethod } from '@pokt-foundation/pocketjs-types'
-import { Redis } from 'ioredis'
 import jsonrpc, { ErrorObject, JsonRpcError } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
@@ -10,6 +9,7 @@ import { WriteApi } from '@influxdata/influxdb-client'
 import { Applications, GatewaySettings, LoadBalancers } from '../models'
 import { StickinessOptions } from '../models/load-balancers.model'
 import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from '../repositories'
+import { Cache } from '../services/cache'
 import { ChainChecker } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
@@ -53,7 +53,7 @@ export class V1Controller {
     @inject('relayPath') private relayPath: string,
     @inject('relayRetries') private relayRetries: number,
     @inject('relayer') private relayer: Relayer,
-    @inject('redisInstance') private redis: Redis,
+    @inject('cache') private cache: Cache,
     @inject('pgPool') private pgPool: PGPool,
     @inject('databaseEncryptionKey') private databaseEncryptionKey: string,
     @inject('processUID') private processUID: string,
@@ -73,19 +73,19 @@ export class V1Controller {
     private loadBalancersRepository: LoadBalancersRepository
   ) {
     this.cherryPicker = new CherryPicker({
-      redis: this.redis,
+      redis: this.cache.redis,
       checkDebug: this.checkDebug(),
       archivalChains: this.archivalChains,
     })
     this.metricsRecorder = new MetricsRecorder({
-      redis: this.redis,
+      redis: this.cache.redis,
       influxWriteAPI: this.influxWriteAPI,
       pgPool: this.pgPool,
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
     })
-    this.syncChecker = new SyncChecker(this.redis, this.metricsRecorder, this.defaultSyncAllowance, this.origin)
-    this.chainChecker = new ChainChecker(this.redis, this.metricsRecorder, this.origin)
+    this.syncChecker = new SyncChecker(this.cache, this.metricsRecorder, this.defaultSyncAllowance, this.origin)
+    this.chainChecker = new ChainChecker(this.cache, this.metricsRecorder, this.origin)
     this.pocketRelayer = new PocketRelayer({
       host: this.host,
       origin: this.origin,
@@ -96,7 +96,7 @@ export class V1Controller {
       metricsRecorder: this.metricsRecorder,
       syncChecker: this.syncChecker,
       chainChecker: this.chainChecker,
-      redis: this.redis,
+      cache: this.cache,
       databaseEncryptionKey: this.databaseEncryptionKey,
       secretKey: this.secretKey,
       relayRetries: this.relayRetries,
@@ -135,7 +135,7 @@ export class V1Controller {
       // Since we only have non-gateway url, let's fetch a blockchain that contains this domain
       const { blockchainAliases } = await getBlockchainAliasesByDomain(
         this.host,
-        this.redis,
+        this.cache,
         this.blockchainsRepository,
         rpcID
       )
@@ -146,7 +146,7 @@ export class V1Controller {
 
       const { blockchainRedirects } = await loadBlockchain(
         this.host,
-        this.redis,
+        this.cache,
         this.blockchainsRepository,
         this.defaultLogLimitBlocks,
         rpcID
@@ -245,7 +245,7 @@ export class V1Controller {
       if (gigastakeOptions.gigastaked) {
         const { blockchainRedirects } = await loadBlockchain(
           this.host,
-          this.redis,
+          this.cache,
           this.blockchainsRepository,
           this.defaultLogLimitBlocks,
           reqRPCID
@@ -572,7 +572,7 @@ export class V1Controller {
     if (prefix || rpcID > 0) {
       const { blockchainID } = await loadBlockchain(
         this.host,
-        this.redis,
+        this.cache,
         this.blockchainsRepository,
         this.defaultLogLimitBlocks,
         rpcID
@@ -586,7 +586,7 @@ export class V1Controller {
       const keyPrefix = prefix ? prefix : rpcID
 
       const clientStickyKey = `${keyPrefix}-${this.ipAddress}-${blockchainID}`
-      const clientStickyAppNodeRaw = await this.redis.get(clientStickyKey)
+      const clientStickyAppNodeRaw = await this.cache.redis.get(clientStickyKey)
       const clientStickyAppNode = JSON.parse(clientStickyAppNodeRaw)
 
       if (clientStickyAppNode?.applicationID && clientStickyAppNode?.nodeAddress) {
@@ -602,13 +602,13 @@ export class V1Controller {
 
   // Pull LoadBalancer records from redis then DB
   async fetchLoadBalancer(id: string, filter: FilterExcludingWhere | undefined): Promise<LoadBalancers | undefined> {
-    const cachedLoadBalancer = await this.redis.get(id)
+    const cachedLoadBalancer = await this.cache.redis.get(id)
 
     if (!cachedLoadBalancer) {
       try {
         const loadBalancer = await this.loadBalancersRepository.findById(id, filter)
 
-        await this.redis.set(id, JSON.stringify(loadBalancer), 'EX', 60)
+        await this.cache.set(id, JSON.stringify(loadBalancer), 'EX', 60)
         return new LoadBalancers(loadBalancer)
       } catch (e) {
         return undefined
@@ -619,13 +619,13 @@ export class V1Controller {
 
   // Pull Application records from redis then DB
   async fetchApplication(id: string, filter: FilterExcludingWhere | undefined): Promise<Applications | undefined> {
-    const cachedApplication = await this.redis.get(id)
+    const cachedApplication = await this.cache.get(id)
 
     if (!cachedApplication) {
       try {
         const application = await this.applicationsRepository.findById(id, filter)
 
-        await this.redis.set(id, JSON.stringify(application), 'EX', 60)
+        await this.cache.set(id, JSON.stringify(application), 'EX', 60)
         return new Applications(application)
       } catch (e) {
         return undefined
@@ -643,7 +643,7 @@ export class V1Controller {
     rpcID: number
   ): Promise<Applications | undefined> {
     let verifiedIDs: string[] = []
-    const cachedLoadBalancerApplicationIDs = await this.redis.get('applicationIDs-' + id)
+    const cachedLoadBalancerApplicationIDs = await this.cache.get('applicationIDs-' + id)
 
     // Fetch from DB if not found in redis
     if (!cachedLoadBalancerApplicationIDs) {
@@ -654,7 +654,7 @@ export class V1Controller {
           verifiedIDs.push(application.id)
         }
       }
-      await this.redis.set('applicationIDs-' + id, JSON.stringify(verifiedIDs), 'EX', 60)
+      await this.cache.set('applicationIDs-' + id, JSON.stringify(verifiedIDs), 'EX', 60)
     } else {
       verifiedIDs = JSON.parse(cachedLoadBalancerApplicationIDs)
     }
@@ -689,7 +689,7 @@ export class V1Controller {
   async getGigastakeApp(filter: FilterExcludingWhere, preferredApplicationID = '', rpcID = 0): Promise<Applications> {
     const { blockchainRedirects } = await loadBlockchain(
       this.host,
-      this.redis,
+      this.cache,
       this.blockchainsRepository,
       this.defaultLogLimitBlocks,
       rpcID
