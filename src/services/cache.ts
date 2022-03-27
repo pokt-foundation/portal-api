@@ -86,8 +86,11 @@ export class Cache {
   async llen(key: string): Promise<number> {
     const value = this.local.get<string>(key)
 
-    if (value && Array.isArray(JSON.parse(value))) {
-      return value.length
+    if (value) {
+      const parsedValue = JSON.parse(value)
+      if (Array.isArray(parsedValue)) {
+        return parsedValue.length
+      }
     }
 
     return this.redis.llen(key)
