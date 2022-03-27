@@ -1,17 +1,15 @@
-import { Redis, Cluster } from 'ioredis'
+import { Redis } from 'ioredis'
 import NodeCache from 'node-cache'
-
-type AllowedKeyTyes = string | number
 
 // Cache performs cache operations using tiered Caching with ioredis and node-cache
 export class Cache {
-  redis: Redis | Cluster
+  redis: Redis
   local: NodeCache
 
-  constructor(redis: Redis | Cluster) {
+  constructor(redis: Redis) {
     this.redis = redis
     this.local = new NodeCache({
-      checkperiod: 120,
+      checkperiod: 60,
       useClones: true,
       deleteOnExpire: true,
     })
@@ -19,16 +17,16 @@ export class Cache {
 
   async set(key: string, value: string | number, ttlType: 'KEEPTTL' | 'EX', ttlSeconds?: number): Promise<string> {
     if (ttlType === 'KEEPTTL') {
-      this.local.set<AllowedKeyTyes>(key, value, this.getLocalTTL(key))
+      this.local.set<string | number>(key, value, this.getLocalTTL(key))
       return this.redis.set(key, value, ttlType)
     }
 
-    this.local.set<AllowedKeyTyes>(key, value, ttlSeconds)
+    this.local.set<string | number>(key, value, ttlSeconds)
     return this.redis.set(key, value, ttlType, ttlSeconds)
   }
 
-  async get(key: string): Promise<AllowedKeyTyes | null> {
-    const value = this.local.get<AllowedKeyTyes>(key)
+  async get(key: string): Promise<string | null> {
+    const value = this.local.get<string>(key)
     return value ? value : this.getRedisToSetLocal(key)
   }
 
@@ -48,47 +46,66 @@ export class Cache {
     const localValue = this.local.get<string>(key)
     const ttl = this.local.getTtl(key)
 
-    const set = [...new Set(values)]
-
     if (localValue) {
-      this.local.set(key, JSON.stringify([...JSON.parse(localValue), ...set]), ttl)
+      this.local.set(key, JSON.stringify([...new Set([...JSON.parse(localValue), ...values])]), ttl)
     } else {
-      this.local.set(key, JSON.stringify(set))
+      this.local.set(key, JSON.stringify([...new Set(values)]))
     }
 
-    return this.redis.sadd(key)
+    return this.redis.sadd(key, values)
   }
 
   async smembers(key: string): Promise<string[]> {
     const value = this.local.get<string>(key)
-    return value ? JSON.parse(value) : this.redis.smembers(key)
+
+    if (value) {
+      const parsedValue = JSON.parse(value)
+      if (Array.isArray(parsedValue)) {
+        return parsedValue
+      }
+    }
+
+    return this.redis.smembers(key)
   }
 
   async ttl(key: string): Promise<number> {
-    let localTTL = this.local.getTtl(key) || 0
-
-    // localTTL returns a timestamp of when the key is going to expire
-    if (localTTL > 0) {
-      // Gets time difference in seconds
-      localTTL = (localTTL - new Date().getTime()) / 1000
-    }
-
-    return localTTL ? localTTL : this.redis.ttl(key)
+    const localTTL = this.local.getTtl(key) || 0
+    return localTTL ? this.getLocalTTL(key) : this.redis.ttl(key)
   }
 
   async expire(key: string, ttlSeconds: number) {
     this.local.ttl(key, ttlSeconds)
-
     return this.redis.expire(key, ttlSeconds)
   }
 
   async del(...keys: string[]): Promise<number> {
     this.local.del(keys)
-
     return this.redis.del(...keys)
   }
 
-  async getRedisToSetLocal(key: string): Promise<string> {
+  async llen(key: string): Promise<number> {
+    const value = this.local.get<string>(key)
+
+    if (value && Array.isArray(JSON.parse(value))) {
+      return value.length
+    }
+
+    return this.redis.llen(key)
+  }
+
+  async incr(key: string): Promise<number> {
+    const value = await this.redis.incr(key)
+    this.local.set(key, value)
+
+    return value
+  }
+
+  async flushall(): Promise<string> {
+    this.local.flushAll()
+    return this.redis.flushall()
+  }
+
+  private async getRedisToSetLocal(key: string): Promise<string> {
     const redisValue = await this.redis.get(key)
     if (redisValue) {
       const ttl = await this.redis.ttl(key)
@@ -97,7 +114,7 @@ export class Cache {
     return redisValue
   }
 
-  async mgetRedisToSetLocal(...keys: string[]): Promise<string[]> {
+  private async mgetRedisToSetLocal(...keys: string[]): Promise<string[]> {
     const values = await this.redis.mget(keys)
 
     for (let i = 0; i < values.length; i++) {
@@ -110,7 +127,7 @@ export class Cache {
     return values
   }
 
-  getLocalTTL(key: string) {
+  private getLocalTTL(key: string) {
     const localTTL = this.local.getTtl(key) || 0
     // Gets time difference in seconds
     return localTTL > 0 ? localTTL : (localTTL - new Date().getTime()) / 1000
