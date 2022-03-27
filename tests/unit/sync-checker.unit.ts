@@ -3,6 +3,7 @@ import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
 import RedisMock from 'ioredis-mock'
 import { expect, sinon } from '@loopback/testlab'
+import { Cache } from '../../src/services/cache'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { SyncChecker } from '../../src/services/sync-checker'
@@ -81,7 +82,7 @@ const blockchains = {
 describe('Sync checker service (unit)', () => {
   let syncChecker: SyncChecker
   let cherryPicker: CherryPicker
-  let redis: RedisMock
+  let cache: Cache
   let metricsRecorder: MetricsRecorder
   let pocketMock: PocketMock
   let axiosMock: MockAdapter
@@ -90,10 +91,10 @@ describe('Sync checker service (unit)', () => {
   const origin = 'unit-test'
 
   before('initialize variables', async () => {
-    redis = new RedisMock(0, '')
-    cherryPicker = new CherryPicker({ redis, checkDebug: false })
-    metricsRecorder = metricsRecorderMock(redis, cherryPicker)
-    syncChecker = new SyncChecker(redis, metricsRecorder, DEFAULT_SYNC_ALLOWANCE, origin)
+    cache = new Cache(new RedisMock(0, ''))
+    cherryPicker = new CherryPicker({ redis: cache.redis, checkDebug: false })
+    metricsRecorder = metricsRecorderMock(cache.redis, cherryPicker)
+    syncChecker = new SyncChecker(cache, metricsRecorder, DEFAULT_SYNC_ALLOWANCE, origin)
     pocketMock = new PocketMock()
     axiosMock = new MockAdapter(axios)
   })
@@ -129,7 +130,7 @@ describe('Sync checker service (unit)', () => {
       .onPost(blockchains['0001']?.altruist.concat(blockchains['0001'].syncCheckOptions.path))
       .reply(200, POCKET_RELAY_RESPONSE)
 
-    await redis.flushall()
+    await cache.flushall()
   })
 
   after(() => {
@@ -282,8 +283,8 @@ describe('Sync checker service (unit)', () => {
       const relayer = pocketMock.object()
       const session = await relayer.getNewSession(undefined)
 
-      const redisGetSpy = sinon.spy(redis, 'get')
-      const redisSetSpy = sinon.spy(redis, 'set')
+      const cacheGetSpy = sinon.spy(cache, 'get')
+      const cacheSetSpy = sinon.spy(cache, 'set')
 
       let syncedNodes = (
         await syncChecker.consensusFilter({
@@ -302,10 +303,10 @@ describe('Sync checker service (unit)', () => {
 
       expect(syncedNodes).to.have.length(5)
 
-      expect(redisGetSpy.callCount).to.be.equal(2)
-      expect(redisSetSpy.callCount).to.be.equal(7)
+      expect(cacheGetSpy.callCount).to.be.equal(2)
+      expect(cacheSetSpy.callCount).to.be.equal(7)
 
-      // Subsequent calls should retrieve results from redis instead
+      // Subsequent calls should retrieve results from cache instead
       syncedNodes = (
         await syncChecker.consensusFilter({
           nodes,
@@ -321,8 +322,8 @@ describe('Sync checker service (unit)', () => {
         })
       ).nodes
 
-      expect(redisGetSpy.callCount).to.be.equal(3)
-      expect(redisSetSpy.callCount).to.be.equal(7)
+      expect(cacheGetSpy.callCount).to.be.equal(3)
+      expect(cacheSetSpy.callCount).to.be.equal(7)
     })
 
     it('performs a non-EVM (Solana) sync check successfully', async () => {
@@ -331,8 +332,8 @@ describe('Sync checker service (unit)', () => {
       const relayer = pocketMock.object()
       const session = await relayer.getNewSession(undefined)
 
-      const redisGetSpy = sinon.spy(redis, 'get')
-      const redisSetSpy = sinon.spy(redis, 'set')
+      const cacheGetSpy = sinon.spy(cache, 'get')
+      const cacheSetSpy = sinon.spy(cache, 'set')
 
       let syncedNodes = (
         await syncChecker.consensusFilter({
@@ -351,10 +352,10 @@ describe('Sync checker service (unit)', () => {
 
       expect(syncedNodes).to.have.length(5)
 
-      expect(redisGetSpy.callCount).to.be.equal(2)
-      expect(redisSetSpy.callCount).to.be.equal(7)
+      expect(cacheGetSpy.callCount).to.be.equal(2)
+      expect(cacheSetSpy.callCount).to.be.equal(7)
 
-      // Subsequent calls should retrieve results from redis instead
+      // Subsequent calls should retrieve results from cache instead
       syncedNodes = (
         await syncChecker.consensusFilter({
           nodes,
@@ -370,8 +371,8 @@ describe('Sync checker service (unit)', () => {
         })
       ).nodes
 
-      expect(redisGetSpy.callCount).to.be.equal(3)
-      expect(redisSetSpy.callCount).to.be.equal(7)
+      expect(cacheGetSpy.callCount).to.be.equal(3)
+      expect(cacheSetSpy.callCount).to.be.equal(7)
     })
 
     it('performs a non-EVM (Pocket) sync check successfully', async () => {
@@ -380,8 +381,8 @@ describe('Sync checker service (unit)', () => {
       const relayer = pocketMock.object()
       const session = await relayer.getNewSession(undefined)
 
-      const redisGetSpy = sinon.spy(redis, 'get')
-      const redisSetSpy = sinon.spy(redis, 'set')
+      const cacheGetSpy = sinon.spy(cache, 'get')
+      const cacheSetSpy = sinon.spy(cache, 'set')
 
       let syncedNodes = (
         await syncChecker.consensusFilter({
@@ -400,10 +401,10 @@ describe('Sync checker service (unit)', () => {
 
       expect(syncedNodes).to.have.length(5)
 
-      expect(redisGetSpy.callCount).to.be.equal(2)
-      expect(redisSetSpy.callCount).to.be.equal(7)
+      expect(cacheGetSpy.callCount).to.be.equal(2)
+      expect(cacheSetSpy.callCount).to.be.equal(7)
 
-      // Subsequent calls should retrieve results from redis instead
+      // Subsequent calls should retrieve results from cache instead
       syncedNodes = (
         await syncChecker.consensusFilter({
           nodes,
@@ -419,8 +420,8 @@ describe('Sync checker service (unit)', () => {
         })
       ).nodes
 
-      expect(redisGetSpy.callCount).to.be.equal(3)
-      expect(redisSetSpy.callCount).to.be.equal(7)
+      expect(cacheGetSpy.callCount).to.be.equal(3)
+      expect(cacheSetSpy.callCount).to.be.equal(7)
     })
 
     it('fails a sync check due to wrong result key (evm/non-evm)', async () => {
@@ -749,7 +750,7 @@ describe('Sync checker service (unit)', () => {
 
       expect(syncedNodes).to.have.length(4)
 
-      const removedNode = await redis.smembers(`session-key-${session.key}`)
+      const removedNode = await cache.smembers(`session-key-${session.key}`)
 
       expect(removedNode).to.have.length(1)
     })
