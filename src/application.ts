@@ -14,8 +14,6 @@ import { InfluxDB } from '@influxdata/influxdb-client'
 import AatPlans from './config/aat-plans.json'
 import { getPocketInstance } from './config/pocket-config'
 import { GatewaySequence } from './sequence'
-import { POCKET_JS_INSTANCE_TIMEOUT_KEY, POCKET_JS_TIMEOUT_MAX, POCKET_JS_TIMEOUT_MIN } from './utils/constants'
-import { getRandomInt } from './utils/helpers'
 const logger = require('./services/logger')
 
 require('log-timestamp')
@@ -126,14 +124,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
           })
 
     this.bind('redisInstance').to(redis)
-
-    // Avoid updating the pocketjs instance right away on boot
-    await redis.set(
-      POCKET_JS_INSTANCE_TIMEOUT_KEY,
-      'true',
-      'EX',
-      getRandomInt(POCKET_JS_TIMEOUT_MIN, POCKET_JS_TIMEOUT_MAX)
-    )
 
     // New metrics postgres for error recording
     const psqlConnection: string = PSQL_CONNECTION || ''
