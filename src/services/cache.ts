@@ -44,7 +44,7 @@ export class Cache {
 
   async sadd(key: string, ...values: string[]): Promise<number> {
     const localValue = this.local.get<string>(key)
-    const ttl = this.local.getTtl(key)
+    const ttl = this.getLocalTTL(key)
 
     if (localValue) {
       this.local.set(key, JSON.stringify([...new Set([...JSON.parse(localValue), ...values])]), ttl)
