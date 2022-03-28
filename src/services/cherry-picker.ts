@@ -16,10 +16,10 @@ const TIMEOUT_VARIANCE = 2
 // The maximum median latency for a node to be considered as providing optimal service.
 // This is temporarily a constant for MVP and will be moved to the database to be
 // variable per chain. Measured in seconds.
-const EXPECTED_SUCCESS_LATENCY = 0.1
+const EXPECTED_SUCCESS_LATENCY = 0.15
 
 // This multiplier is tested to produce a curve that adequately punishes slow nodes
-const WEIGHT_MULTIPLIER = 17
+const WEIGHT_MULTIPLIER = 35
 
 export class CherryPicker {
   checkDebug: boolean
@@ -230,7 +230,7 @@ export class CherryPicker {
         if (totalResults > 20) {
           serviceQuality.weightedSuccessLatency = (
             bucketedServiceQuality.median +
-            0.5 * bucketedServiceQuality.p90
+            0.3 * bucketedServiceQuality.p90
           ).toFixed(5)
         }
       } else {
@@ -351,9 +351,17 @@ export class CherryPicker {
     for (const sortedLog of sortedLogs) {
       let latencyDifference = 0
 
+      // Benchmark this current node's latency against the previous in the list
+      let benchmark = previousNodeLatency
+
       // Only count the latency difference if this node is slower than the expected success latency
-      if (sortedLog.medianSuccessLatency > EXPECTED_SUCCESS_LATENCY) {
-        latencyDifference = sortedLog.weightedSuccessLatency - previousNodeLatency
+      if (previousNodeLatency > 0 && sortedLog.medianSuccessLatency > EXPECTED_SUCCESS_LATENCY) {
+        // If previous node latency is faster than expected success, use the expected as the benchmark
+        if (previousNodeLatency < EXPECTED_SUCCESS_LATENCY) {
+          benchmark = EXPECTED_SUCCESS_LATENCY
+        }
+
+        latencyDifference = sortedLog.weightedSuccessLatency - benchmark
       }
 
       // The amount you subtract here from the weight factor should be variable based on how
@@ -396,6 +404,7 @@ export class CherryPicker {
       // Set the benchmark for the next node
       previousNodeLatency = sortedLog.weightedSuccessLatency
     }
+
     return rankedItems
   }
 
@@ -425,7 +434,7 @@ export class CherryPicker {
     if (rawServiceLog) {
       const parsedLog = JSON.parse(rawServiceLog)
 
-      // Count total relay atttempts with any result
+      // Count total relay attempts with any result
       for (const result of Object.keys(parsedLog.results)) {
         attempts = attempts + parsedLog.results[result]
       }
