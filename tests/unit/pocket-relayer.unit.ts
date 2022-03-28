@@ -10,6 +10,7 @@ import { expect, sinon } from '@loopback/testlab'
 import AatPlans from '../../src/config/aat-plans.json'
 import { Applications } from '../../src/models/applications.model'
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
+import { Cache } from '../../src/services/cache'
 import { ChainChecker, ChainIDFilterOptions } from '../../src/services/chain-checker'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
@@ -140,7 +141,7 @@ describe('Pocket relayer service (unit)', () => {
   let syncChecker: SyncChecker
   let metricsRecorder: MetricsRecorder
   let blockchainRepository: BlockchainsRepository
-  let redis: RedisMock
+  let cache: Cache
   let pocketMock: PocketMock
   let pocketRelayer: PocketRelayer
   let axiosMock: MockAdapter
@@ -149,11 +150,11 @@ describe('Pocket relayer service (unit)', () => {
   const origin = 'unit-test'
 
   before('initialize variables', async () => {
-    redis = new RedisMock(0, '')
-    cherryPicker = new CherryPicker({ redis, checkDebug: false })
-    metricsRecorder = metricsRecorderMock(redis, cherryPicker)
-    chainChecker = new ChainChecker(redis, metricsRecorder, origin)
-    syncChecker = new SyncChecker(redis, metricsRecorder, 5, origin)
+    cache = new Cache(new RedisMock(0, ''))
+    cherryPicker = new CherryPicker({ redis: cache.redis, checkDebug: false })
+    metricsRecorder = metricsRecorderMock(cache.redis, cherryPicker)
+    chainChecker = new ChainChecker(cache, metricsRecorder, origin)
+    syncChecker = new SyncChecker(cache, metricsRecorder, 5, origin)
     blockchainRepository = new BlockchainsRepository(gatewayTestDB)
 
     pocketMock = new PocketMock()
@@ -170,7 +171,7 @@ describe('Pocket relayer service (unit)', () => {
       metricsRecorder,
       syncChecker,
       chainChecker,
-      redis,
+      cache,
       databaseEncryptionKey: DB_ENCRYPTION_KEY,
       secretKey: '',
       relayRetries: 0,
@@ -193,7 +194,7 @@ describe('Pocket relayer service (unit)', () => {
 
   beforeEach(async () => {
     await blockchainRepository.deleteAll()
-    await redis.flushall()
+    await cache.flushall()
     sinon.restore()
   })
 
@@ -224,12 +225,12 @@ describe('Pocket relayer service (unit)', () => {
     expect(dbBlockchains).to.have.length(3)
 
     const repositorySpy = sinon.spy(blockchainRepository, 'find')
-    const redisGetSpy = sinon.spy(redis, 'get')
-    const redisSetSpy = sinon.spy(redis, 'set')
+    const cacheGetSpy = sinon.spy(cache, 'get')
+    const cacheSetSpy = sinon.spy(cache, 'set')
 
     let blockchainResult = await loadBlockchain(
       pocketRelayer.host,
-      pocketRelayer.redis,
+      pocketRelayer.cache,
       pocketRelayer.blockchainsRepository,
       pocketRelayer.defaultLogLimitBlocks,
       1
@@ -239,13 +240,13 @@ describe('Pocket relayer service (unit)', () => {
     expect(blockchainResult.blockchainID).to.be.equal(BLOCKCHAINS[0].hash)
 
     expect(repositorySpy.callCount).to.be.equal(1)
-    expect(redisGetSpy.callCount).to.be.equal(1)
-    expect(redisSetSpy.callCount).to.be.equal(1)
+    expect(cacheGetSpy.callCount).to.be.equal(1)
+    expect(cacheSetSpy.callCount).to.be.equal(1)
 
-    // Subsequent calls should retrieve results from redis instead
+    // Subsequent calls should retrieve results from cache instead
     blockchainResult = await loadBlockchain(
       pocketRelayer.host,
-      pocketRelayer.redis,
+      pocketRelayer.cache,
       pocketRelayer.blockchainsRepository,
       pocketRelayer.defaultLogLimitBlocks,
       1
@@ -255,15 +256,15 @@ describe('Pocket relayer service (unit)', () => {
     expect(blockchainResult.blockchainID).to.be.equal(BLOCKCHAINS[0].hash)
 
     expect(repositorySpy.callCount).to.be.equal(1)
-    expect(redisGetSpy.callCount).to.be.equal(2)
-    expect(redisSetSpy.callCount).to.be.equal(1)
+    expect(cacheGetSpy.callCount).to.be.equal(2)
+    expect(cacheSetSpy.callCount).to.be.equal(1)
   })
 
   it('throws an error when loading an invalid blockchain', async () => {
     await expect(
       loadBlockchain(
         pocketRelayer.host,
-        pocketRelayer.redis,
+        pocketRelayer.cache,
         pocketRelayer.blockchainsRepository,
         pocketRelayer.defaultLogLimitBlocks,
         1
@@ -288,7 +289,7 @@ describe('Pocket relayer service (unit)', () => {
       metricsRecorder,
       syncChecker,
       chainChecker,
-      redis,
+      cache,
       databaseEncryptionKey: DB_ENCRYPTION_KEY,
       secretKey: key,
       relayRetries: 0,
@@ -327,7 +328,7 @@ describe('Pocket relayer service (unit)', () => {
       metricsRecorder,
       syncChecker,
       chainChecker,
-      redis,
+      cache,
       databaseEncryptionKey: DB_ENCRYPTION_KEY,
       secretKey: 'invalid',
       relayRetries: 0,
@@ -464,7 +465,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
-        redis,
+        cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
@@ -517,7 +518,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
-        redis,
+        cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
@@ -567,7 +568,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
-        redis,
+        cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
@@ -618,7 +619,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker,
         chainChecker,
-        redis,
+        cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
@@ -669,7 +670,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker,
         chainChecker,
-        redis,
+        cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
@@ -729,7 +730,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker,
         chainChecker,
-        redis,
+        cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
@@ -762,7 +763,7 @@ describe('Pocket relayer service (unit)', () => {
         }
       )
 
-      let removedNodes = await redis.smembers(sessionCachedKey)
+      let removedNodes = await cache.smembers(sessionCachedKey)
 
       expect(removedNodes).to.have.length(5)
 
@@ -792,7 +793,7 @@ describe('Pocket relayer service (unit)', () => {
         }
       )
 
-      removedNodes = await redis.smembers(sessionCachedKey)
+      removedNodes = await cache.smembers(sessionCachedKey)
 
       expect(removedNodes).to.have.length(5)
 
@@ -823,7 +824,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
-        redis,
+        cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
@@ -856,7 +857,7 @@ describe('Pocket relayer service (unit)', () => {
         }
       )
 
-      let removedNodes = await redis.smembers(sessionCachedKey)
+      let removedNodes = await cache.smembers(sessionCachedKey)
 
       expect(removedNodes).to.have.length(1)
 
@@ -886,7 +887,7 @@ describe('Pocket relayer service (unit)', () => {
         }
       )
 
-      removedNodes = await redis.smembers(sessionCachedKey)
+      removedNodes = await cache.smembers(sessionCachedKey)
 
       expect(removedNodes.length).to.have.lessThanOrEqual(2)
 
@@ -913,7 +914,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
-        redis,
+        cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: 'invalid secret key',
         relayRetries: 0,
@@ -965,7 +966,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
-        redis,
+        cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: 'invalid secret key',
         relayRetries: 0,
@@ -1020,7 +1021,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
-        redis,
+        cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: 'invalid secret key',
         relayRetries: 0,
@@ -1074,7 +1075,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker,
         chainChecker,
-        redis,
+        cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
@@ -1124,7 +1125,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker,
         chainChecker,
-        redis,
+        cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
@@ -1180,7 +1181,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
-        redis,
+        cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
@@ -1243,7 +1244,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
-        redis,
+        cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
@@ -1324,7 +1325,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
-        redis,
+        cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
@@ -1403,7 +1404,7 @@ describe('Pocket relayer service (unit)', () => {
           metricsRecorder,
           syncChecker,
           chainChecker,
-          redis,
+          cache,
           databaseEncryptionKey: DB_ENCRYPTION_KEY,
           secretKey: 'invalid secret key',
           relayRetries: 0,
@@ -1463,7 +1464,7 @@ describe('Pocket relayer service (unit)', () => {
           metricsRecorder,
           syncChecker,
           chainChecker,
-          redis,
+          cache,
           databaseEncryptionKey: DB_ENCRYPTION_KEY,
           secretKey: 'invalid secret key',
           relayRetries: 0,
@@ -1522,7 +1523,7 @@ describe('Pocket relayer service (unit)', () => {
           metricsRecorder,
           syncChecker,
           chainChecker,
-          redis,
+          cache,
           databaseEncryptionKey: DB_ENCRYPTION_KEY,
           secretKey: 'invalid secret key',
           relayRetries: 0,
@@ -1587,7 +1588,7 @@ describe('Pocket relayer service (unit)', () => {
           metricsRecorder,
           syncChecker: mockSyncChecker,
           chainChecker: mockChainChecker,
-          redis,
+          cache,
           databaseEncryptionKey: DB_ENCRYPTION_KEY,
           secretKey: 'invalid secret key',
           relayRetries: 0,
@@ -1813,7 +1814,7 @@ describe('Pocket relayer service (unit)', () => {
           metricsRecorder,
           syncChecker,
           chainChecker,
-          redis,
+          cache,
           databaseEncryptionKey: DB_ENCRYPTION_KEY,
           secretKey: '',
           relayRetries: 0,
