@@ -52,9 +52,7 @@ export class CherryPicker {
     }
 
     // Pull all service & failure & error logs
-    const rawServiceLogs = await this.fetchRawLogs(blockchain, rawNodeIDs, 'service')
-    const rawFailureLogs = await this.fetchRawLogs(blockchain, rawNodeIDs, 'failure')
-    const rawErrorLogs = await this.fetchRawLogs(blockchain, rawNodeIDs, 'errors')
+    const { rawServiceLogs, rawFailureLogs, rawErrorLogs } = await this.fetchRawLogs(blockchain, rawNodeIDs)
 
     for (const node of nodes) {
       sortedLogs.push(
@@ -119,13 +117,22 @@ export class CherryPicker {
   }
 
   // Fetch app/node's service or failure logs from redis
-  async fetchRawLogs(blockchain: string, rawNodeIDs: string[], logType: string): Promise<{ [id: string]: string }> {
+  async fetchRawLogs(blockchain: string, rawNodeIDs: string[]): Promise<{ [type: string]: { [id: string]: string } }> {
     const rawServiceLogs: { [id: string]: string } = {}
+    const rawFailureLogs: { [id: string]: string } = {}
+    const rawErrorLogs: { [id: string]: string } = {}
 
-    const redisKeys = rawNodeIDs.map(function (rawNodeID) {
-      return `{${blockchain}}-${rawNodeID}-${logType}`
+    const redisServiceKeys = rawNodeIDs.map(function (rawNodeID) {
+      return `{${blockchain}}-${rawNodeID}-service`
+    })
+    const redisFailureKeys = rawNodeIDs.map(function (rawNodeID) {
+      return `{${blockchain}}-${rawNodeID}-failure`
+    })
+    const redisErrorKeys = rawNodeIDs.map(function (rawNodeID) {
+      return `{${blockchain}}-${rawNodeID}-errors`
     })
 
+    const redisKeys = redisServiceKeys.concat(redisFailureKeys).concat(redisErrorKeys)
     const rawRedisLogs = await this.redis.mget(redisKeys)
 
     let logCount = 0
@@ -133,7 +140,15 @@ export class CherryPicker {
       rawServiceLogs[rawNodeID] = rawRedisLogs[logCount]
       logCount++
     })
-    return rawServiceLogs
+    rawNodeIDs.forEach((rawNodeID) => {
+      rawFailureLogs[rawNodeID] = rawRedisLogs[logCount]
+      logCount++
+    })
+    rawNodeIDs.forEach((rawNodeID) => {
+      rawErrorLogs[rawNodeID] = rawRedisLogs[logCount]
+      logCount++
+    })
+    return { rawServiceLogs: rawServiceLogs, rawFailureLogs: rawFailureLogs, rawErrorLogs: rawErrorLogs }
   }
 
   // Fetch app/node's service log from redis
