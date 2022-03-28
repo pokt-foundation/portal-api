@@ -1,7 +1,6 @@
 import { EvidenceSealedError, Relayer } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT, HTTPMethod } from '@pokt-foundation/pocketjs-types'
 import axios, { AxiosRequestConfig, Method } from 'axios'
-import { Redis } from 'ioredis'
 import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
@@ -25,6 +24,7 @@ import { getApplicationPublicKey } from '../utils/helpers'
 import { parseJSONRPCError, parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
 import { CheckResult, RelayResponse, SendRelayOptions } from '../utils/types'
+import { Cache } from './cache'
 import { enforceEVMLimits } from './limiter'
 import { NodeSticker } from './node-sticker'
 
@@ -40,7 +40,7 @@ export class PocketRelayer {
   metricsRecorder: MetricsRecorder
   syncChecker: SyncChecker
   chainChecker: ChainChecker
-  redis: Redis
+  cache: Cache
   databaseEncryptionKey: string
   secretKey: string
   relayRetries: number
@@ -62,7 +62,7 @@ export class PocketRelayer {
     metricsRecorder,
     syncChecker,
     chainChecker,
-    redis,
+    cache,
     databaseEncryptionKey,
     secretKey,
     relayRetries,
@@ -82,7 +82,7 @@ export class PocketRelayer {
     metricsRecorder: MetricsRecorder
     syncChecker: SyncChecker
     chainChecker: ChainChecker
-    redis: Redis
+    cache: Cache
     databaseEncryptionKey: string
     secretKey: string
     relayRetries: number
@@ -102,7 +102,7 @@ export class PocketRelayer {
     this.metricsRecorder = metricsRecorder
     this.syncChecker = syncChecker
     this.chainChecker = chainChecker
-    this.redis = redis
+    this.cache = cache
     this.databaseEncryptionKey = databaseEncryptionKey
     this.secretKey = secretKey
     this.relayRetries = relayRetries
@@ -159,7 +159,7 @@ export class PocketRelayer {
       blockchainAltruist,
     } = await loadBlockchain(
       this.host,
-      this.redis,
+      this.cache,
       this.blockchainsRepository,
       this.defaultLogLimitBlocks,
       rpcID
@@ -177,7 +177,7 @@ export class PocketRelayer {
       stickinessOptions,
       blockchainID,
       this.ipAddress,
-      this.redis,
+      this.cache.redis,
       rawData,
       requestID,
       application.id
@@ -327,8 +327,8 @@ export class PocketRelayer {
           } else if (relay instanceof RelayError) {
             // Record failure metric, retry if possible or fallback
             // Increment error log
-            await this.redis.incr(blockchainID + '-' + relay.servicer_node + '-errors')
-            await this.redis.expire(blockchainID + '-' + relay.servicer_node + '-errors', 3600)
+            await this.cache.incr(blockchainID + '-' + relay.servicer_node + '-errors')
+            await this.cache.expire(blockchainID + '-' + relay.servicer_node + '-errors', 3600)
 
             let error = relay.message
 
@@ -611,7 +611,7 @@ export class PocketRelayer {
 
     try {
       const sessionCacheKey = `session-cached-${application?.gatewayAAT.applicationPublicKey}-${blockchainID}`
-      const cachedSession = await this.redis.get(sessionCacheKey)
+      const cachedSession = (await this.cache.get(sessionCacheKey)) as string
 
       if (cachedSession) {
         session = JSON.parse(cachedSession)
@@ -637,7 +637,7 @@ export class PocketRelayer {
         // @ts-ignore
         session.nodes.forEach((node) => (node.stakedTokens = node.stakedTokens.toString()))
 
-        await this.redis.set(sessionCacheKey, JSON.stringify(session), 'EX', 200)
+        await this.cache.set(sessionCacheKey, JSON.stringify(session), 'EX', 200)
       }
     } catch (error) {
       logger.log('error', 'ERROR obtaining a session: ' + error, {
@@ -665,7 +665,7 @@ export class PocketRelayer {
     this.session = session
     const sessionCacheKey = `session-key-${key}`
 
-    const exhaustedNodes = await this.redis.smembers(sessionCacheKey)
+    const exhaustedNodes = await this.cache.smembers(sessionCacheKey)
 
     if (exhaustedNodes.length > 0) {
       nodes = nodes.filter(({ publicKey }) => !exhaustedNodes.includes(publicKey))
@@ -896,7 +896,7 @@ export class PocketRelayer {
     } else if (relay instanceof Error) {
       // Remove node from session if error is due to max relays allowed reached
       if (relay instanceof EvidenceSealedError) {
-        await removeNodeFromSession(this.redis, session, node.publicKey, true, requestID, blockchainID)
+        await removeNodeFromSession(this.cache, session, node.publicKey, true, requestID, blockchainID)
       }
       return new RelayError(relay.message, 500, node?.publicKey)
       // ConsensusNode
