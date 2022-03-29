@@ -43,11 +43,10 @@ export class Cache {
 
     if (localValue) {
       const ttl = await this.local.ttl(key)
-      await this.local.set(key, JSON.stringify([...new Set([...JSON.parse(localValue), ...values])]), 'EX', ttl)
-    } else {
-      await this.local.set(key, JSON.stringify([...new Set(values)]))
+      return this.local.sadd(key, JSON.stringify([...new Set([...JSON.parse(localValue), ...values])]), 'EX', ttl)
     }
 
+    await this.local.sadd(key, JSON.stringify([...new Set(values)]))
     return this.remote.sadd(key, values)
   }
 
@@ -55,7 +54,7 @@ export class Cache {
     const value = await this.local.get(key)
 
     if (value) {
-      const parsedValue = JSON.parse(value)
+      const parsedValue = Array.from(value)
       if (Array.isArray(parsedValue)) {
         return parsedValue
       }
