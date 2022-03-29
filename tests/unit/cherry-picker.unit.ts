@@ -7,7 +7,7 @@ import { PocketMock } from '../mocks/pocketjs'
 
 describe('Cherry picker service (unit)', () => {
   let cherryPicker: CherryPicker
-  let redis: RedisMock
+  let redis: RedisMock.Redis
 
   before('initialize instance', async () => {
     redis = new RedisMock(0, '')
@@ -220,7 +220,7 @@ describe('Cherry picker service (unit)', () => {
         failure: false,
       }
 
-      await redis.set(`{${blockchain}}-${id}-failure`, true, 'EX', 60)
+      await redis.set(`{${blockchain}}-${id}-failure`, 'true', 'EX', 60)
       failureNode = await redis.get(`{${blockchain}}-${id}-failure`)
 
       expect(failureNode).to.be.equal('true')

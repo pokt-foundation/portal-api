@@ -1,141 +1,107 @@
 import { Redis } from 'ioredis'
-import NodeCache from 'node-cache'
 
-// Cache performs cache operations using tiered Caching with ioredis and node-cache
+// Cache performs cache operations using tiered Caching with ioredis
 export class Cache {
-  redis: Redis
-  local: NodeCache
+  remote: Redis
+  local: Redis
 
-  constructor(redis: Redis) {
-    this.redis = redis
-    this.local = new NodeCache({
-      checkperiod: 5,
-      useClones: false,
-      deleteOnExpire: true,
-    })
+  constructor(remoteRedis: Redis, localRedis: Redis) {
+    this.remote = remoteRedis
+    this.local = localRedis
   }
 
-  async set(key: string, value: string, ttlType: 'KEEPTTL' | 'EX', ttlSeconds?: number): Promise<string> {
-    if (ttlType === 'KEEPTTL') {
-      this.local.set<string>(key, value, this.getLocalTTL(key))
-      return this.redis.set(key, value, ttlType)
-    }
-
-    this.local.set<string>(key, value, ttlSeconds)
-    return this.redis.set(key, value, ttlType, ttlSeconds)
+  async set(key: string, value: string, ttlType: string, ttlSeconds?: number): Promise<string> {
+    await this.local.set(key, value, ttlType, ttlSeconds)
+    return this.remote.set(key, value, ttlType, ttlSeconds)
   }
 
   async get(key: string): Promise<string | null> {
-    const value = this.local.get<string>(key)
+    const value = await this.local.get(key)
     return value ? value : this.getRedisToSetLocal(key)
   }
 
   async mget(...keys: string[]): Promise<string[]> {
-    const localValues: string[] = []
+    let valid = true
+    const localValues: string[] = await this.local.mget(keys)
 
-    Object.entries(this.local.mget<string>(keys)).forEach(([_, value]) => {
-      if (typeof value === 'string') {
-        localValues.push(value)
+    for (const value of localValues) {
+      if (!value) {
+        valid = false
+        break
       }
-    })
+    }
 
-    return localValues.length === keys.length ? localValues : this.mgetRedisToSetLocal(...keys)
+    return valid ? localValues : this.mgetRedisToSetLocal(...keys)
   }
 
   async sadd(key: string, ...values: string[]): Promise<number> {
-    const localValue = this.local.get<string>(key)
-    const ttl = this.getLocalTTL(key)
-
-    if (localValue) {
-      this.local.set(key, JSON.stringify([...new Set([...JSON.parse(localValue), ...values])]), ttl)
-    } else {
-      this.local.set(key, JSON.stringify([...new Set(values)]))
-    }
-
-    return this.redis.sadd(key, values)
+    await this.local.sadd(key, ...values)
+    return this.remote.sadd(key, ...values)
   }
 
   async smembers(key: string): Promise<string[]> {
-    const value = this.local.get<string>(key)
+    const value = await this.local.smembers(key)
 
-    if (value) {
-      const parsedValue = JSON.parse(value)
-      if (Array.isArray(parsedValue)) {
-        return parsedValue
-      }
+    if (value.length > 0) {
+      return value
     }
 
-    return this.redis.smembers(key)
+    return this.remote.smembers(key)
   }
 
   async ttl(key: string): Promise<number> {
-    const localTTL = this.local.getTtl(key) || 0
-    return localTTL ? this.getLocalTTL(key) : this.redis.ttl(key)
+    const localTTL = await this.local.ttl(key)
+    return localTTL > 0 ? localTTL : this.remote.ttl(key)
   }
 
   async expire(key: string, ttlSeconds: number) {
-    this.local.ttl(key, ttlSeconds)
-    return this.redis.expire(key, ttlSeconds)
+    await this.local.expire(key, ttlSeconds)
+    return this.remote.expire(key, ttlSeconds)
   }
 
   async del(...keys: string[]): Promise<number> {
-    this.local.del(keys)
-    return this.redis.del(...keys)
+    await this.local.del(keys)
+    return this.remote.del(...keys)
   }
 
   async llen(key: string): Promise<number> {
-    const value = this.local.get<string>(key)
+    const value = await this.local.llen(key)
 
-    if (value) {
-      const parsedValue = JSON.parse(value)
-      if (Array.isArray(parsedValue)) {
-        return parsedValue.length
-      }
+    if (value > 0) {
+      return value
     }
 
-    return this.redis.llen(key)
+    return this.remote.llen(key)
   }
 
   async incr(key: string): Promise<number> {
-    const value = await this.redis.incr(key)
-    this.local.set(key, value)
-
-    return value
+    return this.remote.incr(key)
   }
 
   async flushall(): Promise<string> {
-    this.local.flushAll()
-    return this.redis.flushall()
+    await this.local.flushall()
+    return this.remote.flushall()
   }
 
   private async getRedisToSetLocal(key: string): Promise<string> {
-    const redisValue = await this.redis.get(key)
+    const redisValue = await this.remote.get(key)
     if (redisValue) {
-      const ttl = await this.redis.ttl(key)
-      this.local.set(key, redisValue, ttl)
+      const ttl = await this.remote.ttl(key)
+      await this.local.set(key, redisValue, 'EX', ttl)
     }
     return redisValue
   }
 
   private async mgetRedisToSetLocal(...keys: string[]): Promise<string[]> {
-    const values = await this.redis.mget(keys)
+    const values = await this.remote.mget(keys)
 
     for (let i = 0; i < values.length; i++) {
-      if (values[i] === null) {
+      if (!values[i]) {
         continue
       }
-      const ttl = await this.redis.ttl(keys[i])
-      this.local.set(keys[i], values[i], ttl)
+      const ttl = await this.remote.ttl(keys[i])
+      await this.local.set(keys[i], values[i], 'EX', ttl)
     }
     return values
-  }
-
-  // node-cache returns a timestamp of when the time is going to expire, while
-  // redis returns an integer meaning remaining seconds, this converts the
-  // node-cache ttl result to remaining seconds
-  private getLocalTTL(key: string) {
-    const localTTL = this.local.getTtl(key) || 0
-    // Gets time difference in seconds
-    return localTTL > 0 ? (localTTL - new Date().getTime()) / 1000 : localTTL
   }
 }

@@ -348,7 +348,7 @@ export class CherryPicker {
           serviceNode,
           sessionKey,
         })
-        await removeNodeFromSession(new Cache(this.redis), pocketSession, serviceNode, true, '', blockchain)
+        await removeNodeFromSession(this.redis as unknown as Cache, pocketSession, serviceNode, true, '', blockchain)
       }
     }
   }
