@@ -36,6 +36,7 @@ jobs:
           envkey_DISPATCH_URL: ${{ secrets.DISPATCH_URL }}
           envkey_ALTRUISTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_ALTRUISTS }}
           envkey_REDIRECTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_REDIRECTS }}
+          envkey_LOCAL_REDIS_ENDPOINT: 172.17.0.1:6379
           envkey_REDIS_PORT: 6379
           envkey_POCKET_NETWORK_NODE_URL: ${{ secrets.POCKET_NETWORK_MAINNET_NODE_URL }}
           envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
@@ -58,7 +59,7 @@ jobs:
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
-          envkey_REDIS_ENDPOINT: gateway-prod-redis.gvqq2p.clustercfg.cac1.cache.amazonaws.com
+          envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.gvqq2p.clustercfg.cac1.cache.amazonaws.com
           envkey_REGION: 'ca-central-1'
           envkey_REGION_NAME: 'ca-central-1'
           file_name: .env

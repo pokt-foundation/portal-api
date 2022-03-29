@@ -34,7 +34,7 @@ jobs:
           [[#shared_envs]]
           envkey_[[key]]: [[&value]]
           [[/shared_envs]]
-          envkey_REDIS_ENDPOINT: gateway-staging-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
+          envkey_REMOTE_REDIS_ENDPOINT: gateway-staging-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REGION: 'us-west-2'
           envkey_REGION_NAME: 'staging'
           file_name: .env

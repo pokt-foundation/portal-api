@@ -11,10 +11,9 @@ export const DUMMY_ENV = {
   GATEWAY_CLIENT_PRIVATE_KEY: 'v3rys3cr3tk3yud0nt3venkn0w',
   GATEWAY_CLIENT_PASSPHRASE: 'v3rys3cr3tp4ssphr4ze',
   DATABASE_ENCRYPTION_KEY: '00000000000000000000000000000000',
+  REDIS_PORT: '6379',
   REMOTE_REDIS_ENDPOINT: 'cache:6379',
-  REMOTE_REDIS_PORT: '6379',
   LOCAL_REDIS_ENDPOINT: 'local-cache:6380',
-  LOCAL_REDIS_PORT: '6380',
   PG_CONNECTION: 'postgres://pguser:pgpassword@metricsdb:5432/gateway',
   PG_CERTIFICATE: 'PG_PRODUCTION_CERTIFICATE',
   PSQL_CONNECTION: 'postgres://pguser:pgpassword@metricsdb:5432/gateway',
@@ -69,12 +68,12 @@ export async function setupApplication(pocket?: Relayer, envs?: object): Promise
   let mock: RedisMock.Redis
 
   // remote redis mock
-  mock = new RedisMock(parseInt(DUMMY_ENV.REMOTE_REDIS_PORT), DUMMY_ENV.REMOTE_REDIS_ENDPOINT)
+  mock = new RedisMock(parseInt(DUMMY_ENV.REDIS_PORT), DUMMY_ENV.REMOTE_REDIS_ENDPOINT)
 
   await mock.flushall()
 
   // local redis mock
-  mock = new RedisMock(parseInt(DUMMY_ENV.LOCAL_REDIS_PORT), DUMMY_ENV.LOCAL_REDIS_ENDPOINT)
+  mock = new RedisMock(parseInt(DUMMY_ENV.REDIS_PORT), DUMMY_ENV.LOCAL_REDIS_ENDPOINT)
 
   await mock.flushall()
 

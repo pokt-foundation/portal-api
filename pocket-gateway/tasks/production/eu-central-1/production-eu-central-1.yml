@@ -34,7 +34,7 @@ jobs:
           [[#shared_envs]]
           envkey_[[key]]: [[&value]]
           [[/shared_envs]]
-          envkey_REDIS_ENDPOINT: gateway-prod-redis.6iq570.clustercfg.euc1.cache.amazonaws.com
+          envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.6iq570.clustercfg.euc1.cache.amazonaws.com
           envkey_REGION: 'eu-central-1'
           envkey_REGION_NAME: 'eu-central-1'
           file_name: .env
