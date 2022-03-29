@@ -2,6 +2,7 @@ import { Node, Session } from '@pokt-foundation/pocketjs-types'
 import { Redis } from 'ioredis'
 import { Applications } from '../models'
 import { removeNodeFromSession } from '../utils/cache'
+import { Cache } from './cache'
 
 const logger = require('../services/logger')
 
@@ -347,7 +348,7 @@ export class CherryPicker {
           serviceNode,
           sessionKey,
         })
-        await removeNodeFromSession(this.redis, pocketSession, serviceNode, true, '', blockchain)
+        await removeNodeFromSession(this.redis as unknown as Cache, pocketSession, serviceNode, true, '', blockchain)
       }
     }
   }
