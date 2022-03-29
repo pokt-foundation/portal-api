@@ -136,6 +136,6 @@ export class Cache {
   private getLocalTTL(key: string) {
     const localTTL = this.local.getTtl(key) || 0
     // Gets time difference in seconds
-    return localTTL <= 0 ? localTTL : (localTTL - new Date().getTime()) / 1000
+    return localTTL > 0 ? (localTTL - new Date().getTime()) / 1000 : localTTL
   }
 }
