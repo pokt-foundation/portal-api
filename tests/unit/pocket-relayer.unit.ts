@@ -150,9 +150,9 @@ describe('Pocket relayer service (unit)', () => {
   const origin = 'unit-test'
 
   before('initialize variables', async () => {
-    cache = new Cache(new RedisMock(0, ''))
-    cherryPicker = new CherryPicker({ redis: cache.redis, checkDebug: false })
-    metricsRecorder = metricsRecorderMock(cache.redis, cherryPicker)
+    cache = new Cache(new RedisMock(0, ''), new RedisMock(0, ''))
+    cherryPicker = new CherryPicker({ redis: cache.remote, checkDebug: false })
+    metricsRecorder = metricsRecorderMock(cache.remote, cherryPicker)
     chainChecker = new ChainChecker(cache, metricsRecorder, origin)
     syncChecker = new SyncChecker(cache, metricsRecorder, 5, origin)
     blockchainRepository = new BlockchainsRepository(gatewayTestDB)
