@@ -10,7 +10,7 @@ export class Cache {
     this.local = localRedis
   }
 
-  async set(key: string, value: string, ttlType: 'KEEPTTL' | 'EX', ttlSeconds?: number): Promise<string> {
+  async set(key: string, value: string, ttlType: string, ttlSeconds?: number): Promise<string> {
     await this.local.set(key, value, ttlType, ttlSeconds)
     return this.remote.set(key, value, ttlType, ttlSeconds)
   }
@@ -96,7 +96,7 @@ export class Cache {
     const values = await this.remote.mget(keys)
 
     for (let i = 0; i < values.length; i++) {
-      if (values[i] === null) {
+      if (!values[i]) {
         continue
       }
       const ttl = await this.remote.ttl(keys[i])
