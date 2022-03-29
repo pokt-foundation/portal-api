@@ -50,10 +50,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       GATEWAY_CLIENT_PRIVATE_KEY,
       GATEWAY_CLIENT_PASSPHRASE,
       DATABASE_ENCRYPTION_KEY,
+      REDIS_PORT,
       REMOTE_REDIS_ENDPOINT,
-      REMOTE_REDIS_PORT,
       LOCAL_REDIS_ENDPOINT,
-      LOCAL_REDIS_PORT,
       PSQL_CONNECTION,
       DISPATCH_URL,
       POCKET_RELAY_RETRIES,
@@ -105,13 +104,14 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('defaultLogLimitBlocks').to(defaultLogLimitBlocks)
     this.bind('alwaysRedirectToAltruists').to(alwaysRedirectToAltruists)
 
+    const redisPort: string = REDIS_PORT || ''
+
     // Load remote Redis for cache
     const remoteRedisEndpoint: string = REMOTE_REDIS_ENDPOINT || ''
-    const remoteRedisPort: string = REMOTE_REDIS_PORT || ''
 
     const remoteRedisConfig = {
       host: remoteRedisEndpoint,
-      port: parseInt(remoteRedisPort),
+      port: parseInt(redisPort),
     }
 
     const remoteRedis =
@@ -128,11 +128,10 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     // Load local Redis for cache
     const localRedisEndpoint: string = LOCAL_REDIS_ENDPOINT || ''
-    const localRedisPort: string = LOCAL_REDIS_PORT || ''
 
     const localRedisConfig = {
       host: localRedisEndpoint,
-      port: parseInt(localRedisPort),
+      port: parseInt(redisPort),
     }
 
     const localRedis = new Redis(localRedisConfig.port, localRedisConfig.host)

@@ -29,6 +29,10 @@
       "value": "${{ secrets.POCKET_NETWORK_PRODUCTION_REDIRECTS }}"
     },
     {
+      "key": "LOCAL_REDIS_ENDPOINT",
+      "value": "172.17.0.1:6379"
+    },
+    {
       "key": "REDIS_PORT",
       "value": 6379
     },
