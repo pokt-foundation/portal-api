@@ -9,19 +9,19 @@ export class Cache {
   constructor(redis: Redis) {
     this.redis = redis
     this.local = new NodeCache({
-      checkperiod: 60,
-      useClones: true,
+      checkperiod: 10,
+      useClones: false,
       deleteOnExpire: true,
     })
   }
 
-  async set(key: string, value: string | number, ttlType: 'KEEPTTL' | 'EX', ttlSeconds?: number): Promise<string> {
+  async set(key: string, value: string, ttlType: 'KEEPTTL' | 'EX', ttlSeconds?: number): Promise<string> {
     if (ttlType === 'KEEPTTL') {
-      this.local.set<string | number>(key, value, this.getLocalTTL(key))
+      this.local.set<string>(key, value, this.getLocalTTL(key))
       return this.redis.set(key, value, ttlType)
     }
 
-    this.local.set<string | number>(key, value, ttlSeconds)
+    this.local.set<string>(key, value, ttlSeconds)
     return this.redis.set(key, value, ttlType, ttlSeconds)
   }
 
