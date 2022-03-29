@@ -704,8 +704,7 @@ describe('Pocket relayer service (unit)', () => {
       )
     })
 
-    // eslint-disable-next-line mocha/no-exclusive-tests
-    it.only('Fails relay due to all nodes in session running out of relays, subsequent relays should not attempt to perform checks', async () => {
+    it('Fails relay due to all nodes in session running out of relays, subsequent relays should not attempt to perform checks', async () => {
       const mock = new PocketMock()
 
       const maxRelaysError = new EvidenceSealedError(0, 'error')

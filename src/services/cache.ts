@@ -11,12 +11,6 @@ export class Cache {
   }
 
   async set(key: string, value: string, ttlType: 'KEEPTTL' | 'EX', ttlSeconds?: number): Promise<string> {
-    if (ttlType === 'KEEPTTL') {
-      const ttl = await this.local.ttl(key)
-      await this.local.set(key, value, 'EX', ttl)
-      return this.remote.set(key, value, ttlType)
-    }
-
     await this.local.set(key, value, ttlType, ttlSeconds)
     return this.remote.set(key, value, ttlType, ttlSeconds)
   }
@@ -27,35 +21,28 @@ export class Cache {
   }
 
   async mget(...keys: string[]): Promise<string[]> {
-    const localValues: string[] = []
+    let valid = true
+    const localValues: string[] = await this.local.mget(keys)
 
-    Object.entries(this.local.mget(keys)).forEach(([_, value]) => {
-      if (typeof value === 'string') {
-        localValues.push(value)
+    for (const value of localValues) {
+      if (!value) {
+        valid = false
+        break
       }
-    })
+    }
 
-    return localValues.length === keys.length ? localValues : this.mgetRedisToSetLocal(...keys)
+    return valid ? localValues : this.mgetRedisToSetLocal(...keys)
   }
 
   async sadd(key: string, ...values: string[]): Promise<number> {
-    const localValue = await this.local.get(key)
-
-    if (localValue) {
-      const ttl = await this.local.ttl(key)
-      await this.local.sadd(key, JSON.stringify([...new Set([...JSON.parse(localValue), ...values])]), 'EX', ttl)
-    } else {
-      await this.local.sadd(key, JSON.stringify([...new Set(values)]))
-    }
-
-    await this.local.sadd(key, JSON.stringify([...new Set(values)]))
-    return this.remote.sadd(key, values)
+    await this.local.sadd(key, ...values)
+    return this.remote.sadd(key, ...values)
   }
 
   async smembers(key: string): Promise<string[]> {
     const value = await this.local.smembers(key)
 
-    if (value && Array.isArray(value)) {
+    if (value.length > 0) {
       return value
     }
 
@@ -63,8 +50,8 @@ export class Cache {
   }
 
   async ttl(key: string): Promise<number> {
-    const localTTL = (await this.local.ttl(key)) || 0
-    return localTTL ? localTTL : this.remote.ttl(key)
+    const localTTL = await this.local.ttl(key)
+    return localTTL > 0 ? localTTL : this.remote.ttl(key)
   }
 
   async expire(key: string, ttlSeconds: number) {
@@ -78,23 +65,17 @@ export class Cache {
   }
 
   async llen(key: string): Promise<number> {
-    const value = await this.local.get(key)
+    const value = await this.local.llen(key)
 
-    if (value) {
-      const parsedValue = JSON.parse(value)
-      if (Array.isArray(parsedValue)) {
-        return parsedValue.length
-      }
+    if (value > 0) {
+      return value
     }
 
     return this.remote.llen(key)
   }
 
   async incr(key: string): Promise<number> {
-    const value = await this.remote.incr(key)
-    await this.local.set(key, value)
-
-    return value
+    return this.remote.incr(key)
   }
 
   async flushall(): Promise<string> {
