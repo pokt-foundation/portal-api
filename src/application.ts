@@ -137,7 +137,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     const localRedis = new Redis(localRedisConfig.port, localRedisConfig.host)
 
-    const cache = new Cache(localRedis, remoteRedis)
+    const cache = new Cache(remoteRedis as Redis.Redis, localRedis)
 
     this.bind('cache').to(cache)
 

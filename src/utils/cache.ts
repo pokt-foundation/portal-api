@@ -1,4 +1,5 @@
 import { Node, Session } from '@pokt-foundation/pocketjs-types'
+import { Redis } from 'ioredis'
 import { Cache } from '../services/cache'
 
 const logger = require('../services/logger')
@@ -13,7 +14,7 @@ const logger = require('../services/logger')
  * @returns
  */
 export async function removeNodeFromSession(
-  cache: Cache,
+  cache: Cache | Redis,
   { key, nodes }: Session,
   nodePubKey: string,
   removeChecksFromCache = false,
@@ -41,11 +42,11 @@ export async function removeNodeFromSession(
   }
 }
 
-export async function removeSessionCache(redis: Cache, publicKey: string, blockchainID: string): Promise<void> {
+export async function removeSessionCache(redis: Cache | Redis, publicKey: string, blockchainID: string): Promise<void> {
   await redis.del(`session-cached-${publicKey}-${blockchainID}`)
 }
 
-export async function removeChecksCache(redis: Cache, sessionKey: string, nodes: Node[]) {
+export async function removeChecksCache(redis: Cache | Redis, sessionKey: string, nodes: Node[]) {
   await redis.del(`sync-check-${sessionKey}`)
   await redis.del(`chain-check-${sessionKey}`)
 }

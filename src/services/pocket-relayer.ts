@@ -177,7 +177,7 @@ export class PocketRelayer {
       stickinessOptions,
       blockchainID,
       this.ipAddress,
-      this.cache.redis,
+      this.cache.remote,
       rawData,
       requestID,
       application.id

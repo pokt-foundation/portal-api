@@ -1,13 +1,13 @@
-import { Redis, Cluster } from 'ioredis'
+import { Redis } from 'ioredis'
 
 // Cache performs cache operations using tiered Caching with ioredis
 export class Cache {
+  remote: Redis
   local: Redis
-  remote: Redis | Cluster
 
-  constructor(localRedis: Redis, remoteRedis: Redis | Cluster) {
-    this.local = localRedis
+  constructor(remoteRedis: Redis, localRedis: Redis) {
     this.remote = remoteRedis
+    this.local = localRedis
   }
 
   async set(key: string, value: string, ttlType: 'KEEPTTL' | 'EX', ttlSeconds?: number): Promise<string> {
