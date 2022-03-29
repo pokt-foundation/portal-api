@@ -151,10 +151,66 @@
 			"systemControls": null,
 			"privileged": null,
 			"name": "datadog-agent"
+		},
+		{
+			"dnsSearchDomains": null,
+			"environmentFiles": null,
+			"logConfiguration": {
+				"logDriver": "json-file",
+				"options": {
+					"max-size": "10m",
+					"max-file": "3"
+				}
+			},
+			"entryPoint": [],
+			"portMappings": [
+				{
+					"hostPort": 6379,
+					"protocol": "tcp",
+					"containerPort": 6379
+				}
+			],
+			"command": [],
+			"linuxParameters": null,
+			"cpu": 512,
+			"environment": [],
+			"resourceRequirements": null,
+			"ulimits": [
+				{
+					"name": "nofile",
+					"softLimit": 65535,
+					"hardLimit": 65535
+				}
+			],
+			"dnsServers": null,
+			"mountPoints": [],
+			"workingDirectory": null,
+			"secrets": null,
+			"dockerSecurityOptions": null,
+			"memory": null,
+			"memoryReservation": 659,
+			"volumesFrom": [],
+			"stopTimeout": null,
+			"image": "redis:6.2-alpine",
+			"startTimeout": null,
+			"firelensConfiguration": null,
+			"disableNetworking": null,
+			"interactive": null,
+			"healthCheck": null,
+			"essential": true,
+			"hostname": null,
+			"extraHosts": null,
+			"pseudoTerminal": null,
+			"user": null,
+			"readonlyRootFilesystem": null,
+			"dockerLabels": null,
+			"systemControls": null,
+			"privileged": null,
+			"name": "redis"
 		}
 	],
 	"placementConstraints": [],
-	"memory": "3072",
+	"memory": "3731",
 	"taskRoleArn": "arn:aws:iam::059424750518:role/ecsTaskExecutionRole",
 	"family": "gateway-prod",
 	"pidMode": null,
@@ -162,7 +218,7 @@
 		"EC2"
 	],
 	"networkMode": "bridge",
-	"cpu": "1536",
+	"cpu": "2048",
 	"inferenceAccelerators": null,
 	"proxyConfiguration": null,
 	"volumes": [

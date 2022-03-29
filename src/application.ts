@@ -50,8 +50,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       GATEWAY_CLIENT_PRIVATE_KEY,
       GATEWAY_CLIENT_PASSPHRASE,
       DATABASE_ENCRYPTION_KEY,
-      REDIS_ENDPOINT,
       REDIS_PORT,
+      REMOTE_REDIS_ENDPOINT,
+      LOCAL_REDIS_ENDPOINT,
       PSQL_CONNECTION,
       DISPATCH_URL,
       POCKET_RELAY_RETRIES,
@@ -103,28 +104,39 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('defaultLogLimitBlocks').to(defaultLogLimitBlocks)
     this.bind('alwaysRedirectToAltruists').to(alwaysRedirectToAltruists)
 
-    // Load Redis for cache
-    const redisEndpoint: string = REDIS_ENDPOINT || ''
     const redisPort: string = REDIS_PORT || ''
 
-    const redisConfig = {
-      host: redisEndpoint,
+    // Load remote Redis for cache
+    const remoteRedisEndpoint: string = REMOTE_REDIS_ENDPOINT || ''
+
+    const remoteRedisConfig = {
+      host: remoteRedisEndpoint,
       port: parseInt(redisPort),
     }
 
-    const redis =
+    const remoteRedis =
       environment === 'production'
-        ? new Redis.Cluster([redisConfig], {
+        ? new Redis.Cluster([remoteRedisConfig], {
             scaleReads: 'slave',
             redisOptions: {
               keyPrefix: `${commitHash}-`,
             },
           })
-        : new Redis(redisConfig.port, redisConfig.host, {
+        : new Redis(remoteRedisConfig.port, remoteRedisConfig.host, {
             keyPrefix: `${commitHash}-`,
           })
 
-    const cache = new Cache(redis as Redis.Redis)
+    // Load local Redis for cache
+    const localRedisEndpoint: string = LOCAL_REDIS_ENDPOINT || ''
+
+    const localRedisConfig = {
+      host: localRedisEndpoint,
+      port: parseInt(redisPort),
+    }
+
+    const localRedis = new Redis(localRedisConfig.port, localRedisConfig.host)
+
+    const cache = new Cache(remoteRedis as Redis.Redis, localRedis)
 
     this.bind('cache').to(cache)
 
