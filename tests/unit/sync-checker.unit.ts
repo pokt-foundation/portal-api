@@ -91,7 +91,7 @@ describe('Sync checker service (unit)', () => {
   const origin = 'unit-test'
 
   before('initialize variables', async () => {
-    cache = new Cache(new RedisMock(0, ''), new RedisMock(0, ''))
+    cache = new Cache(new RedisMock(0, ''), new RedisMock(1, ''))
     cherryPicker = new CherryPicker({ redis: cache.remote, checkDebug: false })
     metricsRecorder = metricsRecorderMock(cache.remote, cherryPicker)
     syncChecker = new SyncChecker(cache, metricsRecorder, DEFAULT_SYNC_ALLOWANCE, origin)
