@@ -73,12 +73,12 @@ export class V1Controller {
     private loadBalancersRepository: LoadBalancersRepository
   ) {
     this.cherryPicker = new CherryPicker({
-      redis: this.cache.redis,
+      redis: this.cache.remote,
       checkDebug: this.checkDebug(),
       archivalChains: this.archivalChains,
     })
     this.metricsRecorder = new MetricsRecorder({
-      redis: this.cache.redis,
+      redis: this.cache.remote,
       influxWriteAPI: this.influxWriteAPI,
       pgPool: this.pgPool,
       cherryPicker: this.cherryPicker,
@@ -586,7 +586,7 @@ export class V1Controller {
       const keyPrefix = prefix ? prefix : rpcID
 
       const clientStickyKey = `${keyPrefix}-${this.ipAddress}-${blockchainID}`
-      const clientStickyAppNodeRaw = await this.cache.redis.get(clientStickyKey)
+      const clientStickyAppNodeRaw = await this.cache.remote.get(clientStickyKey)
       const clientStickyAppNode = JSON.parse(clientStickyAppNodeRaw)
 
       if (clientStickyAppNode?.applicationID && clientStickyAppNode?.nodeAddress) {
@@ -602,7 +602,7 @@ export class V1Controller {
 
   // Pull LoadBalancer records from redis then DB
   async fetchLoadBalancer(id: string, filter: FilterExcludingWhere | undefined): Promise<LoadBalancers | undefined> {
-    const cachedLoadBalancer = await this.cache.redis.get(id)
+    const cachedLoadBalancer = await this.cache.remote.get(id)
 
     if (!cachedLoadBalancer) {
       try {

@@ -41,11 +41,11 @@ export async function removeNodeFromSession(
   }
 }
 
-export async function removeSessionCache(redis: Cache, publicKey: string, blockchainID: string): Promise<void> {
-  await redis.del(`session-cached-${publicKey}-${blockchainID}`)
+export async function removeSessionCache(cache: Cache, publicKey: string, blockchainID: string): Promise<void> {
+  await cache.del(`session-cached-${publicKey}-${blockchainID}`)
 }
 
-export async function removeChecksCache(redis: Cache, sessionKey: string, nodes: Node[]) {
-  await redis.del(`sync-check-${sessionKey}`)
-  await redis.del(`chain-check-${sessionKey}`)
+export async function removeChecksCache(cache: Cache, sessionKey: string, nodes: Node[]) {
+  await cache.del(`sync-check-${sessionKey}`)
+  await cache.del(`chain-check-${sessionKey}`)
 }

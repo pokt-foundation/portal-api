@@ -45,6 +45,17 @@ services:
     networks:
       - pocket
 
+  local-cache:
+    image: 'redis:alpine'
+    container_name: local-cache
+    command: redis-server
+    ports:
+      - '6380:6379'
+    environment:
+      - REDIS_REPLICATION_MODE=master
+    networks:
+      - pocket
+
   # DB to store errors
   metricsdb:
     container_name: metricsdb
