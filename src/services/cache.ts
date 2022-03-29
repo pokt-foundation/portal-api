@@ -87,7 +87,10 @@ export class Cache {
     const redisValue = await this.remote.get(key)
     if (redisValue) {
       const ttl = await this.remote.ttl(key)
-      await this.local.set(key, redisValue, 'EX', ttl)
+
+      if (ttl > 0) {
+        await this.local.set(key, redisValue, 'EX', ttl)
+      }
     }
     return redisValue
   }
@@ -100,7 +103,10 @@ export class Cache {
         continue
       }
       const ttl = await this.remote.ttl(keys[i])
-      await this.local.set(keys[i], values[i], 'EX', ttl)
+
+      if (ttl > 0) {
+        await this.local.set(keys[i], values[i], 'EX', ttl)
+      }
     }
     return values
   }
