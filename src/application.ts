@@ -50,8 +50,10 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       GATEWAY_CLIENT_PRIVATE_KEY,
       GATEWAY_CLIENT_PASSPHRASE,
       DATABASE_ENCRYPTION_KEY,
-      REDIS_ENDPOINT,
-      REDIS_PORT,
+      REMOTE_REDIS_ENDPOINT,
+      REMOTE_REDIS_PORT,
+      LOCAL_REDIS_ENDPOINT,
+      LOCAL_REDIS_PORT,
       PSQL_CONNECTION,
       DISPATCH_URL,
       POCKET_RELAY_RETRIES,
@@ -103,28 +105,39 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('defaultLogLimitBlocks').to(defaultLogLimitBlocks)
     this.bind('alwaysRedirectToAltruists').to(alwaysRedirectToAltruists)
 
-    // Load Redis for cache
-    const redisEndpoint: string = REDIS_ENDPOINT || ''
-    const redisPort: string = REDIS_PORT || ''
+    // Load remote Redis for cache
+    const remoteRedisEndpoint: string = REMOTE_REDIS_ENDPOINT || ''
+    const remoteRedisPort: string = REMOTE_REDIS_PORT || ''
 
-    const redisConfig = {
-      host: redisEndpoint,
-      port: parseInt(redisPort),
+    const remoteRedisConfig = {
+      host: remoteRedisEndpoint,
+      port: parseInt(remoteRedisPort),
     }
 
-    const redis =
+    const remoteRedis =
       environment === 'production'
-        ? new Redis.Cluster([redisConfig], {
+        ? new Redis.Cluster([remoteRedisConfig], {
             scaleReads: 'slave',
             redisOptions: {
               keyPrefix: `${commitHash}-`,
             },
           })
-        : new Redis(redisConfig.port, redisConfig.host, {
+        : new Redis(remoteRedisConfig.port, remoteRedisConfig.host, {
             keyPrefix: `${commitHash}-`,
           })
 
-    const cache = new Cache(redis as Redis.Redis)
+    // Load local Redis for cache
+    const localRedisEndpoint: string = LOCAL_REDIS_ENDPOINT || ''
+    const localRedisPort: string = LOCAL_REDIS_PORT || ''
+
+    const localRedisConfig = {
+      host: localRedisEndpoint,
+      port: parseInt(localRedisPort),
+    }
+
+    const localRedis = new Redis(localRedisConfig.port, localRedisConfig.host)
+
+    const cache = new Cache(localRedis, remoteRedis)
 
     this.bind('cache').to(cache)
 
