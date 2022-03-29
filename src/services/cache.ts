@@ -51,13 +51,10 @@ export class Cache {
   }
 
   async smembers(key: string): Promise<string[]> {
-    const value = await this.local.get(key)
+    const value = await this.local.smembers(key)
 
-    if (value) {
-      const parsedValue = Array.from(value)
-      if (Array.isArray(parsedValue)) {
-        return parsedValue
-      }
+    if (value && Array.isArray(value)) {
+      return value
     }
 
     return this.remote.smembers(key)
