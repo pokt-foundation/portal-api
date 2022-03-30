@@ -1559,7 +1559,7 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     describe('sendRelay function (with altruists)', () => {
-      const blockNumberData = { jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] }
+      const blockNumberData = { jsonrpc: '2.0', id: 1, method: 'eth_blockNumber' }
 
       beforeEach(() => {
         axiosMock.reset()
