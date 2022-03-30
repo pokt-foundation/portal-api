@@ -1,4 +1,4 @@
-import { ethers } from 'ethers'
+import { utils } from 'ethers'
 import { parseMethod } from '../parsing'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,7 +27,7 @@ export function extractContractAddress(rawData: Record<string, any>): string | u
 }
 
 export function decodeEthRawTxAddress(rawTxBytes: string): string {
-  const decodedTx = ethers.utils.RLP.decode(rawTxBytes)
+  const decodedTx = utils.RLP.decode(rawTxBytes)
 
   const [
     ,
