@@ -65,6 +65,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       INFLUX_ORG,
       ARCHIVAL_CHAINS,
       ALWAYS_REDIRECT_TO_ALTRUISTS,
+      REDIS_LOCAL_TTL_FACTOR,
     } = await this.get('configuration.environment.values')
 
     const environment: string = NODE_ENV || 'production'
@@ -82,6 +83,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const influxOrg: string = INFLUX_ORG || ''
     const archivalChains: string[] = (ARCHIVAL_CHAINS || '').replace(' ', '').split(',')
     const alwaysRedirectToAltruists: boolean = ALWAYS_REDIRECT_TO_ALTRUISTS === 'true'
+    const ttlFactor = parseInt(REDIS_LOCAL_TTL_FACTOR) || 1
 
     if (aatPlan !== AatPlans.PREMIUM && !AatPlans.values.includes(aatPlan)) {
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
@@ -136,7 +138,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     const localRedis = new Redis(localRedisConfig.port, localRedisConfig.host)
 
-    const cache = new Cache(remoteRedis as Redis.Redis, localRedis)
+    const cache = new Cache(remoteRedis as Redis.Redis, localRedis, ttlFactor)
 
     this.bind('cache').to(cache)
 

@@ -31,6 +31,7 @@ jobs:
         with:
           envkey_GATEWAY_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PRIVATE_KEY }}
           envkey_GATEWAY_CLIENT_PASSPHRASE: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PASSPHRASE }}
+          envkey_REDIS_LOCAL_TTL_FACTOR: ${{ secrets.REDIS_LOCAL_TTL_FACTOR }}
           envkey_MONGO_ENDPOINT: ${{ secrets.MONGO_PRODUCTION_ENDPOINT }}
           envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_PRODUCTION_ENCRYPTION_KEY }}
           envkey_DISPATCH_URL: ${{ secrets.DISPATCH_URL }}
@@ -104,7 +105,7 @@ jobs:
             DD_LOGS_ENABLED=false
             DD_APM_ENABLED=false
             DD_DOGSTATSD_NON_LOCAL_TRAFFIC=false
-
+  
       - name: Deploy / ap-northeast-2
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
