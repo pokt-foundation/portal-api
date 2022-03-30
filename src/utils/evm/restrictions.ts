@@ -14,7 +14,7 @@ export async function enforceEVMRestrictions(
   rpcID: number,
   logLimitBlocks: number,
   altruistURL: string
-): Promise<ErrorObject | void> {
+): Promise<ErrorObject | undefined> {
   const method = parseMethod(parsedRawData)
 
   if (WS_ONLY_METHODS.includes(method)) {
@@ -32,11 +32,12 @@ export async function enforceEVMRestrictions(
 
     const enforced = isMethodWhitelisted(method, restriction.methods)
 
-    if (!enforced) {
-      return
+    if (enforced) {
+      return jsonrpc.error(
+        rpcID,
+        new jsonrpc.JsonRpcError('Restricted endpoint: method not allowed.', 0)
+      ) as ErrorObject
     }
-
-    return jsonrpc.error(rpcID, new jsonrpc.JsonRpcError('Restricted endpoint: method not allowed.', 0)) as ErrorObject
   }
 
   if (application?.gatewaySettings?.whitelistContracts?.length > 0) {
@@ -44,14 +45,12 @@ export async function enforceEVMRestrictions(
 
     const enforced = isContractWhitelisted(parsedRawData, restriction.contracts)
 
-    if (!enforced) {
-      return
+    if (enforced) {
+      return jsonrpc.error(
+        rpcID,
+        new jsonrpc.JsonRpcError('Restricted endpoint: contract address not allowed.', 0)
+      ) as ErrorObject
     }
-
-    return jsonrpc.error(
-      rpcID,
-      new jsonrpc.JsonRpcError('Restricted endpoint: contract address not allowed.', 0)
-    ) as ErrorObject
   }
 
   if (method === 'eth_getLogs') {

@@ -12,7 +12,7 @@ export async function enforceGetLogs(
   requestID: string,
   logLimitBlocks: number,
   altruistURL: string
-): Promise<ErrorObject | void> {
+): Promise<ErrorObject | undefined> {
   let toBlock: number
   let fromBlock: number
   let isToBlockHex = false
