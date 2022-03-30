@@ -177,7 +177,7 @@ export class PocketRelayer {
       stickinessOptions,
       blockchainID,
       this.ipAddress,
-      this.cache.redis,
+      this.cache.remote,
       rawData,
       requestID,
       application.id
@@ -435,9 +435,6 @@ export class PocketRelayer {
             relayType: 'FALLBACK',
             typeID: application.id,
             serviceNode: 'fallback:' + redactedAltruistURL,
-            error: '',
-            elapsedTime: '',
-            blockchainID: '',
             origin: this.origin,
           })
         }
@@ -637,7 +634,7 @@ export class PocketRelayer {
         // @ts-ignore
         session.nodes.forEach((node) => (node.stakedTokens = node.stakedTokens.toString()))
 
-        await this.cache.set(sessionCacheKey, JSON.stringify(session), 'EX', 200)
+        await this.cache.set(sessionCacheKey, JSON.stringify(session), 'EX', 80)
       }
     } catch (error) {
       logger.log('error', 'ERROR obtaining a session: ' + error, {
