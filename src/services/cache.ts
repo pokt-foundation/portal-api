@@ -4,14 +4,21 @@ import { Redis } from 'ioredis'
 export class Cache {
   remote: Redis
   local: Redis
+  // ttlFactor is the factor on which the local ttl is applied in regards of the remote ttl
+  ttlFactor: number
 
-  constructor(remoteRedis: Redis, localRedis: Redis) {
+  constructor(remoteRedis: Redis, localRedis: Redis, ttlFactor = 1) {
     this.remote = remoteRedis
     this.local = localRedis
+    this.ttlFactor = ttlFactor
+  }
+
+  getLocalTTL(ttl: number) {
+    return Math.ceil(this.ttlFactor * ttl)
   }
 
   async set(key: string, value: string, ttlType: string, ttlSeconds?: number): Promise<string> {
-    await this.local.set(key, value, ttlType, ttlSeconds)
+    await this.local.set(key, value, ttlType, this.getLocalTTL(ttlSeconds))
     return this.remote.set(key, value, ttlType, ttlSeconds)
   }
 
@@ -55,7 +62,7 @@ export class Cache {
   }
 
   async expire(key: string, ttlSeconds: number) {
-    await this.local.expire(key, ttlSeconds)
+    await this.local.expire(key, this.getLocalTTL(ttlSeconds))
     return this.remote.expire(key, ttlSeconds)
   }
 
@@ -89,7 +96,7 @@ export class Cache {
       const ttl = await this.remote.ttl(key)
 
       if (ttl > 0) {
-        await this.local.set(key, redisValue, 'EX', ttl)
+        await this.local.set(key, redisValue, 'EX', this.getLocalTTL(ttl))
       }
     }
     return redisValue
@@ -105,7 +112,7 @@ export class Cache {
       const ttl = await this.remote.ttl(keys[i])
 
       if (ttl > 0) {
-        await this.local.set(keys[i], values[i], 'EX', ttl)
+        await this.local.set(keys[i], values[i], 'EX', this.getLocalTTL(ttl))
       }
     }
     return values

@@ -26,7 +26,6 @@ export class ChainChecker {
     this.cache = cache
     this.metricsRecorder = metricsRecorder
     this.origin = origin
-    this.sessionErrors = 0
   }
 
   async chainIDFilter({
