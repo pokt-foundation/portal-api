@@ -32,7 +32,7 @@ export async function enforceEVMRestrictions(
 
     const enforced = isMethodWhitelisted(method, restriction.methods)
 
-    if (enforced) {
+    if (!enforced) {
       return jsonrpc.error(
         rpcID,
         new jsonrpc.JsonRpcError('Restricted endpoint: method not allowed.', 0)
@@ -45,7 +45,7 @@ export async function enforceEVMRestrictions(
 
     const enforced = isContractWhitelisted(parsedRawData, restriction.contracts)
 
-    if (enforced) {
+    if (!enforced) {
       return jsonrpc.error(
         rpcID,
         new jsonrpc.JsonRpcError('Restricted endpoint: contract address not allowed.', 0)
