@@ -56,4 +56,6 @@ export async function enforceEVMRestrictions(
   if (method === 'eth_getLogs') {
     return enforceGetLogs(rpcID, parsedRawData, blockchainID, requestID, logLimitBlocks, altruistURL)
   }
+
+  return undefined
 }
