@@ -416,11 +416,6 @@ export class CherryPicker {
           }
         }
       }
-      console.log(
-        `${weightFactor}: attempts: ${sortedLog.attempts} success: ${Math.round(sortedLog.successRate * 100)}% ${
-          sortedLog.medianSuccessLatency
-        }s ${sortedLog.weightedSuccessLatency}s ${sortedLog.id}`
-      )
       // Set the benchmark for the next node
       previousNodeLatency = sortedLog.weightedSuccessLatency
     }
