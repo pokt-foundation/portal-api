@@ -1083,7 +1083,7 @@ describe('V1 controller (acceptance)', () => {
         secretKeyRequired: false,
         whitelistOrigins: [],
         whitelistUserAgents: [],
-        whitelistContracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
         whitelistMethods: [],
       }
 
@@ -1119,7 +1119,7 @@ describe('V1 controller (acceptance)', () => {
         secretKeyRequired: false,
         whitelistOrigins: [],
         whitelistUserAgents: [],
-        whitelistContracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
         whitelistMethods: [],
       }
 
@@ -1162,7 +1162,7 @@ describe('V1 controller (acceptance)', () => {
         secretKeyRequired: false,
         whitelistOrigins: [],
         whitelistUserAgents: [],
-        whitelistContracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
         whitelistMethods: [],
       }
 
@@ -1200,7 +1200,7 @@ describe('V1 controller (acceptance)', () => {
         secretKeyRequired: false,
         whitelistOrigins: [],
         whitelistUserAgents: [],
-        whitelistContracts: ['0x24ad62502d1c652cc7684081169d04896ac20f30'],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x24ad62502d1c652cc7684081169d04896ac20f30'] }],
         whitelistMethods: [],
       }
 
@@ -1245,7 +1245,7 @@ describe('V1 controller (acceptance)', () => {
         secretKeyRequired: false,
         whitelistOrigins: [],
         whitelistUserAgents: [],
-        whitelistContracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
         whitelistMethods: [],
       }
 
@@ -1283,7 +1283,7 @@ describe('V1 controller (acceptance)', () => {
         secretKeyRequired: false,
         whitelistOrigins: [],
         whitelistUserAgents: [],
-        whitelistContracts: ['0xdef1c0ded9bec7f1a1670819833240f027b25eff'],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0xdef1c0ded9bec7f1a1670819833240f027b25eff'] }],
         whitelistMethods: [],
       }
 
@@ -1327,7 +1327,7 @@ describe('V1 controller (acceptance)', () => {
         secretKeyRequired: false,
         whitelistOrigins: [],
         whitelistUserAgents: [],
-        whitelistContracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
         whitelistMethods: [],
       }
 
@@ -1364,7 +1364,7 @@ describe('V1 controller (acceptance)', () => {
         secretKeyRequired: false,
         whitelistOrigins: [],
         whitelistUserAgents: [],
-        whitelistContracts: ['0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9'],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9'] }],
         whitelistMethods: [],
       }
 
@@ -1405,7 +1405,7 @@ describe('V1 controller (acceptance)', () => {
         secretKeyRequired: false,
         whitelistOrigins: [],
         whitelistUserAgents: [],
-        whitelistContracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
         whitelistMethods: [],
       }
 
@@ -1452,7 +1452,7 @@ describe('V1 controller (acceptance)', () => {
         secretKeyRequired: false,
         whitelistOrigins: [],
         whitelistUserAgents: [],
-        whitelistContracts: ['0x5100bd31b822371108a0f63dcfb6594b9919eaf4'],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x5100bd31b822371108a0f63dcfb6594b9919eaf4'] }],
         whitelistMethods: [],
       }
 
@@ -1504,7 +1504,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistOrigins: [],
         whitelistUserAgents: [],
         whitelistContracts: [],
-        whitelistMethods: ['eth_getLogs'],
+        whitelistMethods: [{ blockchainID: '0021', methods: ['eth_getLogs'] }],
       }
 
       const dbApp = await applicationsRepository.create(appWithSecurity)
@@ -1540,7 +1540,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistOrigins: [],
         whitelistUserAgents: [],
         whitelistContracts: [],
-        whitelistMethods: ['eth_call', 'eth_getLogs'],
+        whitelistMethods: [{ blockchainID: '0021', methods: ['eth_getLogs'] }],
       }
 
       const dbApp = await applicationsRepository.create(appWithSecurity)

@@ -33,7 +33,7 @@ export async function enforceGetLogs(
   if ((toBlock !== 0 || fromBlock !== 0) && altruistURL) {
     // Altruist
     // TODO: use a generic getHeightFromAltruist function to fetch altruist block height
-    const rawData = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] })
+    const rawData = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_blockNumber' })
 
     try {
       const axiosConfig = {

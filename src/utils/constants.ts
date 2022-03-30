@@ -11,26 +11,6 @@ export const WS_ONLY_METHODS = [
   'newBlockFilter',
 ]
 
-export const EVM_CHAINS = [
-  '0021',
-  '0022',
-  '0028',
-  '0026',
-  '0024',
-  '0025',
-  '0023',
-  '0046',
-  '0027',
-  '0003',
-  '0004',
-  '0012',
-  '000C',
-  '0040',
-  '0A40',
-  '0009',
-  '000B',
-]
-
 export const SESSION_TIMEOUT = 2000
 export const CHECK_TIMEOUT = 4000
 export const DEFAULT_ALTRUIST_TIMEOUT = 60000 // Milliseconds

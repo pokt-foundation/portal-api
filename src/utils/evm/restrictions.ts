@@ -26,9 +26,21 @@ export async function enforceEVMRestrictions(
       )
     ) as ErrorObject
   } else if (application?.gatewaySettings?.whitelistMethods?.length > 0) {
-    return enforceMethodWhitelist(rpcID, method, application?.gatewaySettings?.whitelistMethods)
+    const restriction = application.gatewaySettings.whitelistMethods.find((x) => x.blockchainID === blockchainID)
+
+    if (!restriction) {
+      return
+    }
+
+    return enforceMethodWhitelist(rpcID, method, restriction.methods)
   } else if (application?.gatewaySettings?.whitelistContracts?.length > 0) {
-    return enforceContractWhitelist(rpcID, parsedRawData, application?.gatewaySettings?.whitelistContracts)
+    const restriction = application.gatewaySettings.whitelistContracts.find((x) => x.blockchainID === blockchainID)
+
+    if (!restriction) {
+      return
+    }
+
+    return enforceContractWhitelist(rpcID, parsedRawData, restriction.contracts)
   } else if (method === 'eth_getLogs') {
     return enforceGetLogs(rpcID, parsedRawData, blockchainID, requestID, logLimitBlocks, altruistURL)
   }

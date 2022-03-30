@@ -11,7 +11,7 @@ import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { removeNodeFromSession } from '../utils/cache'
-import { SESSION_TIMEOUT, DEFAULT_ALTRUIST_TIMEOUT, EVM_CHAINS } from '../utils/constants'
+import { SESSION_TIMEOUT, DEFAULT_ALTRUIST_TIMEOUT } from '../utils/constants'
 import {
   checkEnforcementJSON,
   isRelayError,
@@ -919,11 +919,6 @@ export class PocketRelayer {
     altruist: string
   ): Promise<void | ErrorObject> {
     let response: Promise<void | ErrorObject>
-
-    // Do not check for restrictions if chain is non-EVM
-    if (!EVM_CHAINS.includes(blockchainID)) {
-      return
-    }
 
     // Is it a bundled transaction?
     if (parsedRawData instanceof Array) {
