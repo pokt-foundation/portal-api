@@ -3,7 +3,7 @@ import { Applications } from '../../models'
 import { WS_ONLY_METHODS } from '../constants'
 import { parseMethod } from '../parsing'
 import { enforceGetLogs } from './get-logs'
-import { enforceContractWhitelist, enforceMethodWhitelist } from './whitelist'
+import { isContractWhitelisted, isMethodWhitelisted } from './whitelist'
 
 export async function enforceEVMRestrictions(
   application: Applications,
@@ -30,21 +30,28 @@ export async function enforceEVMRestrictions(
   if (application?.gatewaySettings?.whitelistMethods?.length > 0) {
     const restriction = application.gatewaySettings.whitelistMethods.find((x) => x.blockchainID === blockchainID)
 
-    if (!restriction) {
+    const enforced = isMethodWhitelisted(method, restriction.methods)
+
+    if (!enforced) {
       return
     }
 
-    return enforceMethodWhitelist(rpcID, method, restriction.methods)
+    return jsonrpc.error(rpcID, new jsonrpc.JsonRpcError('Restricted endpoint: method not allowed.', 0)) as ErrorObject
   }
 
   if (application?.gatewaySettings?.whitelistContracts?.length > 0) {
     const restriction = application.gatewaySettings.whitelistContracts.find((x) => x.blockchainID === blockchainID)
 
-    if (!restriction) {
+    const enforced = isContractWhitelisted(parsedRawData, restriction.contracts)
+
+    if (!enforced) {
       return
     }
 
-    return enforceContractWhitelist(rpcID, parsedRawData, restriction.contracts)
+    return jsonrpc.error(
+      rpcID,
+      new jsonrpc.JsonRpcError('Restricted endpoint: contract address not allowed.', 0)
+    ) as ErrorObject
   }
 
   if (method === 'eth_getLogs') {
