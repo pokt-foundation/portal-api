@@ -3,7 +3,7 @@ import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
 import RedisMock from 'ioredis-mock'
 import { expect, sinon } from '@loopback/testlab'
-
+import { Cache } from '../../src/services/cache'
 import { ChainChecker } from '../../src/services/chain-checker'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
@@ -19,7 +19,7 @@ const DEFAULT_CHAINCHECK_RESPONSE = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
 describe('Chain checker service (unit)', () => {
   let chainChecker: ChainChecker
   let metricsRecorder: MetricsRecorder
-  let redis: RedisMock
+  let cache: Cache
   let cherryPicker: CherryPicker
   let pocketMock: PocketMock
   let logSpy: sinon.SinonSpy
@@ -28,10 +28,10 @@ describe('Chain checker service (unit)', () => {
   const origin = 'unit-test'
 
   before('initialize variables', async () => {
-    redis = new RedisMock(0, '')
-    cherryPicker = new CherryPicker({ redis, checkDebug: false })
-    metricsRecorder = metricsRecorderMock(redis, cherryPicker)
-    chainChecker = new ChainChecker(redis, metricsRecorder, origin)
+    cache = new Cache(new RedisMock(0, ''), new RedisMock(1, ''))
+    cherryPicker = new CherryPicker({ redis: cache.remote, checkDebug: false })
+    metricsRecorder = metricsRecorderMock(cache.remote, cherryPicker)
+    chainChecker = new ChainChecker(cache, metricsRecorder, origin)
 
     axiosMock = new MockAdapter(axios)
     axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
@@ -45,7 +45,7 @@ describe('Chain checker service (unit)', () => {
     pocketMock = new PocketMock()
     pocketMock.relayResponse[CHAINCHECK_PAYLOAD] = DEFAULT_CHAINCHECK_RESPONSE
 
-    await redis.flushall()
+    await cache.flushall()
   })
 
   afterEach(() => {
@@ -182,8 +182,8 @@ describe('Chain checker service (unit)', () => {
     const session = await relayer.getNewSession(undefined)
 
     const chainID = 100
-    const redisGetSpy = sinon.spy(redis, 'get')
-    const redisSetSpy = sinon.spy(redis, 'set')
+    const cacheGetSpy = sinon.spy(cache, 'get')
+    const cacheSetSpy = sinon.spy(cache, 'set')
 
     let checkedNodes = (
       await chainChecker.chainIDFilter({
@@ -203,10 +203,10 @@ describe('Chain checker service (unit)', () => {
     expect(checkedNodes).to.be.Array()
     expect(checkedNodes).to.have.length(5)
 
-    expect(redisGetSpy.callCount).to.be.equal(2)
-    expect(redisSetSpy.callCount).to.be.equal(2)
+    expect(cacheGetSpy.callCount).to.be.equal(2)
+    expect(cacheSetSpy.callCount).to.be.equal(2)
 
-    // Subsequent calls should retrieve results from redis instead
+    // Subsequent calls should retrieve results from cache instead
     checkedNodes = (
       await chainChecker.chainIDFilter({
         nodes,
@@ -222,8 +222,8 @@ describe('Chain checker service (unit)', () => {
       })
     ).nodes
 
-    expect(redisGetSpy.callCount).to.be.equal(3)
-    expect(redisSetSpy.callCount).to.be.equal(2)
+    expect(cacheGetSpy.callCount).to.be.equal(3)
+    expect(cacheSetSpy.callCount).to.be.equal(2)
   })
 
   it('fails the chain check', async () => {
@@ -285,7 +285,7 @@ describe('Chain checker service (unit)', () => {
     expect(checkedNodes).to.be.Array()
     expect(checkedNodes).to.have.length(4)
 
-    const removedNode = await redis.smembers(`session-key-${session.key}`)
+    const removedNode = await cache.smembers(`session-key-${session.key}`)
 
     expect(removedNode).to.have.length(1)
   })

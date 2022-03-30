@@ -127,7 +127,6 @@ export class MetricsRecorder {
           serviceURL,
           serviceDomain,
           elapsedTime,
-          error: '',
           origin,
           blockchainID,
           sessionKey,

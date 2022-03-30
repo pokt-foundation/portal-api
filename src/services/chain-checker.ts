@@ -6,27 +6,26 @@ import {
 } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
 import extractDomain from 'extract-domain'
-import { Redis } from 'ioredis'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { removeChecksCache, removeNodeFromSession, removeSessionCache } from '../utils/cache'
 import { CHECK_TIMEOUT, PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { CheckResult, RelayResponse } from '../utils/types'
+import { Cache } from './cache'
 
 const logger = require('../services/logger')
 
 export class ChainChecker {
-  redis: Redis
+  cache: Cache
   metricsRecorder: MetricsRecorder
   origin: string
   sessionErrors: number
 
-  constructor(redis: Redis, metricsRecorder: MetricsRecorder, origin: string) {
-    this.redis = redis
+  constructor(cache: Cache, metricsRecorder: MetricsRecorder, origin: string) {
+    this.cache = cache
     this.metricsRecorder = metricsRecorder
     this.origin = origin
-    this.sessionErrors = 0
   }
 
   async chainIDFilter({
@@ -49,7 +48,7 @@ export class ChainChecker {
 
     // Value is an array of node public keys that have passed Chain checks for this session in the past 5 minutes
     const checkedNodesKey = `chain-check-${sessionKey}`
-    const CheckedNodesCached = await this.redis.get(checkedNodesKey)
+    const CheckedNodesCached = await this.cache.get(checkedNodesKey)
 
     const cached = Boolean(CheckedNodesCached)
 
@@ -66,14 +65,14 @@ export class ChainChecker {
 
     // Cache is stale, start a new cache fill
     // First check cache lock key; if lock key exists, return full node set
-    const ChainLock = await this.redis.get('lock-' + checkedNodesKey)
+    const ChainLock = await this.cache.get('lock-' + checkedNodesKey)
 
     if (ChainLock) {
       return { nodes, cached }
     } else {
       // Set lock as this thread checks the Chain with 60 second ttl.
       // If any major errors happen below, it will retry the Chain check every 60 seconds.
-      await this.redis.set('lock-' + checkedNodesKey, 'true', 'EX', 60)
+      await this.cache.set('lock-' + checkedNodesKey, 'true', 'EX', 60)
     }
 
     // Fires all Chain checks Chainhronously then assembles the results
@@ -107,8 +106,8 @@ export class ChainChecker {
         sessionPublicKey: session.header.applicationPubKey,
       })
 
-      await removeSessionCache(this.redis, pocketAAT.applicationPublicKey, blockchainID)
-      await removeChecksCache(this.redis, session.key, session.nodes)
+      await removeSessionCache(this.cache, pocketAAT.applicationPublicKey, blockchainID)
+      await removeChecksCache(this.cache, session.key, session.nodes)
     }
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
@@ -154,7 +153,7 @@ export class ChainChecker {
       origin: this.origin,
       sessionKey,
     })
-    await this.redis.set(
+    await this.cache.set(
       checkedNodesKey,
       JSON.stringify(CheckedNodesList),
       'EX',
@@ -316,7 +315,7 @@ export class ChainChecker {
       })
 
       if (relay instanceof EvidenceSealedError) {
-        await removeNodeFromSession(this.redis, session, node.publicKey, true, requestID, blockchainID)
+        await removeNodeFromSession(this.cache, session, node.publicKey, true, requestID, blockchainID)
       }
 
       if (relay instanceof InvalidSessionError || relay instanceof OutOfSyncRequestError) {

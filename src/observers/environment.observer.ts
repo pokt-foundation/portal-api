@@ -19,8 +19,9 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'GATEWAY_CLIENT_PASSPHRASE',
     'MONGO_ENDPOINT',
     'DATABASE_ENCRYPTION_KEY',
-    'REDIS_ENDPOINT',
     'REDIS_PORT',
+    'REMOTE_REDIS_ENDPOINT',
+    'LOCAL_REDIS_ENDPOINT',
     'PSQL_CONNECTION',
     'INFLUX_URL',
     'INFLUX_TOKEN',
@@ -41,7 +42,7 @@ export class EnvironmentObserver implements LifeCycleObserver {
 
   private static requiredEnvVarsOnlyInProd = ['COMMIT_HASH']
 
-  private static optionalEnvVars: string[] = ['ALWAYS_REDIRECT_TO_ALTRUISTS']
+  private static optionalEnvVars: string[] = ['ALWAYS_REDIRECT_TO_ALTRUISTS', 'REDIS_LOCAL_TTL_FACTOR']
 
   /*
   constructor(

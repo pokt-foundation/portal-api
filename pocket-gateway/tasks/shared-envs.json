@@ -9,6 +9,10 @@
       "value": "${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PASSPHRASE }}"
     },
     {
+      "key": "REDIS_LOCAL_TTL_FACTOR",
+      "value": "${{ secrets.REDIS_LOCAL_TTL_FACTOR }}"
+    },
+    {
       "key": "MONGO_ENDPOINT",
       "value": "${{ secrets.MONGO_PRODUCTION_ENDPOINT }}"
     },
@@ -27,6 +31,10 @@
     {
       "key": "REDIRECTS",
       "value": "${{ secrets.POCKET_NETWORK_PRODUCTION_REDIRECTS }}"
+    },
+    {
+      "key": "LOCAL_REDIS_ENDPOINT",
+      "value": "172.17.0.1:6379"
     },
     {
       "key": "REDIS_PORT",

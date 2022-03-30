@@ -14,8 +14,7 @@ import { InfluxDB } from '@influxdata/influxdb-client'
 import AatPlans from './config/aat-plans.json'
 import { getPocketInstance } from './config/pocket-config'
 import { GatewaySequence } from './sequence'
-import { POCKET_JS_INSTANCE_TIMEOUT_KEY, POCKET_JS_TIMEOUT_MAX, POCKET_JS_TIMEOUT_MIN } from './utils/constants'
-import { getRandomInt } from './utils/helpers'
+import { Cache } from './services/cache'
 const logger = require('./services/logger')
 
 require('log-timestamp')
@@ -51,8 +50,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       GATEWAY_CLIENT_PRIVATE_KEY,
       GATEWAY_CLIENT_PASSPHRASE,
       DATABASE_ENCRYPTION_KEY,
-      REDIS_ENDPOINT,
       REDIS_PORT,
+      REMOTE_REDIS_ENDPOINT,
+      LOCAL_REDIS_ENDPOINT,
       PSQL_CONNECTION,
       DISPATCH_URL,
       POCKET_RELAY_RETRIES,
@@ -65,6 +65,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       INFLUX_ORG,
       ARCHIVAL_CHAINS,
       ALWAYS_REDIRECT_TO_ALTRUISTS,
+      REDIS_LOCAL_TTL_FACTOR,
     } = await this.get('configuration.environment.values')
 
     const environment: string = NODE_ENV || 'production'
@@ -82,6 +83,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const influxOrg: string = INFLUX_ORG || ''
     const archivalChains: string[] = (ARCHIVAL_CHAINS || '').replace(' ', '').split(',')
     const alwaysRedirectToAltruists: boolean = ALWAYS_REDIRECT_TO_ALTRUISTS === 'true'
+    const ttlFactor = parseFloat(REDIS_LOCAL_TTL_FACTOR) || 1
 
     if (aatPlan !== AatPlans.PREMIUM && !AatPlans.values.includes(aatPlan)) {
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
@@ -104,36 +106,41 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('defaultLogLimitBlocks').to(defaultLogLimitBlocks)
     this.bind('alwaysRedirectToAltruists').to(alwaysRedirectToAltruists)
 
-    // Load Redis for cache
-    const redisEndpoint: string = REDIS_ENDPOINT || ''
     const redisPort: string = REDIS_PORT || ''
 
-    const redisConfig = {
-      host: redisEndpoint,
+    // Load remote Redis for cache
+    const remoteRedisEndpoint: string = REMOTE_REDIS_ENDPOINT || ''
+
+    const remoteRedisConfig = {
+      host: remoteRedisEndpoint,
       port: parseInt(redisPort),
     }
 
-    const redis =
+    const remoteRedis =
       environment === 'production'
-        ? new Redis.Cluster([redisConfig], {
+        ? new Redis.Cluster([remoteRedisConfig], {
             scaleReads: 'slave',
             redisOptions: {
               keyPrefix: `${commitHash}-`,
             },
           })
-        : new Redis(redisConfig.port, redisConfig.host, {
+        : new Redis(remoteRedisConfig.port, remoteRedisConfig.host, {
             keyPrefix: `${commitHash}-`,
           })
 
-    this.bind('redisInstance').to(redis)
+    // Load local Redis for cache
+    const localRedisEndpoint: string = LOCAL_REDIS_ENDPOINT || ''
 
-    // Avoid updating the pocketjs instance right away on boot
-    await redis.set(
-      POCKET_JS_INSTANCE_TIMEOUT_KEY,
-      'true',
-      'EX',
-      getRandomInt(POCKET_JS_TIMEOUT_MIN, POCKET_JS_TIMEOUT_MAX)
-    )
+    const localRedisConfig = {
+      host: localRedisEndpoint,
+      port: parseInt(redisPort),
+    }
+
+    const localRedis = new Redis(localRedisConfig.port, localRedisConfig.host)
+
+    const cache = new Cache(remoteRedis as Redis.Redis, localRedis, ttlFactor)
+
+    this.bind('cache').to(cache)
 
     // New metrics postgres for error recording
     const psqlConnection: string = PSQL_CONNECTION || ''
