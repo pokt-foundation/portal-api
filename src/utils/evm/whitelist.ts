@@ -2,7 +2,11 @@ import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
 import { checkWhitelist } from '../enforcements'
 import { extractContractAddress } from './parsing'
 
-export function enforceMethodWhitelist(rpcID: number, method: string, whitelistedMethods: string[]) {
+export function enforceMethodWhitelist(
+  rpcID: number,
+  method: string,
+  whitelistedMethods: string[]
+): ErrorObject | void {
   if (!checkWhitelist(whitelistedMethods, method, 'explicit')) {
     return jsonrpc.error(rpcID, new jsonrpc.JsonRpcError('Restricted endpoint: method not allowed.', 0)) as ErrorObject
   }

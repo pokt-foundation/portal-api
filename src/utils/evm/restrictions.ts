@@ -25,7 +25,9 @@ export async function enforceEVMRestrictions(
         -32053
       )
     ) as ErrorObject
-  } else if (application?.gatewaySettings?.whitelistMethods?.length > 0) {
+  }
+
+  if (application?.gatewaySettings?.whitelistMethods?.length > 0) {
     const restriction = application.gatewaySettings.whitelistMethods.find((x) => x.blockchainID === blockchainID)
 
     if (!restriction) {
@@ -33,7 +35,9 @@ export async function enforceEVMRestrictions(
     }
 
     return enforceMethodWhitelist(rpcID, method, restriction.methods)
-  } else if (application?.gatewaySettings?.whitelistContracts?.length > 0) {
+  }
+
+  if (application?.gatewaySettings?.whitelistContracts?.length > 0) {
     const restriction = application.gatewaySettings.whitelistContracts.find((x) => x.blockchainID === blockchainID)
 
     if (!restriction) {
@@ -41,7 +45,9 @@ export async function enforceEVMRestrictions(
     }
 
     return enforceContractWhitelist(rpcID, parsedRawData, restriction.contracts)
-  } else if (method === 'eth_getLogs') {
+  }
+
+  if (method === 'eth_getLogs') {
     return enforceGetLogs(rpcID, parsedRawData, blockchainID, requestID, logLimitBlocks, altruistURL)
   }
 }
