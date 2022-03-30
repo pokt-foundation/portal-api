@@ -1192,6 +1192,43 @@ describe('V1 controller (acceptance)', () => {
       expect(response.body.error.message).to.startWith('Restricted endpoint: contract address not allowed')
     })
 
+    it('success on request with restricted contract whitelist (unsupported method)', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x24ad62502d1c652cc7684081169d04896ac20f30'] }],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+      relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+        '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+
+      pocketMock.relayResponse = relayResponses
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    })
+
     it('success on request with restricted contract whitelist (eth_sendRawTransaction)', async () => {
       const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
 
