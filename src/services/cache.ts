@@ -13,12 +13,12 @@ export class Cache {
     this.ttlFactor = ttlFactor
   }
 
-  getLocalTTlL(ttl: number) {
+  getLocalTTL(ttl: number) {
     return Math.ceil(this.ttlFactor * ttl)
   }
 
   async set(key: string, value: string, ttlType: string, ttlSeconds?: number): Promise<string> {
-    await this.local.set(key, value, ttlType, this.getLocalTTlL(ttlSeconds))
+    await this.local.set(key, value, ttlType, this.getLocalTTL(ttlSeconds))
     return this.remote.set(key, value, ttlType, ttlSeconds)
   }
 
@@ -62,7 +62,7 @@ export class Cache {
   }
 
   async expire(key: string, ttlSeconds: number) {
-    await this.local.expire(key, this.getLocalTTlL(ttlSeconds))
+    await this.local.expire(key, this.getLocalTTL(ttlSeconds))
     return this.remote.expire(key, ttlSeconds)
   }
 
@@ -96,7 +96,7 @@ export class Cache {
       const ttl = await this.remote.ttl(key)
 
       if (ttl > 0) {
-        await this.local.set(key, redisValue, 'EX', this.getLocalTTlL(ttl))
+        await this.local.set(key, redisValue, 'EX', this.getLocalTTL(ttl))
       }
     }
     return redisValue
@@ -112,7 +112,7 @@ export class Cache {
       const ttl = await this.remote.ttl(keys[i])
 
       if (ttl > 0) {
-        await this.local.set(keys[i], values[i], 'EX', this.getLocalTTlL(ttl))
+        await this.local.set(keys[i], values[i], 'EX', this.getLocalTTL(ttl))
       }
     }
     return values
