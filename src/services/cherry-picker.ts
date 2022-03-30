@@ -387,7 +387,7 @@ export class CherryPicker {
         weightFactor = weightFactor - Math.round(latencyDifference * WEIGHT_MULTIPLIER)
 
         if (weightFactor <= 0) {
-          weightFactor = 1
+          weightFactor = sortedLog.attempts >= maxFailuresPerPeriod ? 0 : 1
         }
       }
 
@@ -416,7 +416,6 @@ export class CherryPicker {
           }
         }
       }
-
       // Set the benchmark for the next node
       previousNodeLatency = sortedLog.weightedSuccessLatency
     }

@@ -9,6 +9,10 @@
       "value": "${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PASSPHRASE }}"
     },
     {
+      "key": "REDIS_LOCAL_TTL_FACTOR",
+      "value": "${{ secrets.REDIS_LOCAL_TTL_FACTOR }}"
+    },
+    {
       "key": "MONGO_ENDPOINT",
       "value": "${{ secrets.MONGO_PRODUCTION_ENDPOINT }}"
     },
