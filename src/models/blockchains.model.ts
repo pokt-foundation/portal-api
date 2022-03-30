@@ -128,6 +128,11 @@ export class Blockchains extends Entity {
   path?: string
 
   @property({
+    type: 'boolean',
+  })
+  evm?: boolean
+
+  @property({
     type: 'string',
   })
   altruist?: string
