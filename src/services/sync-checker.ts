@@ -218,10 +218,10 @@ export class SyncChecker {
 
         // Since we don't trust altruist, let's use highest node in session as reference
         referenceBlockHeight = highestNodeBlockHeight
-      } else {
-        // Altruist is trustworthy, so we use it as reference
-        referenceBlockHeight = altruistBlockHeight
       }
+
+      // Altruist is trustworthy, so we use it as reference
+      referenceBlockHeight = altruistBlockHeight
     }
 
     const isBlockHeightTooFar = highestNodeBlockHeight > altruistBlockHeight + syncAllowance
