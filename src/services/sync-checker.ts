@@ -224,14 +224,6 @@ export class SyncChecker {
       referenceBlockHeight = altruistBlockHeight
     }
 
-    const isBlockHeightTooFar = highestNodeBlockHeight > altruistBlockHeight + syncAllowance
-
-    // If altruist is trustworthy...
-    // Make sure nodes aren't running too far ahead of altruist
-    if (isAltruistTrustworthy && isBlockHeightTooFar) {
-      referenceBlockHeight = altruistBlockHeight
-    }
-
     // Go through nodes and add all nodes that are current or within allowance -- this allows for block processing times
     for (const nodeSyncLog of nodeSyncLogs) {
       const { node, blockHeight } = nodeSyncLog
