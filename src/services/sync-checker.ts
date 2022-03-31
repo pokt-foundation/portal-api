@@ -248,7 +248,7 @@ export class SyncChecker {
         ? altruistBlockHeight + syncAllowance
         : highestNodeBlockHeight + syncAllowance
 
-      if (nodeSyncLog.blockHeight <= maximumBlockHeight && correctedNodeBlockHeight >= referenceBlockHeight) {
+      if (correctedNodeBlockHeight >= referenceBlockHeight && nodeSyncLog.blockHeight <= maximumBlockHeight) {
         logger.log('info', 'SYNC CHECK IN-SYNC: ' + node.publicKey + ' height: ' + blockHeight, {
           requestID: requestID,
           blockchainID,
