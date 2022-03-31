@@ -144,7 +144,7 @@ export class V1Controller {
       // TODO: Move URL to ENV
       this.host = `${blockchainAliases[0]}.gateway.pokt.network`
 
-      const { blockchainRedirects } = await loadBlockchain(
+      const { blockchainRedirects, blockchainPath } = await loadBlockchain(
         this.host,
         this.cache,
         this.blockchainsRepository,
@@ -157,7 +157,7 @@ export class V1Controller {
           // Modify the host using the stored blockchain name in DB
           this.pocketRelayer.host = redirect.alias
           this.host = redirect.alias
-          return await this.loadBalancerRelay(redirect.loadBalancerID, rawData)
+          return await this.loadBalancerRelay(`${redirect.loadBalancerID}${blockchainPath}`, rawData)
         }
       }
     } catch (e) {
