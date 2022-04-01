@@ -61,10 +61,7 @@ export async function enforceGetLogs(
   if (toBlock - fromBlock > logLimitBlocks) {
     return jsonrpc.error(
       rpcID,
-      new jsonrpc.JsonRpcError(
-        `(eth_getLogs) You cannot query logs for more than ${logLimitBlocks} blocks at once.`,
-        -32064
-      )
+      new jsonrpc.JsonRpcError(`You cannot query logs for more than ${logLimitBlocks} blocks at once.`, -32064)
     ) as ErrorObject
   }
 }
