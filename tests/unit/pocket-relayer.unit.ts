@@ -1105,57 +1105,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })) as ErrorObject
 
-      expect(relayResponse.error.message).to.match(/Try again with a explicit block number/)
-    })
-
-    it('should return an error if `eth_getLogs` call uses "latest" on block params (no altruist)', async () => {
-      const mock = new PocketMock()
-
-      mock.fail = true
-
-      const relayer = mock.object()
-
-      const poktRelayer = new PocketRelayer({
-        host: 'eth-mainnet',
-        origin: '',
-        userAgent: '',
-        ipAddress: '',
-        relayer,
-        cherryPicker,
-        metricsRecorder,
-        syncChecker,
-        chainChecker,
-        cache,
-        databaseEncryptionKey: DB_ENCRYPTION_KEY,
-        secretKey: '',
-        relayRetries: 0,
-        blockchainsRepository: blockchainRepository,
-        checkDebug: true,
-        aatPlan: AatPlans.FREEMIUM,
-        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
-        dispatchers: DUMMY_ENV.DISPATCH_URL,
-      })
-
-      rawData =
-        '{"method":"eth_getLogs","params":[{"fromBlock":"latest","toBlock":"latest","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
-
-      const relayResponse = (await poktRelayer.sendRelay({
-        rawData,
-        relayPath: '',
-        httpMethod: HTTPMethod.POST,
-        application: APPLICATION as unknown as Applications,
-        requestID: '1234',
-        requestTimeOut: undefined,
-        overallTimeOut: undefined,
-        stickinessOptions: {
-          stickiness: false,
-          duration: 0,
-          preferredNodeAddress: '',
-        },
-        relayRetries: 0,
-      })) as ErrorObject
-
-      expect(relayResponse.error.message).to.match(/Try again with a explicit block number/)
+      expect(relayResponse.error.message).to.match(/You cannot query logs for more than/)
     })
 
     it('should succeed if `eth_getLogs` call is within permitted blocks range (no altruist)', async () => {
@@ -1208,8 +1158,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })) as ErrorObject
 
-      expect(relayResponse.error.message).to.match(/Try again with a explicit block number/)
-      // expect(relayResponse).to.be.deepEqual(JSON.parse(mock.relayResponse[rawData] as string))
+      expect(relayResponse).to.be.deepEqual(JSON.parse(mock.relayResponse[rawData] as string))
     })
 
     it('relay requesting a preferred node should use that one if available with rpcID', async () => {

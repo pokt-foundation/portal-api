@@ -209,7 +209,7 @@ export class PocketRelayer {
         blockchainID,
         requestID,
         relayType: 'APP',
-        error: `${restriction.serialize()}`,
+        error: `${restriction.error.message}`,
         typeID: application.id,
         origin: this.origin,
       })
