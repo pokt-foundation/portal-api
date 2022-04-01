@@ -23,6 +23,7 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'REMOTE_REDIS_ENDPOINT',
     'LOCAL_REDIS_ENDPOINT',
     'PSQL_CONNECTION',
+    'PSQL_CERTIFICATE',
     'INFLUX_URL',
     'INFLUX_TOKEN',
     'INFLUX_ORG',

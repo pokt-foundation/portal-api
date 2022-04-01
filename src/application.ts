@@ -15,6 +15,7 @@ import AatPlans from './config/aat-plans.json'
 import { getPocketInstance } from './config/pocket-config'
 import { GatewaySequence } from './sequence'
 import { Cache } from './services/cache'
+import { getRDSCertificate } from './utils/cache'
 const logger = require('./services/logger')
 
 require('log-timestamp')
@@ -54,6 +55,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       REMOTE_REDIS_ENDPOINT,
       LOCAL_REDIS_ENDPOINT,
       PSQL_CONNECTION,
+      PSQL_CERTIFICATE,
       DISPATCH_URL,
       POCKET_RELAY_RETRIES,
       DEFAULT_SYNC_ALLOWANCE,
@@ -144,10 +146,24 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     // New metrics postgres for error recording
     const psqlConnection: string = PSQL_CONNECTION || ''
+    const psqlCertificate: string = PSQL_CERTIFICATE || ''
+
+    let rdsCertificate: string
+
+    if (environment === 'production') {
+      rdsCertificate = await getRDSCertificate(remoteRedis as Redis.Redis, psqlCertificate)
+    }
 
     const pgPool = new pg.Pool({
       connectionString: psqlConnection,
-      ssl: environment === 'production' || environment === 'staging' ? true : false,
+      ssl:
+        environment === 'production' || environment === 'staging'
+          ? {
+              ca: rdsCertificate,
+              requestCert: true,
+              rejectUnauthorized: false,
+            }
+          : false,
     })
 
     this.bind('pgPool').to(pgPool)

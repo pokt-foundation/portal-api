@@ -1,4 +1,6 @@
 import { Node, Session } from '@pokt-foundation/pocketjs-types'
+import axios, { AxiosRequestConfig } from 'axios'
+import { Redis } from 'ioredis'
 import { Cache } from '../services/cache'
 
 const logger = require('../services/logger')
@@ -48,4 +50,29 @@ export async function removeSessionCache(cache: Cache, publicKey: string, blockc
 export async function removeChecksCache(cache: Cache, sessionKey: string, nodes: Node[]) {
   await cache.del(`sync-check-${sessionKey}`)
   await cache.del(`chain-check-${sessionKey}`)
+}
+
+export async function getRDSCertificate(redis: Redis, certificateUrl: string): Promise<string> {
+  const cachedCertificate = await redis.get('psqlCertificate')
+  let publicCertificate
+
+  if (!cachedCertificate) {
+    try {
+      const axiosConfig = {
+        method: 'GET',
+        url: certificateUrl,
+      } as AxiosRequestConfig
+
+      const { data: rdsCertificate } = await axios(axiosConfig)
+
+      publicCertificate = rdsCertificate
+    } catch (e) {
+      throw new Error('Invalid Certificate')
+    }
+    await redis.set('psqlCertificate', publicCertificate, 'EX', 600)
+  } else {
+    publicCertificate = cachedCertificate
+  }
+
+  return publicCertificate
 }

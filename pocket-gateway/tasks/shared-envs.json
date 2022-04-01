@@ -89,6 +89,10 @@
       "value": "${{ secrets.PSQL_CONNECTION }}"
     },
     {
+      "key": "PSQL_CERTIFICATE",
+      "value": "${{ secrets.PSQL_CERTIFICATE }}"
+    },
+    {
       "key": "LOG_TO_CLOUDWATCH",
       "value": false
     },
