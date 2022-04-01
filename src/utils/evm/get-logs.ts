@@ -51,7 +51,7 @@ export async function enforceGetLogs(
         fromBlock = latestBlock
       }
     } catch (e) {
-      logger.log('error', `Altruist unavailable: (${altruistURL})`, {
+      logger.log('error', `Altruist is not responding: (${altruistURL})`, {
         blockchainID,
         requestID,
       })
