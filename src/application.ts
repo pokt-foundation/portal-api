@@ -155,6 +155,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     }
 
     const pgPool = new pg.Pool({
+      // Do not include ssl settings in the connectionString
       connectionString: psqlConnection,
       ssl:
         environment === 'production' || environment === 'staging'
