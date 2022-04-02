@@ -4,7 +4,7 @@ name: Terraform canary Deployment eu-central-1
 
 on:
   push:
-    branches: [canary, tls-psql]
+    branches: [canary]
 
 jobs:
   deploy:
