@@ -70,7 +70,6 @@ export async function getRDSCertificate(redis: Redis, certificateUrl: string): P
       throw new Error('Invalid Certificate')
     }
 
-    logger.log('info', `Setting certificate: ${publicCertificate}`)
     await redis.set('psqlCertificate', publicCertificate, 'EX', 600)
   } else {
     publicCertificate = cachedCertificate
