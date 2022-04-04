@@ -167,10 +167,11 @@ export class SyncChecker {
       errorState = true
     }
 
+    let referenceBlockHeight: number
     let isAltruistTrustworthy: boolean
 
     // Consult altruist for sync source of truth
-    let altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
+    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
 
     if (altruistBlockHeight === 0 || isNaN(altruistBlockHeight)) {
       // Failure to find sync from consensus and altruist
@@ -215,17 +216,12 @@ export class SyncChecker {
           }
         )
 
-        // Since we don't trust altruist, let's overwrite its block height
-        altruistBlockHeight = highestNodeBlockHeight
+        // Since we don't trust altruist, let's use highest node in session as reference
+        referenceBlockHeight = highestNodeBlockHeight
       }
-    }
 
-    const isBlockHeightTooFar = highestNodeBlockHeight > altruistBlockHeight + syncAllowance
-
-    // If altruist is trustworthy...
-    // Make sure nodes aren't running too far ahead of altruist
-    if (isAltruistTrustworthy && isBlockHeightTooFar) {
-      highestNodeBlockHeight = altruistBlockHeight
+      // Altruist is trustworthy, so we use it as reference
+      referenceBlockHeight = altruistBlockHeight
     }
 
     // Go through nodes and add all nodes that are current or within allowance -- this allows for block processing times
@@ -244,11 +240,7 @@ export class SyncChecker {
         ? altruistBlockHeight + syncAllowance
         : highestNodeBlockHeight + syncAllowance
 
-      if (
-        nodeSyncLog.blockHeight <= maximumBlockHeight &&
-        correctedNodeBlockHeight >= highestNodeBlockHeight &&
-        correctedNodeBlockHeight >= altruistBlockHeight
-      ) {
+      if (correctedNodeBlockHeight >= referenceBlockHeight && nodeSyncLog.blockHeight <= maximumBlockHeight) {
         logger.log('info', 'SYNC CHECK IN-SYNC: ' + node.publicKey + ' height: ' + blockHeight, {
           requestID: requestID,
           blockchainID,

@@ -172,6 +172,9 @@ export class PocketRelayer {
 
     relayPath = !relayPath && blockchainPath ? blockchainPath : relayPath
 
+    // Add relay path to URL
+    const altruistURL = !relayPath ? blockchainAltruist : `${blockchainAltruist}${relayPath}`
+
     const { preferredNodeAddress } = stickinessOptions
     const nodeSticker = new NodeSticker(
       stickinessOptions,
@@ -199,7 +202,7 @@ export class PocketRelayer {
       requestID,
       rpcID,
       logLimitBlocks,
-      blockchainAltruist
+      altruistURL
     )
 
     const data = JSON.stringify(parsedRawData)
@@ -209,7 +212,7 @@ export class PocketRelayer {
         blockchainID,
         requestID,
         relayType: 'APP',
-        error: `${restriction.serialize()}`,
+        error: `${restriction.error.message}`,
         typeID: application.id,
         origin: this.origin,
       })
@@ -271,10 +274,7 @@ export class PocketRelayer {
             // If the parsing goes wrong, we get a response with 'invalid' type and the following message.
             // We could get 'invalid' and not a parse error, hence we check both.
             if (parsedRelayResponse.type === 'invalid' && parsedRelayResponse.payload.message === 'Parse error') {
-              throw new ErrorObject(
-                rpcID,
-                new jsonrpc.JsonRpcError('Service Node returned an invalid response', -32065)
-              )
+              throw new Error('Service Node returned an invalid response')
             }
             // Check for user error to bubble these up to the API
             let userErrorMessage = ''
@@ -392,6 +392,7 @@ export class PocketRelayer {
 
       // Any other error (e.g parsing errors) that should not be propagated as response
       logger.log('error', 'POCKET RELAYER ERROR: ' + e, {
+        blockchainID,
         requestID,
         relayType: 'APP',
         typeID: application.id,
@@ -405,9 +406,6 @@ export class PocketRelayer {
     if (fallbackAvailable) {
       const relayStart = process.hrtime()
       let axiosConfig: AxiosRequestConfig = {}
-
-      // Add relay path to URL
-      const altruistURL = (relayPath = !relayPath ? blockchainAltruist : `${blockchainAltruist}${relayPath}`)
 
       // Remove user/pass from the altruist URL
       const redactedAltruistURL = String(blockchainAltruist)?.replace(/[\w]*:\/\/[^\/]*@/g, '')
