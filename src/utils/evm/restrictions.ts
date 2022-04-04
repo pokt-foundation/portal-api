@@ -53,7 +53,7 @@ export async function enforceEVMRestrictions(
     }
   }
 
-  if (method === 'eth_getLogs') {
+  if (method === 'eth_getLogs' && altruistURL) {
     return enforceGetLogs(rpcID, parsedRawData, blockchainID, requestID, logLimitBlocks, altruistURL)
   }
 
