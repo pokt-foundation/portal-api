@@ -172,6 +172,9 @@ export class PocketRelayer {
 
     relayPath = !relayPath && blockchainPath ? blockchainPath : relayPath
 
+    // Add relay path to URL
+    const altruistURL = !relayPath ? blockchainAltruist : `${blockchainAltruist}${relayPath}`
+
     const { preferredNodeAddress } = stickinessOptions
     const nodeSticker = new NodeSticker(
       stickinessOptions,
@@ -199,7 +202,7 @@ export class PocketRelayer {
       requestID,
       rpcID,
       logLimitBlocks,
-      blockchainAltruist
+      altruistURL
     )
 
     const data = JSON.stringify(parsedRawData)
@@ -403,9 +406,6 @@ export class PocketRelayer {
     if (fallbackAvailable) {
       const relayStart = process.hrtime()
       let axiosConfig: AxiosRequestConfig = {}
-
-      // Add relay path to URL
-      const altruistURL = (relayPath = !relayPath ? blockchainAltruist : `${blockchainAltruist}${relayPath}`)
 
       // Remove user/pass from the altruist URL
       const redactedAltruistURL = String(blockchainAltruist)?.replace(/[\w]*:\/\/[^\/]*@/g, '')
