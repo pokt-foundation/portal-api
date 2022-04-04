@@ -91,7 +91,7 @@ export class MetricsRecorder {
       let serviceDomain = ''
 
       if (session) {
-        const node = session.nodes.find((n) => n.publicKey === serviceNode)
+        const node = session.nodes?.find((n) => n.publicKey === serviceNode)
         if (node) {
           serviceURL = node.serviceUrl
           // @ts-ignore

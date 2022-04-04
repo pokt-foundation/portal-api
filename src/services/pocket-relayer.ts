@@ -209,7 +209,7 @@ export class PocketRelayer {
         blockchainID,
         requestID,
         relayType: 'APP',
-        error: `${restriction.serialize()}`,
+        error: `${restriction.error.message}`,
         typeID: application.id,
         origin: this.origin,
       })
@@ -271,10 +271,7 @@ export class PocketRelayer {
             // If the parsing goes wrong, we get a response with 'invalid' type and the following message.
             // We could get 'invalid' and not a parse error, hence we check both.
             if (parsedRelayResponse.type === 'invalid' && parsedRelayResponse.payload.message === 'Parse error') {
-              throw new ErrorObject(
-                rpcID,
-                new jsonrpc.JsonRpcError('Service Node returned an invalid response', -32065)
-              )
+              throw new Error('Service Node returned an invalid response')
             }
             // Check for user error to bubble these up to the API
             let userErrorMessage = ''
@@ -392,6 +389,7 @@ export class PocketRelayer {
 
       // Any other error (e.g parsing errors) that should not be propagated as response
       logger.log('error', 'POCKET RELAYER ERROR: ' + e, {
+        blockchainID,
         requestID,
         relayType: 'APP',
         typeID: application.id,
