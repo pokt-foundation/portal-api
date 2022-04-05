@@ -60,7 +60,7 @@ jobs:
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
-          envkey_REDIS_ENDPOINT: gateway-prod-redis.c8rv3u.clustercfg.usw1.cache.amazonaws.com
+          envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.c8rv3u.clustercfg.usw1.cache.amazonaws.com
           envkey_REGION: 'us-west-1'
           envkey_REGION_NAME: 'us-west-1'
           file_name: .env
