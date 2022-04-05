@@ -30,7 +30,7 @@ export async function enforceEVMRestrictions(
   if (application?.gatewaySettings?.whitelistMethods?.length > 0) {
     const restriction = application.gatewaySettings.whitelistMethods.find((x) => x.blockchainID === blockchainID)
 
-    const enforced = isMethodWhitelisted(method, restriction.methods)
+    const enforced = isMethodWhitelisted(method, restriction?.methods)
 
     if (!enforced) {
       return jsonrpc.error(
@@ -43,7 +43,7 @@ export async function enforceEVMRestrictions(
   if (application?.gatewaySettings?.whitelistContracts?.length > 0) {
     const restriction = application.gatewaySettings.whitelistContracts.find((x) => x.blockchainID === blockchainID)
 
-    const enforced = isContractWhitelisted(parsedRawData, restriction.contracts)
+    const enforced = isContractWhitelisted(parsedRawData, restriction?.contracts)
 
     if (!enforced) {
       return jsonrpc.error(

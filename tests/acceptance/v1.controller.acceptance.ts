@@ -1610,5 +1610,91 @@ describe('V1 controller (acceptance)', () => {
       expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
       expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
     })
+
+    it('success on request without restricted method whitelist', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [],
+        whitelistMethods: [{ blockchainID: '0021', methods: ['eth_getLogs'] }],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+      relayResponses[
+        '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","toBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
+      ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          method: 'eth_getLogs',
+          params: [
+            { fromBlock: '0x9c5bb6', toBlock: '0x9c5bb6', address: '0xdef1c0ded9bec7f1a1670819833240f027b25eff' },
+          ],
+          id: 1,
+          jsonrpc: '2.0',
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    })
+
+    it('success on request without restricted contracts whitelist', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x24ad62502d1c652cc7684081169d04896ac20f30'] }],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+      relayResponses[
+        '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","toBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
+      ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          method: 'eth_getLogs',
+          params: [
+            { fromBlock: '0x9c5bb6', toBlock: '0x9c5bb6', address: '0xdef1c0ded9bec7f1a1670819833240f027b25eff' },
+          ],
+          id: 1,
+          jsonrpc: '2.0',
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    })
   })
 })
