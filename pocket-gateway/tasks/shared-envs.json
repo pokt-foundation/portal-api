@@ -89,6 +89,10 @@
       "value": "${{ secrets.PSQL_CONNECTION }}"
     },
     {
+      "key": "PSQL_CERTIFICATE",
+      "value": "https://s3.amazonaws.com/rds-downloads/rds-ca-2019-root.pem"
+    },
+    {
       "key": "LOG_TO_CLOUDWATCH",
       "value": false
     },
