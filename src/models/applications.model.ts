@@ -111,6 +111,7 @@ type GatewayAAT = {
 export type GatewaySettings = {
   whitelistOrigins: string[]
   whitelistUserAgents: string[]
+  whitelistBlockchains?: string[]
   whitelistContracts?: WhitelistContract[]
   whitelistMethods?: WhitelistMethod[]
   secretKeyRequired: boolean

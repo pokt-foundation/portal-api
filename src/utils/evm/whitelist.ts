@@ -1,8 +1,8 @@
 import { checkWhitelist } from '../enforcements'
 import { extractContractAddress } from './parsing'
 
-export function isMethodWhitelisted(method: string, whitelistedMethods: string[]): boolean {
-  return checkWhitelist(whitelistedMethods, method, 'explicit')
+export function isWhitelisted(value: string, whitelist: string[]): boolean {
+  return checkWhitelist(whitelist, value, 'explicit')
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
