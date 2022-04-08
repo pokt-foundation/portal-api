@@ -33,6 +33,7 @@ const APPLICATION = {
   gatewaySettings: {
     secretKey: 'y1lhuxbpo7u3hvxzqvesbx7jcjdczw3j',
     secretKeyRequired: false,
+    whitelistBlockchains: [],
     whitelistOrigins: [],
     whitelistUserAgents: [],
     whitelistContracts: [],
@@ -418,6 +419,7 @@ describe('V1 controller (acceptance)', () => {
     appWithSecurity.gatewaySettings = {
       secretKey: encryptedKey,
       secretKeyRequired: true,
+      whitelistBlockchains: [],
       whitelistOrigins: [],
       whitelistUserAgents: [],
       whitelistContracts: [],
@@ -449,6 +451,7 @@ describe('V1 controller (acceptance)', () => {
     appWithSecurity.gatewaySettings = {
       secretKey: '',
       secretKeyRequired: false,
+      whitelistBlockchains: [],
       whitelistOrigins: ['unlocalhost'],
       whitelistUserAgents: [],
       whitelistContracts: [],
@@ -480,6 +483,7 @@ describe('V1 controller (acceptance)', () => {
     appWithSecurity.gatewaySettings = {
       secretKey: 'securekey',
       secretKeyRequired: true,
+      whitelistBlockchains: [],
       whitelistOrigins: [],
       whitelistUserAgents: [],
       whitelistContracts: [],
@@ -510,6 +514,7 @@ describe('V1 controller (acceptance)', () => {
     appWithSecurity.gatewaySettings = {
       secretKey: '',
       secretKeyRequired: false,
+      whitelistBlockchains: [],
       whitelistOrigins: ['https://pokt.network'],
       whitelistUserAgents: [],
       whitelistContracts: [],
@@ -541,6 +546,7 @@ describe('V1 controller (acceptance)', () => {
     appWithSecurity.gatewaySettings = {
       secretKey: '',
       secretKeyRequired: false,
+      whitelistBlockchains: [],
       whitelistOrigins: [],
       whitelistUserAgents: ['Mozilla/5.0'],
       whitelistContracts: [],
@@ -577,6 +583,7 @@ describe('V1 controller (acceptance)', () => {
     appWithSecurity.gatewaySettings = {
       secretKey: encryptedKey,
       secretKeyRequired: true,
+      whitelistBlockchains: [],
       whitelistOrigins: ['unlocalhost'],
       whitelistUserAgents: ['Mozilla/5.0'],
       whitelistContracts: [],
@@ -1081,6 +1088,7 @@ describe('V1 controller (acceptance)', () => {
       appWithSecurity.gatewaySettings = {
         secretKey: '',
         secretKeyRequired: false,
+        whitelistBlockchains: [],
         whitelistOrigins: [],
         whitelistUserAgents: [],
         whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
@@ -1117,6 +1125,7 @@ describe('V1 controller (acceptance)', () => {
       appWithSecurity.gatewaySettings = {
         secretKey: '',
         secretKeyRequired: false,
+        whitelistBlockchains: [],
         whitelistOrigins: [],
         whitelistUserAgents: [],
         whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
@@ -1160,6 +1169,7 @@ describe('V1 controller (acceptance)', () => {
       appWithSecurity.gatewaySettings = {
         secretKey: '',
         secretKeyRequired: false,
+        whitelistBlockchains: [],
         whitelistOrigins: [],
         whitelistUserAgents: [],
         whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
@@ -1198,6 +1208,7 @@ describe('V1 controller (acceptance)', () => {
       appWithSecurity.gatewaySettings = {
         secretKey: '',
         secretKeyRequired: false,
+        whitelistBlockchains: [],
         whitelistOrigins: [],
         whitelistUserAgents: [],
         whitelistContracts: [{ blockchainID: '0021', contracts: ['0x24ad62502d1c652cc7684081169d04896ac20f30'] }],
@@ -1235,6 +1246,7 @@ describe('V1 controller (acceptance)', () => {
       appWithSecurity.gatewaySettings = {
         secretKey: '',
         secretKeyRequired: false,
+        whitelistBlockchains: [],
         whitelistOrigins: [],
         whitelistUserAgents: [],
         whitelistContracts: [{ blockchainID: '0021', contracts: ['0x24ad62502d1c652cc7684081169d04896ac20f30'] }],
@@ -1280,6 +1292,7 @@ describe('V1 controller (acceptance)', () => {
       appWithSecurity.gatewaySettings = {
         secretKey: '',
         secretKeyRequired: false,
+        whitelistBlockchains: [],
         whitelistOrigins: [],
         whitelistUserAgents: [],
         whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
@@ -1318,6 +1331,7 @@ describe('V1 controller (acceptance)', () => {
       appWithSecurity.gatewaySettings = {
         secretKey: '',
         secretKeyRequired: false,
+        whitelistBlockchains: [],
         whitelistOrigins: [],
         whitelistUserAgents: [],
         whitelistContracts: [{ blockchainID: '0021', contracts: ['0xdef1c0ded9bec7f1a1670819833240f027b25eff'] }],
@@ -1362,6 +1376,7 @@ describe('V1 controller (acceptance)', () => {
       appWithSecurity.gatewaySettings = {
         secretKey: '',
         secretKeyRequired: false,
+        whitelistBlockchains: [],
         whitelistOrigins: [],
         whitelistUserAgents: [],
         whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
@@ -1399,6 +1414,7 @@ describe('V1 controller (acceptance)', () => {
       appWithSecurity.gatewaySettings = {
         secretKey: '',
         secretKeyRequired: false,
+        whitelistBlockchains: [],
         whitelistOrigins: [],
         whitelistUserAgents: [],
         whitelistContracts: [{ blockchainID: '0021', contracts: ['0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9'] }],
@@ -1440,6 +1456,7 @@ describe('V1 controller (acceptance)', () => {
       appWithSecurity.gatewaySettings = {
         secretKey: '',
         secretKeyRequired: false,
+        whitelistBlockchains: [],
         whitelistOrigins: [],
         whitelistUserAgents: [],
         whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
@@ -1487,6 +1504,7 @@ describe('V1 controller (acceptance)', () => {
       appWithSecurity.gatewaySettings = {
         secretKey: '',
         secretKeyRequired: false,
+        whitelistBlockchains: [],
         whitelistOrigins: [],
         whitelistUserAgents: [],
         whitelistContracts: [{ blockchainID: '0021', contracts: ['0x5100bd31b822371108a0f63dcfb6594b9919eaf4'] }],
@@ -1538,6 +1556,7 @@ describe('V1 controller (acceptance)', () => {
       appWithSecurity.gatewaySettings = {
         secretKey: '',
         secretKeyRequired: false,
+        whitelistBlockchains: [],
         whitelistOrigins: [],
         whitelistUserAgents: [],
         whitelistContracts: [],
@@ -1574,6 +1593,7 @@ describe('V1 controller (acceptance)', () => {
       appWithSecurity.gatewaySettings = {
         secretKey: '',
         secretKeyRequired: false,
+        whitelistBlockchains: [],
         whitelistOrigins: [],
         whitelistUserAgents: [],
         whitelistContracts: [],
@@ -1617,6 +1637,7 @@ describe('V1 controller (acceptance)', () => {
       appWithSecurity.gatewaySettings = {
         secretKey: '',
         secretKeyRequired: false,
+        whitelistBlockchains: [],
         whitelistOrigins: [],
         whitelistUserAgents: [],
         whitelistContracts: [],
@@ -1660,6 +1681,7 @@ describe('V1 controller (acceptance)', () => {
       appWithSecurity.gatewaySettings = {
         secretKey: '',
         secretKeyRequired: false,
+        whitelistBlockchains: [],
         whitelistOrigins: [],
         whitelistUserAgents: [],
         whitelistContracts: [{ blockchainID: '0021', contracts: ['0x24ad62502d1c652cc7684081169d04896ac20f30'] }],
@@ -1689,6 +1711,87 @@ describe('V1 controller (acceptance)', () => {
         })
         .set('Accept', 'application/json')
         .set('host', 'eth-mainnet-x')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    })
+
+    it('fails on request with restricted blockchain whitelist', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: ['0040'],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          method: 'eth_call',
+          params: [{ to: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f', data: '0x0902f1ac' }, 'latest'],
+          id: 42,
+          jsonrpc: '2.0',
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.property('error')
+      expect(response.body.error.message).to.startWith('Restricted endpoint: blockchain not allowed')
+    })
+
+    it('success on request with restricted blockchain whitelist', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: ['0021'],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+      relayResponses[
+        '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","toBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
+      ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          method: 'eth_getLogs',
+          params: [
+            { fromBlock: '0x9c5bb6', toBlock: '0x9c5bb6', address: '0xdef1c0ded9bec7f1a1670819833240f027b25eff' },
+          ],
+          id: 1,
+          jsonrpc: '2.0',
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
         .set('origin', 'localhost')
         .expect(200)
 

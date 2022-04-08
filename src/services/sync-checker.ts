@@ -299,6 +299,7 @@ export class SyncChecker {
 
     logger.log('info', 'SYNC CHECK COMPLETE: ' + syncedNodes.length + ' nodes in sync', {
       requestID: requestID,
+      typeID: applicationID,
       blockchainID,
       origin: this.origin,
       sessionKey,
