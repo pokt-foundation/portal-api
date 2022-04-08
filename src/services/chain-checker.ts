@@ -149,6 +149,7 @@ export class ChainChecker {
 
     logger.log('info', 'CHAIN CHECK COMPLETE: ' + CheckedNodes.length + ' nodes on chain', {
       requestID: requestID,
+      typeID: applicationID,
       blockchainID,
       origin: this.origin,
       sessionKey,
