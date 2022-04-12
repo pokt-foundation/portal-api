@@ -6,7 +6,7 @@ name: Terraform Production Deployment us-west-1
 
 on:
   push:
-    branches: [T-2734_add_us_west_1_workflow]
+    branches: [master]
 
 jobs:
   deploy:
