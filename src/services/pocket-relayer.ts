@@ -472,7 +472,7 @@ export class PocketRelayer {
               serviceNode: 'fallback:' + redactedAltruistURL,
               relayStart,
               result: 200,
-              responseStart: Buffer.from(JSON.stringify(relay.response)).toString('utf-8', 0, 80),
+              responseStart: Buffer.from(JSON.stringify(responseParsed)).toString('utf-8', 0, 80),
               bytes: Buffer.byteLength(JSON.stringify(responseParsed), 'utf8'),
               fallback: true,
               method: method,
