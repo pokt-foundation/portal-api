@@ -3,7 +3,7 @@ import RedisMock from 'ioredis-mock'
 import { expect } from '@loopback/testlab'
 import { Applications } from '../../src/models'
 import { CherryPicker } from '../../src/services/cherry-picker'
-import { PocketMock } from '../mocks/pocketjs'
+import { DEFAULT_MOCK_VALUES, PocketMock } from '../mocks/pocketjs'
 
 describe('Cherry picker service (unit)', () => {
   let cherryPicker: CherryPicker
@@ -243,6 +243,7 @@ describe('Cherry picker service (unit)', () => {
       const expectedLogs = JSON.stringify({
         medianSuccessLatency: '0.00000',
         weightedSuccessLatency: '0.00000',
+        sessionKey: DEFAULT_MOCK_VALUES.SESSION.key,
         results: {
           [result]: 1,
         },
