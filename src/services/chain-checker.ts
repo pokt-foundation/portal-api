@@ -9,7 +9,7 @@ import extractDomain from 'extract-domain'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { removeChecksCache, removeNodeFromSession, removeSessionCache } from '../utils/cache'
-import { CHECK_TIMEOUT, PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION } from '../utils/constants'
+import { CheckMethods, CHECK_TIMEOUT, PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { CheckResult, RelayResponse } from '../utils/types'
 import { Cache } from './cache'
@@ -335,7 +335,7 @@ export class ChainChecker {
           result: 500,
           bytes: Buffer.byteLength('WRONG CHAIN', 'utf8'),
           fallback: false,
-          method: 'chaincheck',
+          method: CheckMethods.ChainCheck,
           error: typeof relay.message === 'object' ? JSON.stringify(relay.message) : relay.message,
           code: undefined,
           origin: this.origin,
@@ -372,7 +372,7 @@ export class ChainChecker {
           result: 500,
           bytes: Buffer.byteLength('WRONG CHAIN', 'utf8'),
           fallback: false,
-          method: 'chaincheck',
+          method: CheckMethods.ChainCheck,
           error: JSON.stringify(relay),
           code: undefined,
           origin: this.origin,
