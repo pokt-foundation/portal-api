@@ -33,16 +33,10 @@ export class CherryPicker {
     this.archivalChains = archivalChains || []
   }
 
-  // Record the latency and success rate of each node, 1 hour TTL
+  // Record the latency and success rate of each node, 1 hor TTL
   // When selecting a node, pull the stats for each node in the session
   // Rank and weight them for node choice.
-  async cherryPickNode(
-    application: Applications,
-    nodes: Node[],
-    blockchain: string,
-    requestID: string,
-    sessionKey: string
-  ): Promise<Node> {
+  async cherryPickNode(application: Applications, nodes: Node[], blockchain: string, requestID: string): Promise<Node> {
     const rawNodes = {} as { [nodePublicKey: string]: Node }
     const rawNodeIDs = [] as string[]
     let sortedLogs = [] as ServiceLog[]
@@ -68,7 +62,7 @@ export class CherryPicker {
     }
 
     // Sort node logs by highest success rate, then by lowest latency
-    sortedLogs = this.sortLogs(sortedLogs, requestID, 'APP', application.id)
+    sortedLogs = this.sortLogs(sortedLogs)
 
     /*
     RE-ENABLE LOGS to examine cherry picker behaviour
@@ -83,7 +77,7 @@ export class CherryPicker {
     // Iterate through sorted logs and form in to a weighted list
     let rankedItems = await this.rankItems(blockchain, sortedLogs, 50)
 
-    // If we have no nodes left because all 5 are failures, ¯\_(ツ)_/¯
+    // If we have no nodes left because all are failures, ¯\_(ツ)_/¯
     if (rankedItems.length === 0) {
       logger.log('warn', 'Cherry picking failure -- nodes', {
         requestID: requestID,
@@ -359,7 +353,7 @@ export class CherryPicker {
     // weightFactor pushes the fastest apps/nodes with the highest success rates
     // to be called on more often for relays.
     //
-    // The app/node with the highest success rate and the lowest average latency will
+    // The app/node with the highest success rate and the lowest median latency will
     // be 10 times more likely to be selected than a node that has had failures.
     let weightFactor = 10
     let previousNodeLatency = 0
@@ -477,7 +471,7 @@ export class CherryPicker {
     }
   }
 
-  sortLogs(array: ServiceLog[], requestID: string, relayType: string, typeID: string): ServiceLog[] {
+  sortLogs(array: ServiceLog[]): ServiceLog[] {
     const sortedLogs = array.sort((a: ServiceLog, b: ServiceLog) => {
       if (a.weightedSuccessLatency > b.weightedSuccessLatency) {
         return 1
