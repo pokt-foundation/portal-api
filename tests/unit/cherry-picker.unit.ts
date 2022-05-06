@@ -253,7 +253,9 @@ describe('Cherry picker service (unit)', () => {
       logs = await redis.get(`{${blockchain}}-${id}-service`)
       expect(logs).to.be.null()
 
-      await cherryPicker.updateServiceQuality(blockchain, 'appID', id, elapseTime, result)
+      const session = await new PocketMock().object().getNewSession(undefined)
+
+      await cherryPicker.updateServiceQuality(blockchain, id, elapseTime, result, session)
 
       logs = await redis.get(`{${blockchain}}-${id}-service`)
       expect(JSON.parse(logs)).to.be.deepEqual(JSON.parse(expectedLogs))
@@ -281,8 +283,9 @@ describe('Cherry picker service (unit)', () => {
         'EX',
         60
       )
+      const session = await new PocketMock().object().getNewSession(undefined)
 
-      await cherryPicker.updateServiceQuality(blockchain, 'appID', id, elapseTime, result)
+      await cherryPicker.updateServiceQuality(blockchain, id, elapseTime, result, session)
       const logs = await redis.get(`{${blockchain}}-${id}-service`)
 
       expect(JSON.parse(logs)).to.be.deepEqual(JSON.parse(expectedLogs))
@@ -405,7 +408,7 @@ describe('Cherry picker service (unit)', () => {
         failure: true,
       },
     ]
-    const sortedLogs = cherryPicker.sortLogs(unsortedLogs, '1234', '1234', '1234')
+    const sortedLogs = cherryPicker.sortLogs(unsortedLogs)
 
     expect(sortedLogs).to.be.deepEqual(expectedSortedLogs)
   })
