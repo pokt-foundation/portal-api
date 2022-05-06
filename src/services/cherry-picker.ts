@@ -6,6 +6,8 @@ import { Cache } from './cache'
 
 const logger = require('../services/logger')
 
+const logStats = (process.env['LOG_CHERRY_PICKER_STATS'] || '').toLowerCase()
+
 // Amount of times a node is allowed to fail due to misconfigured timeout before
 // being removed from the session
 const TIMEOUT_LIMIT = 20
@@ -36,7 +38,13 @@ export class CherryPicker {
   // Record the latency and success rate of each node, 1 hor TTL
   // When selecting a node, pull the stats for each node in the session
   // Rank and weight them for node choice.
-  async cherryPickNode(application: Applications, nodes: Node[], blockchain: string, requestID: string): Promise<Node> {
+  async cherryPickNode(
+    application: Applications,
+    nodes: Node[],
+    blockchain: string,
+    requestID: string,
+    sessionKey: string
+  ): Promise<Node> {
     const rawNodes = {} as { [nodePublicKey: string]: Node }
     const rawNodeIDs = [] as string[]
     let sortedLogs = [] as ServiceLog[]
@@ -64,15 +72,13 @@ export class CherryPicker {
     // Sort node logs by highest success rate, then by lowest latency
     sortedLogs = this.sortLogs(sortedLogs)
 
-    /*
-    RE-ENABLE LOGS to examine cherry picker behaviour
-    */
-    // TODO: Change this to env
-    // logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
-    //   requestID: requestID,
-    //   blockchainID: blockchain,
-    //   sessionKey: sessionKey,
-    // })
+    if (logStats) {
+      logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
+        requestID: requestID,
+        blockchainID: blockchain,
+        sessionKey: sessionKey,
+      })
+    }
 
     // Iterate through sorted logs and form in to a weighted list
     let rankedItems = await this.rankItems(blockchain, sortedLogs, 50)
