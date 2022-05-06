@@ -214,7 +214,6 @@ export class CherryPicker {
     // Pull the full service log including weighted latency and success rate
     const serviceLog = await this.fetchRawServiceLog(blockchain, id)
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let serviceQuality: {
       results: unknown
       medianSuccessLatency: string
