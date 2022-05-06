@@ -8,7 +8,7 @@ import { Pool as PGPool } from 'pg'
 import pgFormat from 'pg-format'
 import { Point, WriteApi } from '@influxdata/influxdb-client'
 
-import { BLOCK_TIMING_ERROR } from '../utils/constants'
+import { BLOCK_TIMING_ERROR, CheckMethods } from '../utils/constants'
 import { CherryPicker } from './cherry-picker'
 const os = require('os')
 const logger = require('../services/logger')
@@ -170,16 +170,8 @@ export class MetricsRecorder {
       }
 
       // Update service node quality with cherry picker
-      if (serviceNode) {
-        await this.cherryPicker.updateServiceQuality(
-          blockchainID,
-          applicationID,
-          serviceNode,
-          elapsedTime,
-          result,
-          timeout,
-          session
-        )
+      if (serviceNode && !Object.values(CheckMethods).includes(method as CheckMethods)) {
+        await this.cherryPicker.updateServiceQuality(blockchainID, serviceNode, elapsedTime, result, session, timeout)
       }
 
       // Text timestamp
@@ -225,6 +217,12 @@ export class MetricsRecorder {
         error,
         code,
       ]
+
+      // Consumed by the cherry picker external api, not used within this project atm
+      if (serviceNode && result === 200) {
+        await this.redis.incr(`${blockchainID}-${serviceNode}-${session.key}-success-hits`)
+        await this.redis.expire(`${blockchainID}-${serviceNode}-${session.key}-success-hits`, 60 * 60)
+      }
 
       // Increment node errors
       if (result !== 200) {
