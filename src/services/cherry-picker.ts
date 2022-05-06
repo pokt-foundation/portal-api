@@ -216,7 +216,7 @@ export class CherryPicker {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let serviceQuality: {
-      results: any
+      results: unknown
       medianSuccessLatency: string
       weightedSuccessLatency: string
       sessionKey: string
