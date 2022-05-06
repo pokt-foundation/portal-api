@@ -218,6 +218,7 @@ export class MetricsRecorder {
         code,
       ]
 
+      // Consumed by the cherry picker external api, not used within this project atm
       if (serviceNode && result === 200) {
         await this.redis.incr(`${blockchainID}-${serviceNode}-${session.key}-success-hits`)
         await this.redis.expire(`${blockchainID}-${serviceNode}-${session.key}-success-hits`, 60 * 60)
