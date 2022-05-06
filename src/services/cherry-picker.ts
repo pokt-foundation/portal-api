@@ -83,7 +83,7 @@ export class CherryPicker {
     // Iterate through sorted logs and form in to a weighted list
     let rankedItems = await this.rankItems(blockchain, sortedLogs, 50)
 
-    // If we have no nodes left because all are failures, ¯\_(ツ)_/¯
+    // If we have no nodes left it's because all are failures, ¯\_(ツ)_/¯
     if (rankedItems.length === 0) {
       logger.log('warn', 'Cherry picking failure -- nodes', {
         requestID: requestID,
