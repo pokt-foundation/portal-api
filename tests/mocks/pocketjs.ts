@@ -60,7 +60,7 @@ export const DEFAULT_NODES: Node[] = [
 ]
 
 // Default values to use for request/response objects
-const DEFAULT_MOCK_VALUES = {
+export const DEFAULT_MOCK_VALUES = {
   DISPATCHERS: [
     new URL('https://node1.dispatcher.pokt.network'),
     new URL('https://node2.dispatcher.pokt.network'),

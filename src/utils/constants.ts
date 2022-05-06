@@ -16,3 +16,8 @@ export const CHECK_TIMEOUT = 4000
 export const DEFAULT_ALTRUIST_TIMEOUT = 60000 // Milliseconds
 
 export const PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION = 0.7
+
+export enum CheckMethods {
+  SyncCheck = 'synchceck',
+  ChainCheck = 'chaincheck',
+}

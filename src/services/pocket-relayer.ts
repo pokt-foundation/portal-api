@@ -830,7 +830,7 @@ export class PocketRelayer {
     }
 
     if (!node) {
-      node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID, key)
+      node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID, session.key)
     }
 
     if (this.checkDebug) {
