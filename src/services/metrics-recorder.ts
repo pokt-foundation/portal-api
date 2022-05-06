@@ -218,6 +218,11 @@ export class MetricsRecorder {
         code,
       ]
 
+      if (serviceNode && result === 200) {
+        await this.redis.incr(`${blockchainID}-${serviceNode}-${session.key}-success-hits`)
+        await this.redis.expire(`${blockchainID}-${serviceNode}-${session.key}-success-hits`, 60 * 60)
+      }
+
       // Increment node errors
       if (result !== 200) {
         // TODO: FIND Better way to check for valid service nodes (public key)
