@@ -170,15 +170,14 @@ export class CherryPicker {
   // { id: { results: { 200: x, 500: y, ... }, weightedSuccessLatency: z }
   async updateServiceQuality(
     blockchain: string,
-    applicationID: string,
     serviceNode: string,
     elapsedTime: number,
     result: number,
-    timeout?: number,
-    pocketSession?: Session
+    session: Session,
+    timeout?: number
   ): Promise<void> {
     // Removed while load balancer cherry picking is off
-    await this._updateServiceQuality(blockchain, serviceNode, elapsedTime, result, 300, timeout, pocketSession)
+    await this._updateServiceQuality(blockchain, serviceNode, elapsedTime, result, 300, session, timeout)
   }
 
   async _updateServiceQuality(
@@ -187,8 +186,8 @@ export class CherryPicker {
     elapsedTime: number,
     result: number,
     ttl: number,
-    timeout?: number,
-    pocketSession?: Session
+    session: Session,
+    timeout?: number
   ): Promise<void> {
     // Fetch and update the relay timing log; the raw list of elapsed relay times
     let relayTimingLog = []
@@ -216,7 +215,12 @@ export class CherryPicker {
     const serviceLog = await this.fetchRawServiceLog(blockchain, id)
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let serviceQuality: { results: any; medianSuccessLatency: string; weightedSuccessLatency: string }
+    let serviceQuality: {
+      results: any
+      medianSuccessLatency: string
+      weightedSuccessLatency: string
+      sessionKey: string
+    }
 
     // Update service quality log for this time period
     if (serviceLog) {
@@ -250,7 +254,7 @@ export class CherryPicker {
           ).toFixed(5)
         }
       } else {
-        await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, pocketSession)
+        await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, session)
       }
     } else {
       // No current logs found for this period
@@ -258,12 +262,13 @@ export class CherryPicker {
 
       if (result !== 200) {
         elapsedTime = 0
-        await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, pocketSession)
+        await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, session)
       }
       serviceQuality = {
         results: results,
         medianSuccessLatency: elapsedTime.toFixed(5),
         weightedSuccessLatency: elapsedTime.toFixed(5),
+        sessionKey: session.key,
       }
     }
 

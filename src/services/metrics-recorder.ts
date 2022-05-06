@@ -171,15 +171,7 @@ export class MetricsRecorder {
 
       // Update service node quality with cherry picker
       if (serviceNode) {
-        await this.cherryPicker.updateServiceQuality(
-          blockchainID,
-          applicationID,
-          serviceNode,
-          elapsedTime,
-          result,
-          timeout,
-          session
-        )
+        await this.cherryPicker.updateServiceQuality(blockchainID, serviceNode, elapsedTime, result, session, timeout)
       }
 
       // Text timestamp
