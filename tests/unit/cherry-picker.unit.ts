@@ -244,6 +244,7 @@ describe('Cherry picker service (unit)', () => {
         medianSuccessLatency: '0.00000',
         weightedSuccessLatency: '0.00000',
         sessionKey: DEFAULT_MOCK_VALUES.SESSION.key,
+        sessionHeight: DEFAULT_MOCK_VALUES.SESSION.header.sessionBlockHeight,
         results: {
           [result]: 1,
         },
