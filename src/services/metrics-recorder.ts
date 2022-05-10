@@ -222,6 +222,9 @@ export class MetricsRecorder {
       if (serviceNode && result === 200) {
         await this.redis.incr(`${blockchainID}-${serviceNode}-${session.key}-success-hits`)
         await this.redis.expire(`${blockchainID}-${serviceNode}-${session.key}-success-hits`, 60 * 60)
+      } else if (serviceNode && result !== 200) {
+        await this.redis.incr(`${blockchainID}-${serviceNode}-${session.key}-failure-hits`)
+        await this.redis.expire(`${blockchainID}-${serviceNode}-${session.key}-failure-hits`, 60 * 60)
       }
 
       // Increment node errors

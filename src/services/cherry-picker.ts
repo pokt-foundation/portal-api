@@ -219,6 +219,7 @@ export class CherryPicker {
       medianSuccessLatency: string
       weightedSuccessLatency: string
       sessionKey: string
+      sessionHeight: string | number
     }
 
     // Update service quality log for this time period
@@ -268,6 +269,7 @@ export class CherryPicker {
         medianSuccessLatency: elapsedTime.toFixed(5),
         weightedSuccessLatency: elapsedTime.toFixed(5),
         sessionKey: session.key,
+        sessionHeight: session.header.sessionBlockHeight,
       }
     }
 
