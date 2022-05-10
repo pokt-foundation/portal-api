@@ -106,7 +106,7 @@ jobs:
             DD_LOGS_ENABLED=false
             DD_APM_ENABLED=true
             DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
-
+            
       - name: Deploy / eu-central-1
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
