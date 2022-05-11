@@ -8,13 +8,15 @@ import { ChainChecker } from '../../src/services/chain-checker'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
-import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
+import { DEFAULT_MOCK_VALUES, DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
 const logger = require('../../src/services/logger')
 
 const CHAINCHECK_PAYLOAD = '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'
 
 const DEFAULT_CHAINCHECK_RESPONSE = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+
+const { POCKET_AAT } = DEFAULT_MOCK_VALUES
 
 describe('Chain checker service (unit)', () => {
   let chainChecker: ChainChecker
@@ -78,7 +80,7 @@ describe('Chain checker service (unit)', () => {
         relayer,
         applicationID: '',
         applicationPublicKey: '',
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -104,7 +106,7 @@ describe('Chain checker service (unit)', () => {
         relayer,
         applicationID: '',
         applicationPublicKey: '',
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -131,7 +133,7 @@ describe('Chain checker service (unit)', () => {
         relayer,
         applicationID: '',
         applicationPublicKey: '',
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -163,7 +165,7 @@ describe('Chain checker service (unit)', () => {
       relayer,
       applicationID: '',
       applicationPublicKey: '',
-      pocketAAT: undefined,
+      pocketAAT: POCKET_AAT,
       session,
     })
 
@@ -194,7 +196,7 @@ describe('Chain checker service (unit)', () => {
         relayer,
         applicationID: '',
         applicationPublicKey: '',
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
         chainID,
       })
@@ -216,7 +218,7 @@ describe('Chain checker service (unit)', () => {
         relayer,
         applicationID: '',
         applicationPublicKey: '',
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
         chainID,
       })
@@ -243,7 +245,7 @@ describe('Chain checker service (unit)', () => {
       relayer,
       applicationID: '',
       applicationPublicKey: '',
-      pocketAAT: undefined,
+      pocketAAT: POCKET_AAT,
       session,
       chainID,
     })
@@ -277,7 +279,7 @@ describe('Chain checker service (unit)', () => {
       relayer,
       applicationID: '',
       applicationPublicKey: '',
-      pocketAAT: undefined,
+      pocketAAT: POCKET_AAT,
       chainID,
       session,
     })

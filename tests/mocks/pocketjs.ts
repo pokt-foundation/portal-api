@@ -83,6 +83,13 @@ export const DEFAULT_MOCK_VALUES = {
     key: 'default-session-key',
     nodes: DEFAULT_NODES,
   } as Session,
+  POCKET_AAT: {
+    version: '0.0.1',
+    clientPublicKey: 'a3edc0d94701ce5e0692754b519ab125c921c704f11439638834894a5ec5fa53',
+    applicationPublicKey: 'b3ec0904fbaa3b61e41502641af78dfa72f93437a760bf5c529cd97444bd101f',
+    applicationSignature:
+      '9fdbafca62edb8672b9c3931fd8d3b8fd00ec17a1983710b4dc646430a7bf9257ba60f6ce20cd6439dd64102c2634055556573193f35d3abee76cee677fb9abc',
+  },
 }
 
 export type MockRelayResponse = string | RelayResponse | Error

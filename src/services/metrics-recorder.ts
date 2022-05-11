@@ -219,12 +219,14 @@ export class MetricsRecorder {
       ]
 
       // Consumed by the cherry picker external api, not used within this project atm
-      if (serviceNode && result === 200) {
-        await this.redis.incr(`${blockchainID}-${serviceNode}-${session.key}-success-hits`)
-        await this.redis.expire(`${blockchainID}-${serviceNode}-${session.key}-success-hits`, 60 * 60)
-      } else if (serviceNode && result !== 200) {
-        await this.redis.incr(`${blockchainID}-${serviceNode}-${session.key}-failure-hits`)
-        await this.redis.expire(`${blockchainID}-${serviceNode}-${session.key}-failure-hits`, 60 * 60)
+      if (serviceNode && serviceNode.length === 64) {
+        if (result === 200) {
+          await this.redis.incr(`{${blockchainID}}-${serviceNode}-${session.key}-success-hits`)
+          await this.redis.expire(`{${blockchainID}}-${serviceNode}-${session.key}-success-hits`, 60 * 60)
+        } else if (result !== 200) {
+          await this.redis.incr(`{${blockchainID}}-${serviceNode}-${session.key}-failure-hits`)
+          await this.redis.expire(`{${blockchainID}}-${serviceNode}-${session.key}-failure-hits`, 60 * 60)
+        }
       }
 
       // Increment node errors
