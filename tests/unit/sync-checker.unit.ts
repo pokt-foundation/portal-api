@@ -8,7 +8,7 @@ import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { SyncChecker } from '../../src/services/sync-checker'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
-import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
+import { DEFAULT_MOCK_VALUES, DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
 const logger = require('../../src/services/logger')
 
@@ -17,6 +17,8 @@ const DEFAULT_SYNC_ALLOWANCE = 5
 const EVM_RELAY_RESPONSE = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c9c" }'
 const SOLANA_RELAY_RESPONSE = '{"jsonrpc":"2.0","result":85377210,"id":1}'
 const POCKET_RELAY_RESPONSE = '{"height":35758}'
+
+const { POCKET_AAT } = DEFAULT_MOCK_VALUES
 
 const blockchains = {
   '0021': {
@@ -296,7 +298,7 @@ describe('Sync checker service (unit)', () => {
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0021']?.altruist,
-          pocketAAT: undefined,
+          pocketAAT: POCKET_AAT,
           session,
         })
       ).nodes
@@ -317,7 +319,7 @@ describe('Sync checker service (unit)', () => {
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0021']?.altruist,
-          pocketAAT: undefined,
+          pocketAAT: POCKET_AAT,
           session,
         })
       ).nodes
@@ -345,7 +347,7 @@ describe('Sync checker service (unit)', () => {
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0006']?.altruist,
-          pocketAAT: undefined,
+          pocketAAT: POCKET_AAT,
           session,
         })
       ).nodes
@@ -366,7 +368,7 @@ describe('Sync checker service (unit)', () => {
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0006']?.altruist,
-          pocketAAT: undefined,
+          pocketAAT: POCKET_AAT,
           session,
         })
       ).nodes
@@ -394,7 +396,7 @@ describe('Sync checker service (unit)', () => {
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0001']?.altruist,
-          pocketAAT: undefined,
+          pocketAAT: POCKET_AAT,
           session,
         })
       ).nodes
@@ -415,7 +417,7 @@ describe('Sync checker service (unit)', () => {
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0001']?.altruist,
-          pocketAAT: undefined,
+          pocketAAT: POCKET_AAT,
           session,
         })
       ).nodes
@@ -441,7 +443,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0006']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -474,7 +476,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -505,7 +507,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -536,7 +538,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -560,7 +562,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -598,7 +600,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -631,7 +633,7 @@ describe('Sync checker service (unit)', () => {
     //     applicationID: '',
     //     applicationPublicKey: '',
     //     blockchainSyncBackup: blockchains['0021']?.altruist,
-    //     pocketAAT: undefined,
+    //     pocketAAT: POCKET_AAT,
     //     session,
     //   })
 
@@ -675,7 +677,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -711,7 +713,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -744,7 +746,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
