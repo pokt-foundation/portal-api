@@ -152,7 +152,7 @@ export class ChainChecker {
       typeID: applicationID,
       blockchainID,
       origin: this.origin,
-      applicationPublicKey,
+      applicationPublicKey: pocketAAT.applicationPublicKey,
       sessionKey,
     })
     await this.cache.set(
