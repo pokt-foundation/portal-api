@@ -55,18 +55,18 @@ const APPLICATION = {
 }
 
 const GIGASTAKE_LEADER_IDS = {
-  app: 'dofwms0cosmasiqqoadldfisdsf',
-  lb: 'hovj6nfix1nr0dknadwawawaqo',
+  app: 'dofwms0cosmasiqqoadldfis',
+  lb: 'hovj6nfix1nr0dknadwawawa',
 }
 const GIGASTAKE_FOLLOWER_IDS = {
-  app: 'asassd9sd0ffjdcusue2fidisss',
-  lb: 'df9f9f9gdklkwotn5o3ixuso3od',
+  app: 'asassd9sd0ffjdcusue2fidi',
+  lb: 'df9f9f9gdklkwotn5o3ixuso',
 }
 
 // Follower app that has restricted gateway settings
 const GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS = {
-  app: '5ifmwb6aq3frpgl9mqolike1xc',
-  lb: '0ab9z1so2g8x29xazaffse8ce',
+  app: '5ifmwb6aq3frpgl9mqolike1',
+  lb: '0ab9z1so2g8x29xazaffse8c',
 }
 
 // Might not actually reflect real-world values
@@ -166,8 +166,8 @@ const BLOCKCHAINS = [
 
 const APPLICATIONS = [
   APPLICATION,
-  { ...APPLICATION, id: 'fg5fdj31d714kdif9g9fe68foth' },
-  { ...APPLICATION, id: 'cienuohoddigue4w232s9rjafgx' },
+  { ...APPLICATION, id: 'fg5fdj31d714kdif9g9fe68f' },
+  { ...APPLICATION, id: 'cienuohoddigue4w232s9rja' },
   { ...APPLICATION, id: GIGASTAKE_LEADER_IDS.app },
   { ...APPLICATION, id: GIGASTAKE_FOLLOWER_IDS.app },
 ]
@@ -210,7 +210,7 @@ const LOAD_BALANCERS = [
     },
   },
   {
-    id: 'd8ejd7834ht9d9sj345gfsoaao',
+    id: 'd8ejd7834ht9d9sj345gfsoa',
     user: 'test@test.com',
     name: 'test load balancer sticky prefix with whitelist',
     requestTimeout: 5000,
@@ -949,7 +949,7 @@ describe('V1 controller (acceptance)', () => {
 
     for (let i = 1; i <= 5; i++) {
       const response = await client
-        .post('/v1/lb/d8ejd7834ht9d9sj345gfsoaao')
+        .post('/v1/lb/d8ejd7834ht9d9sj345gfsoa')
         .send({ method: 'eth_chainId', id: 1, jsonrpc: '2.0' })
         .set('Accept', 'application/json')
         .set('host', 'eth-mainnet-x')
@@ -1002,7 +1002,7 @@ describe('V1 controller (acceptance)', () => {
 
     for (let i = 1; i <= 5; i++) {
       const response = await client
-        .post('/v1/lb/d8ejd7834ht9d9sj345gfsoaao')
+        .post('/v1/lb/d8ejd7834ht9d9sj345gfsoa')
         .send({ method: 'eth_chainId', id: 1, jsonrpc: '2.0' })
         .set('Accept', 'application/json')
         .set('host', 'eth-mainnet-x')

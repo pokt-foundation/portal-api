@@ -157,7 +157,11 @@ export class V1Controller {
           // Modify the host using the stored blockchain name in DB
           this.pocketRelayer.host = redirect.alias
           this.host = redirect.alias
-          return await this.loadBalancerRelay(`${redirect.loadBalancerID}${blockchainPath}`, rawData)
+
+          // convert the slashes to tildes for processing in the loadBalancerRelay route
+          const lbID = `${redirect.loadBalancerID}${blockchainPath}`.replace(/\//gi, '~')
+
+          return await this.loadBalancerRelay(lbID, rawData)
         }
       }
     } catch (e) {
