@@ -302,7 +302,7 @@ export class SyncChecker {
       typeID: applicationID,
       blockchainID,
       origin: this.origin,
-      applicationPublicKey,
+      applicationPublicKey: pocketAAT.applicationPublicKey,
       sessionKey,
     })
     await this.cache.set(
