@@ -7,6 +7,7 @@ import {
 import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
 import axios from 'axios'
 import extractDomain from 'extract-domain'
+import get from 'lodash/get'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { removeNodeFromSession, removeSessionCache, removeChecksCache } from '../utils/cache'
@@ -580,7 +581,7 @@ export class SyncChecker {
 
   // TODO: We might want to support result keys in nested objects
   parseBlockFromPayload(payload: object, syncCheckResultKey: string): number {
-    const rawHeight = payload[`${syncCheckResultKey}`] || '0'
+    const rawHeight: string = get(payload, syncCheckResultKey) || '0'
 
     return blockHexToDecimal(rawHeight)
   }
