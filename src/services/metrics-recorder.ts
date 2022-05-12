@@ -61,7 +61,6 @@ export class MetricsRecorder {
     sticky,
     elapsedTime = 0,
     gigastakeAppID,
-    sessionBlockHeight,
   }: {
     requestID: string
     applicationID: string
@@ -82,7 +81,6 @@ export class MetricsRecorder {
     sticky?: string
     elapsedTime?: number
     gigastakeAppID?: string
-    sessionBlockHeight?: number | BigInt
   }): Promise<void> {
     try {
       const { key: sessionKey } = session || {}
@@ -115,8 +113,6 @@ export class MetricsRecorder {
       }
 
       // Parse value if coming as BigInt
-      sessionBlockHeight = sessionBlockHeight ? parseInt(sessionBlockHeight.toString()) : sessionBlockHeight
-
       if (result === 200) {
         logger.log('info', 'SUCCESS' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
           requestID,
@@ -131,7 +127,8 @@ export class MetricsRecorder {
           blockchainID,
           sessionKey,
           sticky,
-          sessionBlockHeight,
+          sessionBlockHeight: session.header.sessionBlockHeight,
+          blockHeight: session.blockHeight,
         })
       } else if (result === 500) {
         logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -148,7 +145,8 @@ export class MetricsRecorder {
           blockchainID,
           sessionKey,
           sticky,
-          sessionBlockHeight,
+          sessionBlockHeight: session.header.sessionBlockHeight,
+          blockHeight: session.blockHeight,
         })
       } else if (result === 503) {
         logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -165,7 +163,8 @@ export class MetricsRecorder {
           blockchainID,
           sessionKey,
           sticky,
-          sessionBlockHeight,
+          sessionBlockHeight: session.header.sessionBlockHeight,
+          blockHeight: session.blockHeight,
         })
       }
 
