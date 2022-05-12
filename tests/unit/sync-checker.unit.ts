@@ -352,8 +352,7 @@ describe('Sync checker service (unit)', () => {
       expect(cacheSetSpy.callCount).to.be.equal(7)
     })
 
-    // eslint-disable-next-line mocha/no-exclusive-tests
-    it.only('performs a non EVM (not mainnet) sync check with nested fields successfully', async () => {
+    it('performs a non EVM (not mainnet) sync check with nested fields successfully', async () => {
       const nodes = DEFAULT_NODES
 
       const relayer = pocketMock.object()
