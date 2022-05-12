@@ -352,8 +352,7 @@ describe('Sync checker service (unit)', () => {
       expect(cacheSetSpy.callCount).to.be.equal(7)
     })
 
-    // eslint-disable-next-line mocha/no-exclusive-tests
-    it.only('performs a non EVM (not mainnet) sync check with nested fields successfully', async () => {
+    it('performs a non EVM (not mainnet) sync check with nested fields successfully', async () => {
       const nodes = DEFAULT_NODES
 
       const relayer = pocketMock.object()
@@ -562,6 +561,44 @@ describe('Sync checker service (unit)', () => {
       )
 
       expect(expectedLog).to.be.true()
+    })
+
+    it('passes sync check on altruist failure, but network node returning sync', async () => {
+      axiosMock.onPost(blockchains['0021']?.altruist).networkError()
+
+      const nodes = DEFAULT_NODES
+
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
+
+      const { nodes: syncedNodes } = await syncChecker.consensusFilter({
+        nodes,
+        requestID: '1234',
+        blockchainID: blockchains['0021'].hash,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
+        relayer,
+        applicationID: '',
+        applicationPublicKey: '',
+        blockchainSyncBackup: blockchains['0021']?.altruist,
+        pocketAAT: POCKET_AAT,
+        session,
+      })
+
+      expect(syncedNodes).to.have.length(5)
+
+      const expectedAltruistFailureLog = logSpy.calledWith(
+        'info',
+        sinon.match((arg: string) => arg.startsWith('SYNC CHECK ALTRUIST FAILURE'))
+      )
+
+      expect(expectedAltruistFailureLog).to.be.true()
+
+      const expectedSyncCompleteLog = logSpy.calledWith(
+        'info',
+        sinon.match((arg: string) => arg.startsWith('SYNC CHECK COMPLETE'))
+      )
+
+      expect(expectedSyncCompleteLog).to.be.true()
     })
 
     it('passes sync check with altruist behind and >80% nodes ahead', async () => {
