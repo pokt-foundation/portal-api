@@ -563,7 +563,7 @@ describe('Sync checker service (unit)', () => {
       expect(expectedLog).to.be.true()
     })
 
-    it('passes sync check due to altruist and network node return sync', async () => {
+    it('passes sync check on altruist failure, but network node returning sync', async () => {
       axiosMock.onPost(blockchains['0021']?.altruist).networkError()
 
       const nodes = DEFAULT_NODES
