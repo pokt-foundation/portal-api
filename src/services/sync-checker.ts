@@ -168,8 +168,8 @@ export class SyncChecker {
       errorState = true
     }
 
-    let referenceBlockHeight: number
-    let isAltruistTrustworthy: boolean
+    let referenceBlockHeight = 0
+    let isAltruistTrustworthy = false
 
     // Consult altruist for sync source of truth
     const altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
