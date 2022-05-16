@@ -1834,7 +1834,7 @@ describe('Pocket relayer service (unit)', () => {
           const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
 
           mock.relayResponse[rawData] =
-            '{"error":{"code":-32000,"message":"missing trie node a42a0d32d5fe7161720b3bd78559744e542918a04fb36714176f67226066a167 (path )"},"id":2,"jsonrpc":"2.0"}'
+            '{"error":{"code":-32000,"message":"rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial tcp 127.0.0.1:9090: connect: connection refused""},"id":732830328053361800,"jsonrpc":"2.0"}'
 
           const mockAltruistRelayResponse = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
 
