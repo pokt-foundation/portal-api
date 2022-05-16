@@ -1,22 +1,19 @@
 import { parseJSONRPCError } from './parsing'
 
-export const EVM_ERROR_CODES = [
-  // JSON RPC Standard errors
-  '-32',
-  // Execution reverted error
-  '3',
-]
+// some clients use -32000 for both server/user errors, so message match is needed
+const EVM_USER_ERROR_MSGS = ['execution reverted', 'stack underflow', 'cannot be found', 'missing trie node']
 
 // EVM clients rely on JsonRpc standard, so we check for those errors.
-export function isEVMError(response: string): boolean {
-  return isError(response, EVM_ERROR_CODES)
-}
-
-function isError(response: string, errorsToCheck: string[]): boolean {
+export function isUserErrorEVM(response: string): boolean {
   try {
-    const { code } = parseJSONRPCError(response)
+    const { code, message } = parseJSONRPCError(response)
 
-    return errorsToCheck.some((error) => String(code).includes(error))
+    const userError = EVM_USER_ERROR_MSGS.some((err) => message.includes(err))
+
+    // 3 is execution error
+    // -32000 itself can be thrown for what are server errors
+    // all other -32000 are user errors
+    return userError || code === 3 || code < -32000
   } catch {
     return false
   }

@@ -1,4 +1,4 @@
-import jsonrpc, { IParsedObjectError, JsonRpcError } from 'jsonrpc-lite'
+import jsonrpc, { ErrorObject, IParsedObject, JsonRpcError } from 'jsonrpc-lite'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function parseMethod(parsedRawData: Record<string, any>): string {
@@ -45,16 +45,11 @@ export function parseRPCID(parsedRawData: Record<string, any>): number {
 }
 
 export function parseJSONRPCError(response: string): JsonRpcError {
-  const parsedResponse = jsonrpc.parse(response) as IParsedObjectError
-  const isJSONRpcError = isJSONRPCError(parsedResponse)
+  const parsedResponse = jsonrpc.parse(response) as IParsedObject
 
-  if (isJSONRpcError) {
+  if (parsedResponse.type !== 'invalid' && parsedResponse.payload instanceof ErrorObject) {
     return parsedResponse.payload.error
   }
 
   return { code: 0, message: '' }
-}
-
-export function isJSONRPCError(object: unknown): object is IParsedObjectError {
-  return Object.prototype.hasOwnProperty.call(object, 'type') || Object.prototype.hasOwnProperty.call(object, 'payload')
 }
