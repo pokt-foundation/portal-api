@@ -66,10 +66,7 @@ If you ever get an error from the API, it will be in JSON-RPC format. This is ou
 | -32059 | Secret key does not match | Application's secret key doesn't match | non-standard |
 | -32060 | Whitelist origin check failed | Application configuration doesn't allow specified origin | non-standard |
 | -32061 | Whitelist user agent failed | Application configuration doesn't allow specified user-agent | non-standard |
-| -32062 | Try again with a explicit block number | eth_getLogs Limit Error | non-standard |
-| -32063 | Please use an explicit block number instead of 'latest' | eth_getLogs Limit Error | non-standard |
-| -32064 | You cannot query logs for more than X amount of blocks | eth_getLogs Limit Error | non-standard |
-| -32065 | Node returned an invalid response | The node serving your request returned an invalid response | non-standard |
+| -32064 | You cannot query logs for more than X amount of blocks | eth_getLogs Restriction Error | non-standard |
 | -32066 | The request body is not proper JSON | The request body couldn't be parsed | non-standard |
 | -32067 | GET requests are not supported. Use POST instead | Attempt to send a relay through a GET request | non-standard |
 

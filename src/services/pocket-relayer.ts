@@ -1,4 +1,4 @@
-import { EvidenceSealedError, Relayer } from '@pokt-foundation/pocketjs-relayer'
+import { EvidenceSealedError, InvalidBlockHeightError, Relayer } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT, HTTPMethod } from '@pokt-foundation/pocketjs-types'
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
@@ -10,7 +10,7 @@ import { ChainChecker, ChainIDFilterOptions } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
-import { removeNodeFromSession } from '../utils/cache'
+import { removeNodeFromSession, removeSessionCache } from '../utils/cache'
 import { SESSION_TIMEOUT, DEFAULT_ALTRUIST_TIMEOUT } from '../utils/constants'
 import {
   checkEnforcementJSON,
@@ -20,12 +20,12 @@ import {
   checkSecretKey,
   SecretKeyDetails,
 } from '../utils/enforcements'
+import { enforceEVMRestrictions } from '../utils/evm/restrictions'
 import { getApplicationPublicKey } from '../utils/helpers'
 import { parseJSONRPCError, parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
 import { CheckResult, RelayResponse, SendRelayOptions } from '../utils/types'
 import { Cache } from './cache'
-import { enforceEVMLimits } from './limiter'
 import { NodeSticker } from './node-sticker'
 
 const logger = require('../services/logger')
@@ -172,6 +172,9 @@ export class PocketRelayer {
 
     relayPath = !relayPath && blockchainPath ? blockchainPath : relayPath
 
+    // Add relay path to URL
+    const altruistURL = !relayPath ? blockchainAltruist : `${blockchainAltruist}${relayPath}`
+
     const { preferredNodeAddress } = stickinessOptions
     const nodeSticker = new NodeSticker(
       stickinessOptions,
@@ -190,27 +193,32 @@ export class PocketRelayer {
       logLimitBlocks = blockchainLogLimitBlocks
     }
 
-    const data = JSON.stringify(parsedRawData)
-    const limitation = await this.enforceLimits(
+    const method = parseMethod(parsedRawData)
+
+    const restriction = await this.enforceRestrictions(
+      application,
       parsedRawData,
       blockchainID,
       requestID,
+      rpcID,
       logLimitBlocks,
-      blockchainAltruist
+      altruistURL
     )
 
-    if (limitation instanceof ErrorObject) {
-      logger.log('error', `LIMITATION ERROR ${blockchainID} req: ${data}`, {
+    const data = JSON.stringify(parsedRawData)
+
+    if (restriction instanceof ErrorObject) {
+      logger.log('error', `RESTRICTION ERROR ${blockchainID} req: ${data}`, {
         blockchainID,
         requestID,
         relayType: 'APP',
-        error: `${parsedRawData.method} method limitations exceeded.`,
+        error: `${restriction.error.message}`,
         typeID: application.id,
         origin: this.origin,
       })
-      return limitation
+      return restriction
     }
-    const method = parseMethod(parsedRawData)
+
     const fallbackAvailable = blockchainAltruist !== undefined ? true : false
 
     try {
@@ -266,10 +274,7 @@ export class PocketRelayer {
             // If the parsing goes wrong, we get a response with 'invalid' type and the following message.
             // We could get 'invalid' and not a parse error, hence we check both.
             if (parsedRelayResponse.type === 'invalid' && parsedRelayResponse.payload.message === 'Parse error') {
-              throw new ErrorObject(
-                rpcID,
-                new jsonrpc.JsonRpcError('Service Node returned an invalid response', -32065)
-              )
+              throw new Error('Service Node returned an invalid response')
             }
             // Check for user error to bubble these up to the API
             let userErrorMessage = ''
@@ -387,6 +392,7 @@ export class PocketRelayer {
 
       // Any other error (e.g parsing errors) that should not be propagated as response
       logger.log('error', 'POCKET RELAYER ERROR: ' + e, {
+        blockchainID,
         requestID,
         relayType: 'APP',
         typeID: application.id,
@@ -400,9 +406,6 @@ export class PocketRelayer {
     if (fallbackAvailable) {
       const relayStart = process.hrtime()
       let axiosConfig: AxiosRequestConfig = {}
-
-      // Add relay path to URL
-      const altruistURL = (relayPath = !relayPath ? blockchainAltruist : `${blockchainAltruist}${relayPath}`)
 
       // Remove user/pass from the altruist URL
       const redactedAltruistURL = String(blockchainAltruist)?.replace(/[\w]*:\/\/[^\/]*@/g, '')
@@ -827,7 +830,7 @@ export class PocketRelayer {
     }
 
     if (!node) {
-      node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID, key)
+      node = await this.cherryPicker.cherryPickNode(application, nodes, blockchainID, requestID, session.key)
     }
 
     if (this.checkDebug) {
@@ -895,6 +898,9 @@ export class PocketRelayer {
       if (relay instanceof EvidenceSealedError) {
         await removeNodeFromSession(this.cache, session, node.publicKey, true, requestID, blockchainID)
       }
+      if (relay instanceof InvalidBlockHeightError) {
+        await removeSessionCache(this.cache, pocketAAT.applicationPublicKey, blockchainID)
+      }
       return new RelayError(relay.message, 500, node?.publicKey)
       // ConsensusNode
     } else {
@@ -903,20 +909,51 @@ export class PocketRelayer {
     }
   }
 
-  async enforceLimits(
+  async enforceRestrictions(
+    application: Applications,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     parsedRawData: Record<string, any>,
     blockchainID: string,
     requestID: string,
+    rpcID: number,
     logLimitBlocks: number,
     altruist: string
   ): Promise<void | ErrorObject> {
-    let limiterResponse: Promise<void | ErrorObject>
+    let response: Promise<void | ErrorObject>
 
-    if (blockchainID === '0021') {
-      limiterResponse = enforceEVMLimits(parsedRawData, blockchainID, requestID, logLimitBlocks, altruist)
+    // Is it a bundled transaction?
+    if (parsedRawData instanceof Array) {
+      for (const rawData of parsedRawData) {
+        response = enforceEVMRestrictions(
+          application,
+          rawData,
+          blockchainID,
+          requestID,
+          rpcID,
+          logLimitBlocks,
+          altruist
+        )
+
+        // If any of the bundled tx triggers a restriction, return
+        if (response instanceof ErrorObject) {
+          return response
+        }
+      }
+    } else {
+      // Non-bundled tx
+      response = enforceEVMRestrictions(
+        application,
+        parsedRawData,
+        blockchainID,
+        requestID,
+        rpcID,
+        logLimitBlocks,
+        altruist
+      )
     }
 
-    return limiterResponse
+    // TODO: Non-EVM restrictions
+
+    return response
   }
 }

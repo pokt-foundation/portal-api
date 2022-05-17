@@ -8,15 +8,18 @@ import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { SyncChecker } from '../../src/services/sync-checker'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
-import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
+import { DEFAULT_MOCK_VALUES, DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 
 const logger = require('../../src/services/logger')
 
 const DEFAULT_SYNC_ALLOWANCE = 5
 
 const EVM_RELAY_RESPONSE = '{ "id": 1, "jsonrpc": "2.0", "result": "0x10a0c9c" }'
+const NON_EVM_RELAY_RESPONSE = '{ "id": 1, "jsonrpc": "2.0", "result": {"value": 100} }'
 const SOLANA_RELAY_RESPONSE = '{"jsonrpc":"2.0","result":85377210,"id":1}'
 const POCKET_RELAY_RESPONSE = '{"height":35758}'
+
+const { POCKET_AAT } = DEFAULT_MOCK_VALUES
 
 const blockchains = {
   '0021': {
@@ -77,6 +80,25 @@ const blockchains = {
     },
     altruist: 'https://pocket:pass@backups.example.org:18081',
   },
+  '0099': {
+    hash: '0099',
+    ticker: 'NOT_POKT',
+    networkID: 'not_mainnet',
+    network: 'POKT-mainnet',
+    description: 'Not Pocket Network Mainnet',
+    index: 1,
+    blockchain: 'not_mainnet',
+    blockchainAliases: ['not_mainnet'],
+    active: true,
+    enforceResult: 'JSON',
+    syncCheckOptions: {
+      body: '{"jsonrpc": "2.0", "id": 1, "method": "blockNumber"}',
+      resultKey: 'result.value',
+      path: '',
+      allowance: 2,
+    },
+    altruist: 'https://pocket:pass@backups.example.org:18081',
+  },
 }
 
 describe('Sync checker service (unit)', () => {
@@ -118,6 +140,7 @@ describe('Sync checker service (unit)', () => {
     pocketMock.relayResponse[blockchains['0021'].syncCheckOptions.body] = EVM_RELAY_RESPONSE
     pocketMock.relayResponse[blockchains['0006'].syncCheckOptions.body] = SOLANA_RELAY_RESPONSE
     pocketMock.relayResponse[blockchains['0001'].syncCheckOptions.body] = POCKET_RELAY_RESPONSE
+    pocketMock.relayResponse[blockchains['0099'].syncCheckOptions.body] = NON_EVM_RELAY_RESPONSE
 
     //// Add responses to axios mock
     axiosMock
@@ -129,6 +152,9 @@ describe('Sync checker service (unit)', () => {
     axiosMock
       .onPost(blockchains['0001']?.altruist.concat(blockchains['0001'].syncCheckOptions.path))
       .reply(200, POCKET_RELAY_RESPONSE)
+    axiosMock
+      .onPost(blockchains['0099']?.altruist.concat(blockchains['0099'].syncCheckOptions.path))
+      .reply(200, NON_EVM_RELAY_RESPONSE)
 
     await cache.flushall()
   })
@@ -296,7 +322,7 @@ describe('Sync checker service (unit)', () => {
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0021']?.altruist,
-          pocketAAT: undefined,
+          pocketAAT: POCKET_AAT,
           session,
         })
       ).nodes
@@ -317,7 +343,56 @@ describe('Sync checker service (unit)', () => {
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0021']?.altruist,
-          pocketAAT: undefined,
+          pocketAAT: POCKET_AAT,
+          session,
+        })
+      ).nodes
+
+      expect(cacheGetSpy.callCount).to.be.equal(3)
+      expect(cacheSetSpy.callCount).to.be.equal(7)
+    })
+
+    it('performs a non EVM (not mainnet) sync check with nested fields successfully', async () => {
+      const nodes = DEFAULT_NODES
+
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
+
+      const cacheGetSpy = sinon.spy(cache, 'get')
+      const cacheSetSpy = sinon.spy(cache, 'set')
+
+      let syncedNodes = (
+        await syncChecker.consensusFilter({
+          nodes,
+          requestID: '1234',
+          blockchainID: blockchains['0099'].hash,
+          syncCheckOptions: blockchains['0099'].syncCheckOptions,
+          relayer,
+          applicationID: '',
+          applicationPublicKey: '',
+          blockchainSyncBackup: blockchains['0099']?.altruist,
+          pocketAAT: POCKET_AAT,
+          session,
+        })
+      ).nodes
+
+      expect(syncedNodes).to.have.length(5)
+
+      expect(cacheGetSpy.callCount).to.be.equal(2)
+      expect(cacheSetSpy.callCount).to.be.equal(7)
+
+      // Subsequent calls should retrieve results from cache instead
+      syncedNodes = (
+        await syncChecker.consensusFilter({
+          nodes,
+          requestID: '1234',
+          blockchainID: blockchains['0099'].hash,
+          syncCheckOptions: blockchains['0099'].syncCheckOptions,
+          relayer,
+          applicationID: '',
+          applicationPublicKey: '',
+          blockchainSyncBackup: blockchains['0099']?.altruist,
+          pocketAAT: POCKET_AAT,
           session,
         })
       ).nodes
@@ -345,7 +420,7 @@ describe('Sync checker service (unit)', () => {
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0006']?.altruist,
-          pocketAAT: undefined,
+          pocketAAT: POCKET_AAT,
           session,
         })
       ).nodes
@@ -366,7 +441,7 @@ describe('Sync checker service (unit)', () => {
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0006']?.altruist,
-          pocketAAT: undefined,
+          pocketAAT: POCKET_AAT,
           session,
         })
       ).nodes
@@ -394,7 +469,7 @@ describe('Sync checker service (unit)', () => {
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0001']?.altruist,
-          pocketAAT: undefined,
+          pocketAAT: POCKET_AAT,
           session,
         })
       ).nodes
@@ -415,7 +490,7 @@ describe('Sync checker service (unit)', () => {
           applicationID: '',
           applicationPublicKey: '',
           blockchainSyncBackup: blockchains['0001']?.altruist,
-          pocketAAT: undefined,
+          pocketAAT: POCKET_AAT,
           session,
         })
       ).nodes
@@ -441,7 +516,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0006']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -474,7 +549,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -486,6 +561,44 @@ describe('Sync checker service (unit)', () => {
       )
 
       expect(expectedLog).to.be.true()
+    })
+
+    it('passes sync check on altruist failure, but network node returning sync', async () => {
+      axiosMock.onPost(blockchains['0021']?.altruist).networkError()
+
+      const nodes = DEFAULT_NODES
+
+      const relayer = pocketMock.object()
+      const session = await relayer.getNewSession(undefined)
+
+      const { nodes: syncedNodes } = await syncChecker.consensusFilter({
+        nodes,
+        requestID: '1234',
+        blockchainID: blockchains['0021'].hash,
+        syncCheckOptions: blockchains['0021'].syncCheckOptions,
+        relayer,
+        applicationID: '',
+        applicationPublicKey: '',
+        blockchainSyncBackup: blockchains['0021']?.altruist,
+        pocketAAT: POCKET_AAT,
+        session,
+      })
+
+      expect(syncedNodes).to.have.length(5)
+
+      const expectedAltruistFailureLog = logSpy.calledWith(
+        'info',
+        sinon.match((arg: string) => arg.startsWith('SYNC CHECK ALTRUIST FAILURE'))
+      )
+
+      expect(expectedAltruistFailureLog).to.be.true()
+
+      const expectedSyncCompleteLog = logSpy.calledWith(
+        'info',
+        sinon.match((arg: string) => arg.startsWith('SYNC CHECK COMPLETE'))
+      )
+
+      expect(expectedSyncCompleteLog).to.be.true()
     })
 
     it('passes sync check with altruist behind and >80% nodes ahead', async () => {
@@ -505,7 +618,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -536,7 +649,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -560,7 +673,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -598,7 +711,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -631,7 +744,7 @@ describe('Sync checker service (unit)', () => {
     //     applicationID: '',
     //     applicationPublicKey: '',
     //     blockchainSyncBackup: blockchains['0021']?.altruist,
-    //     pocketAAT: undefined,
+    //     pocketAAT: POCKET_AAT,
     //     session,
     //   })
 
@@ -675,7 +788,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -711,7 +824,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 
@@ -744,7 +857,7 @@ describe('Sync checker service (unit)', () => {
         applicationID: '',
         applicationPublicKey: '',
         blockchainSyncBackup: blockchains['0021']?.altruist,
-        pocketAAT: undefined,
+        pocketAAT: POCKET_AAT,
         session,
       })
 

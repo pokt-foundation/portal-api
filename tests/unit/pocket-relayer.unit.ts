@@ -1105,57 +1105,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })) as ErrorObject
 
-      expect(relayResponse.error.message).to.match(/Try again with a explicit block number/)
-    })
-
-    it('should return an error if `eth_getLogs` call uses "latest" on block params (no altruist)', async () => {
-      const mock = new PocketMock()
-
-      mock.fail = true
-
-      const relayer = mock.object()
-
-      const poktRelayer = new PocketRelayer({
-        host: 'eth-mainnet',
-        origin: '',
-        userAgent: '',
-        ipAddress: '',
-        relayer,
-        cherryPicker,
-        metricsRecorder,
-        syncChecker,
-        chainChecker,
-        cache,
-        databaseEncryptionKey: DB_ENCRYPTION_KEY,
-        secretKey: '',
-        relayRetries: 0,
-        blockchainsRepository: blockchainRepository,
-        checkDebug: true,
-        aatPlan: AatPlans.FREEMIUM,
-        defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
-        dispatchers: DUMMY_ENV.DISPATCH_URL,
-      })
-
-      rawData =
-        '{"method":"eth_getLogs","params":[{"fromBlock":"latest","toBlock":"latest","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
-
-      const relayResponse = (await poktRelayer.sendRelay({
-        rawData,
-        relayPath: '',
-        httpMethod: HTTPMethod.POST,
-        application: APPLICATION as unknown as Applications,
-        requestID: '1234',
-        requestTimeOut: undefined,
-        overallTimeOut: undefined,
-        stickinessOptions: {
-          stickiness: false,
-          duration: 0,
-          preferredNodeAddress: '',
-        },
-        relayRetries: 0,
-      })) as ErrorObject
-
-      expect(relayResponse.error.message).to.match(/Try again with a explicit block number/)
+      expect(relayResponse.error.message).to.match(/You cannot query logs for more than/)
     })
 
     it('should succeed if `eth_getLogs` call is within permitted blocks range (no altruist)', async () => {
@@ -1208,8 +1158,7 @@ describe('Pocket relayer service (unit)', () => {
         relayRetries: 0,
       })) as ErrorObject
 
-      expect(relayResponse.error.message).to.match(/Try again with a explicit block number/)
-      // expect(relayResponse).to.be.deepEqual(JSON.parse(mock.relayResponse[rawData] as string))
+      expect(relayResponse).to.be.deepEqual(JSON.parse(mock.relayResponse[rawData] as string))
     })
 
     it('relay requesting a preferred node should use that one if available with rpcID', async () => {
@@ -1559,7 +1508,7 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     describe('sendRelay function (with altruists)', () => {
-      const blockNumberData = { jsonrpc: '2.0', id: 1, method: 'eth_blockNumber', params: [] }
+      const blockNumberData = { jsonrpc: '2.0', id: 1, method: 'eth_blockNumber' }
 
       beforeEach(() => {
         axiosMock.reset()
@@ -1874,6 +1823,134 @@ describe('Pocket relayer service (unit)', () => {
         })) as ErrorObject
 
         expect(relayResponse.error.message).to.match(/method cannot be served over HTTPS/)
+      })
+
+      describe('Relays with EVM errors', () => {
+        it('should succeed with a fallback when relay response returns a valid EVM server error (not user)', async () => {
+          logSpy = sinon.spy(logger, 'log')
+
+          const mock = new PocketMock()
+
+          const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+
+          mock.relayResponse[rawData] =
+            '{"error":{"code":-32000,"message":"rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial tcp 127.0.0.1:9090: connect: connection refused""},"id":732830328053361800,"jsonrpc":"2.0"}'
+
+          const mockAltruistRelayResponse = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+
+          axiosMock.onPost(BLOCKCHAINS['0040']?.altruist, JSON.parse(rawData)).reply(200, mockAltruistRelayResponse)
+
+          const relayer = mock.object()
+
+          const poktRelayer = new PocketRelayer({
+            host: 'eth-mainnet',
+            origin: '',
+            userAgent: '',
+            ipAddress: '',
+            relayer,
+            cherryPicker,
+            metricsRecorder,
+            syncChecker: mockSyncChecker,
+            chainChecker: mockChainChecker,
+            cache,
+            databaseEncryptionKey: DB_ENCRYPTION_KEY,
+            secretKey: '',
+            relayRetries: 0,
+            blockchainsRepository: blockchainRepository,
+            checkDebug: true,
+            aatPlan: AatPlans.FREEMIUM,
+            defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+            dispatchers: DUMMY_ENV.DISPATCH_URL,
+          })
+
+          const relayResponse = await poktRelayer.sendRelay({
+            rawData,
+            relayPath: '',
+            httpMethod: HTTPMethod.POST,
+            application: APPLICATION as unknown as Applications,
+            requestID: '1234',
+            requestTimeOut: undefined,
+            overallTimeOut: undefined,
+            stickinessOptions: {
+              stickiness: false,
+              duration: 0,
+              preferredNodeAddress: '',
+            },
+            relayRetries: 0,
+          })
+
+          const expectedAltruistSuccessLog = logSpy.calledWith(
+            'info',
+            sinon.match((arg: string) => arg.includes('SUCCESS FALLBACK RELAYING'))
+          )
+
+          expect(expectedAltruistSuccessLog).to.be.true()
+
+          const expected = JSON.parse(mockAltruistRelayResponse)
+
+          expect(relayResponse).to.be.deepEqual(expected)
+        })
+
+        it('should succeed when relay response returns a valid EVM user error', async () => {
+          logSpy = sinon.spy(logger, 'log')
+
+          const mock = new PocketMock()
+
+          const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+
+          mock.relayResponse[rawData] =
+            '{"error":{"code":-32000,"message":"execution reverted"},"id":1,"jsonrpc":"2.0"}'
+
+          const relayer = mock.object()
+
+          const poktRelayer = new PocketRelayer({
+            host: 'eth-mainnet',
+            origin: '',
+            userAgent: '',
+            ipAddress: '',
+            relayer,
+            cherryPicker,
+            metricsRecorder,
+            syncChecker: mockSyncChecker,
+            chainChecker: mockChainChecker,
+            cache,
+            databaseEncryptionKey: DB_ENCRYPTION_KEY,
+            secretKey: '',
+            relayRetries: 0,
+            blockchainsRepository: blockchainRepository,
+            checkDebug: true,
+            aatPlan: AatPlans.FREEMIUM,
+            defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+            dispatchers: DUMMY_ENV.DISPATCH_URL,
+          })
+
+          const relayResponse = await poktRelayer.sendRelay({
+            rawData,
+            relayPath: '',
+            httpMethod: HTTPMethod.POST,
+            application: APPLICATION as unknown as Applications,
+            requestID: '1234',
+            requestTimeOut: undefined,
+            overallTimeOut: undefined,
+            stickinessOptions: {
+              stickiness: false,
+              duration: 0,
+              preferredNodeAddress: '',
+            },
+            relayRetries: 0,
+          })
+
+          const expectedSuccessLog = logSpy.calledWith(
+            'info',
+            sinon.match((arg: string) => arg.includes('SUCCESS RELAYING'))
+          )
+
+          expect(expectedSuccessLog).to.be.true()
+
+          const expected = JSON.parse(mock.relayResponse[rawData] as string)
+
+          expect(relayResponse).to.be.deepEqual(expected)
+        })
       })
     })
   })

@@ -33,8 +33,11 @@ const APPLICATION = {
   gatewaySettings: {
     secretKey: 'y1lhuxbpo7u3hvxzqvesbx7jcjdczw3j',
     secretKeyRequired: false,
+    whitelistBlockchains: [],
     whitelistOrigins: [],
     whitelistUserAgents: [],
+    whitelistContracts: [],
+    whitelistMethods: [],
   },
   freeTierAAT: {
     version: '0.0.1',
@@ -52,18 +55,18 @@ const APPLICATION = {
 }
 
 const GIGASTAKE_LEADER_IDS = {
-  app: 'dofwms0cosmasiqqoadldfisdsf',
-  lb: 'hovj6nfix1nr0dknadwawawaqo',
+  app: 'dofwms0cosmasiqqoadldfis',
+  lb: 'hovj6nfix1nr0dknadwawawa',
 }
 const GIGASTAKE_FOLLOWER_IDS = {
-  app: 'asassd9sd0ffjdcusue2fidisss',
-  lb: 'df9f9f9gdklkwotn5o3ixuso3od',
+  app: 'asassd9sd0ffjdcusue2fidi',
+  lb: 'df9f9f9gdklkwotn5o3ixuso',
 }
 
 // Follower app that has restricted gateway settings
 const GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS = {
-  app: '5ifmwb6aq3frpgl9mqolike1xc',
-  lb: '0ab9z1so2g8x29xazaffse8ce',
+  app: '5ifmwb6aq3frpgl9mqolike1',
+  lb: '0ab9z1so2g8x29xazaffse8c',
 }
 
 // Might not actually reflect real-world values
@@ -163,8 +166,8 @@ const BLOCKCHAINS = [
 
 const APPLICATIONS = [
   APPLICATION,
-  { ...APPLICATION, id: 'fg5fdj31d714kdif9g9fe68foth' },
-  { ...APPLICATION, id: 'cienuohoddigue4w232s9rjafgx' },
+  { ...APPLICATION, id: 'fg5fdj31d714kdif9g9fe68f' },
+  { ...APPLICATION, id: 'cienuohoddigue4w232s9rja' },
   { ...APPLICATION, id: GIGASTAKE_LEADER_IDS.app },
   { ...APPLICATION, id: GIGASTAKE_FOLLOWER_IDS.app },
 ]
@@ -207,7 +210,7 @@ const LOAD_BALANCERS = [
     },
   },
   {
-    id: 'd8ejd7834ht9d9sj345gfsoaao',
+    id: 'd8ejd7834ht9d9sj345gfsoa',
     user: 'test@test.com',
     name: 'test load balancer sticky prefix with whitelist',
     requestTimeout: 5000,
@@ -416,8 +419,11 @@ describe('V1 controller (acceptance)', () => {
     appWithSecurity.gatewaySettings = {
       secretKey: encryptedKey,
       secretKeyRequired: true,
+      whitelistBlockchains: [],
       whitelistOrigins: [],
       whitelistUserAgents: [],
+      whitelistContracts: [],
+      whitelistMethods: [],
     }
 
     const dbApp = await applicationsRepository.create(appWithSecurity)
@@ -445,8 +451,11 @@ describe('V1 controller (acceptance)', () => {
     appWithSecurity.gatewaySettings = {
       secretKey: '',
       secretKeyRequired: false,
+      whitelistBlockchains: [],
       whitelistOrigins: ['unlocalhost'],
       whitelistUserAgents: [],
+      whitelistContracts: [],
+      whitelistMethods: [],
     }
 
     const dbApp = await applicationsRepository.create(appWithSecurity)
@@ -474,8 +483,11 @@ describe('V1 controller (acceptance)', () => {
     appWithSecurity.gatewaySettings = {
       secretKey: 'securekey',
       secretKeyRequired: true,
+      whitelistBlockchains: [],
       whitelistOrigins: [],
       whitelistUserAgents: [],
+      whitelistContracts: [],
+      whitelistMethods: [],
     }
 
     await applicationsRepository.create(appWithSecurity)
@@ -502,8 +514,11 @@ describe('V1 controller (acceptance)', () => {
     appWithSecurity.gatewaySettings = {
       secretKey: '',
       secretKeyRequired: false,
+      whitelistBlockchains: [],
       whitelistOrigins: ['https://pokt.network'],
       whitelistUserAgents: [],
+      whitelistContracts: [],
+      whitelistMethods: [],
     }
 
     await applicationsRepository.create(appWithSecurity)
@@ -531,8 +546,11 @@ describe('V1 controller (acceptance)', () => {
     appWithSecurity.gatewaySettings = {
       secretKey: '',
       secretKeyRequired: false,
+      whitelistBlockchains: [],
       whitelistOrigins: [],
       whitelistUserAgents: ['Mozilla/5.0'],
+      whitelistContracts: [],
+      whitelistMethods: [],
     }
 
     await applicationsRepository.create(appWithSecurity)
@@ -565,8 +583,11 @@ describe('V1 controller (acceptance)', () => {
     appWithSecurity.gatewaySettings = {
       secretKey: encryptedKey,
       secretKeyRequired: true,
+      whitelistBlockchains: [],
       whitelistOrigins: ['unlocalhost'],
       whitelistUserAgents: ['Mozilla/5.0'],
+      whitelistContracts: [],
+      whitelistMethods: [],
     }
 
     await applicationsRepository.create(appWithSecurity)
@@ -928,7 +949,7 @@ describe('V1 controller (acceptance)', () => {
 
     for (let i = 1; i <= 5; i++) {
       const response = await client
-        .post('/v1/lb/d8ejd7834ht9d9sj345gfsoaao')
+        .post('/v1/lb/d8ejd7834ht9d9sj345gfsoa')
         .send({ method: 'eth_chainId', id: 1, jsonrpc: '2.0' })
         .set('Accept', 'application/json')
         .set('host', 'eth-mainnet-x')
@@ -981,7 +1002,7 @@ describe('V1 controller (acceptance)', () => {
 
     for (let i = 1; i <= 5; i++) {
       const response = await client
-        .post('/v1/lb/d8ejd7834ht9d9sj345gfsoaao')
+        .post('/v1/lb/d8ejd7834ht9d9sj345gfsoa')
         .send({ method: 'eth_chainId', id: 1, jsonrpc: '2.0' })
         .set('Accept', 'application/json')
         .set('host', 'eth-mainnet-x')
@@ -1058,5 +1079,725 @@ describe('V1 controller (acceptance)', () => {
     )
 
     expect(gigastakeAppID).to.be.true()
+  })
+
+  describe('Contract/method whitelisting', () => {
+    it('fails on request with restricted contract whitelist (eth_call)', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: [],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          method: 'eth_call',
+          params: [{ to: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f', data: '0x0902f1ac' }, 'latest'],
+          id: 42,
+          jsonrpc: '2.0',
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.property('error')
+      expect(response.body.error.message).to.startWith('Restricted endpoint: contract address not allowed')
+    })
+
+    it('success on request with restricted contract whitelist (eth_call)', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: [],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+      relayResponses[
+        '{"method":"eth_call","params":[{"to":"0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9","data":"0x0902f1ac"},"latest"],"id":42,"jsonrpc":"2.0"}'
+      ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
+
+      pocketMock.relayResponse = relayResponses
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          method: 'eth_call',
+          params: [{ to: '0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9', data: '0x0902f1ac' }, 'latest'],
+          id: 42,
+          jsonrpc: '2.0',
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    })
+
+    it('fails on request with restricted contract whitelist (eth_sendRawTransaction)', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: [],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          id: 6695493563292,
+          jsonrpc: '2.0',
+          method: 'eth_sendRawTransaction',
+          params: [
+            '0xf901718219528506fc23ac0083025b939424ad62502d1c652cc7684081169d04896ac20f3080b9010438ed173900000000000000000000000000000000000000000000000027b41fcc7f854c0800000000000000000000000000000000000000000000000000000000012b6e3900000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000eadce7a42f0a03a12ab599e4abe199abbe4f75eb00000000000000000000000000000000000000000000000000000000623d6853000000000000000000000000000000000000000000000000000000000000000200000000000000000000000072cb10c6bfa5624dd07ef608027e366bd690048f000000000000000000000000985458e523db3d53125813ed68c274899e9dfab484c6ac98a3a0d558b81a80a3473dffea9784b8591c0ad8da8269dac39d94d88a5b25f3a66893a06bf8a29de0bdacd899a200b0b6226f3e781ec9887514b69deeb5af06b28ffd29',
+          ],
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.property('error')
+      expect(response.body.error.message).to.startWith('Restricted endpoint: contract address not allowed')
+    })
+
+    it('success on request with restricted contract whitelist (unsupported method)', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: [],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x24ad62502d1c652cc7684081169d04896ac20f30'] }],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+      relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+        '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+
+      pocketMock.relayResponse = relayResponses
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    })
+
+    it('success on request with restricted contract whitelist (eth_sendRawTransaction)', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: [],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x24ad62502d1c652cc7684081169d04896ac20f30'] }],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+      relayResponses[
+        '{"id":6695493563292,"jsonrpc":"2.0","method":"eth_sendRawTransaction","params":["0xf901718219528506fc23ac0083025b939424ad62502d1c652cc7684081169d04896ac20f3080b9010438ed173900000000000000000000000000000000000000000000000027b41fcc7f854c0800000000000000000000000000000000000000000000000000000000012b6e3900000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000eadce7a42f0a03a12ab599e4abe199abbe4f75eb00000000000000000000000000000000000000000000000000000000623d6853000000000000000000000000000000000000000000000000000000000000000200000000000000000000000072cb10c6bfa5624dd07ef608027e366bd690048f000000000000000000000000985458e523db3d53125813ed68c274899e9dfab484c6ac98a3a0d558b81a80a3473dffea9784b8591c0ad8da8269dac39d94d88a5b25f3a66893a06bf8a29de0bdacd899a200b0b6226f3e781ec9887514b69deeb5af06b28ffd29"]}'
+      ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
+
+      pocketMock.relayResponse = relayResponses
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          id: 6695493563292,
+          jsonrpc: '2.0',
+          method: 'eth_sendRawTransaction',
+          params: [
+            '0xf901718219528506fc23ac0083025b939424ad62502d1c652cc7684081169d04896ac20f3080b9010438ed173900000000000000000000000000000000000000000000000027b41fcc7f854c0800000000000000000000000000000000000000000000000000000000012b6e3900000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000eadce7a42f0a03a12ab599e4abe199abbe4f75eb00000000000000000000000000000000000000000000000000000000623d6853000000000000000000000000000000000000000000000000000000000000000200000000000000000000000072cb10c6bfa5624dd07ef608027e366bd690048f000000000000000000000000985458e523db3d53125813ed68c274899e9dfab484c6ac98a3a0d558b81a80a3473dffea9784b8591c0ad8da8269dac39d94d88a5b25f3a66893a06bf8a29de0bdacd899a200b0b6226f3e781ec9887514b69deeb5af06b28ffd29',
+          ],
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    })
+
+    it('fails on request with restricted contract whitelist (eth_getLogs)', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: [],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          method: 'eth_getLogs',
+          params: [
+            { fromBlock: '0x9c5bb6', toBlock: '0x9c5bb6', address: '0xdef1c0ded9bec7f1a1670819833240f027b25eff' },
+          ],
+          id: 1,
+          jsonrpc: '2.0',
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.property('error')
+      expect(response.body.error.message).to.startWith('Restricted endpoint: contract address not allowed')
+    })
+
+    it('success on request with restricted contract whitelist (eth_getLogs)', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: [],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0xdef1c0ded9bec7f1a1670819833240f027b25eff'] }],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+      relayResponses[
+        '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","toBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
+      ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          method: 'eth_getLogs',
+          params: [
+            { fromBlock: '0x9c5bb6', toBlock: '0x9c5bb6', address: '0xdef1c0ded9bec7f1a1670819833240f027b25eff' },
+          ],
+          id: 1,
+          jsonrpc: '2.0',
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    })
+
+    it('fails on request with restricted contract whitelist (eth_getCode, eth_getBalance, eth_getStorageAt, eth_getTransactionCount)', async () => {
+      // Test includes the scope of the 4 methods, because all of them use the first param for contract address.
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: [],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          jsonrpc: '2.0',
+          method: 'eth_getStorageAt',
+          params: ['0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9', '0x38', '0xdc8c48'],
+          id: 165,
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.property('error')
+      expect(response.body.error.message).to.startWith('Restricted endpoint: contract address not allowed')
+    })
+
+    it('success on request with restricted contract whitelist (eth_getCode, eth_getBalance, eth_getStorageAt, eth_getTransactionCount)', async () => {
+      // Test includes the scope of the 4 methods, because all of them use the first param for contract address.
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: [],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9'] }],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+      relayResponses[
+        '{"jsonrpc":"2.0","method":"eth_getStorageAt","params":["0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9","0x38","0xdc8c48"],"id":165}'
+      ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          jsonrpc: '2.0',
+          method: 'eth_getStorageAt',
+          params: ['0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9', '0x38', '0xdc8c48'],
+          id: 165,
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    })
+
+    it('fails on request with restricted contract whitelist (bundled transactions)', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: [],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9'] }],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send([
+          {
+            jsonrpc: '2.0',
+            method: 'eth_getStorageAt',
+            params: ['0x5100bd31b822371108a0f63dcfb6594b9919eaf4', '0x38', '0xdc8c48'],
+            id: 165,
+          },
+          {
+            id: 678372812632,
+            jsonrpc: '2.0',
+            method: 'eth_sendRawTransaction',
+            params: [
+              '0xf88d4d8506fc23ac00831f1e6b945100bd31b822371108a0f63dcfb6594b9919eaf480a4528be0a9000000000000000000000000000000000000000000000000000000000001753c84c6ac98a4a0166f7f13fd495588c6fad5c6433e85e9ddb49970654b167ddbd45e3db86f4224a05f500ac871223166107943579a25e36b96f6283a9422ac06536f8191af9ea753',
+            ],
+          },
+        ])
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.property('error')
+      expect(response.body.error.message).to.startWith('Restricted endpoint: contract address not allowed')
+    })
+
+    it('success on request with restricted contract whitelist (bundled transactions)', async () => {
+      // Test includes the scope of the 4 methods, because all of them use the first param for contract address.
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: [],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x5100bd31b822371108a0f63dcfb6594b9919eaf4'] }],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+      relayResponses[
+        '[{"jsonrpc":"2.0","method":"eth_getStorageAt","params":["0x5100bd31b822371108a0f63dcfb6594b9919eaf4","0x38","0xdc8c48"],"id":165},{"id":678372812632,"jsonrpc":"2.0","method":"eth_sendRawTransaction","params":["0xf88d4d8506fc23ac00831f1e6b945100bd31b822371108a0f63dcfb6594b9919eaf480a4528be0a9000000000000000000000000000000000000000000000000000000000001753c84c6ac98a4a0166f7f13fd495588c6fad5c6433e85e9ddb49970654b167ddbd45e3db86f4224a05f500ac871223166107943579a25e36b96f6283a9422ac06536f8191af9ea753"]}]'
+      ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send([
+          {
+            jsonrpc: '2.0',
+            method: 'eth_getStorageAt',
+            params: ['0x5100bd31b822371108a0f63dcfb6594b9919eaf4', '0x38', '0xdc8c48'],
+            id: 165,
+          },
+          {
+            id: 678372812632,
+            jsonrpc: '2.0',
+            method: 'eth_sendRawTransaction',
+            params: [
+              '0xf88d4d8506fc23ac00831f1e6b945100bd31b822371108a0f63dcfb6594b9919eaf480a4528be0a9000000000000000000000000000000000000000000000000000000000001753c84c6ac98a4a0166f7f13fd495588c6fad5c6433e85e9ddb49970654b167ddbd45e3db86f4224a05f500ac871223166107943579a25e36b96f6283a9422ac06536f8191af9ea753',
+            ],
+          },
+        ])
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    })
+
+    it('fails on request with restricted method whitelist', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: [],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [],
+        whitelistMethods: [{ blockchainID: '0021', methods: ['eth_getLogs'] }],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          method: 'eth_call',
+          params: [{ to: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f', data: '0x0902f1ac' }, 'latest'],
+          id: 42,
+          jsonrpc: '2.0',
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.property('error')
+      expect(response.body.error.message).to.startWith('Restricted endpoint: method not allowed')
+    })
+
+    it('success on request with restricted method whitelist', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: [],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [],
+        whitelistMethods: [{ blockchainID: '0021', methods: ['eth_getLogs'] }],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+      relayResponses[
+        '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","toBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
+      ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          method: 'eth_getLogs',
+          params: [
+            { fromBlock: '0x9c5bb6', toBlock: '0x9c5bb6', address: '0xdef1c0ded9bec7f1a1670819833240f027b25eff' },
+          ],
+          id: 1,
+          jsonrpc: '2.0',
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    })
+
+    it('success on request without restricted method whitelist', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: [],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [],
+        whitelistMethods: [{ blockchainID: '0021', methods: ['eth_getLogs'] }],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+      relayResponses[
+        '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","toBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
+      ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          method: 'eth_getLogs',
+          params: [
+            { fromBlock: '0x9c5bb6', toBlock: '0x9c5bb6', address: '0xdef1c0ded9bec7f1a1670819833240f027b25eff' },
+          ],
+          id: 1,
+          jsonrpc: '2.0',
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    })
+
+    it('success on request without restricted contracts whitelist', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: [],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [{ blockchainID: '0021', contracts: ['0x24ad62502d1c652cc7684081169d04896ac20f30'] }],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+      relayResponses[
+        '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","toBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
+      ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          method: 'eth_getLogs',
+          params: [
+            { fromBlock: '0x9c5bb6', toBlock: '0x9c5bb6', address: '0xdef1c0ded9bec7f1a1670819833240f027b25eff' },
+          ],
+          id: 1,
+          jsonrpc: '2.0',
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    })
+
+    it('fails on request with restricted blockchain whitelist', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: ['0040'],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          method: 'eth_call',
+          params: [{ to: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f', data: '0x0902f1ac' }, 'latest'],
+          id: 42,
+          jsonrpc: '2.0',
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.property('error')
+      expect(response.body.error.message).to.startWith('Restricted endpoint: blockchain not allowed')
+    })
+
+    it('success on request with restricted blockchain whitelist', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: ['0021'],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
+      relayResponses[
+        '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","toBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
+      ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          method: 'eth_getLogs',
+          params: [
+            { fromBlock: '0x9c5bb6', toBlock: '0x9c5bb6', address: '0xdef1c0ded9bec7f1a1670819833240f027b25eff' },
+          ],
+          id: 1,
+          jsonrpc: '2.0',
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    })
   })
 })

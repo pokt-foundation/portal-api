@@ -3,14 +3,16 @@ import {
   InvalidSessionError,
   EvidenceSealedError,
   OutOfSyncRequestError,
+  InvalidBlockHeightError,
 } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
 import axios from 'axios'
 import extractDomain from 'extract-domain'
+import get from 'lodash/get'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { removeNodeFromSession, removeSessionCache, removeChecksCache } from '../utils/cache'
-import { CHECK_TIMEOUT, PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION } from '../utils/constants'
+import { CheckMethods, CHECK_TIMEOUT, PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { CheckResult, RelayResponse } from '../utils/types'
 import { Cache } from './cache'
@@ -167,10 +169,11 @@ export class SyncChecker {
       errorState = true
     }
 
-    let isAltruistTrustworthy: boolean
+    let referenceBlockHeight = 0
+    let isAltruistTrustworthy = false
 
     // Consult altruist for sync source of truth
-    let altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
+    const altruistBlockHeight = await this.getSyncFromAltruist(syncCheckOptions, blockchainSyncBackup)
 
     if (altruistBlockHeight === 0 || isNaN(altruistBlockHeight)) {
       // Failure to find sync from consensus and altruist
@@ -215,17 +218,12 @@ export class SyncChecker {
           }
         )
 
-        // Since we don't trust altruist, let's overwrite its block height
-        altruistBlockHeight = highestNodeBlockHeight
+        // Since we don't trust altruist, let's use highest node in session as reference
+        referenceBlockHeight = highestNodeBlockHeight
       }
-    }
 
-    const isBlockHeightTooFar = highestNodeBlockHeight > altruistBlockHeight + syncAllowance
-
-    // If altruist is trustworthy...
-    // Make sure nodes aren't running too far ahead of altruist
-    if (isAltruistTrustworthy && isBlockHeightTooFar) {
-      highestNodeBlockHeight = altruistBlockHeight
+      // Altruist is trustworthy, so we use it as reference
+      referenceBlockHeight = altruistBlockHeight
     }
 
     // Go through nodes and add all nodes that are current or within allowance -- this allows for block processing times
@@ -244,11 +242,7 @@ export class SyncChecker {
         ? altruistBlockHeight + syncAllowance
         : highestNodeBlockHeight + syncAllowance
 
-      if (
-        nodeSyncLog.blockHeight <= maximumBlockHeight &&
-        correctedNodeBlockHeight >= highestNodeBlockHeight &&
-        correctedNodeBlockHeight >= altruistBlockHeight
-      ) {
+      if (correctedNodeBlockHeight >= referenceBlockHeight && nodeSyncLog.blockHeight <= maximumBlockHeight) {
         logger.log('info', 'SYNC CHECK IN-SYNC: ' + node.publicKey + ' height: ' + blockHeight, {
           requestID: requestID,
           blockchainID,
@@ -287,7 +281,7 @@ export class SyncChecker {
             result: 500,
             bytes: Buffer.byteLength('OUT OF SYNC', 'utf8'),
             fallback: false,
-            method: 'synccheck',
+            method: CheckMethods.SyncCheck,
             error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${highestNodeBlockHeight} - altruist block height: ${altruistBlockHeight} - nodes height: ${blockHeight} - sync allowance: ${syncAllowance}`,
             code: undefined,
             origin: this.origin,
@@ -307,8 +301,10 @@ export class SyncChecker {
 
     logger.log('info', 'SYNC CHECK COMPLETE: ' + syncedNodes.length + ' nodes in sync', {
       requestID: requestID,
+      typeID: applicationID,
       blockchainID,
       origin: this.origin,
+      applicationPublicKey: pocketAAT.applicationPublicKey,
       sessionKey,
     })
     await this.cache.set(
@@ -505,7 +501,9 @@ export class SyncChecker {
       if (relay instanceof EvidenceSealedError) {
         await removeNodeFromSession(this.cache, session, node.publicKey, true, requestID, blockchainID)
       }
-
+      if (relay instanceof InvalidBlockHeightError) {
+        await removeSessionCache(this.cache, pocketAAT.applicationPublicKey, blockchainID)
+      }
       if (relay instanceof InvalidSessionError || relay instanceof OutOfSyncRequestError) {
         this.sessionErrors++
       }
@@ -521,7 +519,7 @@ export class SyncChecker {
           result: 500,
           bytes: Buffer.byteLength(relay.message, 'utf8'),
           fallback: false,
-          method: 'synccheck',
+          method: CheckMethods.SyncCheck,
           error: typeof relay.message === 'object' ? JSON.stringify(relay.message) : relay.message,
           code: undefined,
           origin: this.origin,
@@ -558,7 +556,7 @@ export class SyncChecker {
           result: 500,
           bytes: Buffer.byteLength('SYNC CHECK', 'utf8'),
           fallback: false,
-          method: 'synccheck',
+          method: CheckMethods.SyncCheck,
           error: JSON.stringify(relay),
           code: undefined,
           origin: this.origin,
@@ -586,7 +584,7 @@ export class SyncChecker {
 
   // TODO: We might want to support result keys in nested objects
   parseBlockFromPayload(payload: object, syncCheckResultKey: string): number {
-    const rawHeight = payload[`${syncCheckResultKey}`] || '0'
+    const rawHeight: string = get(payload, syncCheckResultKey) || '0'
 
     return blockHexToDecimal(rawHeight)
   }
