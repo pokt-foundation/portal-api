@@ -1,10 +1,10 @@
 # .github/workflows: DO NOT MODIFY HERE BUT RATHER REFER TO THEIR CORRESPONDING
 # TEMPLATE IN THE POCKET-GATEWWAY FOLDER OTHERWISE YOUR CHANGES WILL BE OVERWRITTEN
-name: Terraform canary Deployment eu-central-1
+name: Terraform Production Deployment us-west-1
 
 on:
   push:
-    branches: [canary]
+    branches: [master]
 
 jobs:
   deploy:
@@ -20,13 +20,13 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-central-1
+          aws-region: us-west-1
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Make envfile eu-central-1
+      - name: Make envfile us-west-1
         uses: SpicyPizza/create-envfile@v1
         with:
           envkey_GATEWAY_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PRIVATE_KEY }}
@@ -51,7 +51,6 @@ jobs:
           envkey_INFLUX_ORG: pocket
           envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
           envkey_PSQL_CONNECTION: ${{ secrets.PSQL_CONNECTION }}
-          envkey_PSQL_CERTIFICATE: https://s3.amazonaws.com/rds-downloads/rds-ca-2019-root.pem
           envkey_LOG_TO_CLOUDWATCH: false
           envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -61,56 +60,56 @@ jobs:
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
-          envkey_REMOTE_REDIS_ENDPOINT: gateway-canary-redis.6iq570.clustercfg.euc1.cache.amazonaws.com
-          envkey_REGION: 'eu-central-1'
-          envkey_REGION_NAME: '/canary/eu-central-1'
+          envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.c8rv3u.clustercfg.usw1.cache.amazonaws.com
+          envkey_REGION: 'us-west-1'
+          envkey_REGION_NAME: 'us-west-1'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: gateway-canary
+          ECR_REPOSITORY: gateway-prod
           IMAGE_TAG: latest
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
-      - name: Fill in the new image ID / eu-central-1 - gateway
-        id: task-def-eu-central-1-gateway
+      - name: Fill in the new image ID / us-west-1 - gateway
+        id: task-def-us-west-1-gateway
         uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
-          task-definition: pocket-gateway/tasks/canary/ecs-task-definition.json
+          task-definition: pocket-gateway/tasks/production/ecs-task-definition.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
           # Needs to be set at container level to be read by the dd agent
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
             DD_PROFILING_ENABLED=true
-            DD_SERVICE=/canary/eu-central-1/ecs/gateway
+            DD_SERVICE=/us-west-1/ecs/gateway
             DD_VERSION=${{ github.sha }}
-            DD_ENV=canary
+            DD_ENV=production
             DD_AGENT_HOST=datadog-agent
 
-      - name: Fill in the new image ID / eu-central-1 - datadog-agent
-        id: task-def-eu-central-1-datadog-agent
+      - name: Fill in the new image ID / us-west-1 - datadog-agent
+        id: task-def-us-west-1-datadog-agent
         uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
-          task-definition: ${{ steps.task-def-eu-central-1-gateway.outputs.task-definition }}
+          task-definition: ${{ steps.task-def-us-west-1-gateway.outputs.task-definition }}
           container-name: datadog-agent
           image: gcr.io/datadoghq/agent:latest
           environment-variables: |
             DD_API_KEY=${{ secrets.DATADOG_API_KEY }}
             DD_SITE=datadoghq.eu
             DD_LOGS_ENABLED=false
-            DD_APM_ENABLED=false
-            DD_DOGSTATSD_NON_LOCAL_TRAFFIC=false
+            DD_APM_ENABLED=true
+            DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
 
-      - name: Deploy / eu-central-1
+      - name: Deploy / us-west-1
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def-eu-central-1-datadog-agent.outputs.task-definition }}
-          service: gateway-canary
-          cluster: gateway-canary
+          task-definition: ${{ steps.task-def-us-west-1-datadog-agent.outputs.task-definition }}
+          service: gateway-prod
+          cluster: gateway-prod
           wait-for-service-stability: true
