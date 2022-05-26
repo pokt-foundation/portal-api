@@ -61,6 +61,7 @@ jobs:
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
+          envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}
           envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.thcgg8.clustercfg.eus1.cache.amazonaws.com
           envkey_REGION: 'eu-south-1'
           envkey_REGION_NAME: 'eu-south-1'

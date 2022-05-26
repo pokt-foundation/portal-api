@@ -61,6 +61,7 @@ jobs:
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
+          envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}
           envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.6iq570.clustercfg.euc1.cache.amazonaws.com
           envkey_REGION: 'eu-central-1'
           envkey_REGION_NAME: 'eu-central-1'
@@ -106,7 +107,7 @@ jobs:
             DD_LOGS_ENABLED=false
             DD_APM_ENABLED=true
             DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
-
+            
       - name: Deploy / eu-central-1
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:

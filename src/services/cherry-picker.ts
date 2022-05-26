@@ -6,7 +6,7 @@ import { Cache } from './cache'
 
 const logger = require('../services/logger')
 
-const logStats = (process.env['LOG_CHERRY_PICKER_STATS'] || '').toLowerCase()
+const logStats = (process.env['LOG_CHERRY_PICKER_STATS'] || '').toLowerCase() === 'true'
 
 // Amount of times a node is allowed to fail due to misconfigured timeout before
 // being removed from the session
