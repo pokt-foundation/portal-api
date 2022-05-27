@@ -224,7 +224,6 @@ export class CherryPicker {
       sessionKey: string
       sessionHeight: string | number
       metadata: {
-        median: number
         p90: number
         attempts: number
         successRate: number
@@ -263,7 +262,6 @@ export class CherryPicker {
           ).toFixed(5)
         }
         serviceQuality.metadata = {
-          median: bucketedServiceQuality.median,
           p90: bucketedServiceQuality.p90,
           attempts: unsortedLog.attempts,
           successRate: unsortedLog.successRate,
@@ -286,7 +284,6 @@ export class CherryPicker {
         sessionKey: session.key,
         sessionHeight: session.header.sessionBlockHeight,
         metadata: {
-          median: bucketedServiceQuality.median,
           p90: bucketedServiceQuality.p90,
           attempts: 1,
           successRate: unsortedLog.successRate,

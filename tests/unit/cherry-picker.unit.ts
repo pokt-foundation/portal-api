@@ -281,7 +281,6 @@ describe('Cherry picker service (unit)', () => {
         },
         metadata: {
           attempts: 26,
-          median: 0.25,
           p90: 0.262,
           successRate: 0.9230769230769231,
         },
