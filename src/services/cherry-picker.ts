@@ -6,7 +6,7 @@ import { Cache } from './cache'
 
 const logger = require('../services/logger')
 
-const logStats = (process.env['LOG_CHERRY_PICKER_STATS'] || '').toLowerCase()
+const logStats = (process.env['LOG_CHERRY_PICKER_STATS'] || '').toLowerCase() === 'true'
 
 // Amount of times a node is allowed to fail due to misconfigured timeout before
 // being removed from the session
@@ -214,12 +214,20 @@ export class CherryPicker {
     // Pull the full service log including weighted latency and success rate
     const serviceLog = await this.fetchRawServiceLog(blockchain, id)
 
+    // Get calculated data for analytics
+    const unsortedLog = await this.createUnsortedLog(id, blockchain, serviceLog, undefined, '0')
+
     let serviceQuality: {
       results: unknown
       medianSuccessLatency: string
       weightedSuccessLatency: string
       sessionKey: string
       sessionHeight: string | number
+      metadata: {
+        p90: number
+        attempts: number
+        successRate: number
+      }
     }
 
     // Update service quality log for this time period
@@ -253,6 +261,11 @@ export class CherryPicker {
             0.3 * bucketedServiceQuality.p90
           ).toFixed(5)
         }
+        serviceQuality.metadata = {
+          p90: bucketedServiceQuality.p90,
+          attempts: unsortedLog.attempts,
+          successRate: unsortedLog.successRate,
+        }
       } else {
         await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, session)
       }
@@ -270,6 +283,11 @@ export class CherryPicker {
         weightedSuccessLatency: elapsedTime.toFixed(5),
         sessionKey: session.key,
         sessionHeight: session.header.sessionBlockHeight,
+        metadata: {
+          p90: bucketedServiceQuality.p90,
+          attempts: 1,
+          successRate: unsortedLog.successRate,
+        },
       }
     }
 
