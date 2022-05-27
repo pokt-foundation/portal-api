@@ -6,6 +6,8 @@ import { Cache } from './cache'
 
 const logger = require('../services/logger')
 
+const logStats = (process.env['LOG_CHERRY_PICKER_STATS'] || '').toLowerCase() === 'true'
+
 // Amount of times a node is allowed to fail due to misconfigured timeout before
 // being removed from the session
 const TIMEOUT_LIMIT = 20
@@ -33,7 +35,7 @@ export class CherryPicker {
     this.archivalChains = archivalChains || []
   }
 
-  // Record the latency and success rate of each node, 1 hour TTL
+  // Record the latency and success rate of each node, 1 hor TTL
   // When selecting a node, pull the stats for each node in the session
   // Rank and weight them for node choice.
   async cherryPickNode(
@@ -68,22 +70,20 @@ export class CherryPicker {
     }
 
     // Sort node logs by highest success rate, then by lowest latency
-    sortedLogs = this.sortLogs(sortedLogs, requestID, 'APP', application.id)
+    sortedLogs = this.sortLogs(sortedLogs)
 
-    /*
-    RE-ENABLE LOGS to examine cherry picker behaviour
-    */
-    // TODO: Change this to env
-    // logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
-    //   requestID: requestID,
-    //   blockchainID: blockchain,
-    //   sessionKey: sessionKey,
-    // })
+    if (logStats) {
+      logger.log('info', 'CHERRY PICKER STATS Sorted logs: ' + JSON.stringify(sortedLogs), {
+        requestID: requestID,
+        blockchainID: blockchain,
+        sessionKey: sessionKey,
+      })
+    }
 
     // Iterate through sorted logs and form in to a weighted list
     let rankedItems = await this.rankItems(blockchain, sortedLogs, 50)
 
-    // If we have no nodes left because all 5 are failures, ¯\_(ツ)_/¯
+    // If we have no nodes left it's because all are failures, ¯\_(ツ)_/¯
     if (rankedItems.length === 0) {
       logger.log('warn', 'Cherry picking failure -- nodes', {
         requestID: requestID,
@@ -170,15 +170,14 @@ export class CherryPicker {
   // { id: { results: { 200: x, 500: y, ... }, weightedSuccessLatency: z }
   async updateServiceQuality(
     blockchain: string,
-    applicationID: string,
     serviceNode: string,
     elapsedTime: number,
     result: number,
-    timeout?: number,
-    pocketSession?: Session
+    session: Session,
+    timeout?: number
   ): Promise<void> {
     // Removed while load balancer cherry picking is off
-    await this._updateServiceQuality(blockchain, serviceNode, elapsedTime, result, 300, timeout, pocketSession)
+    await this._updateServiceQuality(blockchain, serviceNode, elapsedTime, result, 300, session, timeout)
   }
 
   async _updateServiceQuality(
@@ -187,8 +186,8 @@ export class CherryPicker {
     elapsedTime: number,
     result: number,
     ttl: number,
-    timeout?: number,
-    pocketSession?: Session
+    session: Session,
+    timeout?: number
   ): Promise<void> {
     // Fetch and update the relay timing log; the raw list of elapsed relay times
     let relayTimingLog = []
@@ -215,8 +214,21 @@ export class CherryPicker {
     // Pull the full service log including weighted latency and success rate
     const serviceLog = await this.fetchRawServiceLog(blockchain, id)
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let serviceQuality: { results: any; medianSuccessLatency: string; weightedSuccessLatency: string }
+    // Get calculated data for analytics
+    const unsortedLog = await this.createUnsortedLog(id, blockchain, serviceLog, undefined, '0')
+
+    let serviceQuality: {
+      results: unknown
+      medianSuccessLatency: string
+      weightedSuccessLatency: string
+      sessionKey: string
+      sessionHeight: string | number
+      metadata: {
+        p90: number
+        attempts: number
+        successRate: number
+      }
+    }
 
     // Update service quality log for this time period
     if (serviceLog) {
@@ -249,8 +261,13 @@ export class CherryPicker {
             0.3 * bucketedServiceQuality.p90
           ).toFixed(5)
         }
+        serviceQuality.metadata = {
+          p90: bucketedServiceQuality.p90,
+          attempts: unsortedLog.attempts,
+          successRate: unsortedLog.successRate,
+        }
       } else {
-        await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, pocketSession)
+        await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, session)
       }
     } else {
       // No current logs found for this period
@@ -258,12 +275,19 @@ export class CherryPicker {
 
       if (result !== 200) {
         elapsedTime = 0
-        await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, pocketSession)
+        await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, session)
       }
       serviceQuality = {
         results: results,
         medianSuccessLatency: elapsedTime.toFixed(5),
         weightedSuccessLatency: elapsedTime.toFixed(5),
+        sessionKey: session.key,
+        sessionHeight: session.header.sessionBlockHeight,
+        metadata: {
+          p90: bucketedServiceQuality.p90,
+          attempts: 1,
+          successRate: unsortedLog.successRate,
+        },
       }
     }
 
@@ -359,7 +383,7 @@ export class CherryPicker {
     // weightFactor pushes the fastest apps/nodes with the highest success rates
     // to be called on more often for relays.
     //
-    // The app/node with the highest success rate and the lowest average latency will
+    // The app/node with the highest success rate and the lowest median latency will
     // be 10 times more likely to be selected than a node that has had failures.
     let weightFactor = 10
     let previousNodeLatency = 0
@@ -477,7 +501,7 @@ export class CherryPicker {
     }
   }
 
-  sortLogs(array: ServiceLog[], requestID: string, relayType: string, typeID: string): ServiceLog[] {
+  sortLogs(array: ServiceLog[]): ServiceLog[] {
     const sortedLogs = array.sort((a: ServiceLog, b: ServiceLog) => {
       if (a.weightedSuccessLatency > b.weightedSuccessLatency) {
         return 1

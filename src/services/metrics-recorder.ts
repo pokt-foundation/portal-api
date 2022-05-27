@@ -8,7 +8,7 @@ import { Pool as PGPool } from 'pg'
 import pgFormat from 'pg-format'
 import { Point, WriteApi } from '@influxdata/influxdb-client'
 
-import { BLOCK_TIMING_ERROR } from '../utils/constants'
+import { BLOCK_TIMING_ERROR, CheckMethods } from '../utils/constants'
 import { CherryPicker } from './cherry-picker'
 const os = require('os')
 const logger = require('../services/logger')
@@ -62,7 +62,6 @@ export class MetricsRecorder {
     sticky,
     elapsedTime = 0,
     gigastakeAppID,
-    sessionBlockHeight,
   }: {
     requestID: string
     applicationID: string
@@ -84,7 +83,6 @@ export class MetricsRecorder {
     sticky?: string
     elapsedTime?: number
     gigastakeAppID?: string
-    sessionBlockHeight?: number | BigInt
   }): Promise<void> {
     try {
       const { key: sessionKey } = session || {}
@@ -117,8 +115,6 @@ export class MetricsRecorder {
       }
 
       // Parse value if coming as BigInt
-      sessionBlockHeight = sessionBlockHeight ? parseInt(sessionBlockHeight.toString()) : sessionBlockHeight
-
       if (result === 200) {
         logger.log('info', 'SUCCESS' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
           requestID,
@@ -133,7 +129,8 @@ export class MetricsRecorder {
           blockchainID,
           sessionKey,
           sticky,
-          sessionBlockHeight,
+          sessionBlockHeight: session.header.sessionBlockHeight,
+          blockHeight: session.blockHeight,
           responseStart,
         })
       } else if (result === 500) {
@@ -151,7 +148,8 @@ export class MetricsRecorder {
           blockchainID,
           sessionKey,
           sticky,
-          sessionBlockHeight,
+          sessionBlockHeight: session.header.sessionBlockHeight,
+          blockHeight: session.blockHeight,
         })
       } else if (result === 503) {
         logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -168,21 +166,14 @@ export class MetricsRecorder {
           blockchainID,
           sessionKey,
           sticky,
-          sessionBlockHeight,
+          sessionBlockHeight: session.header.sessionBlockHeight,
+          blockHeight: session.blockHeight,
         })
       }
 
       // Update service node quality with cherry picker
-      if (serviceNode) {
-        await this.cherryPicker.updateServiceQuality(
-          blockchainID,
-          applicationID,
-          serviceNode,
-          elapsedTime,
-          result,
-          timeout,
-          session
-        )
+      if (serviceNode && !Object.values(CheckMethods).includes(method as CheckMethods)) {
+        await this.cherryPicker.updateServiceQuality(blockchainID, serviceNode, elapsedTime, result, session, timeout)
       }
 
       // Text timestamp
@@ -228,6 +219,17 @@ export class MetricsRecorder {
         error,
         code,
       ]
+
+      // Consumed by the cherry picker external api, not used within this project atm
+      if (serviceNode && serviceNode.length === 64) {
+        if (result === 200) {
+          await this.redis.incr(`{${blockchainID}}-${serviceNode}-${session.key}-success-hits`)
+          await this.redis.expire(`{${blockchainID}}-${serviceNode}-${session.key}-success-hits`, 60 * 60)
+        } else if (result !== 200) {
+          await this.redis.incr(`{${blockchainID}}-${serviceNode}-${session.key}-failure-hits`)
+          await this.redis.expire(`{${blockchainID}}-${serviceNode}-${session.key}-failure-hits`, 60 * 60)
+        }
+      }
 
       // Increment node errors
       if (result !== 200) {

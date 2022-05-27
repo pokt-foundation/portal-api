@@ -3,13 +3,14 @@ import {
   InvalidSessionError,
   EvidenceSealedError,
   OutOfSyncRequestError,
+  InvalidBlockHeightError,
 } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
 import extractDomain from 'extract-domain'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { removeChecksCache, removeNodeFromSession, removeSessionCache } from '../utils/cache'
-import { CHECK_TIMEOUT, PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION } from '../utils/constants'
+import { CheckMethods, CHECK_TIMEOUT, PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION } from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { CheckResult, RelayResponse } from '../utils/types'
 import { Cache } from './cache'
@@ -152,6 +153,7 @@ export class ChainChecker {
       typeID: applicationID,
       blockchainID,
       origin: this.origin,
+      applicationPublicKey: pocketAAT.applicationPublicKey,
       sessionKey,
     })
     await this.cache.set(
@@ -315,10 +317,12 @@ export class ChainChecker {
         sessionKey: key,
       })
 
-      if (relay instanceof EvidenceSealedError) {
+      if (relay instanceof EvidenceSealedError || relay instanceof InvalidBlockHeightError) {
         await removeNodeFromSession(this.cache, session, node.publicKey, true, requestID, blockchainID)
       }
-
+      if (relay instanceof InvalidBlockHeightError) {
+        await removeSessionCache(this.cache, pocketAAT.applicationPublicKey, blockchainID)
+      }
       if (relay instanceof InvalidSessionError || relay instanceof OutOfSyncRequestError) {
         this.sessionErrors++
       }
@@ -334,7 +338,7 @@ export class ChainChecker {
           result: 500,
           bytes: Buffer.byteLength('WRONG CHAIN', 'utf8'),
           fallback: false,
-          method: 'chaincheck',
+          method: CheckMethods.ChainCheck,
           error: typeof relay.message === 'object' ? JSON.stringify(relay.message) : relay.message,
           code: undefined,
           origin: this.origin,
@@ -371,7 +375,7 @@ export class ChainChecker {
           result: 500,
           bytes: Buffer.byteLength('WRONG CHAIN', 'utf8'),
           fallback: false,
-          method: 'chaincheck',
+          method: CheckMethods.ChainCheck,
           error: JSON.stringify(relay),
           code: undefined,
           origin: this.origin,
