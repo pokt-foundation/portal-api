@@ -248,6 +248,10 @@ describe('Cherry picker service (unit)', () => {
         results: {
           [result]: 1,
         },
+        metadata: {
+          attempts: 1,
+          successRate: 1,
+        },
       })
       let logs: string
 
@@ -274,6 +278,11 @@ describe('Cherry picker service (unit)', () => {
         results: {
           '200': 25,
           '500': 2,
+        },
+        metadata: {
+          attempts: 26,
+          p90: 0.262,
+          successRate: 0.9230769230769231,
         },
       })
 
