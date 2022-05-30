@@ -462,6 +462,12 @@ export class PocketRelayer {
             responseParsed = JSON.parse(fallbackResponse.data)
           }
 
+          const stringifiedResponse = JSON.stringify(responseParsed)
+
+          if (isRelayError(stringifiedResponse)) {
+            throw new Error(`Response is not valid: ${stringifiedResponse}`)
+          }
+
           this.metricsRecorder
             .recordMetric({
               requestID,
