@@ -1826,15 +1826,24 @@ describe('Pocket relayer service (unit)', () => {
       })
 
       describe('Relays with EVM errors', () => {
-        it('should succeed with a fallback when relay response returns a valid EVM server error (not user)', async () => {
+        const connectionErrorRelayResponse = JSON.stringify({
+          error: {
+            code: -32000,
+            message:
+              'rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial tcp 127.0.0.1:9090: connect: connection refused"',
+          },
+          id: 732830328053361800,
+          jsonrpc: '2.0',
+        })
+
+        it('should succeed with a fallback when relay response returns an EVM server error (not user)', async () => {
           logSpy = sinon.spy(logger, 'log')
 
           const mock = new PocketMock()
 
           const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
 
-          mock.relayResponse[rawData] =
-            '{"error":{"code":-32000,"message":"rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial tcp 127.0.0.1:9090: connect: connection refused""},"id":732830328053361800,"jsonrpc":"2.0"}'
+          mock.relayResponse[rawData] = connectionErrorRelayResponse
 
           const mockAltruistRelayResponse = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
 
@@ -1889,6 +1898,65 @@ describe('Pocket relayer service (unit)', () => {
           const expected = JSON.parse(mockAltruistRelayResponse)
 
           expect(relayResponse).to.be.deepEqual(expected)
+        })
+
+        it('should fail when a fallback returns a relay response with an EVM server error (not user)', async () => {
+          logSpy = sinon.spy(logger, 'log')
+
+          const mock = new PocketMock()
+
+          const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+
+          mock.relayResponse[rawData] = connectionErrorRelayResponse
+
+          const mockAltruistRelayResponse = connectionErrorRelayResponse
+
+          axiosMock.onPost(BLOCKCHAINS['0040']?.altruist, JSON.parse(rawData)).reply(200, mockAltruistRelayResponse)
+
+          const relayer = mock.object()
+
+          const poktRelayer = new PocketRelayer({
+            host: 'eth-mainnet',
+            origin: '',
+            userAgent: '',
+            ipAddress: '',
+            relayer,
+            cherryPicker,
+            metricsRecorder,
+            syncChecker: mockSyncChecker,
+            chainChecker: mockChainChecker,
+            cache,
+            databaseEncryptionKey: DB_ENCRYPTION_KEY,
+            secretKey: '',
+            relayRetries: 0,
+            blockchainsRepository: blockchainRepository,
+            checkDebug: true,
+            aatPlan: AatPlans.FREEMIUM,
+            defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
+            dispatchers: DUMMY_ENV.DISPATCH_URL,
+          })
+
+          await assert.rejects(
+            poktRelayer.sendRelay({
+              rawData,
+              relayPath: '',
+              httpMethod: HTTPMethod.POST,
+              application: APPLICATION as unknown as Applications,
+              requestID: '1234',
+              requestTimeOut: undefined,
+              overallTimeOut: undefined,
+              stickinessOptions: {
+                stickiness: false,
+                duration: 0,
+                preferredNodeAddress: '',
+              },
+              relayRetries: 0,
+            }),
+            (e: ErrorObject) => {
+              assert.strictEqual(e.error.message, 'Internal JSON-RPC error.')
+              return true
+            }
+          )
         })
 
         it('should succeed when relay response returns a valid EVM user error', async () => {
