@@ -464,7 +464,7 @@ export class PocketRelayer {
 
           const stringifiedResponse = JSON.stringify(responseParsed)
 
-          if (isRelayError(stringifiedResponse)) {
+          if (isRelayError(stringifiedResponse) && !isUserError(stringifiedResponse)) {
             throw new Error(`Response is not valid: ${stringifiedResponse}`)
           }
 

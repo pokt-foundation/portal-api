@@ -2,8 +2,6 @@ import { Decryptor } from 'strong-cryptor'
 import { Applications } from '../models'
 import { isUserErrorEVM } from './errors'
 
-const RELAY_ERROR_MSGS = ['{"error"', 'connection error']
-
 export function checkEnforcementJSON(test: string): boolean {
   if (!test || test.length === 0) {
     return false
@@ -68,7 +66,7 @@ export type SecretKeyDetails = {
 }
 
 export function isRelayError(payload: string): boolean {
-  return RELAY_ERROR_MSGS.some((err) => payload.includes(err))
+  return payload.includes('{"error"')
 }
 
 export function isUserError(payload: string, blockchain?: string): boolean {
