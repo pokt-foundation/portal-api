@@ -904,9 +904,6 @@ export class PocketRelayer {
       if (relay instanceof EvidenceSealedError) {
         await removeNodeFromSession(this.cache, session, node.publicKey, true, requestID, blockchainID)
       }
-      if (relay instanceof InvalidBlockHeightError) {
-        await removeSessionCache(this.cache, pocketAAT.applicationPublicKey, blockchainID)
-      }
       return new RelayError(relay.message, 500, node?.publicKey)
       // ConsensusNode
     } else {
