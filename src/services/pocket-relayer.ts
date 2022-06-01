@@ -1,4 +1,4 @@
-import { EvidenceSealedError, InvalidBlockHeightError, Relayer } from '@pokt-foundation/pocketjs-relayer'
+import { EvidenceSealedError, Relayer } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT, HTTPMethod } from '@pokt-foundation/pocketjs-types'
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
@@ -10,7 +10,7 @@ import { ChainChecker, ChainIDFilterOptions } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
-import { removeNodeFromSession, removeSessionCache } from '../utils/cache'
+import { removeNodeFromSession } from '../utils/cache'
 import { SESSION_TIMEOUT, DEFAULT_ALTRUIST_TIMEOUT } from '../utils/constants'
 import {
   checkEnforcementJSON,
@@ -903,9 +903,6 @@ export class PocketRelayer {
       // Remove node from session if error is due to max relays allowed reached
       if (relay instanceof EvidenceSealedError) {
         await removeNodeFromSession(this.cache, session, node.publicKey, true, requestID, blockchainID)
-      }
-      if (relay instanceof InvalidBlockHeightError) {
-        await removeSessionCache(this.cache, pocketAAT.applicationPublicKey, blockchainID)
       }
       return new RelayError(relay.message, 500, node?.publicKey)
       // ConsensusNode
