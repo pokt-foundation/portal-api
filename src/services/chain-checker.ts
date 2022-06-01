@@ -3,7 +3,6 @@ import {
   InvalidSessionError,
   EvidenceSealedError,
   OutOfSyncRequestError,
-  InvalidBlockHeightError,
 } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
 import extractDomain from 'extract-domain'
