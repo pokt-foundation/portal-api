@@ -3,7 +3,6 @@ import {
   InvalidSessionError,
   EvidenceSealedError,
   OutOfSyncRequestError,
-  InvalidBlockHeightError,
 } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
 import axios from 'axios'
@@ -500,9 +499,6 @@ export class SyncChecker {
 
       if (relay instanceof EvidenceSealedError) {
         await removeNodeFromSession(this.cache, session, node.publicKey, true, requestID, blockchainID)
-      }
-      if (relay instanceof InvalidBlockHeightError) {
-        await removeSessionCache(this.cache, pocketAAT.applicationPublicKey, blockchainID)
       }
       if (relay instanceof InvalidSessionError || relay instanceof OutOfSyncRequestError) {
         this.sessionErrors++
