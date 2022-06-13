@@ -1,10 +1,11 @@
 import { Relayer } from '@pokt-foundation/pocketjs-relayer'
-import RedisMock from 'ioredis-mock'
+// import Redis from 'ioredis-mock'
 import rewiremock from 'rewiremock'
 import { createRestAppClient, givenHttpServerConfig, Client } from '@loopback/testlab'
 
 import { PocketGatewayApplication } from '../../src/application'
 import { gatewayTestDB } from '../fixtures/test.datasource'
+const Redis = require('ioredis-mock')
 
 export const DUMMY_ENV = {
   NODE_ENV: 'development',
@@ -37,7 +38,7 @@ export async function setupApplication(pocket?: Relayer, envs?: object): Promise
   const restConfig = givenHttpServerConfig()
 
   const appWithMock = rewiremock.proxy(() => require('../../src/application'), {
-    ioredis: RedisMock,
+    ioredis: Redis,
     ...(pocket && { './config/pocket-config': { getPocketInstance: () => pocket } }),
   })
 
@@ -64,15 +65,15 @@ export async function setupApplication(pocket?: Relayer, envs?: object): Promise
 
   // Redis mock persist data between instances as long as they share the same host/port
   // so they need to be cleaned each time.
-  let mock: RedisMock.Redis
+  let mock: typeof Redis
 
   // remote redis mock
-  mock = new RedisMock(parseInt(DUMMY_ENV.REDIS_PORT), DUMMY_ENV.REMOTE_REDIS_ENDPOINT)
+  mock = new Redis(parseInt(DUMMY_ENV.REDIS_PORT), DUMMY_ENV.REMOTE_REDIS_ENDPOINT)
 
   await mock.flushall()
 
   // local redis mock
-  mock = new RedisMock(parseInt(DUMMY_ENV.REDIS_PORT), DUMMY_ENV.LOCAL_REDIS_ENDPOINT)
+  mock = new Redis(parseInt(DUMMY_ENV.REDIS_PORT), DUMMY_ENV.LOCAL_REDIS_ENDPOINT)
 
   await mock.flushall()
 

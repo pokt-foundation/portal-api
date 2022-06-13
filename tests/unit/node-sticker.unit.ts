@@ -1,8 +1,8 @@
 import { Redis } from 'ioredis'
-import RedisMock from 'ioredis-mock'
 import { expect, sinon } from '@loopback/testlab'
 import { NodeSticker } from '../../src/services/node-sticker'
 import { DEFAULT_NODES } from '../mocks/pocketjs'
+const RedisMock = require('ioredis-mock')
 
 const logger = require('../../src/services/logger')
 
