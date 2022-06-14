@@ -65,7 +65,7 @@
     "tests"
   ],
   "dependencies": {
-    "@aws-sdk/client-cloudwatch-logs": "^3.109.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.110.0",
     "@influxdata/influxdb-client": "^1.26.0",
     "@loopback/boot": "^5.0.1",
     "@loopback/context": "^5.0.1",
@@ -79,7 +79,7 @@
     "@pokt-foundation/pocketjs-types": "^0.0.6",
     "@pokt-foundation/pocketjs-utils": "^0.0.6",
     "assert": "^2.0.0",
-    "aws-sdk": "^2.1023.0",
+    "aws-sdk": "^2.1154.0",
     "axios": "^0.27.2",
     "datadog-winston": "^1.5.1",
     "dd-trace": "^2.0.0",
@@ -98,7 +98,7 @@
     "shortid": "^2.2.15",
     "strong-cryptor": "^2.2.0",
     "winston": "^3.3.3",
-    "winston-cloudwatch": "^3.1.1",
+    "winston-cloudwatch": "^6.0.1",
     "winston-logzio": "^5.1.2"
   },
   "devDependencies": {
@@ -120,14 +120,14 @@
     "eslint-plugin-mocha": "^10.0.3",
     "husky": "^8.0.1",
     "ioredis-mock": "^8.2.2",
-    "lint-staged": "^12.3.3",
-    "moq.ts": "^7.4.1",
+    "lint-staged": "^13.0.1",
+    "moq.ts": "^9.0.2",
     "mustache": "^4.2.0",
-    "prettier": "^2.5.1",
+    "prettier": "^2.7.0",
     "rewiremock": "^3.14.3",
     "source-map-support": "^0.5.19",
     "tsnodemon": "^1.2.2",
-    "typescript": "~4.5.5"
+    "typescript": "~4.7.3"
   },
   "husky": {
     "hooks": {
