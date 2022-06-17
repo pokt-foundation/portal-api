@@ -637,6 +637,8 @@ export class PocketRelayer {
           blockchainID,
           gatewayPublicKey: application?.gatewayAAT.applicationPublicKey,
           typeID: application.id,
+          blockHeight: session?.blockHeight,
+          sessionBlockHeight: session?.header?.sessionBlockHeight,
         })
 
         // TODO: Remove when sdk does it internally
