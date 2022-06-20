@@ -18,5 +18,3 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           DISCORD_EMBEDS: ${{ toJson(steps.discord-embed.output.json_var) }}
         uses: Ilshidur/action-discord@master
-        with:
-          args: 'A new pull request (#{{ EVENT_PAYLOAD.pull_request.id }}) that modifies cherry picker has been detected.'
