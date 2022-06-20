@@ -1,0 +1,30 @@
+name: Cherry Picker Discord Alert
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - 'src/services/cherry-picker.ts'
+jobs:
+  discord-notification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare discord embed
+        id: discord-embed
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          echo ::set-output name=json_var::'[{"title":"Change Alert","color":14687012,"description":"${{ env.PR_AUTHOR }} has submitted a PR that modifies the cherry picker.","timestamp":"","url":"","author":{"name":""},"image":{},"thumbnail":{},"footer":{},"fields":[{"name":"Related PR","value":"https://github.com/${{ env.REPOSITORY }}/pull/${{ env.PR_NUMBER }}"}]}]'
+
+      - name: Print discord embed
+        env:
+          EMBED: ${{ steps.discord-embed.outputs.json_var }}
+        run: |
+          echo $EMBED
+
+      - name: Send discord notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_EMBEDS: ${{ steps.discord-embed.outputs.json_var }}
+        uses: Ilshidur/action-discord@0.3.2
