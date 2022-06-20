@@ -8,7 +8,7 @@ const logger = require('../services/logger')
 
 const logStats = (process.env['LOG_CHERRY_PICKER_STATS'] || '').toLowerCase() === 'true'
 
-// Amount of times a node  to  before
+// Amount of times a node  to 
 // being removed from the session
 const TIMEOUT_LIMIT = 20
 
