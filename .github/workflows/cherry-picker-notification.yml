@@ -18,4 +18,4 @@ jobs:
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         uses: Ilshidur/action-discord@master
         with:
-          args: 'A new commit ({{ steps.vars.outputs.sha_short }}) that modified cherry picker has been detected.'
+          args: 'A new commit (${{ steps.vars.outputs.sha_short }}) that modified cherry picker has been detected.'
