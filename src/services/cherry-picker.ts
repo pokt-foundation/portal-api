@@ -9,7 +9,7 @@ const logger = require('../services/logger')
 const logStats = (process.env['LOG_CHERRY_PICKER_STATS'] || '').toLowerCase() === 'true'
 
 //  of  a   to 
-// being   the 
+// being    
 const TIMEOUT_LIMIT = 20
 
 // Allowed  on ,  in seconds, as the timeout usually
