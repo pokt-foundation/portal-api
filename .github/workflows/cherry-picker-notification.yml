@@ -8,19 +8,13 @@ jobs:
   discord-notification:
     runs-on: ubuntu-latest
     steps:
-      - name: Prepare discord embed
-        id: discord-embed
-        run: |
-          echo ::set-output name=json_var::'{"embeds":[{"type":"rich","title":"Change Alert","description":"Someone has submitted a PR that modifies the cherry picker.","color":13959168,"fields":[{"name":"Related PR","value":"https://github.com/crisog/portal-api/pull/1"}],"url":"https://github.com/crisog/portal-api/pull/1"}]}'
-
-      - name: Print discord embed
-        env:
-          OUT_MSG: ${{ toJSON(steps.discord-embed.outputs.json_var) }}
-        run: |
-          echo $OUT_MSG
-
-      - name: Send discord notification
+      - name: Discord notification
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          DISCORD_EMBEDS: ${{ toJSON(steps.discord-embed.outputs.json_var) }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: 'A new pull request that modifies the cherry picker has been submitted.'
+      - name: Discord notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@master
