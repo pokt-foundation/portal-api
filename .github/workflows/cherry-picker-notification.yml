@@ -11,7 +11,7 @@ jobs:
       - name: Prepare discord embed
         id: discord-embed
         run: |
-        echo ::set-output name=json_var::'{"embeds":[{"type":"rich","title":"Change Alert","description":"Someone has submitted a PR that modifies the cherry picker.","color":13959168,"fields":[{"name":"Related PR","value":"https://github.com/crisog/portal-api/pull/1"}],"url":"https://github.com/crisog/portal-api/pull/1"}]}'
+          echo ::set-output name=json_var::'{"embeds":[{"type":"rich","title":"Change Alert","description":"Someone has submitted a PR that modifies the cherry picker.","color":13959168,"fields":[{"name":"Related PR","value":"https://github.com/crisog/portal-api/pull/1"}],"url":"https://github.com/crisog/portal-api/pull/1"}]}'
 
       - name: Print discord embed
         run: |
