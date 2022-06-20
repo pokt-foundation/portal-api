@@ -12,7 +12,7 @@ const logStats = (process.env['LOG_CHERRY_PICKER_STATS'] || '').toLowerCase() ==
 // being   the 
 const TIMEOUT_LIMIT = 20
 
-// Allowed  on , expressed in seconds, as the timeout usually
+// Allowed  on ,  in seconds, as the timeout usually
 // wont be exact
 const TIMEOUT_VARIANCE = 2
 
