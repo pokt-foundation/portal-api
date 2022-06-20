@@ -1,22 +1,18 @@
 name: Cherry Picker Discord Alert
 on:
-  push:
+  pull_request:
+    branches: [develop]
     paths:
       - 'src/services/cherry-picker.ts'
 jobs:
   discord-notification:
     runs-on: ubuntu-latest
     steps:
-      - name: Get github sha short
-        id: vars
-        shell: bash
-        run: |
-          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
       - name: Discord notification
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-          SHA_SHORT: ${{ steps.vars.outputs.sha_short }}
+          PR_NUMBER: ${{ github.event.number }}
         uses: Ilshidur/action-discord@master
         with:
-          args: 'A new commit ({{ SHA_SHORT }}) that modified cherry picker has been detected.'
+          args: 'A new pull request (#{{ PR_NUMBER }}) that modifies cherry picker has been detected.'

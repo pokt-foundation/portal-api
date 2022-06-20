@@ -8,7 +8,7 @@ const logger = require('../services/logger')
 
 const logStats = (process.env['LOG_CHERRY_PICKER_STATS'] || '').toLowerCase() === 'true'
 
-// Amount of times a node is due to misconfigured timeout before
+// Amount of times a node is  to misconfigured timeout before
 // being removed from the session
 const TIMEOUT_LIMIT = 20
 
