@@ -20,5 +20,5 @@ jobs:
       - name: Send discord notification
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          DISCORD_EMBEDS: ${{ toJson(steps.discord-embed.output.json_var) }}
+          DISCORD_EMBEDS: ${{ toJson(steps.discord-embed.outputs.json_var) }}
         uses: Ilshidur/action-discord@master
