@@ -15,7 +15,7 @@ jobs:
 
       - name: Print discord embed
         run: |
-          echo ${{ discord-embed.outputs.json_var }}
+          echo ${{ steps.discord-embed.outputs.json_var }}
 
       - name: Send discord notification
         env:
