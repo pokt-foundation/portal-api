@@ -59,7 +59,6 @@ jobs:
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: false
           envkey_SILENT_LOGGING: true
-          envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}
           envkey_REGION: 'us-west-2'
           envkey_REGION_NAME: 'testnet'
           file_name: .env
