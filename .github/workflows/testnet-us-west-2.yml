@@ -34,6 +34,7 @@ jobs:
           envkey_DISPATCH_URL: https://testnet-1.nodes.pokt.network:4201,https://testnet-2.nodes.pokt.network:4202,https://testnet-3.nodes.pokt.network:4203
           envkey_ALTRUISTS: ${{ secrets.ALTRUISTS_TESTNET }}
           envkey_REDIRECTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_REDIRECTS }}
+          envkey_LOCAL_REDIS_ENDPOINT: 172.17.0.1:6379
           envkey_REMOTE_REDIS_ENDPOINT: gateway-new-testnet-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REDIS_PORT: 6379
           envkey_POCKET_NETWORK_NODE_URL: ${{ secrets.POCKET_NETWORK_TESTNET_NODE_URL }}
