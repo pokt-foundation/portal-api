@@ -7,7 +7,7 @@ github_path=".github/workflows"
 template_path="pocket-gateway/tasks"
 shared_data="shared-envs.json"
 
-patterns=("canary*.yml" "production*.yml" "staging*.yml" "terraform*.yml")
+patterns=("canary*.yml" "production*.yml" "staging*.yml" "testnet*.yml")
 
 for pattern in "${patterns[@]}" 
   do
