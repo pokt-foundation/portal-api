@@ -1,6 +1,4 @@
-# .github/workflows: DO NOT MODIFY HERE BUT RATHER REFER TO THEIR CORRESPONDING
-# TEMPLATE IN THE POCKET-GATEWWAY FOLDER OTHERWISE YOUR CHANGES WILL BE OVERWRITTEN
-name: us-west-2 Testnet Terraform Deployment 
+name: us-west-2 Testnet Terraform Deployment
 
 on:
   push:
@@ -26,23 +24,23 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Make envfile us-west-2
+      - name: Make envfile
         uses: SpicyPizza/create-envfile@v1
         with:
-          envkey_GATEWAY_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PRIVATE_KEY }}
-          envkey_GATEWAY_CLIENT_PASSPHRASE: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PASSPHRASE }}
-          envkey_REDIS_LOCAL_TTL_FACTOR: ${{ secrets.REDIS_LOCAL_TTL_FACTOR }}
-          envkey_MONGO_ENDPOINT: ${{ secrets.MONGO_PRODUCTION_ENDPOINT }}
-          envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_PRODUCTION_ENCRYPTION_KEY }}
-          envkey_DISPATCH_URL: ${{ secrets.DISPATCH_URL }}
-          envkey_ALTRUISTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_ALTRUISTS }}
+          envkey_GATEWAY_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_TESTNET_CLIENT_PRIVATE_KEY }}
+          envkey_GATEWAY_CLIENT_PASSPHRASE: ${{ secrets.POCKET_NETWORK_TESTNET_CLIENT_PASSPHRASE }}
+          envkey_MONGO_ENDPOINT: ${{ secrets.MONGO_TESTNET_ENDPOINT }}
+          envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_TESTNET_ENCRYPTION_KEY }}
+          envkey_DISPATCH_URL: https://testnet-1.nodes.pokt.network:4201,https://testnet-2.nodes.pokt.network:4202,https://testnet-3.nodes.pokt.network:4203
+          envkey_ALTRUISTS: ${{ secrets.ALTRUISTS_TESTNET }}
           envkey_REDIRECTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_REDIRECTS }}
           envkey_LOCAL_REDIS_ENDPOINT: 172.17.0.1:6379
+          envkey_REMOTE_REDIS_ENDPOINT: gateway-new-testnet-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REDIS_PORT: 6379
-          envkey_POCKET_NETWORK_NODE_URL: ${{ secrets.POCKET_NETWORK_MAINNET_NODE_URL }}
+          envkey_POCKET_NETWORK_NODE_URL: ${{ secrets.POCKET_NETWORK_TESTNET_NODE_URL }}
           envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
-          envkey_POCKET_BLOCK_TIME: 1038000
-          envkey_POCKET_RELAY_RETRIES: 0
+          envkey_POCKET_BLOCK_TIME: 900000
+          envkey_POCKET_RELAY_RETRIES: 5
           envkey_DEFAULT_SYNC_ALLOWANCE: 5
           envkey_DEFAULT_LOG_LIMIT_BLOCKS: 10000
           envkey_AAT_PLAN: premium
@@ -56,13 +54,12 @@ jobs:
           envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           envkey_COMMIT_HASH: ${{ github.sha }}
-          envkey_ARCHIVAL_CHAINS: 0022,0028,0010,000A,000B,000C
+          envkey_ARCHIVAL_CHAINS: '0002'
           envkey_LOG_TO_DATADOG: true
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
-          envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
+          envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: false
           envkey_SILENT_LOGGING: true
           envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}
-          envkey_REMOTE_REDIS_ENDPOINT: gateway-new-testnet-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REGION: 'us-west-2'
           envkey_REGION_NAME: 'testnet'
           file_name: .env
@@ -104,7 +101,7 @@ jobs:
           environment-variables: |
             DD_API_KEY=${{ secrets.DATADOG_API_KEY }}
             DD_SITE=datadoghq.eu
-            DD_LOGS_ENABLED=false
+            DD_LOGS_ENABLED=true
             DD_APM_ENABLED=true
             DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
 
