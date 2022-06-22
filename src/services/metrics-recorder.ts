@@ -49,6 +49,7 @@ export class MetricsRecorder {
     serviceNode,
     relayStart,
     result,
+    responseStart,
     bytes,
     fallback,
     method,
@@ -69,6 +70,7 @@ export class MetricsRecorder {
     serviceNode: string | undefined
     relayStart?: [number, number]
     result: number
+    responseStart?: string | undefined
     bytes: number
     fallback: boolean
     method: string | undefined
@@ -129,6 +131,7 @@ export class MetricsRecorder {
           sticky,
           sessionBlockHeight: session.header.sessionBlockHeight,
           blockHeight: session.blockHeight,
+          responseStart,
         })
       } else if (result === 500) {
         logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
