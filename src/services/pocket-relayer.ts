@@ -219,7 +219,7 @@ export class PocketRelayer {
       return restriction
     }
 
-    const fallbackAvailable = blockchainAltruist !== undefined ? true : false
+    const fallbackAvailable = blockchainAltruist ? true : false
 
     try {
       if (!this.alwaysRedirectToAltruists) {
@@ -330,11 +330,6 @@ export class PocketRelayer {
             }
             return relay.response
           } else if (relay instanceof RelayError) {
-            // Record failure metric, retry if possible or fallback
-            // Increment error log
-            await this.cache.incr(blockchainID + '-' + relay.servicer_node + '-errors')
-            await this.cache.expire(blockchainID + '-' + relay.servicer_node + '-errors', 3600)
-
             let error = relay.message
 
             if (typeof relay.message === 'object') {
@@ -477,6 +472,7 @@ export class PocketRelayer {
               serviceNode: 'fallback:' + redactedAltruistURL,
               relayStart,
               result: 200,
+              responseStart: Buffer.from(JSON.stringify(responseParsed)).toString('utf-8', 0, 200),
               bytes: Buffer.byteLength(JSON.stringify(responseParsed), 'utf8'),
               fallback: true,
               method: method,
@@ -622,13 +618,6 @@ export class PocketRelayer {
       if (cachedSession) {
         session = JSON.parse(cachedSession)
       } else {
-        logger.log('info', 'call to dispatcher to obtain session', {
-          requestID,
-          blockchainID,
-          gatewayPublicKey: application?.gatewayAAT.applicationPublicKey,
-          typeID: application.id,
-        })
-
         session = await this.relayer.getNewSession({
           chain: blockchainID,
           applicationPubKey: application?.gatewayAAT.applicationPublicKey,
@@ -637,6 +626,15 @@ export class PocketRelayer {
             rejectSelfSignedCertificates: false,
             timeout: SESSION_TIMEOUT,
           },
+        })
+
+        logger.log('info', 'success dispatcher call to obtain session', {
+          requestID,
+          blockchainID,
+          gatewayPublicKey: application?.gatewayAAT.applicationPublicKey,
+          typeID: application.id,
+          blockHeight: session?.blockHeight,
+          sessionBlockHeight: session?.header?.sessionBlockHeight,
         })
 
         // TODO: Remove when sdk does it internally

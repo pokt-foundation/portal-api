@@ -2,3 +2,4 @@ dist
 *.json
 coverage
 pocket-gateway
+.nycrc

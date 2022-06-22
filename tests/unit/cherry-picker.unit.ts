@@ -1,16 +1,16 @@
 import { Node } from '@pokt-foundation/pocketjs-types'
-import RedisMock from 'ioredis-mock'
 import { expect } from '@loopback/testlab'
 import { Applications } from '../../src/models'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { DEFAULT_MOCK_VALUES, PocketMock } from '../mocks/pocketjs'
+const Redis = require('ioredis-mock')
 
 describe('Cherry picker service (unit)', () => {
   let cherryPicker: CherryPicker
-  let redis: RedisMock.Redis
+  let redis: typeof Redis
 
   before('initialize instance', async () => {
-    redis = new RedisMock(0, '')
+    redis = new Redis(0, '')
 
     cherryPicker = new CherryPicker({ redis, checkDebug: true, archivalChains: ['1234', '4567'] })
   })
