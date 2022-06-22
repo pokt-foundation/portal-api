@@ -330,11 +330,6 @@ export class PocketRelayer {
             }
             return relay.response
           } else if (relay instanceof RelayError) {
-            // Record failure metric, retry if possible or fallback
-            // Increment error log
-            await this.cache.incr(blockchainID + '-' + relay.servicer_node + '-errors')
-            await this.cache.expire(blockchainID + '-' + relay.servicer_node + '-errors', 3600)
-
             let error = relay.message
 
             if (typeof relay.message === 'object') {
