@@ -17,9 +17,14 @@ export class Cache {
     return Math.ceil(this.ttlFactor * ttl)
   }
 
-  async set(key: string, value: string, ttlType: string, ttlSeconds?: number): Promise<string> {
+  // TODO: Allow more expire types
+  async set(key: string, value: string, ttlType: 'KEEPTTL' | 'EX', ttlSeconds?: number): Promise<string> {
+    if (ttlType === 'KEEPTTL') {
+      await this.local.set(key, value, ttlType)
+      return this.remote.set(key, value, ttlType)
+    }
     await this.local.set(key, value, ttlType, this.getLocalTTL(ttlSeconds))
-    return this.remote.set(key, value, ttlType, ttlSeconds)
+    return this.remote.set(key, value, ttlType, this.getLocalTTL(ttlSeconds))
   }
 
   async get(key: string): Promise<string | null> {

@@ -3,7 +3,6 @@ import { EvidenceSealedError } from '@pokt-foundation/pocketjs-relayer'
 import { HTTPMethod } from '@pokt-foundation/pocketjs-types'
 import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
-import RedisMock from 'ioredis-mock'
 import { ErrorObject } from 'jsonrpc-lite'
 import { Encryptor } from 'strong-cryptor'
 import { expect, sinon } from '@loopback/testlab'
@@ -24,6 +23,7 @@ import { DUMMY_ENV } from '../acceptance/test-helper'
 import { gatewayTestDB } from '../fixtures/test.datasource'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
+const Redis = require('ioredis-mock')
 
 const logger = require('../../src/services/logger')
 
@@ -150,7 +150,7 @@ describe('Pocket relayer service (unit)', () => {
   const origin = 'unit-test'
 
   before('initialize variables', async () => {
-    cache = new Cache(new RedisMock(0, ''), new RedisMock(1, ''))
+    cache = new Cache(new Redis(0, ''), new Redis(1, ''))
     cherryPicker = new CherryPicker({ redis: cache.remote, checkDebug: false })
     metricsRecorder = metricsRecorderMock(cache.remote, cherryPicker)
     chainChecker = new ChainChecker(cache, metricsRecorder, origin)
