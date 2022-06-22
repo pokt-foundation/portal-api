@@ -219,7 +219,7 @@ export class PocketRelayer {
       return restriction
     }
 
-    const fallbackAvailable = blockchainAltruist !== undefined ? true : false
+    const fallbackAvailable = blockchainAltruist ? true : false
 
     try {
       if (!this.alwaysRedirectToAltruists) {
