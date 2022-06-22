@@ -622,13 +622,6 @@ export class PocketRelayer {
       if (cachedSession) {
         session = JSON.parse(cachedSession)
       } else {
-        logger.log('info', 'call to dispatcher to obtain session', {
-          requestID,
-          blockchainID,
-          gatewayPublicKey: application?.gatewayAAT.applicationPublicKey,
-          typeID: application.id,
-        })
-
         session = await this.relayer.getNewSession({
           chain: blockchainID,
           applicationPubKey: application?.gatewayAAT.applicationPublicKey,
@@ -637,6 +630,15 @@ export class PocketRelayer {
             rejectSelfSignedCertificates: false,
             timeout: SESSION_TIMEOUT,
           },
+        })
+
+        logger.log('info', 'success dispatcher call to obtain session', {
+          requestID,
+          blockchainID,
+          gatewayPublicKey: application?.gatewayAAT.applicationPublicKey,
+          typeID: application.id,
+          blockHeight: session?.blockHeight,
+          sessionBlockHeight: session?.header?.sessionBlockHeight,
         })
 
         // TODO: Remove when sdk does it internally
