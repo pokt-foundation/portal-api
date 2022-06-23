@@ -56,6 +56,7 @@ jobs:
           envkey_LOG_TO_CLOUDWATCH: false
           envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          envkey_COMMIT_HASH: ${{ github.sha }}
           envkey_ARCHIVAL_CHAINS: 0022,0028,0010,000A,000B,000C
           envkey_LOG_TO_DATADOG: true
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
