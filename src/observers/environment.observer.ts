@@ -41,7 +41,7 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'AWS_SECRET_ACCESS_KEY',
   ]
 
-  private static requiredEnvVarsOnlyInProd = ['COMMIT_HASH']
+  private static requiredEnvVarsOnlyInProd = []
 
   private static optionalEnvVars: string[] = ['ALWAYS_REDIRECT_TO_ALTRUISTS', 'REDIS_LOCAL_TTL_FACTOR']
 
