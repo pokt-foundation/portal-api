@@ -105,10 +105,6 @@
       "value": "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
     },
     {
-      "key": "COMMIT_HASH",
-      "value": "${{ github.sha }}"
-    },
-    {
       "key": "ARCHIVAL_CHAINS",
       "value": "0022,0028,0010,000A,000B,000C"
     },
