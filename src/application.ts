@@ -61,7 +61,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       DEFAULT_SYNC_ALLOWANCE,
       DEFAULT_LOG_LIMIT_BLOCKS,
       AAT_PLAN,
-      COMMIT_HASH,
       INFLUX_URL,
       INFLUX_TOKEN,
       INFLUX_ORG,
@@ -79,7 +78,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const defaultSyncAllowance: number = parseInt(DEFAULT_SYNC_ALLOWANCE) || -1
     const defaultLogLimitBlocks: number = parseInt(DEFAULT_LOG_LIMIT_BLOCKS) || 10000
     const aatPlan = AAT_PLAN || AatPlans.PREMIUM
-    const commitHash: string | string = COMMIT_HASH || ''
     const influxURL: string = INFLUX_URL || ''
     const influxToken: string = INFLUX_TOKEN || ''
     const influxOrg: string = INFLUX_ORG || ''
@@ -122,13 +120,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       environment === 'production'
         ? new Redis.Cluster([remoteRedisConfig], {
             scaleReads: 'slave',
-            redisOptions: {
-              keyPrefix: `${commitHash}-`,
-            },
           })
-        : new Redis(remoteRedisConfig.port, remoteRedisConfig.host, {
-            keyPrefix: `${commitHash}-`,
-          })
+        : new Redis(remoteRedisConfig.port, remoteRedisConfig.host)
 
     // Load local Redis for cache
     const localRedisEndpoint: string = LOCAL_REDIS_ENDPOINT || ''
