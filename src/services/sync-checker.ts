@@ -253,7 +253,7 @@ export class SyncChecker {
         })
 
         // Erase failure mark
-        await this.cache.set(blockchainID + '-' + node.publicKey + '-failure', 'false', 'EX', 60 * 60 * 24 * 30)
+        await this.cache.set(`{${blockchainID}}-${node.publicKey}-failure`, 'false', 'EX', 60 * 60 * 24 * 30)
 
         // In-sync: add to nodes list
         syncedNodes.push(node)
