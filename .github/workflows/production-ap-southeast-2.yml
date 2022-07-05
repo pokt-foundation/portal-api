@@ -1,0 +1,116 @@
+# .github/workflows: DO NOT MODIFY HERE BUT RATHER REFER TO THEIR CORRESPONDING
+# TEMPLATE IN THE POCKET-GATEWWAY FOLDER OTHERWISE YOUR CHANGES WILL BE OVERWRITTEN
+name: Terraform Production Deployment ap-southeast-1
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    name: Gateway
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Make envfile ap-southeast-1
+        uses: SpicyPizza/create-envfile@v1
+        with:
+          envkey_GATEWAY_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PRIVATE_KEY }}
+          envkey_GATEWAY_CLIENT_PASSPHRASE: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PASSPHRASE }}
+          envkey_REDIS_LOCAL_TTL_FACTOR: ${{ secrets.REDIS_LOCAL_TTL_FACTOR }}
+          envkey_MONGO_ENDPOINT: ${{ secrets.MONGO_PRODUCTION_ENDPOINT }}
+          envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_PRODUCTION_ENCRYPTION_KEY }}
+          envkey_DISPATCH_URL: ${{ secrets.DISPATCH_URL }}
+          envkey_ALTRUISTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_ALTRUISTS }}
+          envkey_REDIRECTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_REDIRECTS }}
+          envkey_LOCAL_REDIS_ENDPOINT: 172.17.0.1:6379
+          envkey_REDIS_PORT: 6379
+          envkey_POCKET_NETWORK_NODE_URL: ${{ secrets.POCKET_NETWORK_MAINNET_NODE_URL }}
+          envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
+          envkey_POCKET_BLOCK_TIME: 1038000
+          envkey_POCKET_RELAY_RETRIES: 0
+          envkey_DEFAULT_SYNC_ALLOWANCE: 5
+          envkey_DEFAULT_LOG_LIMIT_BLOCKS: 10000
+          envkey_AAT_PLAN: premium
+          envkey_NODE_ENV: production
+          envkey_INFLUX_URL: https://influx.portal.pokt.network:8086
+          envkey_INFLUX_ORG: pocket
+          envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
+          envkey_PSQL_CONNECTION: ${{ secrets.PSQL_CONNECTION }}
+          envkey_PSQL_CERTIFICATE: https://s3.amazonaws.com/rds-downloads/rds-ca-2019-root.pem
+          envkey_LOG_TO_CLOUDWATCH: false
+          envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          envkey_ARCHIVAL_CHAINS: 0022,0028,0010,000A,000B,000C
+          envkey_LOG_TO_DATADOG: true
+          envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
+          envkey_SILENT_LOGGING: true
+          envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}
+          envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.y2p8qe.clustercfg.apse1.cache.amazonaws.com
+          envkey_REGION: 'ap-southeast-1'
+          envkey_REGION_NAME: 'ap-southeast-1'
+          file_name: .env
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: gateway-prod
+          IMAGE_TAG: latest
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      - name: Fill in the new image ID / ap-southeast-1 - gateway
+        id: task-def-ap-southeast-1-gateway
+        uses: aws-actions/amazon-ecs-render-task-definition@master
+        with:
+          task-definition: pocket-gateway/tasks/production/ecs-task-definition.json
+          container-name: gateway
+          image: ${{ steps.build-image.outputs.image }}
+          # Needs to be set at container level to be read by the dd agent
+          environment-variables: |
+            DD_RUNTIME_METRICS_ENABLED=true
+            DD_PROFILING_ENABLED=true
+            DD_SERVICE=/ap-southeast-1/ecs/gateway
+            DD_VERSION=${{ github.sha }}
+            DD_ENV=production
+            DD_AGENT_HOST=datadog-agent
+
+      - name: Fill in the new image ID / ap-southeast-1 - datadog-agent
+        id: task-def-ap-southeast-1-datadog-agent
+        uses: aws-actions/amazon-ecs-render-task-definition@master
+        with:
+          task-definition: ${{ steps.task-def-ap-southeast-1-gateway.outputs.task-definition }}
+          container-name: datadog-agent
+          image: gcr.io/datadoghq/agent:latest
+          environment-variables: |
+            DD_API_KEY=${{ secrets.DATADOG_API_KEY }}
+            DD_SITE=datadoghq.eu
+            DD_LOGS_ENABLED=false
+            DD_APM_ENABLED=true
+            DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
+
+      - name: Deploy / ap-southeast-1
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def-ap-southeast-1-datadog-agent.outputs.task-definition }}
+          service: gateway-prod
+          cluster: gateway-prod
+          wait-for-service-stability: true
