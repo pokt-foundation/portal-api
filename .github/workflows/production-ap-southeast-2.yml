@@ -4,7 +4,7 @@ name: Terraform Production Deployment ap-southeast-2
 
 on:
   push:
-    branches: [T-1824_ap-southeast-2_workflows]
+    branches: [master]
 
 jobs:
   deploy:
