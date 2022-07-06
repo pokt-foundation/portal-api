@@ -267,6 +267,9 @@ export class SyncChecker {
           serviceURL,
           serviceDomain,
           sessionKey,
+          referenceBlockHeight,
+          nodeBlockHeight: blockHeight,
+          syncDiff: referenceBlockHeight - blockHeight,
         })
 
         this.metricsRecorder
