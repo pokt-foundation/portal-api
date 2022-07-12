@@ -483,7 +483,7 @@ export class CherryPicker {
         // If previously marked as failure, erase that
         if (failure) {
           failure = false
-          await this.redis.set(`{${blockchain}}-${id}-failure`, 'false', 'EX', 60 * 60 * 24 * 30)
+          await this.redis.set(`{${blockchain}}-${id}-failure`, 'false', 'EX', 60 * 60 * 2)
         }
         successRate = parsedLog.results['200'] / attempts
         medianSuccessLatency = parseFloat(parseFloat(parsedLog.medianSuccessLatency).toFixed(5))
