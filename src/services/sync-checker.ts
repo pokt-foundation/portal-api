@@ -241,7 +241,7 @@ export class SyncChecker {
         ? altruistBlockHeight + syncAllowance
         : highestNodeBlockHeight + syncAllowance
 
-      if (correctedNodeBlockHeight >= referenceBlockHeight && nodeSyncLog.blockHeight <= maximumBlockHeight) {
+      if (correctedNodeBlockHeight >= referenceBlockHeight && blockHeight <= maximumBlockHeight) {
         logger.log('info', 'SYNC CHECK IN-SYNC: ' + node.publicKey + ' height: ' + blockHeight, {
           requestID: requestID,
           blockchainID,
@@ -250,6 +250,7 @@ export class SyncChecker {
           serviceURL: node,
           serviceDomain,
           sessionKey,
+          blockHeight,
         })
 
         // Erase failure mark
@@ -259,7 +260,7 @@ export class SyncChecker {
         syncedNodes.push(node)
         syncedNodesList.push(node.publicKey)
       } else {
-        logger.log('info', 'SYNC CHECK BEHIND: ' + node.publicKey + ' height: ' + nodeSyncLog.blockHeight, {
+        logger.log('info', 'SYNC CHECK BEHIND: ' + node.publicKey + ' height: ' + blockHeight, {
           requestID: requestID,
           blockchainID,
           serviceNode: node.publicKey,
