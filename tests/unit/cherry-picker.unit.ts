@@ -252,7 +252,7 @@ describe('Cherry picker service (unit)', () => {
         metadata: {
           attempts: 1,
           successRate: 1,
-          applicationPubKey: session.header.applicationPubKey,
+          applicationPublicKey: session.header.applicationPubKey,
         },
       })
       let logs: string
@@ -284,7 +284,7 @@ describe('Cherry picker service (unit)', () => {
           attempts: 26,
           p90: 0.262,
           successRate: 0.9230769230769231,
-          applicationPubKey: session.header.applicationPubKey,
+          applicationPublicKey: session.header.applicationPubKey,
         },
       })
 
