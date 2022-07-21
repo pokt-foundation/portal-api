@@ -24,6 +24,11 @@ const EXPECTED_SUCCESS_LATENCY = 0.15
 // This multiplier is tested to produce a curve that adequately punishes slow nodes
 const WEIGHT_MULTIPLIER = 35
 
+// This weight controls how much weight is given to the p90 service quality result.
+// 1 - this value determines the median service quality weight
+// This weights the nodes better than a simple average
+const P90_WEIGHT = 0.3
+
 export class CherryPicker {
   checkDebug: boolean
   redis: Redis
@@ -258,8 +263,8 @@ export class CherryPicker {
         // Don't use weighting until there have been at least 20 requests
         if (totalResults > 20) {
           serviceQuality.weightedSuccessLatency = (
-            bucketedServiceQuality.median +
-            0.3 * bucketedServiceQuality.p90
+            (1 - P90_WEIGHT) * bucketedServiceQuality.median +
+            P90_WEIGHT * bucketedServiceQuality.p90
           ).toFixed(5)
         }
         serviceQuality.metadata = {
@@ -398,7 +403,7 @@ export class CherryPicker {
       let benchmark = previousNodeLatency
 
       // Only count the latency difference if this node is slower than the expected success latency
-      if (previousNodeLatency > 0 && sortedLog.medianSuccessLatency > EXPECTED_SUCCESS_LATENCY) {
+      if (previousNodeLatency > 0 && sortedLog.weightedSuccessLatency > EXPECTED_SUCCESS_LATENCY) {
         // If previous node latency is faster than expected success, use the expected as the benchmark
         if (previousNodeLatency < EXPECTED_SUCCESS_LATENCY) {
           benchmark = EXPECTED_SUCCESS_LATENCY
