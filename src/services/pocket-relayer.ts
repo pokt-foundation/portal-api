@@ -206,7 +206,6 @@ export class PocketRelayer {
           logLimitBlocks,
           blockchainID,
           altruistURL,
-          origin: this.origin,
         })
 
         if (restriction instanceof ErrorObject) {

@@ -19,15 +19,8 @@ export async function enforceJSONRPCRestrictions({
   logLimitBlocks,
   blockchainID,
   altruistURL,
-  origin,
 }) {
-  // This converts the raw data into formatted JSON then back to a string for relaying.
-  // This allows us to take in both [{},{}] arrays of JSON and plain JSON and removes
-  // extraneous characters like newlines and tabs from the rawData.
-  // Normally the arrays of JSON do not pass the AJV validation used by Loopback.
-  const rpcID = parseRPCID(parsedRawData)
-
-  return enforceRestrictions(application, parsedRawData, blockchainID, requestID, rpcID, logLimitBlocks, altruistURL)
+  return enforceRestrictions(application, parsedRawData, blockchainID, requestID, logLimitBlocks, altruistURL)
 }
 
 export async function validateJSONRPCRelayResponse(
@@ -161,11 +154,12 @@ async function enforceRestrictions(
   parsedRawData: Record<string, any>,
   blockchainID: string,
   requestID: string,
-  rpcID: number,
   logLimitBlocks: number,
   altruist: string
 ): Promise<void | ErrorObject> {
   let response: Promise<void | ErrorObject>
+
+  const rpcID = parseRPCID(parsedRawData)
 
   // Is it a bundled transaction?
   if (parsedRawData instanceof Array) {
