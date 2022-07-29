@@ -1,5 +1,5 @@
 import { utils } from 'ethers'
-import { parseMethod } from '../parsing'
+import { parseMethod } from '../jsonrpc/parsing'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function extractContractAddress(rawData: Record<string, any>): string | undefined {

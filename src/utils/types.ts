@@ -1,11 +1,12 @@
 import { Node, HTTPMethod, StakingStatus } from '@pokt-foundation/pocketjs-types'
 import { Applications } from '../models'
 import { SyncCheckOptions } from '../services/sync-checker'
+import { SupportedProtocols } from './constants'
 
 export type BlockchainDetails = {
   blockchain: string
   blockchainChainID: string
-  blockchainEnforceResult: string
+  blockchainCommunicationProtocol: SupportedProtocols
   blockchainID: string
   blockchainIDCheck: string
   blockchainSyncCheck: SyncCheckOptions

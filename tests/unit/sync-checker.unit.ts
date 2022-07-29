@@ -1,4 +1,5 @@
 import { EvidenceSealedError } from '@pokt-foundation/pocketjs-relayer'
+import { HTTPMethod } from '@pokt-foundation/pocketjs-types'
 import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
 import { expect, sinon } from '@loopback/testlab'
@@ -183,7 +184,8 @@ describe('Sync checker service (unit)', () => {
         '',
         relayer,
         undefined,
-        session
+        session,
+        HTTPMethod.NA
       )
 
       const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
@@ -210,7 +212,8 @@ describe('Sync checker service (unit)', () => {
         '',
         relayer,
         undefined,
-        session
+        session,
+        HTTPMethod.NA
       )
 
       const expectedBlockHeight = 0
@@ -239,7 +242,8 @@ describe('Sync checker service (unit)', () => {
         '',
         relayer,
         undefined,
-        session
+        session,
+        HTTPMethod.NA
       )
 
       const expectedBlockHeight = 0
@@ -291,7 +295,8 @@ describe('Sync checker service (unit)', () => {
       '',
       relayer,
       undefined,
-      session
+      session,
+      HTTPMethod.NA
     )
 
     const expectedBlockHeight = 17435804 // 0x10a0c9c to base 10
@@ -324,6 +329,7 @@ describe('Sync checker service (unit)', () => {
           blockchainSyncBackup: blockchains['0021']?.altruist,
           pocketAAT: POCKET_AAT,
           session,
+          httpMethod: HTTPMethod.NA,
         })
       ).nodes
 
@@ -345,6 +351,7 @@ describe('Sync checker service (unit)', () => {
           blockchainSyncBackup: blockchains['0021']?.altruist,
           pocketAAT: POCKET_AAT,
           session,
+          httpMethod: HTTPMethod.NA,
         })
       ).nodes
 
@@ -373,6 +380,7 @@ describe('Sync checker service (unit)', () => {
           blockchainSyncBackup: blockchains['0099']?.altruist,
           pocketAAT: POCKET_AAT,
           session,
+          httpMethod: HTTPMethod.NA,
         })
       ).nodes
 
@@ -394,6 +402,7 @@ describe('Sync checker service (unit)', () => {
           blockchainSyncBackup: blockchains['0099']?.altruist,
           pocketAAT: POCKET_AAT,
           session,
+          httpMethod: HTTPMethod.NA,
         })
       ).nodes
 
@@ -422,6 +431,7 @@ describe('Sync checker service (unit)', () => {
           blockchainSyncBackup: blockchains['0006']?.altruist,
           pocketAAT: POCKET_AAT,
           session,
+          httpMethod: HTTPMethod.NA,
         })
       ).nodes
 
@@ -443,6 +453,7 @@ describe('Sync checker service (unit)', () => {
           blockchainSyncBackup: blockchains['0006']?.altruist,
           pocketAAT: POCKET_AAT,
           session,
+          httpMethod: HTTPMethod.NA,
         })
       ).nodes
 
@@ -471,6 +482,7 @@ describe('Sync checker service (unit)', () => {
           blockchainSyncBackup: blockchains['0001']?.altruist,
           pocketAAT: POCKET_AAT,
           session,
+          httpMethod: HTTPMethod.NA,
         })
       ).nodes
 
@@ -492,6 +504,7 @@ describe('Sync checker service (unit)', () => {
           blockchainSyncBackup: blockchains['0001']?.altruist,
           pocketAAT: POCKET_AAT,
           session,
+          httpMethod: HTTPMethod.NA,
         })
       ).nodes
 
@@ -518,6 +531,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: blockchains['0006']?.altruist,
         pocketAAT: POCKET_AAT,
         session,
+        httpMethod: HTTPMethod.NA,
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -551,6 +565,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: POCKET_AAT,
         session,
+        httpMethod: HTTPMethod.NA,
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -582,6 +597,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: POCKET_AAT,
         session,
+        httpMethod: HTTPMethod.NA,
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -620,6 +636,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: POCKET_AAT,
         session,
+        httpMethod: HTTPMethod.NA,
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -651,6 +668,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: POCKET_AAT,
         session,
+        httpMethod: HTTPMethod.NA,
       })
 
       expect(syncedNodes).to.have.length(0)
@@ -675,6 +693,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: POCKET_AAT,
         session,
+        httpMethod: HTTPMethod.NA,
       })
 
       expect(syncedNodes).to.have.length(0)
@@ -713,6 +732,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: POCKET_AAT,
         session,
+        httpMethod: HTTPMethod.NA,
       })
 
       expect(syncedNodes).to.have.length(5)
@@ -790,6 +810,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: POCKET_AAT,
         session,
+        httpMethod: HTTPMethod.NA,
       })
 
       expect(syncedNodes).to.have.length(3)
@@ -826,6 +847,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: POCKET_AAT,
         session,
+        httpMethod: HTTPMethod.NA,
       })
 
       expect(syncedNodes).to.have.length(1)
@@ -859,6 +881,7 @@ describe('Sync checker service (unit)', () => {
         blockchainSyncBackup: blockchains['0021']?.altruist,
         pocketAAT: POCKET_AAT,
         session,
+        httpMethod: HTTPMethod.NA,
       })
 
       expect(syncedNodes).to.have.length(4)

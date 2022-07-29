@@ -1,4 +1,7 @@
-import { parseJSONRPCError } from './parsing'
+import jsonrpc, { ErrorObject as JSONRPCError } from 'jsonrpc-lite'
+import { HttpErrors } from '@loopback/rest'
+import { SupportedProtocols } from './constants'
+import { parseJSONRPCError } from './jsonrpc/parsing'
 
 // Messages thrown by evm clients like Geth that are node fault, not user fault.
 const EVM_SERVER_ERROR_MSGS = ['connection error']
@@ -17,4 +20,21 @@ export function isUserErrorEVM(response: string): boolean {
   } catch {
     return false
   }
+}
+
+export function constructError(error: GenericErrorInput): JSONRPCError | HttpErrors.HttpError {
+  if (error.protocol === SupportedProtocols.JSONRPC) {
+    return new JSONRPCError(error?.id, new jsonrpc.JsonRpcError(error.message, error.code))
+  } else if (error.protocol === SupportedProtocols.REST) {
+    return new HttpErrors[error.code](error.message)
+  }
+}
+
+export type CombinedError = JSONRPCError | HttpErrors.HttpError
+
+interface GenericErrorInput {
+  id?: string
+  message: string
+  code: number
+  protocol: SupportedProtocols
 }

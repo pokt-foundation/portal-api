@@ -1,7 +1,7 @@
 import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
 import { Applications } from '../../models'
 import { WS_ONLY_METHODS } from '../constants'
-import { parseMethod } from '../parsing'
+import { parseMethod } from '../jsonrpc/parsing'
 import { enforceGetLogs } from './get-logs'
 import { isContractWhitelisted, isWhitelisted } from './whitelist'
 

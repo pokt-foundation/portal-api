@@ -3,7 +3,7 @@ import axios, { AxiosRequestConfig } from 'axios'
 import { Redis } from 'ioredis'
 import { Cache } from '../services/cache'
 
-const logger = require('../services/logger')
+const logger = require('../../src/services/logger')
 
 /**
  * Removes node from cached session, following calls within the same session,

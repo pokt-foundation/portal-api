@@ -1,10 +1,10 @@
 import { Relayer } from '@pokt-foundation/pocketjs-relayer'
 import { HTTPMethod } from '@pokt-foundation/pocketjs-types'
-import jsonrpc, { ErrorObject, JsonRpcError } from 'jsonrpc-lite'
+import { ErrorObject } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
 import { FilterExcludingWhere, repository } from '@loopback/repository'
-import { get, param, post, requestBody } from '@loopback/rest'
+import { HttpErrors, param, post, requestBody } from '@loopback/rest'
 import { WriteApi } from '@influxdata/influxdb-client'
 import { Applications, GatewaySettings, LoadBalancers } from '../models'
 import { StickinessOptions } from '../models/load-balancers.model'
@@ -15,8 +15,10 @@ import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
+import { SupportedProtocols } from '../utils/constants'
 import { checkWhitelist } from '../utils/enforcements'
-import { parseRawData, parseRPCID } from '../utils/parsing'
+import { CombinedError, constructError } from '../utils/errors'
+import { parseRawData, parseRPCID } from '../utils/jsonrpc/parsing'
 import { getBlockchainAliasesByDomain, loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
 const logger = require('../services/logger')
@@ -124,7 +126,7 @@ export class V1Controller {
       },
     })
     rawData: object
-  ): Promise<string | ErrorObject> {
+  ): Promise<string | CombinedError> {
     let rpcID = 1
 
     try {
@@ -175,7 +177,12 @@ export class V1Controller {
       })
     }
 
-    return jsonrpc.error(rpcID, new jsonrpc.JsonRpcError('Invalid domain', -32052)) as ErrorObject
+    return constructError({
+      message: 'Invalid domain',
+      code: -32052,
+      id: rpcID.toString(),
+      protocol: SupportedProtocols.JSONRPC,
+    })
   }
 
   /**
@@ -210,7 +217,7 @@ export class V1Controller {
     rawData: object,
     @param.filter(Applications, { exclude: 'where' })
     filter?: FilterExcludingWhere<Applications>
-  ): Promise<string | ErrorObject> {
+  ): Promise<string | CombinedError> {
     let reqRPCID = 1
 
     // Take the relay path from the end of the endpoint URL
@@ -227,7 +234,12 @@ export class V1Controller {
       let loadBalancer = await this.fetchLoadBalancer(id, filter)
 
       if (!loadBalancer?.id) {
-        throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('Load balancer not found', -32054))
+        throw constructError({
+          message: 'Load balancer not found',
+          code: -32054,
+          id: reqRPCID.toString(),
+          protocol: SupportedProtocols.JSONRPC,
+        })
       }
 
       const gigastakeOptions: {
@@ -263,10 +275,12 @@ export class V1Controller {
           loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
 
           if (!loadBalancer?.id) {
-            throw new ErrorObject(
-              reqRPCID,
-              new jsonrpc.JsonRpcError(`GS (${redirect.alias}) load balancer not found`, -32054)
-            )
+            throw constructError({
+              message: `Gigastake load balancer not found (${redirect.alias})`,
+              code: -32054,
+              id: reqRPCID.toString(),
+              protocol: SupportedProtocols.JSONRPC,
+            })
           }
 
           const originalApp = await this.fetchLoadBalancerApplication(
@@ -309,7 +323,12 @@ export class V1Controller {
       )
 
       if (!application?.id) {
-        throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('No application found in the load balancer', -32055))
+        throw constructError({
+          message: 'No application found in the load balancer',
+          code: -32055,
+          id: reqRPCID.toString(),
+          protocol: SupportedProtocols.JSONRPC,
+        })
       }
 
       if (gigastakeOptions?.gatewaySettings) {
@@ -345,7 +364,7 @@ export class V1Controller {
 
       return await this.pocketRelayer.sendRelay(options)
     } catch (e) {
-      if (e instanceof ErrorObject) {
+      if (e instanceof ErrorObject || e instanceof HttpErrors.HttpError) {
         logger.log('error', 'LOAD BALANCER RELAY ERROR: ' + e.error.message, {
           requestID: this.requestID,
           relayType: 'LB',
@@ -358,7 +377,12 @@ export class V1Controller {
       }
 
       if (e instanceof SyntaxError && e.message.includes('JSON')) {
-        return jsonrpc.error(reqRPCID, new JsonRpcError('The request body is not proper JSON', -32066))
+        return constructError({
+          message: 'The request body is not proper JSON',
+          code: -32066,
+          id: reqRPCID.toString(),
+          protocol: SupportedProtocols.JSONRPC,
+        })
       }
 
       logger.log('error', 'INTERNAL ERROR: ' + JSON.stringify(e), {
@@ -405,7 +429,7 @@ export class V1Controller {
     rawData: object,
     @param.filter(Applications, { exclude: 'where' })
     filter?: FilterExcludingWhere<Applications>
-  ): Promise<string | ErrorObject> {
+  ): Promise<string | CombinedError> {
     let reqRPCID = 1
 
     // Take the relay path from the end of the endpoint URL
@@ -422,7 +446,12 @@ export class V1Controller {
       let application = await this.fetchApplication(id, filter)
 
       if (!application?.id) {
-        throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('Application not found', -32056))
+        throw constructError({
+          message: 'Application not found',
+          code: -32056,
+          id: reqRPCID.toString(),
+          protocol: SupportedProtocols.JSONRPC,
+        })
       }
 
       const applicationID = application.id
@@ -466,9 +495,11 @@ export class V1Controller {
         applicationPublicKey,
       }
 
-      return await this.pocketRelayer.sendRelay(sendRelayOptions)
+      const relay = await this.pocketRelayer.sendRelay(sendRelayOptions)
+
+      return relay
     } catch (e) {
-      if (e instanceof ErrorObject) {
+      if (e instanceof ErrorObject || e instanceof HttpErrors.HttpError) {
         logger.log('error', 'APP RELAY ERROR: ' + e.error.message, {
           requestID: this.requestID,
           relayType: 'APP',
@@ -481,7 +512,12 @@ export class V1Controller {
       }
 
       if (e instanceof SyntaxError && e.message.includes('JSON')) {
-        return jsonrpc.error(reqRPCID, new JsonRpcError('The request body is not proper JSON', -32066))
+        return constructError({
+          message: 'The request body is not proper JSON',
+          code: -32066,
+          id: reqRPCID.toString(),
+          protocol: SupportedProtocols.JSONRPC,
+        })
       }
 
       logger.log('error', 'INTERNAL ERROR: ' + JSON.stringify(e), {
@@ -494,67 +530,6 @@ export class V1Controller {
         trace: e.stack,
       })
     }
-  }
-
-  /**
-   * Load Balancers cannot be relayed through a GET request. Returns message to
-   * use POST method instead
-   * @param id Load Balancer ID
-   * @param rawData
-   * @param filter
-   * @returns
-   */
-  @get('/v1/lb/{id}')
-  async invalidLoadBalancerRelay(
-    @requestBody({
-      description: 'Relay Request',
-      required: true,
-      content: {
-        'application/json': {
-          // Skip body parsing
-          'x-parser': 'raw',
-        },
-      },
-    })
-    rawData: object
-  ): Promise<ErrorObject> {
-    return V1Controller.getInvalidRequestResponse(rawData || '')
-  }
-
-  /**
-   * Load Balancers cannot be relayed through a GET request. Returns message to
-   * use POST method instead
-   * @param id Load Balancer ID
-   * @param rawData
-   * @param filter
-   * @returns
-   */
-  @get('/v1/{id}')
-  async invalidApplicationRelay(
-    @requestBody({
-      description: 'Relay Request',
-      required: true,
-      content: {
-        'application/json': {
-          // Skip body parsing
-          'x-parser': 'raw',
-        },
-      },
-    })
-    rawData: object
-  ): Promise<ErrorObject> {
-    return V1Controller.getInvalidRequestResponse(rawData || '')
-  }
-
-  static getInvalidRequestResponse(rawData: object | string): ErrorObject {
-    const parsedRawData = parseRawData(rawData)
-
-    const reqRPCID = parseRPCID(parsedRawData)
-
-    return new ErrorObject(
-      reqRPCID,
-      new jsonrpc.JsonRpcError('GET requests are not supported. Use POST instead', -32067)
-    )
   }
 
   async checkClientStickiness(
@@ -665,7 +640,12 @@ export class V1Controller {
 
     // Sanity check; make sure applications are configured for this LB
     if (verifiedIDs.length < 1) {
-      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('Load Balancer configuration invalid', -32058))
+      throw constructError({
+        message: 'Load Balancer configuration invalid',
+        code: -32058,
+        id: rpcID.toString(),
+        protocol: SupportedProtocols.JSONRPC,
+      })
     }
     /*
     return this.fetchApplication(
@@ -708,7 +688,12 @@ export class V1Controller {
     const loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
 
     if (!loadBalancer?.id) {
-      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError(`GS (${redirect.alias}) load balancer not found`, -32054))
+      throw constructError({
+        message: `Gigastake load balancer not found (${redirect.alias})`,
+        code: -32054,
+        id: rpcID.toString(),
+        protocol: SupportedProtocols.JSONRPC,
+      })
     }
 
     const application = await this.fetchLoadBalancerApplication(
@@ -720,7 +705,12 @@ export class V1Controller {
     )
 
     if (!application?.id) {
-      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('No application found in the load balancer', -32055))
+      throw constructError({
+        message: 'No application found in the load balancer',
+        code: -32055,
+        id: rpcID.toString(),
+        protocol: SupportedProtocols.JSONRPC,
+      })
     }
 
     return application

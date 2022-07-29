@@ -16,7 +16,7 @@ import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { PocketRelayer } from '../../src/services/pocket-relayer'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../../src/services/sync-checker'
 import { checkWhitelist, checkSecretKey } from '../../src/utils/enforcements'
-import { parseMethod } from '../../src/utils/parsing'
+import { parseMethod } from '../../src/utils/jsonrpc/parsing'
 import { loadBlockchain } from '../../src/utils/relayer'
 import { CheckResult } from '../../src/utils/types'
 import { DUMMY_ENV } from '../acceptance/test-helper'
@@ -44,6 +44,7 @@ const BLOCKCHAINS = [
     blockchainAliases: ['eth-mainnet-x'],
     active: true,
     enforceResult: 'JSON',
+    communicationProtocol: 'jsonrpc',
     nodeCount: 1,
     chainID: '137',
     syncCheckOptions: {
@@ -65,6 +66,7 @@ const BLOCKCHAINS = [
     blockchainAliases: ['eth-mainnet'],
     active: true,
     enforceResult: 'JSON',
+    communicationProtocol: 'jsonrpc',
     nodeCount: 1,
     chainID: 100,
     chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
@@ -85,6 +87,7 @@ const BLOCKCHAINS = [
     network: 'ETH-1S',
     description: 'Ethereum Mainnet String',
     index: 3,
+    communicationProtocol: 'jsonrpc',
     blockchain: 'eth-mainnet-string',
     blockchainAliases: ['eth-mainnet-string'],
     active: true,

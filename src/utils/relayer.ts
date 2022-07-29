@@ -59,7 +59,7 @@ export async function loadBlockchain(
     throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${host}`, -32057))
   }
 
-  let blockchainEnforceResult = ''
+  let blockchainCommunicationProtocol = ''
   let blockchainIDCheck = ''
   let blockchainID = ''
   let blockchainChainID = ''
@@ -77,10 +77,6 @@ export async function loadBlockchain(
 
   blockchainID = blockchainFilter.hash as string // ex. '0021'
 
-  // Record the necessary format for the result; example: JSON
-  if (blockchainFilter.enforceResult) {
-    blockchainEnforceResult = blockchainFilter.enforceResult
-  }
   // Sync Check to determine current blockheight
   if (blockchainFilter.syncCheckOptions) {
     blockchainSyncCheck.body = (blockchainFilter.syncCheckOptions.body || '').replace(/\\"/g, '"')
@@ -119,9 +115,14 @@ export async function loadBlockchain(
     blockchainRedirects = blockchainFilter.redirects
   }
 
+  // Communication Protocol (e.g. JSON-RPC or REST)
+  if (blockchainFilter.communicationProtocol) {
+    blockchainCommunicationProtocol = blockchainFilter.communicationProtocol
+  }
+
   return Promise.resolve({
     blockchain,
-    blockchainEnforceResult,
+    blockchainCommunicationProtocol,
     blockchainSyncCheck,
     blockchainIDCheck,
     blockchainID,

@@ -1,7 +1,8 @@
 import { EvidenceSealedError, Relayer } from '@pokt-foundation/pocketjs-relayer'
-import { Session, Node, PocketAAT, HTTPMethod } from '@pokt-foundation/pocketjs-types'
+import { Session, HTTPMethod, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
 import axios, { AxiosRequestConfig, Method } from 'axios'
-import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
+import { ErrorObject } from 'jsonrpc-lite'
+import { HttpErrors } from '@loopback/rest'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
 import { Applications } from '../models'
@@ -9,24 +10,25 @@ import { BlockchainsRepository } from '../repositories'
 import { ChainChecker, ChainIDFilterOptions } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
 import { MetricsRecorder } from '../services/metrics-recorder'
-import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { removeNodeFromSession } from '../utils/cache'
-import { SESSION_TIMEOUT, DEFAULT_ALTRUIST_TIMEOUT } from '../utils/constants'
+import { DEFAULT_ALTRUIST_TIMEOUT, SESSION_TIMEOUT, SupportedProtocols } from '../utils/constants'
 import {
   checkEnforcementJSON,
+  checkSecretKey,
+  checkWhitelist,
   isRelayError,
   isUserError,
-  checkWhitelist,
-  checkSecretKey,
   SecretKeyDetails,
 } from '../utils/enforcements'
-import { enforceEVMRestrictions } from '../utils/evm/restrictions'
+import { CombinedError, constructError } from '../utils/errors'
 import { getApplicationPublicKey } from '../utils/helpers'
-import { parseJSONRPCError, parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
+import { enforceJSONRPCRestrictions, validateJSONRPCRelayResponse } from '../utils/jsonrpc/handler'
+import { parseMethod, parseRawData, parseRPCID } from '../utils/jsonrpc/parsing'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
 import { CheckResult, RelayResponse, SendRelayOptions } from '../utils/types'
 import { Cache } from './cache'
 import { NodeSticker } from './node-sticker'
+import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from './sync-checker'
 
 const logger = require('../services/logger')
 
@@ -127,7 +129,7 @@ export class PocketRelayer {
     logLimitBlocks,
     applicationID,
     applicationPublicKey,
-  }: SendRelayOptions): Promise<string | ErrorObject> {
+  }: SendRelayOptions): Promise<string | CombinedError> {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries
     }
@@ -149,7 +151,7 @@ export class PocketRelayer {
     const rpcID = parseRPCID(parsedRawData)
 
     const {
-      blockchainEnforceResult,
+      blockchainCommunicationProtocol,
       blockchainSyncCheck,
       blockchainIDCheck,
       blockchainID,
@@ -170,6 +172,11 @@ export class PocketRelayer {
       throw e
     })
 
+    // Check for lb-specific log limits
+    if (logLimitBlocks === undefined || logLimitBlocks <= 0) {
+      logLimitBlocks = blockchainLogLimitBlocks
+    }
+
     relayPath = !relayPath && blockchainPath ? blockchainPath : relayPath
 
     // Add relay path to URL
@@ -186,38 +193,36 @@ export class PocketRelayer {
       application.id
     )
 
-    const overallStart = process.hrtime()
-
-    // Check for lb-specific log limits
-    if (logLimitBlocks === undefined || logLimitBlocks <= 0) {
-      logLimitBlocks = blockchainLogLimitBlocks
-    }
-
     const method = parseMethod(parsedRawData)
-
-    const restriction = await this.enforceRestrictions(
-      application,
-      parsedRawData,
-      blockchainID,
-      requestID,
-      rpcID,
-      logLimitBlocks,
-      altruistURL
-    )
-
     const data = JSON.stringify(parsedRawData)
 
-    if (restriction instanceof ErrorObject) {
-      logger.log('error', `RESTRICTION ERROR ${blockchainID} req: ${data}`, {
-        blockchainID,
-        requestID,
-        relayType: 'APP',
-        error: `${restriction.error.message}`,
-        typeID: application.id,
-        origin: this.origin,
-      })
-      return restriction
+    let restriction
+    switch (blockchainCommunicationProtocol) {
+      case SupportedProtocols.JSONRPC:
+        restriction = await enforceJSONRPCRestrictions({
+          parsedRawData,
+          application,
+          requestID,
+          logLimitBlocks,
+          blockchainID,
+          altruistURL,
+          origin: this.origin,
+        })
+
+        if (restriction instanceof ErrorObject) {
+          logger.log('error', `RESTRICTION ERROR ${blockchainID} req: ${data}`, {
+            blockchainID,
+            requestID,
+            relayType: 'APP',
+            error: `${restriction.error.message}`,
+            typeID: application.id,
+            origin: this.origin,
+          })
+          return restriction
+        }
     }
+
+    const overallStart = process.hrtime()
 
     const fallbackAvailable = blockchainAltruist ? true : false
 
@@ -237,10 +242,12 @@ export class PocketRelayer {
               relayType: 'APP',
               typeID: application.id,
             })
-            throw new ErrorObject(
-              rpcID,
-              new jsonrpc.JsonRpcError(`Overall Timeout exceeded: ${overallTimeOut}`, -32051)
-            )
+            throw constructError({
+              message: `Overall Timeout exceeded: ${overallTimeOut}`,
+              code: -32051,
+              id: rpcID.toString(),
+              protocol: blockchainCommunicationProtocol,
+            })
           }
 
           // Send this relay attempt
@@ -254,7 +261,7 @@ export class PocketRelayer {
             applicationPublicKey,
             requestTimeOut,
             blockchainID,
-            blockchainEnforceResult,
+            blockchainCommunicationProtocol,
             blockchainSyncCheck,
             blockchainIDCheck,
             blockchainChainID,
@@ -264,124 +271,42 @@ export class PocketRelayer {
             blockchainSyncBackup: String(blockchainAltruist),
           })
 
-          // TODO: Remove references of relayResponse and change for pocketjs v2 Response object
-          if (!(relay instanceof Error)) {
-            // Even if the relay is successful, we could get an invalid response from servide node.
-            // We attempt to parse the service node response using jsonrpc-lite lib.
+          const metricOptions: MetricOptions = {
+            requestID,
+            applicationID,
+            applicationPublicKey,
+            preferredNodeAddress,
+            blockchainID,
+            relayStart,
+            fallback: false,
+            method: method,
+            origin: this.origin,
+            data,
+            session: this.session,
+            gigastakeAppID: applicationID !== application.id ? application.id : undefined,
+          }
 
-            const parsedRelayResponse = jsonrpc.parse(relay.response as string) as IParsedObject
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          let relayResponse: any
 
-            // If the parsing goes wrong, we get a response with 'invalid' type and the following message.
-            // We could get 'invalid' and not a parse error, hence we check both.
-            if (parsedRelayResponse.type === 'invalid' && parsedRelayResponse.payload.message === 'Parse error') {
-              throw new Error('Service Node returned an invalid response')
-            }
-            // Check for user error to bubble these up to the API
-            let userErrorMessage = ''
-            let userErrorCode = ''
+          switch (blockchainCommunicationProtocol) {
+            case SupportedProtocols.JSONRPC:
+              relayResponse = await validateJSONRPCRelayResponse(
+                relay,
+                nodeSticker,
+                this.metricsRecorder,
+                metricOptions
+              )
+          }
 
-            if (isUserError(relay.response)) {
-              const userError = parseJSONRPCError(relay.response)
-
-              userErrorMessage = userError.message
-              userErrorCode = userError.code !== 0 ? String(userError.code) : ''
-            }
-
-            // Record success metric
-            this.metricsRecorder
-              .recordMetric({
-                requestID,
-                applicationID,
-                applicationPublicKey,
-                blockchainID,
-                serviceNode: relay.serviceNode.publicKey,
-                relayStart,
-                result: 200,
-                bytes: Buffer.byteLength(relay.response, 'utf8'),
-                fallback: false,
-                method: method,
-                error: userErrorMessage,
-                code: userErrorCode,
-                origin: this.origin,
-                data,
-                session: this.session,
-                sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relay.serviceNode.publicKey),
-                gigastakeAppID: applicationID !== application.id ? application.id : undefined,
-              })
-              .catch(function log(e) {
-                logger.log('error', 'Error recording metrics: ' + e, {
-                  requestID,
-                  relayType: 'APP',
-                  typeID: application.id,
-                  serviceNode: relay.serviceNode.publicKey,
-                })
-              })
-
-            // Clear error log
-            // TODO: Implement servicerPubKey and uncomment
-            // await this.redis.del(blockchainID + '-' + relayResponse.proof.servicerPubKey + '-errors')
-
-            // If return payload is valid JSON, turn it into an object so it is sent with content-type: json
-            if (
-              blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
-              blockchainEnforceResult.toLowerCase() === 'json' // the check is for JSON
-            ) {
-              return JSON.parse(relay.response)
-            }
-            return relay.response
-          } else if (relay instanceof RelayError) {
-            let error = relay.message
-
-            if (typeof relay.message === 'object') {
-              error = JSON.stringify(relay.message)
-            }
-
-            // If sticky and is over error threshold, remove stickiness
-            const sticky = await NodeSticker.stickyRelayResult(preferredNodeAddress, relay.servicer_node)
-
-            if (sticky === 'SUCCESS') {
-              const errorCount = await nodeSticker.increaseErrorCount()
-
-              if (errorCount > 5) {
-                await nodeSticker.remove('error limit exceeded')
-              }
-            }
-
-            this.metricsRecorder
-              .recordMetric({
-                requestID,
-                applicationID,
-                applicationPublicKey,
-                blockchainID,
-                serviceNode: relay.servicer_node,
-                relayStart,
-                result: 500,
-                bytes: Buffer.byteLength(relay.message, 'utf8'),
-                fallback: false,
-                method,
-                error,
-                code: String(relay.code),
-                origin: this.origin,
-                data,
-                // TODO: Add pocket session again
-                session: this.session,
-                sticky,
-                gigastakeAppID: applicationID !== application.id ? application.id : undefined,
-              })
-              .catch(function log(e) {
-                logger.log('error', 'Error recording metrics: ' + e, {
-                  requestID,
-                  relayType: 'APP',
-                  typeID: application.id,
-                  serviceNode: relay.servicer_node,
-                })
-              })
+          if (relayResponse && !(relayResponse instanceof RelayError)) {
+            return relayResponse
           }
         }
       }
     } catch (e) {
-      // Explicit JSON-RPC errors should be propagated so they can be sent as a response
-      if (e instanceof ErrorObject) {
+      // API specific errors should be propagated so they can be sent as a response
+      if (e instanceof ErrorObject || e instanceof HttpErrors.HttpError) {
         throw e
       }
 
@@ -438,29 +363,25 @@ export class PocketRelayer {
         }
 
         if (!(fallbackResponse instanceof Error)) {
+          let stringifiedResponse: string
           // This could either be a string or a json object
           let responseParsed = fallbackResponse.data
 
-          // If return payload is a string and blockchain has json enforcement,
-          // turn it into an object so it is sent with content-type: json
-          if (
-            blockchainEnforceResult && // Is this blockchain marked for result enforcement and
-            blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON
-            typeof fallbackResponse.data === 'string'
-          ) {
-            // If the fallback response string is not valid JSON,
-            // we throw because a parsing error would occur.
-            if (!checkEnforcementJSON(fallbackResponse.data)) {
-              throw new Error('Response is not valid JSON')
-            }
+          switch (blockchainCommunicationProtocol) {
+            case SupportedProtocols.JSONRPC:
+              if (typeof responseParsed === 'string') {
+                if (!checkEnforcementJSON(responseParsed)) {
+                  throw new Error('Response is not valid JSON')
+                }
 
-            responseParsed = JSON.parse(fallbackResponse.data)
-          }
+                responseParsed = JSON.parse(responseParsed)
+              }
 
-          const stringifiedResponse = JSON.stringify(responseParsed)
+              stringifiedResponse = JSON.stringify(responseParsed)
 
-          if (isRelayError(stringifiedResponse) && !isUserError(stringifiedResponse)) {
-            throw new Error(`Response is not valid: ${stringifiedResponse}`)
+              if (isRelayError(stringifiedResponse) && !isUserError(stringifiedResponse)) {
+                throw new Error(`Response is not valid: ${stringifiedResponse}`)
+              }
           }
 
           this.metricsRecorder
@@ -526,7 +447,12 @@ export class PocketRelayer {
       origin: this.origin,
     })
 
-    throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('Internal JSON-RPC error.', -32603))
+    throw constructError({
+      message: 'Internal JSON-RPC error.',
+      code: -32603,
+      id: rpcID.toString(),
+      protocol: blockchainCommunicationProtocol,
+    })
   }
 
   // Private function to allow relay retries
@@ -539,7 +465,7 @@ export class PocketRelayer {
     applicationID,
     applicationPublicKey,
     requestTimeOut,
-    blockchainEnforceResult,
+    blockchainCommunicationProtocol,
     blockchainSyncCheck,
     blockchainSyncBackup,
     blockchainIDCheck,
@@ -557,7 +483,7 @@ export class PocketRelayer {
     applicationID: string
     applicationPublicKey: string
     requestTimeOut: number | undefined
-    blockchainEnforceResult: string
+    blockchainCommunicationProtocol: SupportedProtocols
     blockchainSyncCheck: SyncCheckOptions
     blockchainSyncBackup: string
     blockchainIDCheck: string
@@ -577,20 +503,32 @@ export class PocketRelayer {
 
     // Secret key check
     if (!checkSecretKey(application, secretKeyDetails)) {
-      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('SecretKey does not match', -32059))
+      throw constructError({
+        message: 'SecretKey does not match',
+        code: -32059,
+        id: rpcID.toString(),
+        protocol: blockchainCommunicationProtocol,
+      })
     }
 
     // Whitelist: origins -- explicit matches
     if (!checkWhitelist(application.gatewaySettings.whitelistOrigins, this.origin, 'explicit')) {
-      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError(`Whitelist Origin check failed: ${this.origin}`, -32060))
+      throw constructError({
+        message: `Whitelist Origin check failed: ${this.origin}`,
+        code: -32060,
+        id: rpcID.toString(),
+        protocol: blockchainCommunicationProtocol,
+      })
     }
 
     // Whitelist: userAgent -- substring matches
     if (!checkWhitelist(application.gatewaySettings.whitelistUserAgents, this.userAgent, 'substring')) {
-      throw new ErrorObject(
-        rpcID,
-        new jsonrpc.JsonRpcError(`Whitelist User Agent check failed: ${this.userAgent}`, -32061)
-      )
+      throw constructError({
+        message: `Whitelist User Agent check failed: ${this.userAgent}`,
+        code: -32061,
+        id: rpcID.toString(),
+        protocol: blockchainCommunicationProtocol,
+      })
     }
 
     const pocketAAT: PocketAAT =
@@ -636,10 +574,6 @@ export class PocketRelayer {
           blockHeight: session?.blockHeight,
           sessionBlockHeight: session?.header?.sessionBlockHeight,
         })
-
-        // TODO: Remove when sdk does it internally
-        // @ts-ignore
-        session.nodes.forEach((node) => (node.stakedTokens = node.stakedTokens.toString()))
 
         await this.cache.set(sessionCacheKey, JSON.stringify(session), 'EX', 80)
       }
@@ -724,6 +658,7 @@ export class PocketRelayer {
         relayer: this.relayer,
         pocketAAT: pocketAAT,
         session: session,
+        httpMethod,
       }
 
       syncCheckPromise = this.syncChecker.consensusFilter(consensusFilterOptions)
@@ -853,7 +788,7 @@ export class PocketRelayer {
       relay = await this.relayer.relay({
         blockchain: blockchainID,
         data,
-        method: '',
+        method: httpMethod ? httpMethod : '',
         node,
         path: relayPath,
         pocketAAT,
@@ -882,19 +817,20 @@ export class PocketRelayer {
       // Those results are still marked as 200:success.
       // To filter them out, we will enforce result formats on certain blockchains. If the
       // relay result is not in the correct format, this was not a successful relay.
-      if (
-        blockchainEnforceResult && // Is this blockchain marked for result enforcement // and
-        blockchainEnforceResult.toLowerCase() === 'json' && // the check is for JSON // and
-        (!checkEnforcementJSON(relay.response) || // the relay response is not valid JSON // or
-          (isRelayError(relay.response) && !isUserError(relay.response))) // check if the payload indicates relay error, not a user error
-      ) {
-        // then this result is invalid
-        return new RelayError(relay.response, 503, node.publicKey)
-      } else {
-        await nodeSticker.setStickinessKey(application.id, node.address, this.origin)
+      switch (blockchainCommunicationProtocol) {
+        case SupportedProtocols.JSONRPC:
+          if (
+            !checkEnforcementJSON(relay.response) || // the relay response is not valid JSON // or
+            (isRelayError(relay.response) && !isUserError(relay.response)) // check if the payload indicates relay error, not a user error
+          ) {
+            // then this result is invalid
+            return new RelayError(relay.response, 503, node.publicKey)
+          } else {
+            await nodeSticker.setStickinessKey(application.id, node.address, this.origin)
 
-        // Success
-        return relay
+            // Success
+            return relay
+          }
       }
       // Error
     } else if (relay instanceof Error) {
@@ -909,52 +845,19 @@ export class PocketRelayer {
       return new Error('relayResponse is undefined')
     }
   }
+}
 
-  async enforceRestrictions(
-    application: Applications,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    parsedRawData: Record<string, any>,
-    blockchainID: string,
-    requestID: string,
-    rpcID: number,
-    logLimitBlocks: number,
-    altruist: string
-  ): Promise<void | ErrorObject> {
-    let response: Promise<void | ErrorObject>
-
-    // Is it a bundled transaction?
-    if (parsedRawData instanceof Array) {
-      for (const rawData of parsedRawData) {
-        response = enforceEVMRestrictions(
-          application,
-          rawData,
-          blockchainID,
-          requestID,
-          rpcID,
-          logLimitBlocks,
-          altruist
-        )
-
-        // If any of the bundled tx triggers a restriction, return
-        if (response instanceof ErrorObject) {
-          return response
-        }
-      }
-    } else {
-      // Non-bundled tx
-      response = enforceEVMRestrictions(
-        application,
-        parsedRawData,
-        blockchainID,
-        requestID,
-        rpcID,
-        logLimitBlocks,
-        altruist
-      )
-    }
-
-    // TODO: Non-EVM restrictions
-
-    return response
-  }
+export type MetricOptions = {
+  requestID: string
+  applicationID: string
+  applicationPublicKey: string
+  preferredNodeAddress: string
+  blockchainID: string
+  relayStart: [number, number]
+  fallback: boolean
+  method: string
+  origin: string
+  data: string
+  session: Session
+  gigastakeAppID: string
 }

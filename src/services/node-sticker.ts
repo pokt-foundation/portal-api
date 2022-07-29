@@ -7,7 +7,7 @@ import { StickinessOptions } from '../utils/types'
 
 export type StickyResult = 'SUCCESS' | 'FAILURE' | 'NONE'
 
-const logger = require('./logger')
+const logger = require('../services/logger')
 
 const ERROR_COUNT_LIMIT = 5
 

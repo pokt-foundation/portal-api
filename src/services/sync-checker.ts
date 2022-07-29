@@ -4,7 +4,7 @@ import {
   EvidenceSealedError,
   OutOfSyncRequestError,
 } from '@pokt-foundation/pocketjs-relayer'
-import { Session, Node, PocketAAT } from '@pokt-foundation/pocketjs-types'
+import { Session, Node, PocketAAT, HTTPMethod } from '@pokt-foundation/pocketjs-types'
 import axios from 'axios'
 import extractDomain from 'extract-domain'
 import get from 'lodash/get'
@@ -44,6 +44,7 @@ export class SyncChecker {
     relayer,
     pocketAAT,
     session,
+    httpMethod,
   }: ConsensusFilterOptions): Promise<CheckResult> {
     // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
     const syncAllowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
@@ -92,7 +93,8 @@ export class SyncChecker {
       applicationPublicKey,
       relayer,
       pocketAAT,
-      session
+      session,
+      httpMethod
     )
 
     // Check for percentange of check session errors to determined if session should be
@@ -359,7 +361,8 @@ export class SyncChecker {
     applicationPublicKey: string,
     relayer: Relayer,
     pocketAAT: PocketAAT,
-    session: Session
+    session: Session,
+    httpMethod: HTTPMethod
   ): Promise<NodeSyncLog[]> {
     const nodeSyncLogs: NodeSyncLog[] = []
     const promiseStack: Promise<NodeSyncLog>[] = []
@@ -384,7 +387,8 @@ export class SyncChecker {
           applicationPublicKey,
           relayer,
           pocketAAT,
-          session
+          session,
+          httpMethod
         )
       )
     }
@@ -433,7 +437,8 @@ export class SyncChecker {
     applicationPublicKey: string,
     relayer: Relayer,
     pocketAAT: PocketAAT,
-    session: Session
+    session: Session,
+    httpMethod: HTTPMethod
   ): Promise<NodeSyncLog> {
     const { serviceUrl: serviceURL } = node
     const serviceDomain = extractDomain(serviceURL)
@@ -450,7 +455,7 @@ export class SyncChecker {
         data: syncCheckOptions.body,
         path: syncCheckOptions.path,
         node,
-        method: '',
+        method: httpMethod,
         pocketAAT,
         session,
         options: {
@@ -631,4 +636,5 @@ export type ConsensusFilterOptions = {
   relayer: Relayer
   pocketAAT: PocketAAT
   session: Session
+  httpMethod: HTTPMethod
 }
