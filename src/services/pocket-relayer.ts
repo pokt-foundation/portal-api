@@ -22,9 +22,10 @@ import {
 } from '../utils/enforcements'
 import { CombinedError, constructError } from '../utils/errors'
 import { getApplicationPublicKey } from '../utils/helpers'
-import { enforceJSONRPCRestrictions, validateJSONRPCRelayResponse } from '../utils/jsonrpc/handler'
+import { enforceJSONRPCRestrictions, handleJSONRPCRelayResponse } from '../utils/jsonrpc/handler'
 import { parseMethod, parseRawData, parseRPCID } from '../utils/jsonrpc/parsing'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
+import { handleRESTRelayResponse } from '../utils/rest/handler'
 import { CheckResult, RelayResponse, SendRelayOptions } from '../utils/types'
 import { Cache } from './cache'
 import { NodeSticker } from './node-sticker'
@@ -219,6 +220,7 @@ export class PocketRelayer {
           })
           return restriction
         }
+        break
     }
 
     const overallStart = process.hrtime()
@@ -290,12 +292,12 @@ export class PocketRelayer {
 
           switch (blockchainCommunicationProtocol) {
             case SupportedProtocols.JSONRPC:
-              relayResponse = await validateJSONRPCRelayResponse(
-                relay,
-                nodeSticker,
-                this.metricsRecorder,
-                metricOptions
-              )
+            default:
+              relayResponse = await handleJSONRPCRelayResponse(relay, nodeSticker, this.metricsRecorder, metricOptions)
+              break
+            case SupportedProtocols.REST:
+              relayResponse = await handleRESTRelayResponse(relay, nodeSticker, this.metricsRecorder, metricOptions)
+              break
           }
 
           if (relayResponse && !(relayResponse instanceof RelayError)) {
@@ -362,22 +364,21 @@ export class PocketRelayer {
         }
 
         if (!(fallbackResponse instanceof Error)) {
-          let stringifiedResponse: string
           // This could either be a string or a json object
           let responseParsed = fallbackResponse.data
 
+          if (typeof responseParsed === 'string') {
+            if (!checkEnforcementJSON(responseParsed)) {
+              throw new Error('Response is not valid JSON')
+            }
+
+            responseParsed = JSON.parse(responseParsed)
+          }
+
+          const stringifiedResponse = JSON.stringify(responseParsed)
+
           switch (blockchainCommunicationProtocol) {
             case SupportedProtocols.JSONRPC:
-              if (typeof responseParsed === 'string') {
-                if (!checkEnforcementJSON(responseParsed)) {
-                  throw new Error('Response is not valid JSON')
-                }
-
-                responseParsed = JSON.parse(responseParsed)
-              }
-
-              stringifiedResponse = JSON.stringify(responseParsed)
-
               if (isRelayError(stringifiedResponse) && !isUserError(stringifiedResponse)) {
                 throw new Error(`Response is not valid: ${stringifiedResponse}`)
               }
@@ -818,6 +819,7 @@ export class PocketRelayer {
       // relay result is not in the correct format, this was not a successful relay.
       switch (blockchainCommunicationProtocol) {
         case SupportedProtocols.JSONRPC:
+        default:
           if (
             !checkEnforcementJSON(relay.response) || // the relay response is not valid JSON // or
             (isRelayError(relay.response) && !isUserError(relay.response)) // check if the payload indicates relay error, not a user error

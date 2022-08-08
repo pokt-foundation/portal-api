@@ -1,29 +1,12 @@
-/* eslint-disable import/order */
-import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
 import { RelayError } from '../../errors/types'
-import { Applications } from '../../models'
 import { MetricsRecorder } from '../../services/metrics-recorder'
 import { NodeSticker } from '../../services/node-sticker'
 import { MetricOptions } from '../../services/pocket-relayer'
-import { isUserError } from '../enforcements'
-import { enforceEVMRestrictions } from '../evm/restrictions'
 import { RelayResponse } from '../types'
-import { parseJSONRPCError, parseRPCID } from './parsing'
 
 const logger = require('../../services/logger')
 
-export async function enforceJSONRPCRestrictions({
-  parsedRawData,
-  application,
-  requestID,
-  logLimitBlocks,
-  blockchainID,
-  altruistURL,
-}) {
-  return enforceRestrictions(application, parsedRawData, blockchainID, requestID, logLimitBlocks, altruistURL)
-}
-
-export async function handleJSONRPCRelayResponse(
+export async function handleRESTRelayResponse(
   relay: RelayResponse | Error,
   nodeSticker: NodeSticker,
   metricsRecorder: MetricsRecorder,
@@ -43,27 +26,8 @@ export async function handleJSONRPCRelayResponse(
     session,
   } = metricOptions
 
+  // TODO: Blockchain restrictions.
   if (!(relay instanceof Error)) {
-    // Even if the relay is successful, we could get an invalid response from servide node.
-    // We attempt to parse the service node response using jsonrpc-lite lib.
-    const parsedRelayResponse = jsonrpc.parse(relay.response as string) as IParsedObject
-
-    // If the parsing goes wrong, we get a response with 'invalid' type and the following message.
-    // We could get 'invalid' and not a parse error, hence we check both.
-    if (parsedRelayResponse.type === 'invalid' && parsedRelayResponse.payload.message === 'Parse error') {
-      throw new Error('Service Node returned an invalid response')
-    }
-    // Check for user error to bubble these up to the API
-    let userErrorMessage = ''
-    let userErrorCode = ''
-
-    if (isUserError(relay.response)) {
-      const userError = parseJSONRPCError(relay.response)
-
-      userErrorMessage = userError.message
-      userErrorCode = userError.code !== 0 ? String(userError.code) : ''
-    }
-
     // Record success metric
     metricsRecorder
       .recordMetric({
@@ -77,8 +41,8 @@ export async function handleJSONRPCRelayResponse(
         bytes: Buffer.byteLength(relay.response, 'utf8'),
         fallback: false,
         method,
-        error: userErrorMessage,
-        code: userErrorCode,
+        error: '',
+        code: '',
         origin,
         data,
         session,
@@ -145,45 +109,4 @@ export async function handleJSONRPCRelayResponse(
 
     return relay
   }
-}
-
-async function enforceRestrictions(
-  application: Applications,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  parsedRawData: Record<string, any>,
-  blockchainID: string,
-  requestID: string,
-  logLimitBlocks: number,
-  altruist: string
-): Promise<void | ErrorObject> {
-  let response: Promise<void | ErrorObject>
-
-  const rpcID = parseRPCID(parsedRawData)
-
-  // Is it a bundled transaction?
-  if (parsedRawData instanceof Array) {
-    for (const rawData of parsedRawData) {
-      response = enforceEVMRestrictions(application, rawData, blockchainID, requestID, rpcID, logLimitBlocks, altruist)
-
-      // If any of the bundled tx triggers a restriction, return
-      if (response instanceof ErrorObject) {
-        return response
-      }
-    }
-  } else {
-    // Non-bundled tx
-    response = enforceEVMRestrictions(
-      application,
-      parsedRawData,
-      blockchainID,
-      requestID,
-      rpcID,
-      logLimitBlocks,
-      altruist
-    )
-  }
-
-  // TODO: Non-EVM restrictions
-
-  return response
 }

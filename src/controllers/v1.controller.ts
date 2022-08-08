@@ -4,7 +4,7 @@ import { ErrorObject } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
 import { FilterExcludingWhere, repository } from '@loopback/repository'
-import { HttpErrors, param, post, requestBody } from '@loopback/rest'
+import { get, HttpErrors, param, post, requestBody } from '@loopback/rest'
 import { WriteApi } from '@influxdata/influxdb-client'
 import { Applications, GatewaySettings, LoadBalancers } from '../models'
 import { StickinessOptions } from '../models/load-balancers.model'
@@ -203,6 +203,221 @@ export class V1Controller {
     },
   })
   async loadBalancerRelay(
+    @param.path.string('id') id: string,
+    @requestBody({
+      description: 'Relay Request',
+      required: true,
+      content: {
+        'application/json': {
+          // Skip body parsing
+          'x-parser': 'raw',
+        },
+      },
+    })
+    rawData: object,
+    @param.filter(Applications, { exclude: 'where' })
+    filter?: FilterExcludingWhere<Applications>
+  ): Promise<string | CombinedError> {
+    let reqRPCID = 1
+
+    // Take the relay path from the end of the endpoint URL
+    if (id.match(/[0-9a-zA-Z]{24}~/g)) {
+      this.relayPath = id.slice(24).replace(/~/gi, '/')
+      id = id.slice(0, 24)
+    }
+
+    try {
+      const parsedRawData = parseRawData(rawData)
+
+      reqRPCID = parseRPCID(parsedRawData)
+
+      let loadBalancer = await this.fetchLoadBalancer(id, filter)
+
+      if (!loadBalancer?.id) {
+        throw constructError({
+          message: 'Load balancer not found',
+          code: -32054,
+          id: reqRPCID.toString(),
+          protocol: SupportedProtocols.JSONRPC,
+        })
+      }
+
+      const gigastakeOptions: {
+        gigastaked: boolean
+        originalAppID: string | undefined
+        originalAppPK: string | undefined
+        stickinessOptions: StickinessOptions | undefined
+        gatewaySettings: GatewaySettings | undefined
+      } = {
+        gigastaked: loadBalancer.gigastakeRedirect || false,
+        originalAppID: undefined,
+        originalAppPK: undefined,
+        stickinessOptions: undefined,
+        gatewaySettings: undefined,
+      }
+
+      // Is this LB marked for gigastakeRedirect?
+      // Temporary: will be removed when live
+      if (gigastakeOptions.gigastaked) {
+        const { blockchainRedirects } = await loadBlockchain(
+          this.host,
+          this.cache,
+          this.blockchainsRepository,
+          this.defaultLogLimitBlocks,
+          reqRPCID
+        )
+
+        if (blockchainRedirects.length > 0) {
+          const originalLoadBalancer = { ...loadBalancer }
+
+          const redirect = blockchainRedirects.find((rdr) => this.host.toLowerCase().includes(rdr.alias))
+
+          loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
+
+          if (!loadBalancer?.id) {
+            throw constructError({
+              message: `Gigastake load balancer not found (${redirect.alias})`,
+              code: -32054,
+              id: reqRPCID.toString(),
+              protocol: SupportedProtocols.JSONRPC,
+            })
+          }
+
+          const originalApp = await this.fetchLoadBalancerApplication(
+            originalLoadBalancer.id,
+            originalLoadBalancer.applicationIDs,
+            undefined,
+            filter,
+            reqRPCID
+          )
+
+          gigastakeOptions.originalAppID = originalApp.id
+          gigastakeOptions.originalAppPK = originalApp.freeTierApplicationAccount?.publicKey
+            ? originalApp.freeTierApplicationAccount?.publicKey
+            : originalApp.publicPocketAccount?.publicKey
+          gigastakeOptions.stickinessOptions = originalApp?.stickinessOptions
+          gigastakeOptions.gatewaySettings = originalApp?.gatewaySettings
+        }
+      }
+
+      // Fetch applications contained in this Load Balancer. Verify they exist and choose
+      // one randomly for the relay.
+      // For sticking sessions (sessions which must be relied using the same node for data consistency)
+      // There's two ways to handle them: rpcID or prefix (full sticky), on rpcID the stickiness works
+      // with increasing rpcID relays to maintain consistency and with prefix all relays from a load
+      // balancer go to the same app/node regardless the data.
+      const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins, rpcIDThreshold } =
+        gigastakeOptions?.stickinessOptions || loadBalancer?.stickinessOptions || DEFAULT_STICKINESS_PARAMS
+      const stickyKeyPrefix = stickiness && !useRPCID ? loadBalancer?.id : ''
+
+      const { preferredApplicationID, preferredNodeAddress, rpcID } = stickiness
+        ? await this.checkClientStickiness(rawData, stickyKeyPrefix, stickyOrigins, this.origin)
+        : DEFAULT_STICKINESS_APP_PARAMS
+
+      const application = await this.fetchLoadBalancerApplication(
+        loadBalancer.id,
+        loadBalancer.applicationIDs,
+        preferredApplicationID,
+        filter,
+        rpcID
+      )
+
+      if (!application?.id) {
+        throw constructError({
+          message: 'No application found in the load balancer',
+          code: -32055,
+          id: reqRPCID.toString(),
+          protocol: SupportedProtocols.JSONRPC,
+        })
+      }
+
+      if (gigastakeOptions?.gatewaySettings) {
+        application.gatewaySettings = gigastakeOptions.gatewaySettings
+      }
+
+      const options: SendRelayOptions = {
+        rawData,
+        relayPath: this.relayPath,
+        httpMethod: this.httpMethod,
+        application,
+        requestID: this.requestID,
+        requestTimeOut: parseInt(loadBalancer.requestTimeOut),
+        overallTimeOut: parseInt(loadBalancer.overallTimeOut),
+        relayRetries: parseInt(loadBalancer.relayRetries),
+        stickinessOptions: {
+          stickiness,
+          preferredNodeAddress,
+          duration,
+          keyPrefix: stickyKeyPrefix,
+          rpcID,
+          relaysLimit,
+          stickyOrigins,
+          rpcIDThreshold,
+        },
+        applicationID: gigastakeOptions.originalAppID,
+        applicationPublicKey: gigastakeOptions.originalAppPK,
+      }
+
+      if (loadBalancer.logLimitBlocks) {
+        Object.assign(options, { logLimitBlocks: loadBalancer.logLimitBlocks })
+      }
+
+      return await this.pocketRelayer.sendRelay(options)
+    } catch (e) {
+      if (e instanceof ErrorObject || e instanceof HttpErrors.HttpError) {
+        logger.log('error', 'LOAD BALANCER RELAY ERROR: ' + e.error.message, {
+          requestID: this.requestID,
+          relayType: 'LB',
+          typeID: id,
+          serviceNode: '',
+          origin: this.origin,
+        })
+
+        return e
+      }
+
+      if (e instanceof SyntaxError && e.message.includes('JSON')) {
+        return constructError({
+          message: 'The request body is not proper JSON',
+          code: -32066,
+          id: reqRPCID.toString(),
+          protocol: SupportedProtocols.JSONRPC,
+        })
+      }
+
+      logger.log('error', 'INTERNAL ERROR: ' + JSON.stringify(e), {
+        requestID: this.requestID,
+        error: e,
+        relayType: 'LB',
+        typeID: id,
+        serviceNode: '',
+        origin: this.origin,
+        trace: e.stack,
+      })
+    }
+  }
+
+  /**
+   * Load Balancer Relay
+   *
+   * Send a Pocket Relay using a Gateway Load Balancer ID
+   *
+   * @param id Load Balancer ID
+   */
+
+  // THIS IS ONLY for the PoC, this will be improved before the release.
+  // For now, it's only used to test the Gateway feature.
+  @get('/v1/lb/{id}', {
+    responses: {
+      '200': {
+        description: 'Relay Response',
+        content: {
+          'application/json': {},
+        },
+      },
+    },
+  })
+  async loadBalancerRelayGet(
     @param.path.string('id') id: string,
     @requestBody({
       description: 'Relay Request',
