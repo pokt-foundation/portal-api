@@ -59,4 +59,29 @@ export class BlockchainsController {
   ): Promise<Blockchains> {
     return this.blockchainsRepository.findById(id, filter)
   }
+
+  @get('/blockchains/ids', {
+    responses: {
+      '200': {
+        description: 'Mapping of available blockchains and their API aliases',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'array',
+              items: getModelSchemaRef(Blockchains, { includeRelations: true }),
+            },
+          },
+        },
+      },
+    },
+  })
+  async idsMapping(@param.filter(Blockchains) filter?: Filter<Blockchains>): Promise<object> {
+    const blockchains = await this.blockchainsRepository.find(filter)
+
+    const aliases = {}
+    blockchains.forEach((blockchain) => {
+      aliases[blockchain.hash] = blockchain.blockchainAliases
+    })
+    return aliases
+  }
 }
