@@ -67,7 +67,6 @@ export class BlockchainsController {
         content: {
           'application/json': {
             schema: {
-              type: 'array',
               items: getModelSchemaRef(Blockchains, { includeRelations: true }),
             },
           },
