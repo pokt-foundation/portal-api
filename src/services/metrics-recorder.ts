@@ -129,8 +129,8 @@ export class MetricsRecorder {
           blockchainID,
           sessionKey,
           sticky,
-          sessionBlockHeight: session.header.sessionBlockHeight,
-          blockHeight: session.blockHeight,
+          sessionBlockHeight: session?.header.sessionBlockHeight,
+          blockHeight: session?.blockHeight,
           responseStart,
         })
       } else if (result === 500) {
