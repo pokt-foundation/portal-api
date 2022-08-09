@@ -96,9 +96,12 @@ describe('Blockchains controller (acceptance)', () => {
 
     expect(res.body).to.be.Object()
 
-    const blockchainID = '0'
-    expect(res.body[blockchainID]).to.be.Array()
-    expect(res.body[blockchainID]).to.have.length(1)
+    const blockchainID = 'Kovan'
+    expect(res.body[blockchainID].prefix).to.be.Array()
+    expect(res.body[blockchainID].prefix).to.have.length(1)
+
+    expect(res.body[blockchainID].id).to.be.String()
+    expect(res.body[blockchainID].id).to.be.equal('0')
   })
 
   async function generateBlockchains(amount: number): Promise<Partial<Blockchains>[]> {

@@ -80,7 +80,10 @@ export class BlockchainsController {
 
     const aliases = {}
     blockchains.forEach((blockchain) => {
-      aliases[blockchain.hash] = blockchain.blockchainAliases
+      aliases[blockchain.description] = {
+        id: blockchain.hash,
+        prefix: blockchain.blockchainAliases,
+      }
     })
     return aliases
   }
