@@ -89,6 +89,21 @@ describe('Blockchains controller (acceptance)', () => {
     await client.get('/blockchains/nope').expect(404)
   })
 
+  it('generate a mapping of the available aliases for the chains', async () => {
+    await generateBlockchains(1)
+
+    const res = await client.get('/blockchains/ids').expect(200)
+
+    expect(res.body).to.be.Object()
+
+    const blockchainID = 'Kovan'
+    expect(res.body[blockchainID].prefix).to.be.Array()
+    expect(res.body[blockchainID].prefix).to.have.length(1)
+
+    expect(res.body[blockchainID].id).to.be.String()
+    expect(res.body[blockchainID].id).to.be.equal('0')
+  })
+
   async function generateBlockchains(amount: number): Promise<Partial<Blockchains>[]> {
     const blockchains = []
 
