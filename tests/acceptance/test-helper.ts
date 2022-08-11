@@ -31,6 +31,7 @@ export const DUMMY_ENV = {
   AWS_ACCESS_KEY_ID: 'test',
   AWS_SECRET_ACCESS_KEY: 'test',
   AWS_REGION: 'test',
+  BLOCKED_ADDRESSES: '0xea674fdde714fd979de3edf0f56aa9716b898ec8,0x5d13399e7a59941734900157381e2d0b9d29c971',
 }
 
 export async function setupApplication(pocket?: Relayer, envs?: object): Promise<AppWithClient> {

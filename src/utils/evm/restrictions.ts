@@ -3,7 +3,9 @@ import { Applications } from '../../models'
 import { WS_ONLY_METHODS } from '../constants'
 import { parseMethod } from '../parsing'
 import { enforceGetLogs } from './get-logs'
-import { isContractWhitelisted, isWhitelisted } from './whitelist'
+import { isContractBlocked, isContractWhitelisted, isWhitelisted } from './whitelist'
+
+const BLOCKED_ADDRESSES: string[] = process.env.BLOCKED_ADDRESSES ? process.env.BLOCKED_ADDRESSES.split(',') : []
 
 export async function enforceEVMRestrictions(
   application: Applications,
@@ -55,6 +57,17 @@ export async function enforceEVMRestrictions(
     const restriction = application.gatewaySettings.whitelistContracts.find((x) => x.blockchainID === blockchainID)
 
     const enforced = isContractWhitelisted(parsedRawData, restriction?.contracts)
+
+    if (!enforced) {
+      return jsonrpc.error(
+        rpcID,
+        new jsonrpc.JsonRpcError('Restricted endpoint: contract address not allowed.', 0)
+      ) as ErrorObject
+    }
+  }
+
+  if (blockchainID === '0021') {
+    const enforced = !isContractBlocked(parsedRawData, BLOCKED_ADDRESSES)
 
     if (!enforced) {
       return jsonrpc.error(

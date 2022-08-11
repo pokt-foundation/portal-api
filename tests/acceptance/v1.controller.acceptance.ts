@@ -1799,5 +1799,42 @@ describe('V1 controller (acceptance)', () => {
       expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
       expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
     })
+
+    it('fails on request with blocked contract address', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: [],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          method: 'eth_call',
+          params: [{ to: '0x5d13399e7a59941734900157381e2d0b9d29c971', data: '0x0902f1ac' }, 'latest'],
+          id: 42,
+          jsonrpc: '2.0',
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.property('error')
+      expect(response.body.error.message).to.startWith('Restricted endpoint: contract address not allowed')
+    })
   })
 })
