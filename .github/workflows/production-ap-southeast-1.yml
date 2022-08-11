@@ -63,7 +63,7 @@ jobs:
           envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}
           envkey_REMOTE_REDIS_ENDPOINT: gateway-rutwick-redis.y2p8qe.clustercfg.apse1.cache.amazonaws.com
           envkey_REGION: 'ap-southeast-1'
-          envkey_REGION_NAME: 'ap-southeast-1'
+          envkey_REGION_NAME: 'rutwick'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
