@@ -6,8 +6,10 @@ import { inject } from '@loopback/context'
 import { FilterExcludingWhere, repository } from '@loopback/repository'
 import { get, param, post, requestBody } from '@loopback/rest'
 import { WriteApi } from '@influxdata/influxdb-client'
+
 import { Applications, GatewaySettings, LoadBalancers } from '../models'
 import { StickinessOptions } from '../models/load-balancers.model'
+import { PHDClient } from '../phd-client'
 import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from '../repositories'
 import { Cache } from '../services/cache'
 import { ChainChecker } from '../services/chain-checker'
@@ -20,6 +22,7 @@ import { checkWhitelist, RateLimiter, shouldRateLimit } from '../utils/enforceme
 import { parseRawData, parseRPCID } from '../utils/parsing'
 import { getBlockchainAliasesByDomain, loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
+
 const logger = require('../services/logger')
 
 const DEFAULT_STICKINESS_APP_PARAMS = {
@@ -43,6 +46,7 @@ export class V1Controller {
   syncChecker: SyncChecker
   chainChecker: ChainChecker
   mergeChecker: MergeChecker
+  phdClient: PHDClient
 
   constructor(
     @inject('secretKey') private secretKey: string,
@@ -116,6 +120,7 @@ export class V1Controller {
       altruistOnlyChains: this.altruistOnlyChains,
       dispatchers: this.dispatchURL,
     })
+    this.phdClient = new PHDClient()
   }
 
   /**
@@ -151,6 +156,7 @@ export class V1Controller {
       // Since we only have non-gateway url, let's fetch a blockchain that contains this domain
       const { blockchainAliases } = await getBlockchainAliasesByDomain(
         this.host,
+        this.phdClient,
         this.cache,
         this.blockchainsRepository,
         rpcID
@@ -161,6 +167,7 @@ export class V1Controller {
 
       const { blockchainRedirects, blockchainPath } = await loadBlockchain(
         this.host,
+        this.phdClient,
         this.cache,
         this.blockchainsRepository,
         this.defaultLogLimitBlocks,
@@ -264,6 +271,7 @@ export class V1Controller {
       if (gigastakeOptions.gigastaked) {
         const { blockchainRedirects } = await loadBlockchain(
           this.host,
+          this.phdClient,
           this.cache,
           this.blockchainsRepository,
           this.defaultLogLimitBlocks,
@@ -642,6 +650,7 @@ export class V1Controller {
     if (prefix || rpcID > 0) {
       const { blockchainID } = await loadBlockchain(
         this.host,
+        this.phdClient,
         this.cache,
         this.blockchainsRepository,
         this.defaultLogLimitBlocks,
@@ -676,10 +685,13 @@ export class V1Controller {
 
     if (!cachedLoadBalancer) {
       try {
-        const loadBalancer = await this.loadBalancersRepository.findById(id, filter)
-
-        await this.cache.set(id, JSON.stringify(loadBalancer), 'EX', 60)
-        return new LoadBalancers(loadBalancer)
+        return await this.phdClient.findById({
+          path: 'load_balancer',
+          id,
+          model: LoadBalancers,
+          cache: this.cache,
+          fallback: async () => this.loadBalancersRepository.findById(id, filter),
+        })
       } catch (e) {
         return undefined
       }
@@ -693,10 +705,13 @@ export class V1Controller {
 
     if (!cachedApplication) {
       try {
-        const application = await this.applicationsRepository.findById(id, filter)
-
-        await this.cache.set(id, JSON.stringify(application), 'EX', 60)
-        return new Applications(application)
+        return await this.phdClient.findById({
+          path: 'application',
+          id,
+          model: Applications,
+          cache: this.cache,
+          fallback: async () => this.applicationsRepository.findById(id, filter),
+        })
       } catch (e) {
         return undefined
       }
@@ -759,6 +774,7 @@ export class V1Controller {
   async getGigastakeApp(filter: FilterExcludingWhere, preferredApplicationID = '', rpcID = 0): Promise<Applications> {
     const { blockchainRedirects } = await loadBlockchain(
       this.host,
+      this.phdClient,
       this.cache,
       this.blockchainsRepository,
       this.defaultLogLimitBlocks,
