@@ -94,15 +94,21 @@ export class BlockchainsController {
     },
   })
   async idsMapping(@param.filter(Blockchains) filter?: Filter<Blockchains>): Promise<object> {
-    const blockchains = await this.blockchainsRepository.find(filter)
+    const blockchains = await this.phdClient.find({
+      path: 'blockchain',
+      model: Blockchains,
+      fallback: () => this.blockchainsRepository.find(filter),
+    })
 
     const aliases = {}
-    blockchains.forEach((blockchain) => {
-      aliases[blockchain.description] = {
-        id: blockchain.hash,
-        prefix: blockchain.blockchainAliases,
+
+    blockchains.forEach(({ id, blockchainAliases, description }) => {
+      aliases[description] = {
+        id: id,
+        prefix: blockchainAliases,
       }
     })
+
     return aliases
   }
 }
