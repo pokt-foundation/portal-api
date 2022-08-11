@@ -27,7 +27,7 @@ export class BlockchainsController {
     return this.phdClient.count({
       path: 'blockchains',
       model: Blockchains,
-      fallback: async () => this.blockchainsRepository.count(where),
+      fallback: () => this.blockchainsRepository.count(where),
     })
   }
 
@@ -50,7 +50,7 @@ export class BlockchainsController {
     return this.phdClient.find({
       path: 'blockchain',
       model: Blockchains,
-      fallback: async () => this.blockchainsRepository.find(filter),
+      fallback: () => this.blockchainsRepository.find(filter),
     })
   }
 
@@ -75,7 +75,7 @@ export class BlockchainsController {
       path: 'blockchain',
       id,
       model: Blockchains,
-      fallback: async () => this.blockchainsRepository.findById(id, filter),
+      fallback: () => this.blockchainsRepository.findById(id, filter),
     })
   }
 

@@ -49,7 +49,7 @@ export async function loadBlockchain(
       path: 'blockchain',
       model: Blockchains,
       cache,
-      fallback: async () => blockchainsRepository.find(),
+      fallback: () => blockchainsRepository.find(),
     })
   } else {
     blockchains = JSON.parse(cachedBlockchains)
@@ -157,7 +157,7 @@ export async function getBlockchainAliasesByDomain(
       path: 'blockchain',
       model: Blockchains,
       cache: redis,
-      fallback: async () => blockchainsRepository.find(),
+      fallback: () => blockchainsRepository.find(),
     })
   } else {
     blockchains = JSON.parse(cachedBlockchains)
