@@ -17,3 +17,17 @@ export function isContractWhitelisted(rawData: Record<string, any>, whitelistedC
 
   return checkWhitelist(whitelistedContracts, contractAddress, 'explicit')
 }
+
+// Has the contract been widely blocked?
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isContractBlocked(rawData: Record<string, any>, blockedContracts: string[]): boolean {
+  const contractAddress = extractContractAddress(rawData)
+
+  // This means that the method is not supported for this feature,
+  // so it shall pass.
+  if (!contractAddress) {
+    return false
+  }
+
+  return blockedContracts.includes(contractAddress)
+}
