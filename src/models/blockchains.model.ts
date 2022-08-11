@@ -54,14 +54,20 @@ export class Blockchains extends Entity {
   })
   ticker: string
 
-  // TODO - Verify if fields can be removed
-  // @property({
-  //   type: 'string',
-  //   id: true,
-  //   generated: false,
-  //   required: true,
-  // })
-  // hash: string
+  @property({
+    type: 'string',
+    id: true,
+    generated: false,
+    required: true,
+  })
+  id: string
+
+  @property({
+    type: 'string',
+    generated: false,
+    required: true,
+  })
+  chainID: string
 
   @property({
     type: 'string',

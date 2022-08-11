@@ -48,17 +48,15 @@ class PHDClient {
     cacheKey = 'blockchains',
     fallback,
   }: FindParams<T>): Promise<T[]> {
-    const url = `${this.baseUrl}/${path}`,
-      cacheData = [],
-      modelsData: T[] = []
+    const url = `${this.baseUrl}/${path}`
+    const modelsData: T[] = []
 
     try {
       const { data: documents } = await axios.get(url, { headers: { authorization: this.apiKey } })
+      // console.debug('PHD RESULT', documents, url)
 
       documents.forEach((document) => {
         if (this.hasAllPortalFields<T>(document, model)) {
-          cacheData.push(document)
-
           modelsData.push(new model(document))
         } else {
           throw new Error('data not instance of model')
@@ -67,9 +65,9 @@ class PHDClient {
     } catch (error) {
       if (fallback) {
         const documents = await fallback()
-        documents.forEach((document) => {
-          cacheData.push(document)
+        // console.debug('FALLBACK RESULT', error.message, url)
 
+        documents.forEach((document) => {
           modelsData.push(new model(document))
         })
       } else {
@@ -78,21 +76,19 @@ class PHDClient {
     }
 
     if (cache && cacheKey) {
-      await cache.set(cacheKey, JSON.stringify(cacheData), 'EX', 60)
+      await cache.set(cacheKey, JSON.stringify(modelsData), 'EX', 60)
     }
     return modelsData
   }
 
   async findById<T extends Entity>({ path, id, model, cache, fallback }: FindOneParams<T>): Promise<T> {
     const url = `${this.baseUrl}/${path}/${id}`
-    let cacheData
     let modelData: T
 
     try {
       const { data: document } = await axios.get(url, { headers: { authorization: this.apiKey } })
 
       if (this.hasAllPortalFields<T>(document, model)) {
-        cacheData = document
         modelData = new model(document)
       } else {
         throw new Error('data not instance of model')
@@ -101,7 +97,6 @@ class PHDClient {
       if (fallback) {
         const document = await fallback()
 
-        cacheData = document
         modelData = new model(document)
       } else {
         throw error
@@ -109,7 +104,7 @@ class PHDClient {
     }
 
     if (cache) {
-      await cache.set(id, JSON.stringify(cacheData), 'EX', 60)
+      await cache.set(id, JSON.stringify(modelData), 'EX', 60)
     }
     return modelData
   }
@@ -138,15 +133,15 @@ class PHDClient {
     const isInstanceOfModel = modelFields.every((key) => dataFields.includes(key))
 
     // TODO - Remove when tested. DEBUG ONLY
-    if (!isInstanceOfModel) {
-      console.debug('DEBUG', model, {
-        data,
-        modelFields,
-        dataFields,
-        fieldsNotInLoopbackModel: dataFields.filter((key) => !modelFields.includes(key)),
-        fieldsNotInPostgres: modelFields.filter((key) => !dataFields.includes(key)),
-      })
-    }
+    // if (!isInstanceOfModel) {
+    //   console.debug('DEBUG', model, {
+    //     data,
+    //     modelFields,
+    //     dataFields,
+    //     fieldsNotInLoopbackModel: dataFields.filter((key) => !modelFields.includes(key)),
+    //     fieldsNotInPostgres: modelFields.filter((key) => !dataFields.includes(key)),
+    //   })
+    // }
     // DEBUG ONLY
 
     return isInstanceOfModel
