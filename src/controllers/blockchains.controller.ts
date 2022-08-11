@@ -1,13 +1,19 @@
 import { Count, CountSchema, Filter, FilterExcludingWhere, repository, Where } from '@loopback/repository'
 import { param, get, getModelSchemaRef } from '@loopback/rest'
+
 import { Blockchains } from '../models'
+import { PHDClient } from '../phd-client'
 import { BlockchainsRepository } from '../repositories'
 
 export class BlockchainsController {
+  phdClient: PHDClient
+
   constructor(
     @repository(BlockchainsRepository)
     public blockchainsRepository: BlockchainsRepository
-  ) {}
+  ) {
+    this.phdClient = new PHDClient()
+  }
 
   @get('/blockchains/count', {
     responses: {
@@ -18,7 +24,11 @@ export class BlockchainsController {
     },
   })
   async count(@param.where(Blockchains) where?: Where<Blockchains>): Promise<Count> {
-    return this.blockchainsRepository.count(where)
+    return this.phdClient.count({
+      path: 'blockchains',
+      model: Blockchains,
+      fallback: async () => this.blockchainsRepository.count(where),
+    })
   }
 
   @get('/blockchains', {
@@ -37,7 +47,11 @@ export class BlockchainsController {
     },
   })
   async find(@param.filter(Blockchains) filter?: Filter<Blockchains>): Promise<Blockchains[]> {
-    return this.blockchainsRepository.find(filter)
+    return this.phdClient.find({
+      path: 'blockchain',
+      model: Blockchains,
+      fallback: async () => this.blockchainsRepository.find(filter),
+    })
   }
 
   @get('/blockchains/{id}', {
@@ -57,6 +71,11 @@ export class BlockchainsController {
     @param.filter(Blockchains, { exclude: 'where' })
     filter?: FilterExcludingWhere<Blockchains>
   ): Promise<Blockchains> {
-    return this.blockchainsRepository.findById(id, filter)
+    return this.phdClient.findById({
+      path: 'blockchain',
+      id,
+      model: Blockchains,
+      fallback: async () => this.blockchainsRepository.findById(id, filter),
+    })
   }
 }

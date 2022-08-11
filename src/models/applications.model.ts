@@ -1,5 +1,4 @@
 import { Entity, model, property } from '@loopback/repository'
-import { StickinessOptions } from './load-balancers.model'
 
 @model({ settings: { strict: false } })
 export class Applications extends Entity {
@@ -41,35 +40,44 @@ export class Applications extends Entity {
   })
   freeTierApplicationAccount?: PocketAccount
 
-  @property({
-    type: 'object',
-  })
-  aat?: object
+  // TODO - Verify if fields can be removed
+  // @property({
+  //   type: 'object',
+  // })
+  // aat?: object
 
-  @property({
-    type: 'boolean',
-    required: false,
-  })
-  stickiness?: boolean
+  // @property({
+  //   type: 'boolean',
+  //   required: false,
+  // })
+  // stickiness?: boolean
 
-  @property({
-    type: 'number',
-    required: false,
-  })
-  stickinessDuration?: number
+  // @property({
+  //   type: 'number',
+  //   required: false,
+  // })
+  // stickinessDuration?: number
 
-  @property({
-    type: 'object',
-    required: false,
-    defautl: {},
-  })
-  stickinessOptions?: StickinessOptions
+  // @property({
+  //   type: 'object',
+  //   required: false,
+  //   defautl: {},
+  // })
+  // stickinessOptions?: StickinessOptions
 
   @property({
     type: 'object',
     required: true,
   })
   gatewayAAT: GatewayAAT
+
+  // TEMP DUE TO TYPO IN POSTGRES
+  // @property({
+  //   type: 'object',
+  //   required: true,
+  // })
+  // gatewatAAT: GatewayAAT
+  // TEMP DUE TO TYPO IN POSTGRES
 
   @property({
     type: 'object',

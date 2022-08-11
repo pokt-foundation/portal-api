@@ -230,6 +230,7 @@ describe('Pocket relayer service (unit)', () => {
 
     let blockchainResult = await loadBlockchain(
       pocketRelayer.host,
+      pocketRelayer.phdClient,
       pocketRelayer.cache,
       pocketRelayer.blockchainsRepository,
       pocketRelayer.defaultLogLimitBlocks,
@@ -246,6 +247,7 @@ describe('Pocket relayer service (unit)', () => {
     // Subsequent calls should retrieve results from cache instead
     blockchainResult = await loadBlockchain(
       pocketRelayer.host,
+      pocketRelayer.phdClient,
       pocketRelayer.cache,
       pocketRelayer.blockchainsRepository,
       pocketRelayer.defaultLogLimitBlocks,
@@ -264,6 +266,7 @@ describe('Pocket relayer service (unit)', () => {
     await expect(
       loadBlockchain(
         pocketRelayer.host,
+        pocketRelayer.phdClient,
         pocketRelayer.cache,
         pocketRelayer.blockchainsRepository,
         pocketRelayer.defaultLogLimitBlocks,

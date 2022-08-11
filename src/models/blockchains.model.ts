@@ -54,13 +54,14 @@ export class Blockchains extends Entity {
   })
   ticker: string
 
-  @property({
-    type: 'string',
-    id: true,
-    generated: false,
-    required: true,
-  })
-  hash: string
+  // TODO - Verify if fields can be removed
+  // @property({
+  //   type: 'string',
+  //   id: true,
+  //   generated: false,
+  //   required: true,
+  // })
+  // hash: string
 
   @property({
     type: 'string',
@@ -127,10 +128,11 @@ export class Blockchains extends Entity {
   })
   path?: string
 
-  @property({
-    type: 'boolean',
-  })
-  evm?: boolean
+  // TODO - Verify if fields can be removed
+  // @property({
+  //   type: 'boolean',
+  // })
+  // evm?: boolean
 
   @property({
     type: 'string',

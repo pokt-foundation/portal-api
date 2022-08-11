@@ -56,11 +56,18 @@ export class LoadBalancers extends Entity {
   })
   gigastakeRedirect?: boolean
 
+  // TODO - Verify if fields can be removed
+  // @property({
+  //   type: 'string',
+  //   required: true,
+  // })
+  // user: string
+
   @property({
     type: 'string',
     required: true,
   })
-  user: string
+  userID: string
 
   @property({
     type: 'string',
@@ -75,29 +82,30 @@ export class LoadBalancers extends Entity {
   })
   applicationIDs: string[]
 
-  @property({
-    type: 'number',
-  })
-  logLimitBlocks?: number
+  // TODO - Verify if fields can be removed
+  // @property({
+  //   type: 'number',
+  // })
+  // logLimitBlocks?: number
 
-  @property({
-    type: 'boolean',
-    required: false,
-  })
-  stickiness?: boolean
+  // @property({
+  //   type: 'boolean',
+  //   required: false,
+  // })
+  // stickiness?: boolean
 
-  @property({
-    type: 'number',
-    required: false,
-  })
-  stickinessDuration?: number
+  // @property({
+  //   type: 'number',
+  //   required: false,
+  // })
+  // stickinessDuration?: number
 
-  @property({
-    type: 'number',
-    required: false,
-    default: true,
-  })
-  useRPCID?: boolean
+  // @property({
+  //   type: 'number',
+  //   required: false,
+  //   default: true,
+  // })
+  // useRPCID?: boolean
 
   @property({
     type: 'object',

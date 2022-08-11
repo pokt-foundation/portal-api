@@ -2,9 +2,11 @@ import { EvidenceSealedError, Relayer } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT, HTTPMethod } from '@pokt-foundation/pocketjs-types'
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
+
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
 import { Applications } from '../models'
+import { PHDClient } from '../phd-client'
 import { BlockchainsRepository } from '../repositories'
 import { ChainChecker, ChainIDFilterOptions } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
@@ -51,6 +53,7 @@ export class PocketRelayer {
   session: Session
   alwaysRedirectToAltruists: boolean
   dispatchers: string
+  phdClient: PHDClient
 
   constructor({
     host,
@@ -112,6 +115,7 @@ export class PocketRelayer {
     this.defaultLogLimitBlocks = defaultLogLimitBlocks
     this.alwaysRedirectToAltruists = alwaysRedirectToAltruists
     this.dispatchers = dispatchers
+    this.phdClient = new PHDClient()
   }
 
   async sendRelay({
@@ -159,6 +163,7 @@ export class PocketRelayer {
       blockchainAltruist,
     } = await loadBlockchain(
       this.host,
+      this.phdClient,
       this.cache,
       this.blockchainsRepository,
       this.defaultLogLimitBlocks,
