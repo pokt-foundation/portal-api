@@ -624,7 +624,7 @@ export class V1Controller {
           id,
           model: LoadBalancers,
           cache: this.cache,
-          fallback: async () => this.loadBalancersRepository.findById(id, filter),
+          fallback: () => this.loadBalancersRepository.findById(id, filter),
         })
       } catch (e) {
         return undefined
@@ -644,7 +644,7 @@ export class V1Controller {
           id,
           model: Applications,
           cache: this.cache,
-          fallback: async () => this.applicationsRepository.findById(id, filter),
+          fallback: () => this.applicationsRepository.findById(id, filter),
         })
       } catch (e) {
         return undefined
