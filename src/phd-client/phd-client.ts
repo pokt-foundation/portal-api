@@ -114,8 +114,9 @@ class PHDClient {
     return modelData
   }
 
-  async count<T extends Entity>({ path, model, fallback }: CountParams<T>): Promise<Count> {
+  async count<T extends Entity>({ path, fallback }: CountParams<T>): Promise<Count> {
     const url = `${this.baseUrl}/${path}`
+
     try {
       const { data: documents } = await axios.get(url, { headers: { authorization: this.apiKey } })
 
@@ -129,14 +130,14 @@ class PHDClient {
     }
   }
 
-  /** Checks that the data returned from the PHD has all fields used by the Portal API code.
-   ie. All fields declared by the Loopbak model */
+  /** Checks that the data returned from the PHD has all fields used by the
+      Portal API code, meaning all fields declared by the Loopbak model. */
   private hasAllPortalFields<T>(data: T, model) {
     const modelFields = Object.keys(model.definition.properties)
     const dataFields = Object.keys(data)
     const isInstanceOfModel = modelFields.every((key) => dataFields.includes(key))
 
-    // DEBUG ONLY
+    // TODO - Remove when tested. DEBUG ONLY
     if (!isInstanceOfModel) {
       console.debug('DEBUG', model, {
         data,
