@@ -137,7 +137,7 @@ describe('Blockchains controller (acceptance)', () => {
 
       const blockchainID = 'Kovan'
       expect(res.body[blockchainID].prefix).to.be.Array()
-      expect(res.body[blockchainID].prefix).to.have.length(1)
+      expect(res.body[blockchainID].prefix).to.have.length(2)
 
       expect(res.body[blockchainID].id).to.be.String()
       expect(res.body[blockchainID].id).to.be.equal('0024')
@@ -153,7 +153,7 @@ describe('Blockchains controller (acceptance)', () => {
 
       const blockchainID = 'Kovan'
       expect(res.body[blockchainID].prefix).to.be.Array()
-      expect(res.body[blockchainID].prefix).to.have.length(1)
+      expect(res.body[blockchainID].prefix).to.have.length(2)
 
       expect(res.body[blockchainID].id).to.be.String()
       expect(res.body[blockchainID].id).to.be.equal('0024')
@@ -178,30 +178,29 @@ const mockChain = Object.assign(
   {},
   {
     id: '0024',
-    ticker: 'POA',
-    networkID: '42',
-    network: 'POA-42',
-    description: 'Kovan',
-    index: 6,
+    altruist: 'https://user:pass@test.example.org:12345',
     blockchain: 'poa-kovan',
-    blockchainAliases: ['poa-kovan'],
-    active: true,
-    chainID: '1234',
-    syncCheck: '',
+    chainID: '42',
+    chainIDCheck: '{\\"method\\":\\"eth_chainId\\",\\"id\\":1,\\"jsonrpc\\":\\"2.0\\"}',
+    description: 'Kovan',
+    enforceResult: '',
+    network: 'POA-42',
+    networkID: '42',
     path: '',
+    syncCheck: '',
+    ticker: 'POA',
+    blockchainAliases: ['poa-kovan', 'eth-kovan'],
+    requestTimeout: 0,
+    index: 6,
+    logLimitBlocks: 100000,
+    syncAllowance: 0,
+    active: false,
+    redirects: null,
     syncCheckOptions: {
-      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
-      resultKey: 'result',
-      allowance: 2,
+      body: '',
+      resultKey: '',
+      path: '',
+      allowance: 0,
     },
-    logLimitBlocks: 10,
-    altruist: 'https://user:pass@backups.example.org:18546',
-    redirects: [
-      {
-        alias: '',
-        domain: '',
-        loadBalancerID: '',
-      },
-    ],
   }
 )

@@ -53,7 +53,7 @@ class PHDClient {
 
     try {
       const { data: documents } = await axios.get(url, { headers: { authorization: this.apiKey } })
-      // console.debug('PHD RESULT', documents, url)
+      console.debug('PHD RESULT', documents, url)
 
       documents.forEach((document) => {
         if (this.hasAllPortalFields<T>(document, model)) {
@@ -65,7 +65,7 @@ class PHDClient {
     } catch (error) {
       if (fallback) {
         const documents = await fallback()
-        // console.debug('FALLBACK RESULT', error.message, url)
+        console.debug('FALLBACK RESULT', error.message, url)
 
         documents.forEach((document) => {
           modelsData.push(new model(document))

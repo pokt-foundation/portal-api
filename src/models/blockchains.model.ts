@@ -50,12 +50,6 @@ class BlockchainRedirect {
 export class Blockchains extends Entity {
   @property({
     type: 'string',
-    required: true,
-  })
-  ticker: string
-
-  @property({
-    type: 'string',
     id: true,
     generated: false,
     required: true,
@@ -64,14 +58,18 @@ export class Blockchains extends Entity {
 
   @property({
     type: 'string',
-    generated: false,
     required: true,
+  })
+  ticker: string
+
+  @property({
+    type: 'string',
+    generated: false,
   })
   chainID: string
 
   @property({
     type: 'string',
-    required: true,
   })
   networkID: string
 
@@ -133,12 +131,6 @@ export class Blockchains extends Entity {
     default: '',
   })
   path?: string
-
-  // TODO - Verify if fields can be removed
-  // @property({
-  //   type: 'boolean',
-  // })
-  // evm?: boolean
 
   @property({
     type: 'string',

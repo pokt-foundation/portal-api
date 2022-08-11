@@ -1,6 +1,6 @@
 import { Entity, model, property } from '@loopback/repository'
 
-@model({ settings: { strict: false } })
+@model({ settings: { strict: true } })
 export class Applications extends Entity {
   @property({
     type: 'string',
@@ -40,43 +40,19 @@ export class Applications extends Entity {
   })
   freeTierApplicationAccount?: PocketAccount
 
-  // TODO - Verify if fields can be removed
-  // @property({
-  //   type: 'object',
-  // })
-  // aat?: object
-
-  // @property({
-  //   type: 'boolean',
-  //   required: false,
-  // })
-  // stickiness?: boolean
-
-  // @property({
-  //   type: 'number',
-  //   required: false,
-  // })
-  // stickinessDuration?: number
-
-  // @property({
-  //   type: 'object',
-  //   required: false,
-  //   defautl: {},
-  // })
-  // stickinessOptions?: StickinessOptions
-
+  // TODO - Fix typo on `gatewayAAT` field in Postgres
+  // TEMP DUE TO TYPO IN POSTGRES
   @property({
     type: 'object',
-    required: true,
+    // required: true,
   })
   gatewayAAT: GatewayAAT
 
-  // TEMP DUE TO TYPO IN POSTGRES
-  // @property({
-  //   type: 'object',
-  //   required: true,
-  // })
-  // gatewatAAT: GatewayAAT
+  @property({
+    type: 'object',
+    // required: true,
+  })
+  gatewatAAT: GatewayAAT
   // TEMP DUE TO TYPO IN POSTGRES
 
   @property({
