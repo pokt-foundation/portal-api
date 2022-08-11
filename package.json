@@ -28,7 +28,7 @@
     "eslint:fix": "npm run eslint -- --fix",
     "pretest": "npm run clean && npm run build",
     "test": "lb-tsc && SILENT_LOGGING=true MONGO_ENDPOINT=test POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' mocha --exit --recursive dist/tests",
-    "test:one": "lb-tsc && MONGO_ENDPOINT=test POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' mocha --exit dist/tests/acceptance/blockchain.controller.acceptance.tests.js ",
+    "test:one": "lb-tsc && MONGO_ENDPOINT=test POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' mocha --exit dist/tests/acceptance/v1.controller.acceptance.js -f",
     "test:log": "lb-tsc && MONGO_ENDPOINT=test POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' mocha --exit --recursive dist/tests",
     "test:parallel": "lb-tsc && SILENT_LOGGING=true MONGO_ENDPOINT=test POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' mocha -p --exit --recursive dist/tests",
     "test:cover": "lb-tsc && SILENT_LOGGING=true MONGO_ENDPOINT=test POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' nyc mocha --exit --recursive dist/tests",

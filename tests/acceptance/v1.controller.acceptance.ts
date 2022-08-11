@@ -19,7 +19,6 @@ const APPLICATION = {
   id: 'sd9fj31d714kgos42e68f9gh',
   name: 'Test',
   owner: 'test',
-  icon: '',
   publicPocketAccount: {
     address: 'zbsh21mrn411umuyv2xh7e85cme3tf7er1assuop',
     publicKey: '9c1osndf3hj5wvkgi5ounpqwdhzcyzfy0qrk6z7o',
@@ -39,12 +38,6 @@ const APPLICATION = {
     whitelistContracts: [],
     whitelistMethods: [],
   },
-  freeTierAAT: {
-    version: '0.0.1',
-    clientPublicKey: 'zxllicp807cz107r9b4vpeenepmr4quhz8dlek85f2faj1nwaey7oo7emamdf6nq',
-    applicationPublicKey: '4jsdmxn9zbej57dejhnjcp355ezq20locf6wypr6lndwzmpt4akiiofxdqn8naqe',
-  },
-  updatingStatus: false,
   gatewayAAT: {
     version: '0.0.1',
     clientPublicKey: 'f8sqxrxhzjt59mk1vmm4v3r1l62rf1xwt5e6yrc3vaktnfvmf0x9ggs8jkjxlp4c',
@@ -79,7 +72,7 @@ const GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS = {
 // Might not actually reflect real-world values
 const BLOCKCHAINS = [
   {
-    hash: '0001',
+    id: '0001',
     ticker: 'POKT',
     networkID: 'mainnet',
     network: 'POKT-mainnet',
@@ -101,7 +94,7 @@ const BLOCKCHAINS = [
     ],
   },
   {
-    hash: '0021',
+    id: '0021',
     ticker: 'ETH',
     networkID: '1',
     network: 'ETH-1',
@@ -130,7 +123,7 @@ const BLOCKCHAINS = [
     ],
   },
   {
-    hash: '0040',
+    id: '0040',
     ticker: 'ETHS',
     networkID: '1',
     network: 'ETH-1S',
@@ -143,7 +136,7 @@ const BLOCKCHAINS = [
     chainID: '64',
   },
   {
-    hash: '0041',
+    id: '0041',
     ticker: 'ETHX',
     networkID: '1',
     network: 'ETH-2',
@@ -182,14 +175,14 @@ const APPLICATIONS = [
 const LOAD_BALANCERS = [
   {
     id: 'gt4a1s9rfrebaf8g31bsdc04',
-    user: 'test@test.com',
+    userID: 'test@test.com',
     name: 'test load balancer',
     requestTimeout: 5000,
     applicationIDs: APPLICATIONS.map((app) => app.id),
   },
   {
     id: 'gt4a1s9rfrebaf8g31bsdc05',
-    user: 'test@test.com',
+    userID: 'test@test.com',
     name: 'test load balancer sticky rpc',
     requestTimeout: 5000,
     applicationIDs: APPLICATIONS.map((app) => app.id),
@@ -204,7 +197,7 @@ const LOAD_BALANCERS = [
   },
   {
     id: 'df9gjsjg43db9fsajfjg93fk',
-    user: 'test@test.com',
+    userID: 'test@test.com',
     name: 'test load balancer sticky prefix',
     requestTimeout: 5000,
     applicationIDs: APPLICATIONS.map((app) => app.id),
@@ -218,7 +211,7 @@ const LOAD_BALANCERS = [
   },
   {
     id: 'd8ejd7834ht9d9sj345gfsoa',
-    user: 'test@test.com',
+    userID: 'test@test.com',
     name: 'test load balancer sticky prefix with whitelist',
     requestTimeout: 5000,
     applicationIDs: APPLICATIONS.map((app) => app.id),
@@ -233,7 +226,7 @@ const LOAD_BALANCERS = [
   },
   {
     id: GIGASTAKE_LEADER_IDS.lb,
-    user: 'test@test.com',
+    userID: 'test@test.com',
     name: 'gigastaked lb - leader',
     requestTimeout: 5000,
     applicationIDs: [GIGASTAKE_LEADER_IDS.app],
@@ -248,7 +241,7 @@ const LOAD_BALANCERS = [
   },
   {
     id: GIGASTAKE_FOLLOWER_IDS.lb,
-    user: 'test@test.com',
+    userID: 'test@test.com',
     name: 'gigastaked lb - follower',
     requestTimeout: 5000,
     applicationIDs: [GIGASTAKE_FOLLOWER_IDS.app],
@@ -264,7 +257,7 @@ const LOAD_BALANCERS = [
   },
   {
     id: GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb,
-    user: 'test@test.com',
+    userID: 'test@test.com',
     name: 'gigastaked lb - follower',
     requestTimeout: 5000,
     applicationIDs: [GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.app],
@@ -1264,6 +1257,8 @@ describe('V1 controller (acceptance)', () => {
         .set('host', 'eth-mainnet')
         .set('origin', 'localhost')
         .expect(200)
+
+      console.log('ERROR HERE', response.body.error.message)
 
       expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
       expect(response.body).to.have.property('error')
