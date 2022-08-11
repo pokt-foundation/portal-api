@@ -30,7 +30,7 @@ interface CountParams<T extends Entity> {
 
 // TODO - Unit tests for PHD Client - all cases and fallbacks
 
-/** The PHSClient fetches data from the Pocket HTTP DB, and falls back to fetching from the Loopback repositorites
+/** The PHDClient fetches data from the Pocket HTTP DB, and falls back to fetching from the Loopback repositorites
  * (which connect to MongoDB) if the fetch fails or the returned data is missing required fields. */
 class PHDClient {
   private apiKey: string
@@ -59,8 +59,7 @@ class PHDClient {
         if (this.hasAllPortalFields<T>(document, model)) {
           cacheData.push(document)
 
-          const modelInstance = new model(document)
-          modelsData.push(modelInstance)
+          modelsData.push(new model(document))
         } else {
           throw new Error('data not instance of model')
         }
@@ -70,8 +69,8 @@ class PHDClient {
         const documents = await fallback()
         documents.forEach((document) => {
           cacheData.push(document)
-          const modelInstance = new model(document)
-          modelsData.push(modelInstance)
+
+          modelsData.push(new model(document))
         })
       } else {
         throw error
@@ -101,6 +100,7 @@ class PHDClient {
     } catch (error) {
       if (fallback) {
         const document = await fallback()
+
         cacheData = document
         modelData = new model(document)
       } else {
@@ -122,7 +122,7 @@ class PHDClient {
       return { count: documents.length }
     } catch (error) {
       if (fallback) {
-        return await fallback()
+        return fallback()
       } else {
         throw error
       }
@@ -142,8 +142,8 @@ class PHDClient {
         data,
         modelFields,
         dataFields,
-        notIn: dataFields.filter((key) => !modelFields.includes(key)),
-        alsoNot: modelFields.filter((key) => !dataFields.includes(key)),
+        fieldsNotInLoopbackModel: dataFields.filter((key) => !modelFields.includes(key)),
+        fieldsNotInPostgres: modelFields.filter((key) => !dataFields.includes(key)),
       })
     }
     // DEBUG ONLY
