@@ -79,6 +79,18 @@ export async function enforceEVMRestrictions(
     }
   }
 
+  if (blockchainID === '0021') {
+    const blockedContracts = process.env.BLOCKED_ADDRESSES?.split(',') || []
+    const enforced = !isContractBlocked(parsedRawData, blockedContracts)
+
+    if (!enforced) {
+      return jsonrpc.error(
+        rpcID,
+        new jsonrpc.JsonRpcError('Restricted endpoint: contract address not allowed.', 0)
+      ) as ErrorObject
+    }
+  }
+
   if (method === 'eth_getLogs' && altruistURL) {
     return enforceGetLogs(rpcID, parsedRawData, blockchainID, requestID, logLimitBlocks, altruistURL)
   }
