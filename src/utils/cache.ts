@@ -80,7 +80,7 @@ export async function getRDSCertificate(redis: Redis, certificateUrl: string): P
 
 export async function getBlockedAddresses(redis: Redis, URL: string): Promise<string[]> {
   const cachedBlockedAddresses = await redis.get('blockedAddresses')
-  let blockedAddresses: string[]
+  let blockedAddresses: string[] = []
 
   if (!cachedBlockedAddresses) {
     try {
@@ -97,7 +97,9 @@ export async function getBlockedAddresses(redis: Redis, URL: string): Promise<st
       // The blocked addresses list gets refreshed every hour
       await redis.set('blockedAddresses', JSON.stringify(blockedAddresses), 'EX', 3600)
     } catch (e) {
-      throw new Error(`Error fetching blocked addresses: ${JSON.stringify(e.message)}`)
+      logger.log('error', 'Error fetching blocked addresses', {
+        error: e?.message,
+      })
     }
   } else {
     blockedAddresses = JSON.parse(cachedBlockedAddresses)
