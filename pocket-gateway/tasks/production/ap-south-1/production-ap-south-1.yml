@@ -6,7 +6,7 @@ name: Terraform Production Deployment ap-south-1
 
 on:
   push:
-    branches: [T-11983_Rutwick_first_region]
+    branches: [master]
 
 jobs:
   deploy:
@@ -34,7 +34,7 @@ jobs:
           [[#shared_envs]]
           envkey_[[key]]: [[&value]]
           [[/shared_envs]]
-          envkey_REMOTE_REDIS_ENDPOINT: gateway-rutwick-redis.qbodc0.clustercfg.aps1.cache.amazonaws.com
+          envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.qbodc0.clustercfg.aps1.cache.amazonaws.com
           envkey_REGION: 'ap-south-1'
           envkey_REGION_NAME: 'ap-south-1'
           file_name: .env
@@ -43,7 +43,7 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: gateway-rutwick
+          ECR_REPOSITORY: gateway-prod
           IMAGE_TAG: latest
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
@@ -84,6 +84,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def-ap-south-1-datadog-agent.outputs.task-definition }}
-          service: gateway-rutwick
-          cluster: gateway-rutwick
+          service: gateway-prod
+          cluster: gateway-prod
           wait-for-service-stability: true
