@@ -4,11 +4,16 @@ import { Count, DefaultCrudRepository, Entity } from '@loopback/repository'
 
 import { Cache } from '../services/cache'
 
-type ClassRef = new (...args: any[]) => any //eslint-disable-line
+type ModelRef = new (...args: any[]) => any //eslint-disable-line
+interface ModelFields extends ModelRef {
+  definition?: {
+    properties: { [key: string]: { type: string; id?: boolean; generated?: boolean; required?: boolean } }
+  }
+}
 
 interface FindParams<T extends Entity> {
   path: string
-  model: ClassRef
+  model: ModelRef
   fallback: DefaultCrudRepository<T, unknown>['find']
   cacheKey?: string
   cache?: Cache
@@ -17,14 +22,14 @@ interface FindParams<T extends Entity> {
 interface FindOneParams<T extends Entity> {
   path: string
   id: string
-  model: ClassRef
+  model: ModelRef
   fallback: DefaultCrudRepository<T, unknown>['findOne']
   cache?: Cache
 }
 
 interface CountParams<T extends Entity> {
   path: string
-  model: ClassRef
+  model: ModelRef
   fallback: DefaultCrudRepository<T, unknown>['count']
 }
 
@@ -53,7 +58,7 @@ class PHDClient {
 
     try {
       const { data: documents } = await axios.get(url, { headers: { authorization: this.apiKey } })
-      console.debug('PHD RESULT', documents, url)
+      // console.debug('find - PHD RESULT', model.name, documents, url)
 
       documents.forEach((document) => {
         if (this.hasAllPortalFields<T>(document, model)) {
@@ -65,7 +70,7 @@ class PHDClient {
     } catch (error) {
       if (fallback) {
         const documents = await fallback()
-        console.debug('FALLBACK RESULT', error.message, url)
+        // console.debug('find - FALLBACK RESULT', model.name, error.message, url)
 
         documents.forEach((document) => {
           modelsData.push(new model(document))
@@ -88,6 +93,8 @@ class PHDClient {
     try {
       const { data: document } = await axios.get(url, { headers: { authorization: this.apiKey } })
 
+      // console.debug('find by ID - PHD RESULT', model.name, document, url)
+
       if (this.hasAllPortalFields<T>(document, model)) {
         modelData = new model(document)
       } else {
@@ -96,6 +103,7 @@ class PHDClient {
     } catch (error) {
       if (fallback) {
         const document = await fallback()
+        // console.debug('find by ID - FALLBACK RESULT', model.name, error.message, url)
 
         modelData = new model(document)
       } else {
@@ -127,21 +135,23 @@ class PHDClient {
 
   /** Checks that the data returned from the PHD has all fields used by the
       Portal API code, meaning all fields declared by the Loopbak model. */
-  private hasAllPortalFields<T>(data: T, model) {
-    const modelFields = Object.keys(model.definition.properties)
+  private hasAllPortalFields<T>(data: T, model: ModelFields) {
+    const modelFields = Object.entries(model.definition.properties)
+      .filter(([_, { required }]) => required)
+      .map(([key]) => key)
     const dataFields = Object.keys(data)
     const isInstanceOfModel = modelFields.every((key) => dataFields.includes(key))
 
     // TODO - Remove when tested. DEBUG ONLY
-    // if (!isInstanceOfModel) {
-    //   console.debug('DEBUG', model, {
-    //     data,
-    //     modelFields,
-    //     dataFields,
-    //     fieldsNotInLoopbackModel: dataFields.filter((key) => !modelFields.includes(key)),
-    //     fieldsNotInPostgres: modelFields.filter((key) => !dataFields.includes(key)),
-    //   })
-    // }
+    if (!isInstanceOfModel) {
+      // console.debug('DEBUG', model, {
+      //   data,
+      //   modelFields,
+      //   dataFields,
+      //   fieldsNotInLoopbackModel: dataFields.filter((key) => !modelFields.includes(key)),
+      //   fieldsNotInPostgres: modelFields.filter((key) => !dataFields.includes(key)),
+      // })
+    }
     // DEBUG ONLY
 
     return isInstanceOfModel

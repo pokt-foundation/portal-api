@@ -703,8 +703,6 @@ export class V1Controller {
   async fetchApplication(id: string, filter: FilterExcludingWhere | undefined): Promise<Applications | undefined> {
     const cachedApplication = await this.cache.get(id)
 
-    console.log('CALLING FETCH APPLICATION')
-
     if (!cachedApplication) {
       try {
         return await this.phdClient.findById({

@@ -82,7 +82,7 @@ export async function loadBlockchain(
     }
   })
 
-  blockchainID = blockchainFilter.hash as string // ex. '0021'
+  blockchainID = blockchainFilter.id as string // ex. '0021'
 
   // Record the necessary format for the result; example: JSON
   if (blockchainFilter.enforceResult) {
