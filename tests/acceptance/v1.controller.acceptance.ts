@@ -1845,6 +1845,10 @@ describe('V1 controller (acceptance)', () => {
 
       ;({ app, client } = await setupApplication(pocket))
 
+      axiosMock.onGet('https://blocked.addresses').reply(200, {
+        blockedAddresses: ['0x5d13399e7a59941734900157381e2d0b9d29c971', '0xea674fdde714fd979de3edf0f56aa9716b898ec8'],
+      })
+
       const response = await client
         .post(`/v1/${dbApp.id}`)
         .send({
