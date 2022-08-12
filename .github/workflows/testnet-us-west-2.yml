@@ -30,7 +30,7 @@ jobs:
           envkey_GATEWAY_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_TESTNET_CLIENT_PRIVATE_KEY }}
           envkey_GATEWAY_CLIENT_PASSPHRASE: ${{ secrets.POCKET_NETWORK_TESTNET_CLIENT_PASSPHRASE }}
           envkey_MONGO_ENDPOINT: ${{ secrets.MONGO_TESTNET_ENDPOINT }}
-          envkey_BLOCKED_ADDRESSES: ${{ secrets.BLOCKED_ADDRESSES }}
+          envkey_BLOCKED_ADDRESSES_URL: ${{ secrets.BLOCKED_ADDRESSES_URL }}
           envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_TESTNET_ENCRYPTION_KEY }}
           envkey_DISPATCH_URL: https://testnet-1.nodes.pokt.network:4201,https://testnet-2.nodes.pokt.network:4202,https://testnet-3.nodes.pokt.network:4203
           envkey_ALTRUISTS: ${{ secrets.ALTRUISTS_TESTNET }}

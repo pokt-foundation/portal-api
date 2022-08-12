@@ -186,6 +186,9 @@ describe('Pocket relayer service (unit)', () => {
     axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
       service_url: 'https://localhost:443',
     })
+    axiosMock.onGet('https://blocked.addresses').reply(200, {
+      blockedAddresses: ['0x5d13399e7a59941734900157381e2d0b9d29c971', '0xea674fdde714fd979de3edf0f56aa9716b898ec8'],
+    })
   })
 
   after(() => {
@@ -1515,6 +1518,13 @@ describe('Pocket relayer service (unit)', () => {
 
         axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
           service_url: 'https://localhost:443',
+        })
+
+        axiosMock.onGet('https://blocked.addresses').reply(200, {
+          blockedAddresses: [
+            '0x5d13399e7a59941734900157381e2d0b9d29c971',
+            '0xea674fdde714fd979de3edf0f56aa9716b898ec8',
+          ],
         })
       })
 
