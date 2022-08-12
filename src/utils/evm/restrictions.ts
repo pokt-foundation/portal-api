@@ -7,8 +7,6 @@ import { parseMethod } from '../parsing'
 import { enforceGetLogs } from './get-logs'
 import { isContractBlocked, isContractWhitelisted, isWhitelisted } from './whitelist'
 
-const BLOCKED_ADDRESSES_URL = process.env.BLOCKED_ADDRESSES_URL ?? ''
-
 export async function enforceEVMRestrictions(
   application: Applications,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,7 +68,8 @@ export async function enforceEVMRestrictions(
   }
 
   if (blockchainID === '0021') {
-    const blockedAddresses = await getBlockedAddresses(cache.remote, BLOCKED_ADDRESSES_URL)
+    const url = process.env.BLOCKED_ADDRESSES_URL ?? ''
+    const blockedAddresses = await getBlockedAddresses(cache.remote, url)
 
     const enforced = !isContractBlocked(parsedRawData, blockedAddresses)
 
