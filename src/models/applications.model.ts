@@ -40,20 +40,11 @@ export class Applications extends Entity {
   })
   freeTierApplicationAccount?: PocketAccount
 
-  // TODO - Fix typo on `gatewayAAT` field in Postgres
-  // TEMP DUE TO TYPO IN POSTGRES
   @property({
     type: 'object',
     // required: true,
   })
   gatewayAAT: GatewayAAT
-
-  @property({
-    type: 'object',
-    // required: true,
-  })
-  gatewatAAT: GatewayAAT
-  // TEMP DUE TO TYPO IN POSTGRES
 
   @property({
     type: 'object',

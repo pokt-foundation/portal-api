@@ -45,6 +45,7 @@ const APPLICATION = {
     applicationSignature:
       '87ux2poyr319tp9un97nflybr3l66umrjf4p5ifmwb6aq3frpgl9mqolikt1xcpu4d1o321pbm0edizck8tsnr8e8fdmazxskr9c5zx0ab9z1so2g8x29xazaffse8c0',
   },
+  url: 'https://test-portal-url.com',
 }
 
 const GIGASTAKE_LEADER_IDS = {
@@ -324,6 +325,36 @@ describe('V1 controller (acceptance)', () => {
 
   after(async () => {
     axiosMock.restore()
+  })
+
+  it('Fetches all data from Pocket HTTP DB, invokes GET /v1/{appId} and successfully relays a request', async () => {
+    const pocket = pocketMock.object()
+
+    relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+    ;({ app, client } = await setupApplication(pocket))
+
+    axiosMock.onGet(`${process.env.PHD_BASE_URL}/application/${APPLICATION.id}`).replyOnce(200, APPLICATION)
+    axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain`).replyOnce(200, BLOCKCHAINS)
+    axiosMock.onGet(`${process.env.PHD_BASE_URL}/load_balancer/${GIGASTAKE_LEADER_IDS.lb}`).replyOnce(
+      200,
+      LOAD_BALANCERS.find(({ id }) => id === GIGASTAKE_LEADER_IDS.lb)
+    )
+    axiosMock.onGet(`${process.env.PHD_BASE_URL}/application/${GIGASTAKE_LEADER_IDS.app}`).replyOnce(
+      200,
+      APPLICATIONS.find(({ id }) => id === GIGASTAKE_LEADER_IDS.app)
+    )
+
+    const response = await client
+      .post(`/v1/${APPLICATION.id}`)
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet-x')
+      .expect(200)
+
+    expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+    expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
   })
 
   it('invokes GET /v1/{appId} and successfully relays a request', async () => {

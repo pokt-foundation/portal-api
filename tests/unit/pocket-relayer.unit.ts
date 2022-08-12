@@ -34,7 +34,7 @@ const DEFAULT_HOST = 'eth-mainnet-x'
 // Properties below might not reflect real-world values
 const BLOCKCHAINS = [
   {
-    hash: '0041',
+    id: '0041',
     ticker: 'ETHX',
     networkID: '1',
     network: 'ETH-2',
@@ -55,7 +55,7 @@ const BLOCKCHAINS = [
     altruist: 'https://user:pass@backups.example.org:18082',
   },
   {
-    hash: '0021',
+    id: '0021',
     ticker: 'ETH',
     networkID: '1',
     network: 'ETH-1',
@@ -79,7 +79,7 @@ const BLOCKCHAINS = [
     altruist: 'https://user:pass@backups.example.org:18545',
   },
   {
-    hash: '0040',
+    id: '0040',
     ticker: 'ETHS',
     networkID: '1',
     network: 'ETH-1S',
@@ -238,7 +238,7 @@ describe('Pocket relayer service (unit)', () => {
     )
 
     expect(blockchainResult).to.be.ok()
-    expect(blockchainResult.blockchainID).to.be.equal(BLOCKCHAINS[0].hash)
+    expect(blockchainResult.blockchainID).to.be.equal(BLOCKCHAINS[0].id)
 
     expect(repositorySpy.callCount).to.be.equal(1)
     expect(cacheGetSpy.callCount).to.be.equal(1)
@@ -255,7 +255,7 @@ describe('Pocket relayer service (unit)', () => {
     )
 
     expect(blockchainResult).to.be.ok()
-    expect(blockchainResult.blockchainID).to.be.equal(BLOCKCHAINS[0].hash)
+    expect(blockchainResult.blockchainID).to.be.equal(BLOCKCHAINS[0].id)
 
     expect(repositorySpy.callCount).to.be.equal(1)
     expect(cacheGetSpy.callCount).to.be.equal(2)
