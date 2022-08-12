@@ -5,8 +5,6 @@ import { parseMethod } from '../parsing'
 import { enforceGetLogs } from './get-logs'
 import { isContractBlocked, isContractWhitelisted, isWhitelisted } from './whitelist'
 
-const BLOCKED_ADDRESSES: string[] = process.env.BLOCKED_ADDRESSES ? process.env.BLOCKED_ADDRESSES.split(',') : []
-
 export async function enforceEVMRestrictions(
   application: Applications,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -67,7 +65,8 @@ export async function enforceEVMRestrictions(
   }
 
   if (blockchainID === '0021') {
-    const enforced = !isContractBlocked(parsedRawData, BLOCKED_ADDRESSES)
+    const blockedContracts = process.env.BLOCKED_ADDRESSES?.split(',') || []
+    const enforced = !isContractBlocked(parsedRawData, blockedContracts)
 
     if (!enforced) {
       return jsonrpc.error(

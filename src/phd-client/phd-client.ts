@@ -5,10 +5,8 @@ import { Count, DefaultCrudRepository, Entity } from '@loopback/repository'
 import { Cache } from '../services/cache'
 
 type ModelRef = new (...args: any[]) => any //eslint-disable-line
-interface ModelFields extends ModelRef {
-  definition?: {
-    properties: { [key: string]: { type: string; id?: boolean; generated?: boolean; required?: boolean } }
-  }
+interface ModelProps extends ModelRef {
+  definition?: { properties: { [key: string]: { required?: boolean } } }
 }
 
 interface FindParams<T extends Entity> {
@@ -50,10 +48,11 @@ class PHDClient {
     path,
     model,
     cache,
-    cacheKey = 'blockchains',
+    cacheKey = 'blockchains', // Currently .find only used to get blockchains
     fallback,
   }: FindParams<T>): Promise<T[]> {
     const url = `${this.baseUrl}/${path}`
+    const modelFields = this.getRequiredModelFields(model)
     const modelsData: T[] = []
 
     try {
@@ -61,7 +60,7 @@ class PHDClient {
       // console.debug('find - PHD RESULT', model.name, documents, url)
 
       documents.forEach((document) => {
-        if (this.hasAllPortalFields<T>(document, model)) {
+        if (this.hasAllRequiredModelFields<T>(document, modelFields)) {
           modelsData.push(new model(document))
         } else {
           throw new Error('data not instance of model')
@@ -88,14 +87,14 @@ class PHDClient {
 
   async findById<T extends Entity>({ path, id, model, cache, fallback }: FindOneParams<T>): Promise<T> {
     const url = `${this.baseUrl}/${path}/${id}`
+    const modelFields = this.getRequiredModelFields(model)
     let modelData: T
 
     try {
       const { data: document } = await axios.get(url, { headers: { authorization: this.apiKey } })
-
       // console.debug('find by ID - PHD RESULT', model.name, document, url)
 
-      if (this.hasAllPortalFields<T>(document, model)) {
+      if (this.hasAllRequiredModelFields<T>(document, modelFields)) {
         modelData = new model(document)
       } else {
         throw new Error('data not instance of model')
@@ -133,26 +132,32 @@ class PHDClient {
     }
   }
 
-  /** Checks that the data returned from the PHD has all fields used by the
-      Portal API code, meaning all fields declared by the Loopbak model. */
-  private hasAllPortalFields<T>(data: T, model: ModelFields) {
-    const modelFields = Object.entries(model.definition.properties)
+  /** Gets a string array of all the fields marked as required by the Loopback model */
+  private getRequiredModelFields(model: ModelProps): string[] {
+    return Object.entries(model.definition.properties)
       .filter(([_, { required }]) => required)
       .map(([key]) => key)
-    const dataFields = Object.keys(data)
-    const isInstanceOfModel = modelFields.every((key) => dataFields.includes(key))
+  }
 
-    // TODO - Remove when tested. DEBUG ONLY
-    if (!isInstanceOfModel) {
-      // console.debug('DEBUG', model, {
-      //   data,
-      //   modelFields,
-      //   dataFields,
-      //   fieldsNotInLoopbackModel: dataFields.filter((key) => !modelFields.includes(key)),
-      //   fieldsNotInPostgres: modelFields.filter((key) => !dataFields.includes(key)),
-      // })
-    }
-    // DEBUG ONLY
+  /** Checks that the data returned from the PHD has all required fields used by the
+      Portal API code, meaning all required fields declared by the Loopbak model. */
+  private hasAllRequiredModelFields<T>(data: T, modelFields: string[]): boolean {
+    // TODO - Replace below with this line
+    // return modelFields.every((key) => Object.keys(data).includes(key))
+
+    // /* TODO - Remove when tested. DEBUG ONLY*/
+    const isInstanceOfModel = modelFields.every((key) => Object.keys(data).includes(key))
+
+    // if (!isInstanceOfModel) {
+    // console.debug('DEBUG', model, {
+    //   data,
+    //   modelFields,
+    //   dataFields,
+    //   fieldsNotInLoopbackModel: dataFields.filter((key) => !modelFields.includes(key)),
+    //   fieldsNotInPostgres: modelFields.filter((key) => !dataFields.includes(key)),
+    // })
+    // }
+    // /* DEBUG ONLY */
 
     return isInstanceOfModel
   }

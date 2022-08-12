@@ -49,6 +49,8 @@ export async function setupApplication(pocket?: Relayer, envs?: object): Promise
     process.env[name] = value as string
   }
 
+  // console.debug({ appEnvs, ENV_AFTER: process.env })
+
   const app = new appWithMock.PocketGatewayApplication({
     rest: restConfig,
     env: {
