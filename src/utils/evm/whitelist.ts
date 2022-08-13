@@ -7,27 +7,33 @@ export function isWhitelisted(value: string, whitelist: string[]): boolean {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isContractWhitelisted(rawData: Record<string, any>, whitelistedContracts: string[]): boolean {
-  const contractAddress = extractContractAddress(rawData)
+  const { toAddress } = extractContractAddress(rawData)
 
   // This means that the method is not supported for this feature,
   // so it shall pass.
-  if (!contractAddress) {
+  if (!toAddress) {
     return true
   }
 
-  return checkWhitelist(whitelistedContracts, contractAddress, 'explicit')
+  return checkWhitelist(whitelistedContracts, toAddress, 'explicit')
 }
 
 // Has the contract been widely blocked?
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isContractBlocked(rawData: Record<string, any>, blockedContracts: string[]): boolean {
-  const contractAddress = extractContractAddress(rawData)
+  const { fromAddress, toAddress } = extractContractAddress(rawData)
 
   // This means that the method is not supported for this feature,
   // so it shall pass.
-  if (!contractAddress) {
+  if (!fromAddress && !toAddress) {
     return false
   }
 
-  return blockedContracts.includes(contractAddress)
+  const isBlocked =
+    blockedContracts.includes(fromAddress) ||
+    blockedContracts.includes(fromAddress?.toLowerCase()) ||
+    blockedContracts.includes(toAddress) ||
+    blockedContracts.includes(toAddress?.toLowerCase())
+
+  return isBlocked
 }
