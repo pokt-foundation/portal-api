@@ -72,7 +72,7 @@ export async function enforceEVMRestrictions(
   }
 
   const url = process.env.BLOCKED_ADDRESSES_URL ?? ''
-  const blockedAddresses = await getBlockedAddresses(cache.remote, url)
+  const blockedAddresses = await getBlockedAddresses(cache.local, url)
 
   const enforced = !isContractBlocked(parsedRawData, blockedAddresses)
 
