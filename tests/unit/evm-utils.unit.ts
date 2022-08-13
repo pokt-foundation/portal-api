@@ -42,8 +42,7 @@ describe('EVM utilities (unit)', () => {
       expect(address).to.to.be.equal('0xdac17f958d2ee523a2206206994597c13d831ec7')
     })
 
-    // eslint-disable-next-line mocha/no-exclusive-tests
-    it.only('should successfully extract contract address from a `eth_call` call', () => {
+    it('should successfully extract contract address from a `eth_call` call', () => {
       const call = {
         jsonrpc: '2.0',
         method: 'eth_call',
