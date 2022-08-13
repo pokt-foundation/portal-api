@@ -31,8 +31,8 @@ export function isContractBlocked(rawData: Record<string, any>, blockedContracts
 
   blockedContracts = blockedContracts.map((x) => x.toLowerCase())
 
-  const toAddressLowerCase = toAddress ? toAddress.toLowerCase() : ''
-  const fromAddressLowerCase = fromAddress ? fromAddress.toLowerCase() : ''
+  const toAddressLowerCase = typeof toAddress === 'string' ? toAddress.toLowerCase() : ''
+  const fromAddressLowerCase = typeof fromAddress === 'string' ? fromAddress.toLowerCase() : ''
 
   return blockedContracts.includes(fromAddressLowerCase) || blockedContracts.includes(toAddressLowerCase)
 }
