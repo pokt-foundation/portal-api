@@ -27,7 +27,23 @@ describe('EVM utilities (unit)', () => {
       expect(address).to.to.be.equal('0xe44000972e7c737a2d43609c2254a8f7b646bf9d')
     })
 
-    it('should successfully extract contract address from a `eth_call` call', () => {
+    it('should successfully extract contract address from a `eth_sendRawTransaction` EIP1559 call', () => {
+      const call = {
+        id: 1,
+        jsonrpc: '2.0',
+        method: 'eth_sendRawTransaction',
+        params: [
+          '0x02f8b401830153b4843b9aca008507f3be98328301d4c094dac17f958d2ee523a2206206994597c13d831ec780b844a9059cbb000000000000000000000000622779096805724b38c42b51989ddca32d671a000000000000000000000000000000000000000000000000000000000022df0080c001a0236084da36000fb2c7373cfa78e8f1bc9d8eb081dc240630c8024aa06fc39f96a030bdc5cd4e1f5f6abbb36c3b004270b68724cc46c56ad5847c99f8ced9c4112d',
+        ],
+      }
+
+      const address = extractContractAddress(call)
+
+      expect(address).to.to.be.equal('0xdac17f958d2ee523a2206206994597c13d831ec7')
+    })
+
+    // eslint-disable-next-line mocha/no-exclusive-tests
+    it.only('should successfully extract contract address from a `eth_call` call', () => {
       const call = {
         jsonrpc: '2.0',
         method: 'eth_call',
@@ -42,6 +58,7 @@ describe('EVM utilities (unit)', () => {
       }
 
       const address = extractContractAddress(call)
+      console.log('address', address)
 
       expect(address).to.to.be.equal('0xf012702a5f0e54015362cBCA26a26fc90AA832a3')
     })
