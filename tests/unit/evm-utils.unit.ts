@@ -12,8 +12,7 @@ describe('EVM utilities (unit)', () => {
   })
 
   describe('Extract contract addresses', () => {
-    // eslint-disable-next-line mocha/no-exclusive-tests
-    it.only('should return undefined when address cannot be extracted from call', () => {
+    it('should return undefined when address cannot be extracted from call', () => {
       const call = {
         id: 1,
         jsonrpc: '2.0',
