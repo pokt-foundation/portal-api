@@ -29,7 +29,7 @@ export function extractContractAddress(rawData: Record<string, any>): string | u
 export function decodeEthRawTxAddress(rawTxBytes: string): string {
   // Fix for parsing EIP1559: see below link for more details
   // https://github.com/ethers-io/ethers.js/discussions/3269
-  if (rawTxBytes.substring(2, 4) === '02') {
+  if (rawTxBytes.substring(0, 4) === '0x02') {
     rawTxBytes = rawTxBytes.substring(0, 2) + rawTxBytes.substring(4)
   }
 
