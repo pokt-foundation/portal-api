@@ -57,7 +57,6 @@ describe('EVM utilities (unit)', () => {
       }
 
       const address = extractContractAddress(call)
-      console.log('address', address)
 
       expect(address).to.to.be.equal('0xf012702a5f0e54015362cBCA26a26fc90AA832a3')
     })
