@@ -12,6 +12,22 @@ describe('EVM utilities (unit)', () => {
   })
 
   describe('Extract contract addresses', () => {
+    // eslint-disable-next-line mocha/no-exclusive-tests
+    it.only('should return undefined when address cannot be extracted from call', () => {
+      const call = {
+        id: 1,
+        jsonrpc: '2.0',
+        method: 'eth_sendRawTransaction',
+        params: [
+          '0x02f89382d2af82020a8402625a008402625a0083830b0994e9abfbc143d7cef74b5b793ec5907fa62ca5315480a4528be0a9000000000000000000000000000000000000000000000000000000000001b3adc001a0c6f95fb46560bd59bf40a787e67649dc74c213eb5be4304249feb8ebc37753bca079c7f1e23eac1fe3185d1d7da8ac23c2b0eaba136039ea5ce2a83879fa7b3d29',
+        ],
+      }
+
+      const address = extractContractAddress(call)
+
+      expect(address).to.to.be.equal(undefined)
+    })
+
     it('should successfully extract contract address from a `eth_sendRawTransaction` call', () => {
       const call = {
         id: 1,
