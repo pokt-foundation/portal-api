@@ -27,17 +27,23 @@ export function extractContractAddress(rawData: Record<string, any>): string | u
 }
 
 export function decodeEthRawTxAddress(rawTxBytes: string): string {
+  let type = 'Legacy'
+  // Fix for parsing EIP1559: see below link for more details
+  // https://github.com/ethers-io/ethers.js/discussions/3269
+  if (rawTxBytes.substring(0, 4) === '0x02') {
+    rawTxBytes = rawTxBytes.substring(0, 2) + rawTxBytes.substring(4)
+    type = 'EIP1559'
+  } else if (rawTxBytes.substring(0, 2) === '02') {
+    rawTxBytes = rawTxBytes.substring(2)
+    type = 'EIP1559'
+  }
+
   const decodedTx = utils.RLP.decode(rawTxBytes)
 
-  const [
-    ,
-    ,
-    ,
-    // rawNonce
-    // rawGasPrice
-    // rawGasLimit
-    rawTo,
-  ] = decodedTx
+  if (type !== 'EIP1559') {
+    return decodedTx[3]
+  }
 
-  return rawTo
+  // in case of EIP1559, the 'to address' is on index 5
+  return decodedTx[5]
 }
