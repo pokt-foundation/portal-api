@@ -6,9 +6,10 @@ describe('EVM utilities (unit)', () => {
     const ethTxHex =
       '0xf86d8301ae13843b9aca00831e848094e44000972e7c737a2d43609c2254a8f7b646bf9d80844641257d820118a0272dd734582f2965b3989d1c2e32fdc7d76434e7082fce5dada6a8d88e26564ba066729c21be992d9f966ea0b3f69b4033e1595fc8b2f8761d8d0dd73ae96a26f1'
 
-    const address = decodeEthRawTxAddress(ethTxHex)
+    const { fromAddress, toAddress } = decodeEthRawTxAddress(ethTxHex)
 
-    expect(address).to.to.be.equal('0xe44000972e7c737a2d43609c2254a8f7b646bf9d')
+    expect(fromAddress).to.to.be.equal('0xB1F190Bf99FEA986e2d4D99ABB5BE1A649D5247d')
+    expect(toAddress).to.to.be.equal('0xE44000972e7C737a2D43609c2254a8F7B646BF9D')
   })
 
   describe('Extract contract addresses', () => {
@@ -22,9 +23,10 @@ describe('EVM utilities (unit)', () => {
         ],
       }
 
-      const address = extractContractAddress(call)
+      const { fromAddress, toAddress } = extractContractAddress(call)
 
-      expect(address).to.to.be.equal('0xe44000972e7c737a2d43609c2254a8f7b646bf9d')
+      expect(fromAddress).to.to.be.equal('0xB1F190Bf99FEA986e2d4D99ABB5BE1A649D5247d')
+      expect(toAddress).to.to.be.equal('0xE44000972e7C737a2D43609c2254a8F7B646BF9D')
     })
 
     it('should successfully extract contract address from a `eth_sendRawTransaction` EIP1559 call', () => {
@@ -37,9 +39,10 @@ describe('EVM utilities (unit)', () => {
         ],
       }
 
-      const address = extractContractAddress(call)
+      const { fromAddress, toAddress } = extractContractAddress(call)
 
-      expect(address).to.to.be.equal('0xdac17f958d2ee523a2206206994597c13d831ec7')
+      expect(fromAddress).to.to.be.equal('0x4c9AF439b1A6761B8E549D8d226A468a6b2803A8')
+      expect(toAddress).to.to.be.equal('0xdAC17F958D2ee523a2206206994597C13D831ec7')
     })
 
     it('should successfully extract contract address from a `eth_call` call', () => {
@@ -56,9 +59,10 @@ describe('EVM utilities (unit)', () => {
         id: 1,
       }
 
-      const address = extractContractAddress(call)
+      const { fromAddress, toAddress } = extractContractAddress(call)
 
-      expect(address).to.to.be.equal('0xf012702a5f0e54015362cBCA26a26fc90AA832a3')
+      expect(fromAddress).to.to.be.equal(undefined)
+      expect(toAddress).to.to.be.equal('0xf012702a5f0e54015362cBCA26a26fc90AA832a3')
     })
 
     it('should successfully extract contract address from a `eth_getLogs` call', () => {
@@ -76,9 +80,10 @@ describe('EVM utilities (unit)', () => {
         ],
       }
 
-      const address = extractContractAddress(call)
+      const { fromAddress, toAddress } = extractContractAddress(call)
 
-      expect(address).to.to.be.equal('0xb80a07e13240c31ec6dc0b5d72af79d461da3a70')
+      expect(fromAddress).to.to.be.equal(undefined)
+      expect(toAddress).to.to.be.equal('0xb80a07e13240c31ec6dc0b5d72af79d461da3a70')
     })
 
     it('should successfully extract contract address from a `eth_getBalance` call', () => {
@@ -89,9 +94,10 @@ describe('EVM utilities (unit)', () => {
         params: ['0x3a59d3f892da39235a5649fed80e832b4066d309', '0x191d935'],
       }
 
-      const address = extractContractAddress(call)
+      const { fromAddress, toAddress } = extractContractAddress(call)
 
-      expect(address).to.to.be.equal('0x3a59d3f892da39235a5649fed80e832b4066d309')
+      expect(fromAddress).to.to.be.equal(undefined)
+      expect(toAddress).to.to.be.equal('0x3a59d3f892da39235a5649fed80e832b4066d309')
     })
 
     it('should successfully extract contract address from a `eth_getTransactionCount` call', () => {
@@ -102,9 +108,10 @@ describe('EVM utilities (unit)', () => {
         params: ['0x0f0edc5e5191c6d0baf64eec4c755c49f3048cdf', 'latest'],
       }
 
-      const address = extractContractAddress(call)
+      const { fromAddress, toAddress } = extractContractAddress(call)
 
-      expect(address).to.to.be.equal('0x0f0edc5e5191c6d0baf64eec4c755c49f3048cdf')
+      expect(fromAddress).to.to.be.equal(undefined)
+      expect(toAddress).to.to.be.equal('0x0f0edc5e5191c6d0baf64eec4c755c49f3048cdf')
     })
 
     it('should successfully extract contract address from a `eth_getStorageAt` call', () => {
@@ -115,9 +122,10 @@ describe('EVM utilities (unit)', () => {
         id: 1,
       }
 
-      const address = extractContractAddress(call)
+      const { fromAddress, toAddress } = extractContractAddress(call)
 
-      expect(address).to.to.be.equal('0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9')
+      expect(fromAddress).to.to.be.equal(undefined)
+      expect(toAddress).to.to.be.equal('0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9')
     })
 
     it('should successfully extract contract address from a `eth_getCode` call', () => {
@@ -128,9 +136,10 @@ describe('EVM utilities (unit)', () => {
         id: 1,
       }
 
-      const address = extractContractAddress(call)
+      const { fromAddress, toAddress } = extractContractAddress(call)
 
-      expect(address).to.to.be.equal('0x34965ba0ac2451A34a0471F04CCa3F990b8dea27')
+      expect(fromAddress).to.to.be.equal(undefined)
+      expect(toAddress).to.to.be.equal('0x34965ba0ac2451A34a0471F04CCa3F990b8dea27')
     })
   })
 })
