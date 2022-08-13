@@ -1086,7 +1086,6 @@ describe('V1 controller (acceptance)', () => {
   })
 
   describe('Contract/method whitelisting', () => {
-    // eslint-disable-next-line mocha/no-exclusive-tests
     it('fails on request with restricted contract whitelist (eth_call)', async () => {
       const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
 

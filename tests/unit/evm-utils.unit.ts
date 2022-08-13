@@ -1,4 +1,3 @@
-/* eslint-disable mocha/no-exclusive-tests */
 import { expect } from '@loopback/testlab'
 import { decodeEthRawTxAddress, extractContractAddress } from '../../src/utils/evm/parsing'
 
