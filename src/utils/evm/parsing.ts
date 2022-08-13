@@ -31,6 +31,8 @@ export function decodeEthRawTxAddress(rawTxBytes: string): string {
   // https://github.com/ethers-io/ethers.js/discussions/3269
   if (rawTxBytes.substring(0, 4) === '0x02') {
     rawTxBytes = rawTxBytes.substring(0, 2) + rawTxBytes.substring(4)
+  } else if (rawTxBytes.substring(0, 2) === '02') {
+    rawTxBytes = rawTxBytes.substring(2)
   }
 
   const decodedTx = utils.RLP.decode(rawTxBytes)
