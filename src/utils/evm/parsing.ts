@@ -2,7 +2,7 @@ import { utils } from 'ethers'
 import { parseMethod } from '../parsing'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function extractContractAddress(rawData: Record<string, any>): string | undefined {
+export function extractContractAddress(rawData: Record<string, any>): { fromAddress: string; toAddress: string } {
   const params = rawData.params
   const method = parseMethod(rawData)
 
@@ -11,39 +11,22 @@ export function extractContractAddress(rawData: Record<string, any>): string | u
       return decodeEthRawTxAddress(params[0])
     case 'eth_call':
       // firstParameter is the raw tx hex
-      return params[0]?.to
+      return { toAddress: params[0]?.to, fromAddress: undefined }
     case 'eth_getLogs':
-      return params[0]?.address
+      return { toAddress: params[0]?.address, fromAddress: undefined }
     case 'eth_getCode':
     case 'eth_getBalance':
     case 'eth_getStorageAt':
     case 'eth_getTransactionCount':
       // firstParameter is the address
-      return params[0]
+      return { toAddress: params[0], fromAddress: undefined }
     default:
-      // If the method is not supported, return undefined
-      return undefined
+      return { toAddress: undefined, fromAddress: undefined }
   }
 }
 
-export function decodeEthRawTxAddress(rawTxBytes: string): string {
-  let type = 'Legacy'
-  // Fix for parsing EIP1559: see below link for more details
-  // https://github.com/ethers-io/ethers.js/discussions/3269
-  if (rawTxBytes.substring(0, 4) === '0x02') {
-    rawTxBytes = rawTxBytes.substring(0, 2) + rawTxBytes.substring(4)
-    type = 'EIP1559'
-  } else if (rawTxBytes.substring(0, 2) === '02') {
-    rawTxBytes = rawTxBytes.substring(2)
-    type = 'EIP1559'
-  }
+export function decodeEthRawTxAddress(rawTxBytes: string): { fromAddress: string; toAddress: string } {
+  const { from: fromAddress, to: toAddress } = utils.parseTransaction(rawTxBytes)
 
-  const decodedTx = utils.RLP.decode(rawTxBytes)
-
-  if (type !== 'EIP1559') {
-    return decodedTx[3]
-  }
-
-  // in case of EIP1559, the 'to address' is on index 5
-  return decodedTx[5]
+  return { fromAddress, toAddress }
 }
