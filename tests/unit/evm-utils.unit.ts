@@ -1,5 +1,6 @@
 import { expect } from '@loopback/testlab'
 import { decodeEthRawTxAddress, extractContractAddress } from '../../src/utils/evm/parsing'
+import { isContractBlocked } from '../../src/utils/evm/whitelist'
 
 describe('EVM utilities (unit)', () => {
   it('should return an address from a eth raw tx hex', () => {
@@ -140,6 +141,20 @@ describe('EVM utilities (unit)', () => {
 
       expect(fromAddress).to.to.be.equal(undefined)
       expect(toAddress).to.to.be.equal('0x34965ba0ac2451A34a0471F04CCa3F990b8dea27')
+    })
+
+    it('should pass if toAddress param is not string', () => {
+      const blockedContracts = ['0x34965ba0ac2451A34a0471F04CCa3F990b8dea27']
+      const rawData = {
+        jsonrpc: '2.0',
+        method: 'eth_getCode',
+        params: [0],
+        id: 1,
+      }
+
+      const blocked = isContractBlocked(rawData, blockedContracts)
+
+      expect(blocked).to.to.be.equal(false)
     })
   })
 })
