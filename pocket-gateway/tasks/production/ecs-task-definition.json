@@ -172,7 +172,7 @@
 			],
 			"command": [],
 			"linuxParameters": null,
-			"cpu": 512,
+			"cpu": 1024,
 			"environment": [],
 			"resourceRequirements": null,
 			"ulimits": [
@@ -188,7 +188,7 @@
 			"secrets": null,
 			"dockerSecurityOptions": null,
 			"memory": null,
-			"memoryReservation": 659,
+			"memoryReservation": 2048,
 			"volumesFrom": [],
 			"stopTimeout": null,
 			"image": "redis:6.2-alpine",
@@ -210,7 +210,7 @@
 		}
 	],
 	"placementConstraints": [],
-	"memory": "3731",
+	"memory": "7873",
 	"taskRoleArn": "arn:aws:iam::059424750518:role/ecsTaskExecutionRole",
 	"family": "gateway-prod",
 	"pidMode": null,
@@ -218,7 +218,7 @@
 		"EC2"
 	],
 	"networkMode": "bridge",
-	"cpu": "2048",
+	"cpu": "4096",
 	"inferenceAccelerators": null,
 	"proxyConfiguration": null,
 	"volumes": [
