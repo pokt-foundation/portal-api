@@ -64,7 +64,7 @@ jobs:
           envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}
           envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.3vxfd0.clustercfg.apne1.cache.amazonaws.com
           envkey_REGION: 'ap-northeast-1'
-          envkey_REGION_NAME: 'upgraded_redis_ap_northeast_1'
+          envkey_REGION_NAME: 'ap_northeast_1'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
@@ -89,7 +89,7 @@ jobs:
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
             DD_PROFILING_ENABLED=true
-            DD_SERVICE=/upgraded_redis/ap-northeast-1/ecs/gateway
+            DD_SERVICE=/ap-northeast-1/ecs/gateway
             DD_VERSION=${{ github.sha }}
             DD_ENV=production
             DD_AGENT_HOST=datadog-agent
