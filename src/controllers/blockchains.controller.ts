@@ -2,8 +2,8 @@ import { Count, CountSchema, Filter, FilterExcludingWhere, repository, Where } f
 import { param, get, getModelSchemaRef } from '@loopback/rest'
 
 import { Blockchains } from '../models'
-import { PHDClient } from '../phd-client'
 import { BlockchainsRepository } from '../repositories'
+import { PHDClient } from '../services/phd-client'
 
 export class BlockchainsController {
   phdClient: PHDClient

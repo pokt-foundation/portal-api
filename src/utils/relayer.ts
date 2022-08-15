@@ -3,9 +3,9 @@ import { Redis } from 'ioredis'
 import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
 
 import { Blockchains } from '../models'
-import { PHDClient } from '../phd-client'
 import { BlockchainsRepository } from '../repositories'
 import { Cache } from '../services/cache'
+import { PHDClient } from '../services/phd-client'
 import { SyncCheckOptions } from '../services/sync-checker'
 import { BlockchainDetails, CheckResult, BlockchainRedirect } from './types'
 
