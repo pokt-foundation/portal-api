@@ -64,7 +64,7 @@ jobs:
           envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}
           envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.hmerc8.clustercfg.ape1.cache.amazonaws.com
           envkey_REGION: 'ap-east-1'
-          envkey_REGION_NAME: 'upgraded_redis'
+          envkey_REGION_NAME: 'upgraded_redis_ap_east_1'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
