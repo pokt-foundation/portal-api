@@ -4,6 +4,11 @@ import { Count, DefaultCrudRepository, Entity } from '@loopback/repository'
 
 import { Cache } from '../services/cache'
 
+const logger = require('./logger')
+
+const FALLBACK_WARNING = 'Data from Pocket HTTP DB not fetched. Falling back to fetching from MongoDB.'
+const FAILURE_ERROR = 'Data from Pocket HTTP DB not fetched. No fallback set so data fetch failed.'
+
 type ModelRef = new (...args: any[]) => any //eslint-disable-line
 interface ModelProps extends ModelRef {
   definition?: { properties: { [key: string]: { required?: boolean } } }
@@ -68,6 +73,7 @@ class PHDClient {
       })
     } catch (error) {
       if (fallback) {
+        logger.log('warn', FALLBACK_WARNING, { error })
         const documents = await fallback()
         // console.debug('find - FALLBACK RESULT', model.name, error.message, url)
 
@@ -75,6 +81,7 @@ class PHDClient {
           modelsData.push(new model(document))
         })
       } else {
+        logger.log('error', FAILURE_ERROR, { error })
         throw error
       }
     }
@@ -101,11 +108,13 @@ class PHDClient {
       }
     } catch (error) {
       if (fallback) {
+        logger.log('warn', FALLBACK_WARNING, { error })
         const document = await fallback()
         // console.debug('find by ID - FALLBACK RESULT', model.name, error.message, url)
 
         modelData = new model(document)
       } else {
+        logger.log('error', FAILURE_ERROR, { error })
         throw error
       }
     }
@@ -125,8 +134,10 @@ class PHDClient {
       return { count: documents.length }
     } catch (error) {
       if (fallback) {
+        logger.log('warn', FALLBACK_WARNING, { error })
         return fallback()
       } else {
+        logger.log('error', FAILURE_ERROR, { error })
         throw error
       }
     }
