@@ -210,7 +210,7 @@
 		}
 	],
 	"placementConstraints": [],
-	"memory": "7873",
+	"memory": "7623",
 	"taskRoleArn": "arn:aws:iam::059424750518:role/ecsTaskExecutionRole",
 	"family": "gateway-prod",
 	"pidMode": null,
