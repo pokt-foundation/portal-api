@@ -18,6 +18,18 @@ export async function enforceEVMRestrictions(
   altruistURL: string,
   cache: Cache
 ): Promise<ErrorObject | undefined> {
+  const url = process.env.BLOCKED_ADDRESSES_URL ?? ''
+  const blockedAddresses = await getBlockedAddresses(cache.local, url)
+
+  const blocked = isContractBlocked(parsedRawData, blockedAddresses)
+
+  if (blocked) {
+    return jsonrpc.error(
+      rpcID,
+      new jsonrpc.JsonRpcError('Restricted endpoint: contract address not allowed.', 0)
+    ) as ErrorObject
+  }
+
   const method = parseMethod(parsedRawData)
 
   if (WS_ONLY_METHODS.includes(method)) {
@@ -69,18 +81,6 @@ export async function enforceEVMRestrictions(
 
   if (method === 'eth_getLogs' && altruistURL) {
     return enforceGetLogs(rpcID, parsedRawData, blockchainID, requestID, logLimitBlocks, altruistURL)
-  }
-
-  const url = process.env.BLOCKED_ADDRESSES_URL ?? ''
-  const blockedAddresses = await getBlockedAddresses(cache.remote, url)
-
-  const enforced = !isContractBlocked(parsedRawData, blockedAddresses)
-
-  if (!enforced) {
-    return jsonrpc.error(
-      rpcID,
-      new jsonrpc.JsonRpcError('Restricted endpoint: contract address not allowed.', 0)
-    ) as ErrorObject
   }
 
   return undefined
