@@ -91,7 +91,7 @@
 			],
 			"command": [],
 			"linuxParameters": null,
-			"cpu": 512,
+			"cpu": 200,
 			"environment": [],
 			"resourceRequirements": null,
 			"ulimits": [
@@ -123,7 +123,7 @@
 			"secrets": null,
 			"dockerSecurityOptions": null,
 			"memory": null,
-			"memoryReservation": 1024,
+			"memoryReservation": 256,
 			"volumesFrom": [],
 			"stopTimeout": null,
 			"image": "gcr.io/datadoghq/agent:latest",
@@ -172,7 +172,7 @@
 			],
 			"command": [],
 			"linuxParameters": null,
-			"cpu": 512,
+			"cpu": 784,
 			"environment": [],
 			"resourceRequirements": null,
 			"ulimits": [
@@ -188,7 +188,7 @@
 			"secrets": null,
 			"dockerSecurityOptions": null,
 			"memory": null,
-			"memoryReservation": 659,
+			"memoryReservation": 1024,
 			"volumesFrom": [],
 			"stopTimeout": null,
 			"image": "redis:6.2-alpine",
@@ -198,6 +198,9 @@
 			"interactive": null,
 			"healthCheck": null,
 			"essential": true,
+            "links": [
+                "datadog-agent"
+            ],
 			"hostname": null,
 			"extraHosts": null,
 			"pseudoTerminal": null,

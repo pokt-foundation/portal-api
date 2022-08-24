@@ -4,7 +4,7 @@ name: Terraform Production Deployment ap-south-1
 
 on:
   push:
-    branches: [master]
+    branches: [T-13102-enable-local-redis-logs-test]
 
 jobs:
   deploy:
@@ -62,16 +62,16 @@ jobs:
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
           envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}
-          envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.qbodc0.clustercfg.aps1.cache.amazonaws.com
+          envkey_REMOTE_REDIS_ENDPOINT: gateway-rutwick-redis.qbodc0.clustercfg.aps1.cache.amazonaws.com:6379
           envkey_REGION: 'ap-south-1'
-          envkey_REGION_NAME: 'ap-south-1'
+          envkey_REGION_NAME: 'rutwick'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: gateway-prod
+          ECR_REPOSITORY: gateway-rutwick
           IMAGE_TAG: latest
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
@@ -89,7 +89,7 @@ jobs:
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
             DD_PROFILING_ENABLED=true
-            DD_SERVICE=/ap-south-1/ecs/gateway
+            DD_SERVICE=/rutwick/ap-south-1/ecs/gateway
             DD_VERSION=${{ github.sha }}
             DD_ENV=production
             DD_AGENT_HOST=datadog-agent
@@ -112,6 +112,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def-ap-south-1-datadog-agent.outputs.task-definition }}
-          service: gateway-prod
-          cluster: gateway-prod
+          service: gateway-rutwick
+          cluster: gateway-rutwick
           wait-for-service-stability: true
