@@ -34,7 +34,7 @@ jobs:
           [[#shared_envs]]
           envkey_[[key]]: [[&value]]
           [[/shared_envs]]
-          envkey_REMOTE_REDIS_ENDPOINT: gateway-rutwick-redis.qbodc0.clustercfg.aps1.cache.amazonaws.com:6379
+          envkey_REMOTE_REDIS_ENDPOINT: gateway-rutwick-redis.qbodc0.clustercfg.aps1.cache.amazonaws.com
           envkey_REGION: 'ap-south-1'
           envkey_REGION_NAME: 'rutwick'
           file_name: .env
@@ -62,6 +62,23 @@ jobs:
             DD_RUNTIME_METRICS_ENABLED=true
             DD_PROFILING_ENABLED=true
             DD_SERVICE=/rutwick/ap-south-1/ecs/gateway
+            DD_VERSION=${{ github.sha }}
+            DD_ENV=production
+            DD_AGENT_HOST=datadog-agent
+      
+      - name: Fill in the new image ID / ap-south-1 - gateway-redis
+        id: task-def-ap-south-1-gateway-redis
+        uses: aws-actions/amazon-ecs-render-task-definition@master
+        with:
+          task-definition: pocket-gateway/tasks/production/ecs-task-definition.json
+          container-name: redis
+          image: redis:6.2-alpine 
+          # Needs to be set at container level to be read by the dd agent
+          environment-variables: |
+            DD_RUNTIME_METRICS_ENABLED=true
+            DD_PROFILING_ENABLED=true
+            DD_LOGGING_ENABLED=true
+            DD_SERVICE=/rutwick/ap-south-1/ecs/gateway-redis
             DD_VERSION=${{ github.sha }}
             DD_ENV=production
             DD_AGENT_HOST=datadog-agent
