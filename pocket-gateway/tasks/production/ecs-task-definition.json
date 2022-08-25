@@ -215,7 +215,7 @@
 	"placementConstraints": [],
 	"memory": "3731",
 	"taskRoleArn": "arn:aws:iam::059424750518:role/ecsTaskExecutionRole",
-	"family": "gateway-prod",
+	"family": "gateway-rutwick",
 	"pidMode": null,
 	"requiresCompatibilities": [
 		"EC2"
