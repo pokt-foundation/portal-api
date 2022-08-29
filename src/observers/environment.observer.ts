@@ -37,7 +37,6 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'INFLUX_ORG',
     'ARCHIVAL_CHAINS',
     'BLOCKED_ADDRESSES_URL',
-    'RATE_LIMITER_URL',
     // Not required in code, but must be present in .env
     'AWS_ACCESS_KEY_ID',
     'AWS_SECRET_ACCESS_KEY',
@@ -45,7 +44,11 @@ export class EnvironmentObserver implements LifeCycleObserver {
 
   private static requiredEnvVarsOnlyInProd = []
 
-  private static optionalEnvVars: string[] = ['ALWAYS_REDIRECT_TO_ALTRUISTS', 'REDIS_LOCAL_TTL_FACTOR']
+  private static optionalEnvVars: string[] = [
+    'ALWAYS_REDIRECT_TO_ALTRUISTS',
+    'REDIS_LOCAL_TTL_FACTOR',
+    'RATE_LIMITER_URL',
+  ]
 
   /*
   constructor(
