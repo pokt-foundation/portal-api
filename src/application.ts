@@ -67,6 +67,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       ARCHIVAL_CHAINS,
       ALWAYS_REDIRECT_TO_ALTRUISTS,
       REDIS_LOCAL_TTL_FACTOR,
+      RATE_LIMITER_URL,
     } = await this.get('configuration.environment.values')
 
     const environment: string = NODE_ENV || 'production'
@@ -84,6 +85,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const archivalChains: string[] = (ARCHIVAL_CHAINS || '').replace(' ', '').split(',')
     const alwaysRedirectToAltruists: boolean = ALWAYS_REDIRECT_TO_ALTRUISTS === 'true'
     const ttlFactor = parseFloat(REDIS_LOCAL_TTL_FACTOR) || 1
+    const rateLimiterURL: string = RATE_LIMITER_URL || ''
 
     if (aatPlan !== AatPlans.PREMIUM && !AatPlans.values.includes(aatPlan)) {
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
@@ -105,6 +107,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('defaultSyncAllowance').to(defaultSyncAllowance)
     this.bind('defaultLogLimitBlocks').to(defaultLogLimitBlocks)
     this.bind('alwaysRedirectToAltruists').to(alwaysRedirectToAltruists)
+    this.bind('rateLimiterURL').to(rateLimiterURL)
 
     const redisPort: string = REDIS_PORT || ''
 
