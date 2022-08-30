@@ -132,6 +132,10 @@
     {
       "key": "LOG_CHERRY_PICKER_STATS",
       "value": "${{ secrets.LOG_CHERRY_PICKER_STATS }}"
+    },
+    {
+      "key": "RATE_LIMITER_URL",
+      "value": "https://rate-limiter.backend.pokt.network/v0/app-ids"
     }
   ]
 }
