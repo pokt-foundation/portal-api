@@ -123,7 +123,7 @@ export async function getRateLimitedApps(redis: Redis, rateLimiterURL: string): 
         } as AxiosRequestConfig
 
         const { data } = await axios(axiosConfig)
-        const { ApplicationIDs: rateLimitedAppsList } = data
+        const { applicationIDs: rateLimitedAppsList } = data
 
         rateLimitedApps = rateLimitedAppsList ?? []
       }
