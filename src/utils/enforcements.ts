@@ -25,7 +25,6 @@ export async function shouldRateLimit(appID: string, rateLimiterURL: string, cac
     return false
   }
 
-  const url = process.env.RATE_LIMITER_URL ?? ''
   const limitedApps = await getRateLimitedApps(cache.local, rateLimiterURL)
   if (limitedApps.length === 0) {
     return false
