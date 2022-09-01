@@ -28,6 +28,7 @@ export type SendRelayOptions = {
   logLimitBlocks?: number
   applicationID?: string
   applicationPublicKey?: string
+  loadBalancerID?: string
 }
 
 export type StickinessOptions = {

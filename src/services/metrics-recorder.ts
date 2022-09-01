@@ -62,6 +62,7 @@ export class MetricsRecorder {
     sticky,
     elapsedTime = 0,
     gigastakeAppID,
+    loadBalancerID,
   }: {
     requestID: string
     applicationID: string
@@ -83,6 +84,7 @@ export class MetricsRecorder {
     sticky?: string
     elapsedTime?: number
     gigastakeAppID?: string
+    loadBalancerID?: string
   }): Promise<void> {
     try {
       const { key: sessionKey } = session || {}
@@ -132,6 +134,7 @@ export class MetricsRecorder {
           sessionBlockHeight: session.header.sessionBlockHeight,
           blockHeight: session.blockHeight,
           responseStart,
+          loadBalancerID,
         })
       } else if (result === 500) {
         logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -150,6 +153,7 @@ export class MetricsRecorder {
           sticky,
           sessionBlockHeight: session.header.sessionBlockHeight,
           blockHeight: session.blockHeight,
+          loadBalancerID,
         })
       } else if (result === 503) {
         logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -168,6 +172,7 @@ export class MetricsRecorder {
           sticky,
           sessionBlockHeight: session.header.sessionBlockHeight,
           blockHeight: session.blockHeight,
+          loadBalancerID,
         })
       }
 
