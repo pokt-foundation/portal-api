@@ -127,6 +127,7 @@ export class PocketRelayer {
     logLimitBlocks,
     applicationID,
     applicationPublicKey,
+    loadBalancerID,
   }: SendRelayOptions): Promise<string | ErrorObject> {
     if (relayRetries !== undefined && relayRetries >= 0) {
       this.relayRetries = relayRetries
@@ -307,6 +308,7 @@ export class PocketRelayer {
                 session: this.session,
                 sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relay.serviceNode.publicKey),
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
+                loadBalancerID,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -367,6 +369,7 @@ export class PocketRelayer {
                 session: this.session,
                 sticky,
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
+                loadBalancerID,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -394,6 +397,7 @@ export class PocketRelayer {
         error: e,
         origin: this.origin,
         trace: e.stack,
+        loadBalancerID,
       })
     }
 
@@ -482,6 +486,7 @@ export class PocketRelayer {
               data,
               session: this.session,
               gigastakeAppID: applicationID !== application.id ? application.id : undefined,
+              loadBalancerID,
             })
             .catch(function log(e) {
               logger.log('error', 'Error recording metrics: ' + e, {
@@ -524,6 +529,7 @@ export class PocketRelayer {
       typeID: application.id,
       blockchainID,
       origin: this.origin,
+      loadBalancerID,
     })
 
     throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('Internal JSON-RPC error.', -32603))

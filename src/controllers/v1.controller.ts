@@ -355,6 +355,7 @@ export class V1Controller {
         },
         applicationID: gigastakeOptions.originalAppID,
         applicationPublicKey: gigastakeOptions.originalAppPK,
+        loadBalancerID: loadBalancer.id,
       }
 
       if (loadBalancer.logLimitBlocks) {
