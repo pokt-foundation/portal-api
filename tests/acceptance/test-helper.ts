@@ -32,6 +32,7 @@ export const DUMMY_ENV = {
   AWS_SECRET_ACCESS_KEY: 'test',
   AWS_REGION: 'test',
   BLOCKED_ADDRESSES_URL: 'https://blocked.addresses',
+  RATE_LIMITER_URL: 'https://rate.limiter',
 }
 
 export async function setupApplication(pocket?: Relayer, envs?: object): Promise<AppWithClient> {

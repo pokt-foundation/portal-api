@@ -57,6 +57,13 @@ const GIGASTAKE_FOLLOWER_IDS = {
   lb: 'df9f9f9gdklkwotn5o3ixuso',
 }
 
+const RATE_LIMITED_APPLICATION = { ...APPLICATION, id: 'rateLimitedApp123' }
+
+const RATE_LIMITED_LB_ID = {
+  app: RATE_LIMITED_APPLICATION.id,
+  lb: '1bc8y2dp3h7c38vbybeeaf7b',
+}
+
 // Follower app that has restricted gateway settings
 const GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS = {
   app: '5ifmwb6aq3frpgl9mqolike1',
@@ -265,6 +272,22 @@ const LOAD_BALANCERS = [
       stickyOrigins: ['localhost'],
     },
   },
+  {
+    id: RATE_LIMITED_LB_ID.lb,
+    user: 'test@test.com',
+    name: 'rate limited lb',
+    requestTimeout: 5000,
+    applicationIDs: [RATE_LIMITED_LB_ID.app],
+    logLimitBlocks: 25000,
+    gigastakeRedirect: false,
+    stickinessOptions: {
+      stickiness: true,
+      duration: 300,
+      useRPCID: false,
+      relaysLimit: 1e6,
+      stickyOrigins: ['localhost'],
+    },
+  },
 ]
 
 describe('V1 controller (acceptance)', () => {
@@ -289,6 +312,10 @@ describe('V1 controller (acceptance)', () => {
 
     axiosMock.onGet('https://blocked.addresses').reply(200, {
       blockedAddresses: ['0x5d13399e7a59941734900157381e2d0b9d29c971', '0xea674fdde714fd979de3edf0f56aa9716b898ec8'],
+    })
+
+    axiosMock.onGet('https://rate.limiter').reply(200, {
+      applicationIDs: ['rateLimitedApp123'],
     })
   })
 
@@ -317,6 +344,7 @@ describe('V1 controller (acceptance)', () => {
     await loadBalancersRepository.createAll(LOAD_BALANCERS)
     await blockchainsRepository.createAll(BLOCKCHAINS)
     await applicationsRepository.createAll(APPLICATIONS)
+    await applicationsRepository.create(RATE_LIMITED_APPLICATION)
   })
 
   afterEach(async () => {
@@ -1107,6 +1135,60 @@ describe('V1 controller (acceptance)', () => {
     )
 
     expect(gigastakeAppID).to.be.true()
+  })
+
+  describe('Rate-limiting applications and loadbalancers', () => {
+    // TODO: empty list of rate-limited apps: needs per-test setup of axios
+    // TODO: failure in calling the rate-limiter: needs per-test setup of axios
+    it('logs a warning on request with rate-limited app', async () => {
+      const pocket = pocketMock.object()
+      const logSpy = sinon.spy(logger, 'log')
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${RATE_LIMITED_APPLICATION.id}`)
+        .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+
+      const rateLimitWarningLogged = logSpy.calledWith(
+        'warn',
+        sinon.match((arg: string) => arg.startsWith('application relay count has exceeded the rate limit'))
+      )
+      expect(rateLimitWarningLogged).to.be.true()
+    })
+
+    it('logs a warning on lb relay request with rate-limited app', async () => {
+      const pocket = pocketMock.object()
+      const logSpy = sinon.spy(logger, 'log')
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/lb/${RATE_LIMITED_LB_ID.lb}`)
+        .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+
+      const rateLimitWarningLogged = logSpy.calledWith(
+        'warn',
+        sinon.match((arg: string) =>
+          arg.startsWith('relay count on application associated with the endpoint has exceeded the rate limit')
+        )
+      )
+      expect(rateLimitWarningLogged).to.be.true()
+    })
   })
 
   describe('Contract/method whitelisting', () => {
