@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import os from 'os'
 import path from 'path'
 import process from 'process'
+import axios from 'axios'
 import Redis from 'ioredis'
 import pg from 'pg'
 import { BootMixin } from '@loopback/boot'
@@ -68,6 +69,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       ALWAYS_REDIRECT_TO_ALTRUISTS,
       REDIS_LOCAL_TTL_FACTOR,
       RATE_LIMITER_URL,
+      RELAY_SECURITY_URL,
+      RELAY_SECURITY_HEALTHCHECK_PATH,
     } = await this.get('configuration.environment.values')
 
     const environment: string = NODE_ENV || 'production'
@@ -86,6 +89,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const alwaysRedirectToAltruists: boolean = ALWAYS_REDIRECT_TO_ALTRUISTS === 'true'
     const ttlFactor = parseFloat(REDIS_LOCAL_TTL_FACTOR) || 1
     const rateLimiterURL: string = RATE_LIMITER_URL || ''
+    const relaySecurityURL: string = RELAY_SECURITY_URL || ''
+    const relaySecurityHealthCheckPath = RELAY_SECURITY_HEALTHCHECK_PATH || ''
 
     if (aatPlan !== AatPlans.PREMIUM && !AatPlans.values.includes(aatPlan)) {
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
@@ -171,6 +176,19 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const writeApi = influxClient.getWriteApi(influxOrg, influxBucket)
 
     this.bind('influxWriteAPI').to(writeApi)
+
+    // HealthCheck relay security
+    if (relaySecurityURL) {
+      try {
+        await axios({
+          method: 'GET',
+          url: `${relaySecurityURL}${relaySecurityHealthCheckPath}`,
+        })
+        this.bind('relaySecurityURL').to(relaySecurityURL)
+      } catch (error) {
+        logger.log('warn', 'Error on relay security health check: ' + error)
+      }
+    }
 
     // Create a UID for this process
     const parts = [os.hostname(), process.pid, +new Date()]
