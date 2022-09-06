@@ -66,6 +66,7 @@ export class V1Controller {
     @inject('alwaysRedirectToAltruists') private alwaysRedirectToAltruists: boolean,
     @inject('dispatchURL') private dispatchURL: string,
     @inject('rateLimiterURL') private rateLimiterURL: string,
+    @inject('relaySecurityURL') private relaySecurityURL: string,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -107,6 +108,7 @@ export class V1Controller {
       defaultLogLimitBlocks: this.defaultLogLimitBlocks,
       alwaysRedirectToAltruists: this.alwaysRedirectToAltruists,
       dispatchers: this.dispatchURL,
+      relaySecurityURL: this.relaySecurityURL,
     })
   }
 
