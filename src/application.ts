@@ -177,7 +177,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     this.bind('influxWriteAPI').to(writeApi)
 
-    // HealthCheck relay security
+    // HealthCheck relay security, first set to undefined until health check pass to avoid errors
+    this.bind('relaySecurityURL').to(undefined)
     if (relaySecurityURL) {
       try {
         await axios({
