@@ -96,6 +96,12 @@ class PHDClient {
     try {
       const { data: document } = await axios.get(url, { headers: { authorization: this.apiKey } })
 
+      // Necessary to recreate the `applicationIDs` array from the data provided by PHD
+      if (path === 'load_balancer') {
+        document.applicationIDs = document.Applications.map(({ id: appID }) => appID)
+        delete document.Applications
+      }
+
       if (this.hasAllRequiredModelFields<T>(document, modelFields)) {
         modelData = new model(document)
       } else {

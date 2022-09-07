@@ -7,15 +7,36 @@ import { PHDClient } from '../src/services/phd-client'
 
 import 'dotenv/config'
 
+const blockchainRequiredFields = [
+  'id',
+  'ticker',
+  'chainID',
+  'chainIDCheck',
+  'enforceResult',
+  'network',
+  'index',
+  'blockchain',
+  'blockchainAliases',
+  'active',
+  'syncCheckOptions',
+  'logLimitBlocks',
+  'path',
+  'altruist',
+]
+const loadBalancerRequiredFields = ['userID', 'requestTimeout', 'applicationIDs']
+const applicationRequiredFields = ['id', 'freeTierApplicationAccount', 'gatewayAAT', 'gatewaySettings']
+
 describe('Pocket HTTP DB Client', () => {
   let phdClient: PHDClient
+
   let blockchainsRepository: BlockchainsRepository
   let applicationsRepository: ApplicationsRepository
   let loadBalancersRepository: LoadBalancersRepository
 
   before('setupApplication', async () => {
-    const datasource = new GatewayDataSource()
     phdClient = new PHDClient()
+
+    const datasource = new GatewayDataSource()
     blockchainsRepository = new BlockchainsRepository(datasource)
     applicationsRepository = new ApplicationsRepository(datasource)
     loadBalancersRepository = new LoadBalancersRepository(datasource)
@@ -27,21 +48,12 @@ describe('Pocket HTTP DB Client', () => {
         const blockchains = await phdClient.find<Blockchains>({
           path: 'blockchain',
           model: Blockchains,
-          fallback: () => blockchainsRepository.find(),
+          fallback: () => undefined,
         })
 
-        expect(blockchains.length).to.be.aboveOrEqual(1)
+        expect(blockchains.length).to.be.above(1)
         blockchains.forEach((chain) => {
-          expect(chain).to.have.properties(
-            'id',
-            'ticker',
-            'network',
-            'index',
-            'blockchain',
-            'blockchainAliases',
-            'active',
-            'path'
-          )
+          expect(chain).to.have.properties(blockchainRequiredFields)
         })
       })
 
@@ -52,18 +64,9 @@ describe('Pocket HTTP DB Client', () => {
           fallback: () => blockchainsRepository.find(),
         })
 
-        expect(blockchains.length).to.be.aboveOrEqual(1)
+        expect(blockchains.length).to.be.above(1)
         blockchains.forEach((chain) => {
-          expect(chain).to.have.properties(
-            'id',
-            'ticker',
-            'network',
-            'index',
-            'blockchain',
-            'blockchainAliases',
-            'active',
-            'path'
-          )
+          expect(chain).to.have.properties(blockchainRequiredFields)
         })
       })
     })
@@ -78,21 +81,12 @@ describe('Pocket HTTP DB Client', () => {
           path: 'blockchain',
           id: testId,
           model: Blockchains,
-          fallback: () => blockchainsRepository.findById(testId),
+          fallback: () => undefined,
         })
 
         expect(blockchain).not.to.be.undefined()
         expect(blockchain.ticker).to.equal('POKT')
-        expect(blockchain).to.have.properties(
-          'id',
-          'ticker',
-          'network',
-          'index',
-          'blockchain',
-          'blockchainAliases',
-          'active',
-          'path'
-        )
+        expect(blockchain).to.have.properties(blockchainRequiredFields)
       })
 
       it('fetches a blockchain from MongoDB if PHD fetch fails', async () => {
@@ -107,16 +101,7 @@ describe('Pocket HTTP DB Client', () => {
 
         expect(blockchain).not.to.be.undefined()
         expect(blockchain.ticker).to.equal('POKT')
-        expect(blockchain).to.have.properties(
-          'id',
-          'ticker',
-          'network',
-          'index',
-          'blockchain',
-          'blockchainAliases',
-          'active',
-          'path'
-        )
+        expect(blockchain).to.have.properties(blockchainRequiredFields)
       })
     })
 
@@ -128,12 +113,12 @@ describe('Pocket HTTP DB Client', () => {
           path: 'load_balancer',
           id: testId,
           model: LoadBalancers,
-          fallback: () => loadBalancersRepository.findById(testId),
+          fallback: () => undefined,
         })
 
         expect(loadBalancer).not.to.be.undefined()
         expect(loadBalancer.name).to.equal('PascalsTestApp')
-        expect(loadBalancer).to.have.properties('gigastakeRedirect', 'userID', 'applicationIDs')
+        expect(loadBalancer).to.have.properties(loadBalancerRequiredFields)
       })
 
       it('fetches a load balancer from MongoDB if PHD fetch fails', async () => {
@@ -148,7 +133,7 @@ describe('Pocket HTTP DB Client', () => {
 
         expect(loadBalancer).not.to.be.undefined()
         expect(loadBalancer.name).to.equal('PascalsTestApp')
-        expect(loadBalancer).to.have.properties('gigastakeRedirect', 'userID', 'applicationIDs')
+        expect(loadBalancer).to.have.properties(loadBalancerRequiredFields)
       })
     })
 
@@ -160,12 +145,12 @@ describe('Pocket HTTP DB Client', () => {
           path: 'application',
           id: testId,
           model: Applications,
-          fallback: () => applicationsRepository.findById(testId),
+          fallback: () => undefined,
         })
 
         expect(application).not.to.be.undefined()
         expect(application.name).to.equal('PascalsTestApp')
-        expect(application).to.have.properties('id', 'freeTier', 'gatewayAAT', 'gatewaySettings')
+        expect(application).to.have.properties(applicationRequiredFields)
       })
 
       it('fetches an application from MongoDB if PHD fetch fails', async () => {
@@ -180,7 +165,7 @@ describe('Pocket HTTP DB Client', () => {
 
         expect(application).not.to.be.undefined()
         expect(application.name).to.equal('PascalsTestApp')
-        expect(application).to.have.properties('id', 'freeTier', 'gatewayAAT', 'gatewaySettings')
+        expect(application).to.have.properties(applicationRequiredFields)
       })
     })
   })
@@ -189,24 +174,24 @@ describe('Pocket HTTP DB Client', () => {
     describe('blockchains', () => {
       it('fetches the count of blockchains from PHD', async () => {
         const { count } = await phdClient.count({
-          path: 'blockchains',
+          path: 'blockchain',
           model: Blockchains,
-          fallback: () => blockchainsRepository.count(),
+          fallback: () => undefined,
         })
 
         expect(count).not.to.be.undefined()
-        expect(count).to.be.aboveOrEqual(1)
+        expect(count).to.be.above(1)
       })
 
       it('fetches the count of blockchains from MongoDB if PHD fetch fails', async () => {
         const { count } = await phdClient.count({
-          path: 'not_blockchains',
+          path: 'not_blockchain',
           model: Blockchains,
           fallback: () => blockchainsRepository.count(),
         })
 
         expect(count).not.to.be.undefined()
-        expect(count).to.be.aboveOrEqual(1)
+        expect(count).to.be.above(1)
       })
     })
   })

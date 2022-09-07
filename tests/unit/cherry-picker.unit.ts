@@ -53,7 +53,6 @@ describe('Cherry picker service (unit)', () => {
 
       const app: Partial<Applications> = {
         id: '24676c9f7sf4552f0b9cad',
-        freeTier: true,
       }
 
       const blockchain = '0027'
@@ -139,7 +138,6 @@ describe('Cherry picker service (unit)', () => {
 
       const app: Partial<Applications> = {
         id: '24676c9f7sf4552f0b9cad',
-        freeTier: true,
       }
 
       const blockchain = '0027'

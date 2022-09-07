@@ -69,6 +69,12 @@ export class LoadBalancers extends Entity {
   name: string
 
   @property({
+    type: 'string',
+    required: true,
+  })
+  requestTimeout: string
+
+  @property({
     type: 'array',
     itemType: 'string',
     required: true,

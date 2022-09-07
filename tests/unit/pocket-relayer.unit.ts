@@ -109,7 +109,6 @@ const APPLICATION = {
     address: 'zbsh21mrn411umuyv2xh7e85cme3tf7er1assuop',
     publicKey: '9c1osndf3hj5wvkgi5ounpqwdhzcyzfy0qrk6z7o',
   },
-  freeTier: true,
   freeTierApplicationAccount: {
     address: 'qglysyptu3ga0tq8qfi4pxvdxo1cg629oh6s8uom',
     publicKey: '74xyfz6bey09pmtayj0ma7vvqq15cb8y7w7vv4jfrf1tjsh7o6fppk0xbw4zlcbr',
