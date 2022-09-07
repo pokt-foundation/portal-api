@@ -71,7 +71,6 @@ export class Blockchains extends Entity {
 
   @property({
     type: 'string',
-    required: true,
   })
   chainIDCheck: string
 
@@ -130,26 +129,22 @@ export class Blockchains extends Entity {
 
   @property({
     type: 'object',
-    required: true,
   })
   syncCheckOptions?: SyncCheckOptions
 
   @property({
     type: 'number',
-    required: true,
   })
   logLimitBlocks?: number
 
   @property({
     type: 'string',
-    required: true,
     default: '',
   })
   path?: string
 
   @property({
     type: 'string',
-    required: true,
   })
   altruist?: string
 
