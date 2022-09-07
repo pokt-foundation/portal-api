@@ -26,7 +26,6 @@ export class Applications extends Entity {
 
   @property({
     type: 'boolean',
-    required: true,
   })
   freeTier: boolean
 
@@ -37,12 +36,13 @@ export class Applications extends Entity {
 
   @property({
     type: 'object',
+    required: true,
   })
   freeTierApplicationAccount?: PocketAccount
 
   @property({
     type: 'object',
-    // required: true,
+    required: true,
   })
   gatewayAAT: GatewayAAT
 
