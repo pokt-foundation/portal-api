@@ -183,7 +183,7 @@ const mockChain = Object.assign(
     chainID: '42',
     chainIDCheck: '{\\"method\\":\\"eth_chainId\\",\\"id\\":1,\\"jsonrpc\\":\\"2.0\\"}',
     description: 'Kovan',
-    enforceResult: '',
+    enforceResult: 'JSON',
     network: 'POA-42',
     networkID: '42',
     path: '',
