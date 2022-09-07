@@ -1,4 +1,4 @@
-import { expect } from '@loopback/testlab'
+import { expect, sinon } from '@loopback/testlab'
 
 import { GatewayDataSource } from '../src/datasources'
 import { Applications, Blockchains, LoadBalancers } from '../src/models'
@@ -6,6 +6,8 @@ import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository 
 import { PHDClient } from '../src/services/phd-client'
 
 import 'dotenv/config'
+
+const logger = require('../src/services/logger')
 
 const blockchainRequiredFields = [
   'id',
@@ -33,14 +35,20 @@ describe('Pocket HTTP DB Client', () => {
   let applicationsRepository: ApplicationsRepository
   let loadBalancersRepository: LoadBalancersRepository
 
+  let logSpy: sinon.SinonSpy
+
   before('setupApplication', async () => {
     phdClient = new PHDClient()
-
     const datasource = new GatewayDataSource()
     blockchainsRepository = new BlockchainsRepository(datasource)
     applicationsRepository = new ApplicationsRepository(datasource)
     loadBalancersRepository = new LoadBalancersRepository(datasource)
   })
+
+  beforeEach(() => {
+    logSpy = sinon.spy(logger, 'log')
+  })
+  afterEach(() => logSpy.restore())
 
   describe('find', () => {
     describe('blockchains', () => {
@@ -51,6 +59,7 @@ describe('Pocket HTTP DB Client', () => {
           fallback: () => undefined,
         })
 
+        expect(logSpy.calledOnceWith('warn')).to.be.false()
         expect(blockchains.length).to.be.above(1)
         blockchains.forEach((chain) => {
           expect(chain).to.have.properties(blockchainRequiredFields)
@@ -64,6 +73,7 @@ describe('Pocket HTTP DB Client', () => {
           fallback: () => blockchainsRepository.find(),
         })
 
+        expect(logSpy.calledOnceWith('warn')).to.be.true()
         expect(blockchains.length).to.be.above(1)
         blockchains.forEach((chain) => {
           expect(chain).to.have.properties(blockchainRequiredFields)
@@ -84,6 +94,7 @@ describe('Pocket HTTP DB Client', () => {
           fallback: () => undefined,
         })
 
+        expect(logSpy.calledOnceWith('warn')).to.be.false()
         expect(blockchain).not.to.be.undefined()
         expect(blockchain.ticker).to.equal('POKT')
         expect(blockchain).to.have.properties(blockchainRequiredFields)
@@ -99,6 +110,7 @@ describe('Pocket HTTP DB Client', () => {
           fallback: () => blockchainsRepository.findById(testId),
         })
 
+        expect(logSpy.calledOnceWith('warn')).to.be.true()
         expect(blockchain).not.to.be.undefined()
         expect(blockchain.ticker).to.equal('POKT')
         expect(blockchain).to.have.properties(blockchainRequiredFields)
@@ -116,6 +128,7 @@ describe('Pocket HTTP DB Client', () => {
           fallback: () => undefined,
         })
 
+        expect(logSpy.calledOnceWith('warn')).to.be.false()
         expect(loadBalancer).not.to.be.undefined()
         expect(loadBalancer.name).to.equal('PascalsTestApp')
         expect(loadBalancer).to.have.properties(loadBalancerRequiredFields)
@@ -131,6 +144,7 @@ describe('Pocket HTTP DB Client', () => {
           fallback: () => loadBalancersRepository.findById(testId),
         })
 
+        expect(logSpy.calledOnceWith('warn')).to.be.true()
         expect(loadBalancer).not.to.be.undefined()
         expect(loadBalancer.name).to.equal('PascalsTestApp')
         expect(loadBalancer).to.have.properties(loadBalancerRequiredFields)
@@ -148,6 +162,7 @@ describe('Pocket HTTP DB Client', () => {
           fallback: () => undefined,
         })
 
+        expect(logSpy.calledOnceWith('warn')).to.be.false()
         expect(application).not.to.be.undefined()
         expect(application.name).to.equal('PascalsTestApp')
         expect(application).to.have.properties(applicationRequiredFields)
@@ -163,6 +178,7 @@ describe('Pocket HTTP DB Client', () => {
           fallback: () => applicationsRepository.findById(testId),
         })
 
+        expect(logSpy.calledOnceWith('warn')).to.be.true()
         expect(application).not.to.be.undefined()
         expect(application.name).to.equal('PascalsTestApp')
         expect(application).to.have.properties(applicationRequiredFields)
@@ -179,6 +195,7 @@ describe('Pocket HTTP DB Client', () => {
           fallback: () => undefined,
         })
 
+        expect(logSpy.calledOnceWith('warn')).to.be.false()
         expect(count).not.to.be.undefined()
         expect(count).to.be.above(1)
       })
@@ -190,6 +207,7 @@ describe('Pocket HTTP DB Client', () => {
           fallback: () => blockchainsRepository.count(),
         })
 
+        expect(logSpy.calledOnceWith('warn')).to.be.true()
         expect(count).not.to.be.undefined()
         expect(count).to.be.above(1)
       })
