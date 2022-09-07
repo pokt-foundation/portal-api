@@ -10,5 +10,5 @@
     "strict": false,
     "moduleResolution": "node"
   },
-  "include": ["src", "tests", ".eslintrc.js"]
+  "include": ["src", "tests", ".eslintrc.js", "tests-integration/phd-client.integration.ts"]
 }

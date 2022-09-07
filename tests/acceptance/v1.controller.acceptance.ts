@@ -274,7 +274,7 @@ const LOAD_BALANCERS = [
   },
   {
     id: RATE_LIMITED_LB_ID.lb,
-    user: 'test@test.com',
+    userID: 'test@test.com',
     name: 'rate limited lb',
     requestTimeout: 5000,
     applicationIDs: [RATE_LIMITED_LB_ID.app],

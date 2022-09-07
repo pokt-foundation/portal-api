@@ -36,8 +36,6 @@ interface CountParams<T extends Entity> {
   fallback: DefaultCrudRepository<T, unknown>['count']
 }
 
-// TODO - Unit tests for PHD Client - all cases and fallbacks
-
 /** The PHDClient fetches data from the Pocket HTTP DB, and falls back to fetching from the Loopback repositorites
  * (which connect to MongoDB) if the fetch fails or the returned data is missing required fields. */
 class PHDClient {
@@ -62,7 +60,6 @@ class PHDClient {
 
     try {
       const { data: documents } = await axios.get(url, { headers: { authorization: this.apiKey } })
-      // console.debug('find - PHD RESULT', model.name, documents, url)
 
       documents.forEach((document) => {
         if (this.hasAllRequiredModelFields<T>(document, modelFields)) {
@@ -75,7 +72,6 @@ class PHDClient {
       if (fallback) {
         logger.log('warn', FALLBACK_WARNING, { error })
         const documents = await fallback()
-        // console.debug('find - FALLBACK RESULT', model.name, error.message, url)
 
         documents.forEach((document) => {
           modelsData.push(new model(document))
@@ -99,7 +95,6 @@ class PHDClient {
 
     try {
       const { data: document } = await axios.get(url, { headers: { authorization: this.apiKey } })
-      // console.debug('find by ID - PHD RESULT', model.name, document, url)
 
       if (this.hasAllRequiredModelFields<T>(document, modelFields)) {
         modelData = new model(document)
@@ -110,7 +105,6 @@ class PHDClient {
       if (fallback) {
         logger.log('warn', FALLBACK_WARNING, { error })
         const document = await fallback()
-        // console.debug('find by ID - FALLBACK RESULT', model.name, error.message, url)
 
         modelData = new model(document)
       } else {
@@ -153,24 +147,7 @@ class PHDClient {
   /** Checks that the data returned from the PHD has all required fields used by the
       Portal API code, meaning all required fields declared by the Loopbak model. */
   private hasAllRequiredModelFields<T>(data: T, modelFields: string[]): boolean {
-    // TODO - Replace below with this line
-    // return modelFields.every((key) => Object.keys(data).includes(key))
-
-    // /* TODO - Remove when tested. DEBUG ONLY*/
-    const isInstanceOfModel = modelFields.every((key) => Object.keys(data).includes(key))
-
-    // if (!isInstanceOfModel) {
-    // console.debug('DEBUG', model, {
-    //   data,
-    //   modelFields,
-    //   dataFields,
-    //   fieldsNotInLoopbackModel: dataFields.filter((key) => !modelFields.includes(key)),
-    //   fieldsNotInPostgres: modelFields.filter((key) => !dataFields.includes(key)),
-    // })
-    // }
-    // /* DEBUG ONLY */
-
-    return isInstanceOfModel
+    return modelFields.every((key) => Object.keys(data).includes(key))
   }
 }
 
