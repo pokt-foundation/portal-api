@@ -60,6 +60,7 @@ class PHDClient {
 
     try {
       const { data: documents } = await axios.get(url, { headers: { authorization: this.apiKey } })
+      console.debug('[find] DEBUG - PHD CLIENT', { documents })
 
       documents.forEach((document) => {
         if (this.hasAllRequiredModelFields<T>(document, modelFields)) {
@@ -72,12 +73,15 @@ class PHDClient {
       if (fallback) {
         logger.log('warn', FALLBACK_WARNING, { error })
         const documents = await fallback()
+        console.debug('[find - fallback] DEBUG - PHD CLIENT', { error, documents })
 
         documents.forEach((document) => {
           modelsData.push(new model(document))
         })
       } else {
+        console.debug('DEBUG - PHD CLIENT')
         logger.log('error', FAILURE_ERROR, { error })
+        console.debug('[find - error] DEBUG - PHD CLIENT', { error })
         throw error
       }
     }
@@ -95,6 +99,7 @@ class PHDClient {
 
     try {
       const { data: document } = await axios.get(url, { headers: { authorization: this.apiKey } })
+      console.debug('[findById] DEBUG - PHD CLIENT')
 
       // Necessary to recreate the `applicationIDs` array from the data provided by PHD
       if (path === 'load_balancer') {
@@ -111,10 +116,12 @@ class PHDClient {
       if (fallback) {
         logger.log('warn', FALLBACK_WARNING, { error })
         const document = await fallback()
+        console.debug('[findById - fallback] DEBUG - PHD CLIENT', { error, document })
 
         modelData = new model(document)
       } else {
         logger.log('error', FAILURE_ERROR, { error })
+        console.debug('[findById - error] DEBUG - PHD CLIENT', { error })
         throw error
       }
     }
@@ -130,14 +137,17 @@ class PHDClient {
 
     try {
       const { data: documents } = await axios.get(url, { headers: { authorization: this.apiKey } })
+      console.debug('[count] DEBUG - PHD CLIENT', { count: documents.length })
 
       return { count: documents.length }
     } catch (error) {
       if (fallback) {
+        console.debug('[count - fallback] DEBUG - PHD CLIENT')
         logger.log('warn', FALLBACK_WARNING, { error })
         return fallback()
       } else {
         logger.log('error', FAILURE_ERROR, { error })
+        console.debug('[count - error] DEBUG - PHD CLIENT', { error })
         throw error
       }
     }
