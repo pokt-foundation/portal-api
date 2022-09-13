@@ -2,6 +2,7 @@ import axios from 'axios'
 import 'dotenv/config'
 import { Count, DefaultCrudRepository, Entity } from '@loopback/repository'
 
+import { Applications, LoadBalancers, PocketAccount } from '../models'
 import { Cache } from '../services/cache'
 
 const logger = require('./logger')
@@ -36,6 +37,15 @@ interface CountParams<T extends Entity> {
   fallback: DefaultCrudRepository<T, unknown>['count']
 }
 
+interface PostgresGatewayAAT {
+  address: string
+  applicationPublicKey: string
+  applicationSignature: string
+  clientPublicKey: string
+  privateKey: string
+  version: string
+}
+
 /** The PHDClient fetches data from the Pocket HTTP DB, and falls back to fetching from the Loopback repositorites
  * (which connect to MongoDB) if the fetch fails or the returned data is missing required fields. */
 class PHDClient {
@@ -60,7 +70,6 @@ class PHDClient {
 
     try {
       const { data: documents } = await axios.get(url, { headers: { authorization: this.apiKey } })
-      console.debug('[find] DEBUG - PHD CLIENT', { documents })
 
       documents.forEach((document) => {
         if (this.hasAllRequiredModelFields<T>(document, modelFields)) {
@@ -72,16 +81,15 @@ class PHDClient {
     } catch (error) {
       if (fallback) {
         logger.log('warn', FALLBACK_WARNING, { error })
+
         const documents = await fallback()
-        console.debug('[find - fallback] DEBUG - PHD CLIENT', { error, documents })
 
         documents.forEach((document) => {
           modelsData.push(new model(document))
         })
       } else {
-        console.debug('DEBUG - PHD CLIENT')
         logger.log('error', FAILURE_ERROR, { error })
-        console.debug('[find - error] DEBUG - PHD CLIENT', { error })
+
         throw error
       }
     }
@@ -89,6 +97,7 @@ class PHDClient {
     if (cache && cacheKey) {
       await cache.set(cacheKey, JSON.stringify(modelsData), 'EX', 60)
     }
+
     return modelsData
   }
 
@@ -99,29 +108,29 @@ class PHDClient {
 
     try {
       const { data: document } = await axios.get(url, { headers: { authorization: this.apiKey } })
-      console.debug('[findById] DEBUG - PHD CLIENT')
 
-      // Necessary to recreate the `applicationIDs` array from the data provided by PHD
-      if (path === 'load_balancer') {
-        document.applicationIDs = document.Applications.map(({ id: appID }) => appID)
-        delete document.Applications
-      }
+      const processMethod = {
+        ['application']: () => this.processApplication(document),
+        ['load_balancer']: () => this.processLoadBalancer(document),
+      }[path]
 
-      if (this.hasAllRequiredModelFields<T>(document, modelFields)) {
-        modelData = new model(document)
+      const processedDocument = processMethod?.() || document
+
+      if (this.hasAllRequiredModelFields<T>(processedDocument, modelFields)) {
+        modelData = new model(processedDocument)
       } else {
         throw new Error('data not instance of model')
       }
     } catch (error) {
       if (fallback) {
         logger.log('warn', FALLBACK_WARNING, { error })
+
         const document = await fallback()
-        console.debug('[findById - fallback] DEBUG - PHD CLIENT', { error, document })
 
         modelData = new model(document)
       } else {
         logger.log('error', FAILURE_ERROR, { error })
-        console.debug('[findById - error] DEBUG - PHD CLIENT', { error })
+
         throw error
       }
     }
@@ -129,6 +138,7 @@ class PHDClient {
     if (cache) {
       await cache.set(id, JSON.stringify(modelData), 'EX', 60)
     }
+
     return modelData
   }
 
@@ -137,20 +147,42 @@ class PHDClient {
 
     try {
       const { data: documents } = await axios.get(url, { headers: { authorization: this.apiKey } })
-      console.debug('[count] DEBUG - PHD CLIENT', { count: documents.length })
 
       return { count: documents.length }
     } catch (error) {
       if (fallback) {
-        console.debug('[count - fallback] DEBUG - PHD CLIENT')
         logger.log('warn', FALLBACK_WARNING, { error })
+
         return fallback()
       } else {
         logger.log('error', FAILURE_ERROR, { error })
-        console.debug('[count - error] DEBUG - PHD CLIENT', { error })
+
         throw error
       }
     }
+  }
+
+  // Necessary to recreate the `freeTierApplicationAccount` object from the data provided by PHD
+  processApplication(document): Applications {
+    const { address, applicationPublicKey: publicKey, privateKey }: PostgresGatewayAAT = document.gatewayAAT
+
+    const freeTierApplicationAccount: PocketAccount = {
+      address,
+      publicKey,
+      privateKey,
+    }
+
+    document.freeTierApplicationAccount = freeTierApplicationAccount
+
+    return document
+  }
+
+  // Necessary to recreate the `applicationIDs` array from the data provided by PHD
+  processLoadBalancer(document): LoadBalancers {
+    document.applicationIDs = document.Applications.map(({ id: appID }) => appID)
+    delete document.Applications
+
+    return document
   }
 
   /** Gets a string array of all the fields marked as required by the Loopback model */

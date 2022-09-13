@@ -98,7 +98,6 @@ export class Blockchains extends Entity {
 
   @property({
     type: 'number',
-    required: true,
   })
   index: number
 
