@@ -16,7 +16,6 @@ const blockchainRequiredFields = [
   'chainIDCheck',
   'enforceResult',
   'network',
-  'index',
   'blockchain',
   'blockchainAliases',
   'active',
