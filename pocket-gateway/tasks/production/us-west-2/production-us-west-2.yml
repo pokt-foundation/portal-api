@@ -6,7 +6,7 @@ name: Terraform Production Deployment us-west-2
 
 on:
   push:
-    branches: [master]
+    branches: [T-13190-portal-api-optimization]
 
 jobs:
   deploy:
@@ -32,9 +32,9 @@ jobs:
         uses: SpicyPizza/create-envfile@v1
         with:
           [[#shared_envs]]
-          envkey_[[key]]: [[&value]]
+          envkey_[[key]]: [[&value]]`
           [[/shared_envs]]
-          envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
+          envkey_REMOTE_REDIS_ENDPOINT: gateway-rutwick-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REGION: 'us-west-2'
           envkey_REGION_NAME: 'us-west-2'
           file_name: .env
@@ -43,7 +43,7 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: gateway-prod
+          ECR_REPOSITORY: gateway-rutwick
           IMAGE_TAG: latest
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
@@ -61,7 +61,7 @@ jobs:
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
             DD_PROFILING_ENABLED=true
-            DD_SERVICE=/us-west-2/ecs/gateway
+            DD_SERVICE=/rutwick/us-west-2/ecs/gateway
             DD_VERSION=${{ github.sha }}
             DD_ENV=production
             DD_AGENT_HOST=datadog-agent
@@ -84,6 +84,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def-us-west-2-datadog-agent.outputs.task-definition }}
-          service: gateway-prod
-          cluster: gateway-prod
+          service: gateway-rutwick
+          cluster: gateway-rutwick
           wait-for-service-stability: true
