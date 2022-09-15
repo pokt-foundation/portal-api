@@ -699,7 +699,6 @@ export class PocketRelayer {
         pocketAAT: pocketAAT,
         applicationID,
         applicationPublicKey,
-        chainID: parseInt(blockchainChainID),
         relayer: this.relayer,
         session,
         path: blockchainPath,

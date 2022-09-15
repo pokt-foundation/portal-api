@@ -441,7 +441,6 @@ interface GetNodeMergeLogOptions extends BaseMergeLogOptions {
 export type MergeFilterOptions = {
   nodes: Node[]
   requestID: string
-  chainID: number
   blockchainID: string
   relayer: Relayer
   applicationID: string
