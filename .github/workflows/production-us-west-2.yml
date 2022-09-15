@@ -4,7 +4,7 @@ name: Terraform Production Deployment us-west-2
 
 on:
   push:
-    branches: [T-13190-portal-api-optimization]
+    branches: [T-13190-portal-api-optimization-infra]
 
 jobs:
   deploy:
@@ -64,14 +64,14 @@ jobs:
           envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}`
           envkey_REMOTE_REDIS_ENDPOINT: gateway-rutwick-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REGION: 'us-west-2'
-          envkey_REGION_NAME: 'rutwick'
+          envkey_REGION_NAME: 'stress-test'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: gateway-rutwick
+          ECR_REPOSITORY: gateway-stress-test
           IMAGE_TAG: latest
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
@@ -89,7 +89,7 @@ jobs:
           environment-variables: |
             DD_RUNTIME_METRICS_ENABLED=true
             DD_PROFILING_ENABLED=true
-            DD_SERVICE=/rutwick/us-west-2/ecs/gateway
+            DD_SERVICE=/gateway-stress-test/us-west-2/ecs/gateway
             DD_VERSION=${{ github.sha }}
             DD_ENV=production
             DD_AGENT_HOST=datadog-agent
@@ -112,6 +112,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def-us-west-2-datadog-agent.outputs.task-definition }}
-          service: gateway-rutwick
-          cluster: gateway-rutwick
+          service: gateway-stress-test
+          cluster: gateway-stress-test
           wait-for-service-stability: true
