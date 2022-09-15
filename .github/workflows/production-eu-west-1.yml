@@ -4,7 +4,7 @@ name: Terraform Production Deployment eu-west-1
 
 on:
   push:
-    branches: [master]
+    branches: [master, eth-altruist]
 
 jobs:
   deploy:
