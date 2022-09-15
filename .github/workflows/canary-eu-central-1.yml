@@ -4,7 +4,7 @@ name: Terraform canary Deployment eu-central-1
 
 on:
   push:
-    branches: [canary]
+    branches: [canary, merge-checker-canary]
 
 jobs:
   deploy:
