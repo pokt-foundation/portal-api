@@ -222,7 +222,7 @@ export class PocketRelayer {
     const fallbackAvailable = blockchainAltruist ? true : false
 
     try {
-      if (blockchainID !== '0040') {
+      if (blockchainID !== '0021') {
         // Retries if applicable
         for (let x = 0; x <= this.relayRetries; x++) {
           const relayStart = process.hrtime()
