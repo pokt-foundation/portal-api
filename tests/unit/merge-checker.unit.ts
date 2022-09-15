@@ -17,7 +17,7 @@ const MERGE_CHECK_PAYLOAD = '{"jsonrpc":"2.0","method":"eth_getBlockByNumber","p
 
 // Success (merged node)
 const SUCCESS_MERGE_CHECK_RESPONSE =
-  '{"jsonrpc":"2.0","id":1,"result":{"number":"0xEd14c8","totalDifficulty":"0xc70d808a128d7380000"}}'
+  '{"jsonrpc":"2.0","id":1,"result":{"number":"0xed14f2","totalDifficulty":"0xc70d815d562d3cfa955"}}'
 
 // Failure (non-merged node)
 const FAILURE_MERGE_CHECK_RESPONSE =
@@ -88,8 +88,8 @@ describe('Merge checker service (unit)', () => {
         session,
       })
 
-      const expectedTotalDifficulty = '0xc70d808a128d7380000'
-      const expectedBlockNumber = 15537352
+      const expectedTotalDifficulty = '0xc70d815d562d3cfa955'
+      const expectedBlockNumber = 15537394
 
       expect(nodeLog.node).to.be.equal(node)
       expect(nodeLog.totalDifficulty).to.be.equal(expectedTotalDifficulty)
@@ -176,8 +176,8 @@ describe('Merge checker service (unit)', () => {
       session,
     })
 
-    const expectedTotalDifficulty = '0xc70d808a128d7380000'
-    const expectedBlockNumber = 15537352
+    const expectedTotalDifficulty = '0xc70d815d562d3cfa955'
+    const expectedBlockNumber = 15537394
 
     nodeLogs.forEach((nodeLog, idx: number) => {
       expect(nodeLog.node).to.be.deepEqual(nodes[idx])
@@ -290,7 +290,7 @@ describe('Merge checker service (unit)', () => {
     expect(removedNode).to.have.length(1)
   })
 
-  it.only('Fails on two nodes, passes in three', async () => {
+  it('Fails on two nodes, passes in three', async () => {
     const nodes = DEFAULT_NODES
     const blockchainID = '0021'
 

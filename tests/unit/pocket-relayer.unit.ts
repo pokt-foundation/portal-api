@@ -753,7 +753,7 @@ describe('Pocket relayer service (unit)', () => {
       const mock = new PocketMock()
 
       mock.relayResponse['{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["latest",false],"id":1}'] =
-        '{"jsonrpc":"2.0","id":1,"result":{"number":"0xEd14c8","totalDifficulty":"0xc70d808a128d7380000"}}'
+        '{"jsonrpc":"2.0","id":1,"result":{"number":"0xed14f2","totalDifficulty":"0xc70d815d562d3cfa955"}}'
 
       const maxRelaysError = new EvidenceSealedError(0, 'error')
 

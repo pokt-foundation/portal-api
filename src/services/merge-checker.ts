@@ -16,8 +16,8 @@ import { Cache } from './cache'
 
 const logger = require('../services/logger')
 
-const MERGE_BLOCK_NUMBER = 15537351
-const TERMINAL_TOTAL_DIFFICULTY = BigInt('58750000000000000000000')
+const MERGE_BLOCK_NUMBER = 15537394
+const TERMINAL_TOTAL_DIFFICULTY = BigInt('58750003716598352816469')
 
 const MERGE_CHECK_PAYLOAD = JSON.stringify({
   jsonrpc: '2.0',
@@ -123,7 +123,7 @@ export class MergeChecker {
       const { serviceUrl: serviceURL } = node
       const serviceDomain = extractDomain(serviceURL)
 
-      if (BigInt(nodeTotalDifficulty) >= TERMINAL_TOTAL_DIFFICULTY && nodeBlockNumber > MERGE_BLOCK_NUMBER) {
+      if (BigInt(nodeTotalDifficulty) === TERMINAL_TOTAL_DIFFICULTY && nodeBlockNumber >= MERGE_BLOCK_NUMBER) {
         logger.log(
           'info',
           'MERGE CHECK SUCCESS: ' +
