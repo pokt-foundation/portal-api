@@ -129,7 +129,7 @@ export class MergeChecker {
           'MERGE CHECK SUCCESS: ' +
             node.publicKey +
             ' difficulty: ' +
-            nodeTotalDifficulty +
+            BigInt(nodeTotalDifficulty) +
             ' block number: ' +
             nodeBlockNumber,
           {
@@ -152,7 +152,7 @@ export class MergeChecker {
           'MERGE CHECK FAILURE: ' +
             nodeMergeLog.node.publicKey +
             ' difficulty: ' +
-            nodeTotalDifficulty +
+            BigInt(nodeTotalDifficulty) +
             ' block number: ' +
             nodeBlockNumber,
           {
