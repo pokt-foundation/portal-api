@@ -1,4 +1,3 @@
-/* eslint-disable mocha/no-exclusive-tests */
 import { EvidenceSealedError } from '@pokt-foundation/pocketjs-relayer'
 import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
