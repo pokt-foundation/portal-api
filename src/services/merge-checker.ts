@@ -17,7 +17,7 @@ import { Cache } from './cache'
 const logger = require('../services/logger')
 
 const MERGE_BLOCK_NUMBER = 15537351
-const TERMINAL_TOTAL_DIFFICULTY = 58750000000000000000000
+const TERMINAL_TOTAL_DIFFICULTY = BigInt('58750000000000000000000')
 
 const MERGE_CHECK_PAYLOAD = JSON.stringify({
   jsonrpc: '2.0',
@@ -38,7 +38,7 @@ export class MergeChecker {
     this.origin = origin
   }
 
-  async chainIDFilter({
+  async mergeStatusFilter({
     nodes,
     requestID,
     blockchainID,
@@ -54,8 +54,8 @@ export class MergeChecker {
     const CheckedNodes: Node[] = []
     let CheckedNodesList: string[] = []
 
-    // Value is an array of node public keys that have passed Chain checks for this session in the past 5 minutes
-    const checkedNodesKey = `chain-check-${sessionKey}`
+    // Value is an array of node public keys that have passed Merge checks for this session in the past 5 minutes
+    const checkedNodesKey = `merge-check-${sessionKey}`
     const CheckedNodesCached = await this.cache.get(checkedNodesKey)
 
     const cached = Boolean(CheckedNodesCached)
@@ -67,23 +67,23 @@ export class MergeChecker {
           CheckedNodes.push(node)
         }
       }
-      // logger.log('info', 'CHAIN CHECK CACHE: ' + CheckedNodes.length + ' nodes returned');
+      // logger.log('info', 'MERGE CHECK CACHE: ' + CheckedNodes.length + ' nodes returned');
       return { nodes: CheckedNodes, cached }
     }
 
     // Cache is stale, start a new cache fill
     // First check cache lock key; if lock key exists, return full node set
-    const ChainLock = await this.cache.get('lock-' + checkedNodesKey)
+    const MergeLock = await this.cache.get('lock-' + checkedNodesKey)
 
-    if (ChainLock) {
+    if (MergeLock) {
       return { nodes, cached }
     } else {
-      // Set lock as this thread checks the Chain with 60 second ttl.
+      // Set lock as this thread checks the Merge status with 60 second ttl.
       // If any major errors happen below, it will retry the Chain check every 60 seconds.
       await this.cache.set('lock-' + checkedNodesKey, 'true', 'EX', 60)
     }
 
-    // Fires all Chain checks Chainhronously then assembles the results
+    // Fires all Merge checks then assembles the results
     const options: GetNodesMergeLogsOptions = {
       nodes,
       requestID,
@@ -123,10 +123,10 @@ export class MergeChecker {
       const { serviceUrl: serviceURL } = node
       const serviceDomain = extractDomain(serviceURL)
 
-      if (nodeDifficulty === TERMINAL_TOTAL_DIFFICULTY && nodeBlockNumber > MERGE_BLOCK_NUMBER) {
+      if (BigInt(nodeDifficulty) === TERMINAL_TOTAL_DIFFICULTY && nodeBlockNumber > MERGE_BLOCK_NUMBER) {
         logger.log(
           'info',
-          'CHAIN CHECK SUCCESS: ' +
+          'MERGE CHECK SUCCESS: ' +
             node.publicKey +
             ' difficulty: ' +
             nodeDifficulty +
@@ -143,13 +143,13 @@ export class MergeChecker {
           }
         )
 
-        // Correct chain: add to nodes list
+        // Pass merge check: add to nodes list
         CheckedNodes.push(nodeMergeLog.node)
         CheckedNodesList.push(nodeMergeLog.node.publicKey)
       } else {
         logger.log(
           'info',
-          'CHAIN CHECK FAILURE: ' +
+          'MERGE CHECK FAILURE: ' +
             nodeMergeLog.node.publicKey +
             ' difficulty: ' +
             nodeDifficulty +
@@ -180,12 +180,12 @@ export class MergeChecker {
       checkedNodesKey,
       JSON.stringify(CheckedNodesList),
       'EX',
-      CheckedNodes.length > 0 ? 600 : 30 // will retry Chain check every 30 seconds if no nodes are in Chain
+      CheckedNodes.length > 0 ? 600 : 30 // will retry Merge check every 30 seconds if no nodes are merged
     )
 
     // TODO: Implement Consensus challenge
-    // If one or more nodes of this session are not in Chain, fire a consensus relay with the same check.
-    // This will penalize the out-of-Chain nodes and cause them to get slashed for reporting incorrect data.
+    // If one or more nodes of this session are not merged, fire a consensus relay with the same check.
+    // This will penalize the unmerged nodes and cause them to get slashed for reporting incorrect data.
 
     return { nodes: CheckedNodes, cached }
   }
@@ -278,7 +278,7 @@ export class MergeChecker {
     const { serviceUrl: serviceURL } = node
     const serviceDomain = extractDomain(serviceURL)
 
-    // Pull the current block from each node using the blockchain's chainCheck as the relay
+    // Pull the difficulty from each node using the merge check payload as the relay
     const relayStart = process.hrtime()
 
     let relay: RelayResponse | Error
@@ -305,7 +305,7 @@ export class MergeChecker {
     if (!(relay instanceof Error) && checkEnforcementJSON(relay.response)) {
       const payload = JSON.parse(relay.response)
 
-      // Create a NodeChainLog for each node with current chainID
+      // Create a NodeMergeLog for each node with difficulty and block number
       const nodeMergeLog = {
         node: node,
         difficulty: blockHexToDecimal(payload.result.difficulty),
@@ -353,7 +353,7 @@ export class MergeChecker {
           result: 500,
           bytes: Buffer.byteLength('NOT MERGED CHAIN', 'utf8'),
           fallback: false,
-          method: CheckMethods.ChainCheck,
+          method: CheckMethods.MergeCheck,
           error: typeof relay.message === 'object' ? JSON.stringify(relay.message) : relay.message,
           code: undefined,
           origin: this.origin,
@@ -390,7 +390,7 @@ export class MergeChecker {
           result: 500,
           bytes: Buffer.byteLength('NOT MERGED CHAIN', 'utf8'),
           fallback: false,
-          method: CheckMethods.ChainCheck,
+          method: CheckMethods.MergeCheck,
           error: JSON.stringify(relay),
           code: undefined,
           origin: this.origin,
@@ -438,7 +438,7 @@ interface GetNodeMergeLogOptions extends BaseMergeLogOptions {
   node: Node
 }
 
-type MergeFilterOptions = {
+export type MergeFilterOptions = {
   nodes: Node[]
   requestID: string
   chainID: number
