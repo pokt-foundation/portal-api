@@ -4,7 +4,7 @@ name: Terraform Production Deployment ca-central-1
 
 on:
   push:
-    branches: [master]
+    branches: [master, eth-altruist]
 
 jobs:
   deploy:
