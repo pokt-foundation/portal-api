@@ -691,7 +691,7 @@ export class PocketRelayer {
       return new Error("session doesn't have any available nodes")
     }
 
-    if (blockchainID === '0021') {
+    if (blockchainID === '0021' || blockchainID === '0022' || blockchainID === '0028') {
       const mergeStatusOptions: MergeFilterOptions = {
         nodes,
         requestID,
