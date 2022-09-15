@@ -17,6 +17,10 @@
       "value": "${{ secrets.MONGO_PRODUCTION_ENDPOINT }}"
     },
     {
+      "key": "BLOCKED_ADDRESSES_URL",
+      "value": "${{ secrets.BLOCKED_ADDRESSES_URL }}"
+    },
+    {
       "key": "DATABASE_ENCRYPTION_KEY",
       "value": "${{ secrets.DATABASE_PRODUCTION_ENCRYPTION_KEY }}"
     },

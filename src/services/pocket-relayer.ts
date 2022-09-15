@@ -933,7 +933,8 @@ export class PocketRelayer {
           requestID,
           rpcID,
           logLimitBlocks,
-          altruist
+          altruist,
+          this.cache
         )
 
         // If any of the bundled tx triggers a restriction, return
@@ -950,7 +951,8 @@ export class PocketRelayer {
         requestID,
         rpcID,
         logLimitBlocks,
-        altruist
+        altruist,
+        this.cache
       )
     }
 
