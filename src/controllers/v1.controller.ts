@@ -12,6 +12,7 @@ import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository 
 import { Cache } from '../services/cache'
 import { ChainChecker } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
+import { MergeChecker } from '../services/merge-checker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
@@ -41,6 +42,7 @@ export class V1Controller {
   pocketRelayer: PocketRelayer
   syncChecker: SyncChecker
   chainChecker: ChainChecker
+  mergeChecker: MergeChecker
 
   constructor(
     @inject('secretKey') private secretKey: string,
@@ -87,6 +89,7 @@ export class V1Controller {
     })
     this.syncChecker = new SyncChecker(this.cache, this.metricsRecorder, this.defaultSyncAllowance, this.origin)
     this.chainChecker = new ChainChecker(this.cache, this.metricsRecorder, this.origin)
+    this.mergeChecker = new MergeChecker(this.cache, this.metricsRecorder, this.origin)
     this.pocketRelayer = new PocketRelayer({
       host: this.host,
       origin: this.origin,
@@ -97,6 +100,7 @@ export class V1Controller {
       metricsRecorder: this.metricsRecorder,
       syncChecker: this.syncChecker,
       chainChecker: this.chainChecker,
+      mergeChecker: this.mergeChecker,
       cache: this.cache,
       databaseEncryptionKey: this.databaseEncryptionKey,
       secretKey: this.secretKey,
