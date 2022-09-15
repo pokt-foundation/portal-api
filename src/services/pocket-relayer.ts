@@ -397,7 +397,6 @@ export class PocketRelayer {
       })
     }
 
-    console.log('trying fallback')
     // Exhausted network relay attempts; use fallback
     if (fallbackAvailable) {
       const relayStart = process.hrtime()
