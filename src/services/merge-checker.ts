@@ -119,17 +119,17 @@ export class MergeChecker {
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
     for (const nodeMergeLog of nodeMergeLogs) {
-      const { node, difficulty: nodeDifficulty, blockNumber: nodeBlockNumber } = nodeMergeLog
+      const { node, totalDifficulty: nodeTotalDifficulty, blockNumber: nodeBlockNumber } = nodeMergeLog
       const { serviceUrl: serviceURL } = node
       const serviceDomain = extractDomain(serviceURL)
 
-      if (BigInt(nodeDifficulty) === TERMINAL_TOTAL_DIFFICULTY && nodeBlockNumber > MERGE_BLOCK_NUMBER) {
+      if (BigInt(nodeTotalDifficulty) >= TERMINAL_TOTAL_DIFFICULTY && nodeBlockNumber > MERGE_BLOCK_NUMBER) {
         logger.log(
           'info',
           'MERGE CHECK SUCCESS: ' +
             node.publicKey +
             ' difficulty: ' +
-            nodeDifficulty +
+            nodeTotalDifficulty +
             ' block number: ' +
             nodeBlockNumber,
           {
@@ -152,7 +152,7 @@ export class MergeChecker {
           'MERGE CHECK FAILURE: ' +
             nodeMergeLog.node.publicKey +
             ' difficulty: ' +
-            nodeDifficulty +
+            nodeTotalDifficulty +
             ' block number: ' +
             nodeBlockNumber,
           {
@@ -256,7 +256,7 @@ export class MergeChecker {
     ] = await Promise.all(promiseStack)
 
     for (const rawNodeMergeLog of rawNodeMergeLogs) {
-      if (typeof rawNodeMergeLog === 'object' && (rawNodeMergeLog?.difficulty as unknown as string) !== '') {
+      if (typeof rawNodeMergeLog === 'object' && (rawNodeMergeLog?.totalDifficulty as unknown as string) !== '') {
         nodeMergeLogs.push(rawNodeMergeLog)
       }
     }
@@ -286,7 +286,7 @@ export class MergeChecker {
     try {
       relay = await relayer.relay({
         blockchain: blockchainID,
-        data: JSON.stringify(MERGE_CHECK_PAYLOAD),
+        data: MERGE_CHECK_PAYLOAD,
         method: '',
         path,
         node,
@@ -308,7 +308,7 @@ export class MergeChecker {
       // Create a NodeMergeLog for each node with difficulty and block number
       const nodeMergeLog = {
         node: node,
-        difficulty: blockHexToDecimal(payload.result.difficulty),
+        totalDifficulty: String(payload.result.totalDifficulty),
         blockNumber: blockHexToDecimal(payload.result.number),
       } as MergeCheckLog
 
@@ -407,7 +407,7 @@ export class MergeChecker {
         })
     }
     // Failed
-    const nodeMergeLog = { node: node, difficulty: 0, blockNumber: 0 } as MergeCheckLog
+    const nodeMergeLog = { node: node, totalDifficulty: '0', blockNumber: 0 } as MergeCheckLog
 
     return nodeMergeLog
   }
@@ -415,7 +415,7 @@ export class MergeChecker {
 
 type MergeCheckLog = {
   node: Node
-  difficulty: number
+  totalDifficulty: string
   blockNumber: number
 }
 

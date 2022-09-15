@@ -752,6 +752,9 @@ describe('Pocket relayer service (unit)', () => {
     it('Fails relay due to all nodes in session running out of relays, subsequent relays should not attempt to perform checks', async () => {
       const mock = new PocketMock()
 
+      mock.relayResponse['{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["latest",false],"id":1}'] =
+        '{"jsonrpc":"2.0","id":1,"result":{"number":"0xEd14c8","totalDifficulty":"0xc70d808a128d7380000"}}'
+
       const maxRelaysError = new EvidenceSealedError(0, 'error')
 
       mock.relayResponse[BLOCKCHAINS[1].chainIDCheck] = Array(5).fill(maxRelaysError)
