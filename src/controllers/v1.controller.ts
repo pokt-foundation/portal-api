@@ -12,10 +12,11 @@ import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository 
 import { Cache } from '../services/cache'
 import { ChainChecker } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
+import { MergeChecker } from '../services/merge-checker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
-import { checkWhitelist } from '../utils/enforcements'
+import { checkWhitelist, shouldRateLimit } from '../utils/enforcements'
 import { parseRawData, parseRPCID } from '../utils/parsing'
 import { getBlockchainAliasesByDomain, loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
@@ -41,6 +42,7 @@ export class V1Controller {
   pocketRelayer: PocketRelayer
   syncChecker: SyncChecker
   chainChecker: ChainChecker
+  mergeChecker: MergeChecker
 
   constructor(
     @inject('secretKey') private secretKey: string,
@@ -65,6 +67,7 @@ export class V1Controller {
     @inject('archivalChains') private archivalChains: string[],
     @inject('alwaysRedirectToAltruists') private alwaysRedirectToAltruists: boolean,
     @inject('dispatchURL') private dispatchURL: string,
+    @inject('rateLimiterURL') private rateLimiterURL: string,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -86,6 +89,7 @@ export class V1Controller {
     })
     this.syncChecker = new SyncChecker(this.cache, this.metricsRecorder, this.defaultSyncAllowance, this.origin)
     this.chainChecker = new ChainChecker(this.cache, this.metricsRecorder, this.origin)
+    this.mergeChecker = new MergeChecker(this.cache, this.metricsRecorder, this.origin)
     this.pocketRelayer = new PocketRelayer({
       host: this.host,
       origin: this.origin,
@@ -96,6 +100,7 @@ export class V1Controller {
       metricsRecorder: this.metricsRecorder,
       syncChecker: this.syncChecker,
       chainChecker: this.chainChecker,
+      mergeChecker: this.mergeChecker,
       cache: this.cache,
       databaseEncryptionKey: this.databaseEncryptionKey,
       secretKey: this.secretKey,
@@ -312,6 +317,23 @@ export class V1Controller {
         throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('No application found in the load balancer', -32055))
       }
 
+      if (!gigastakeOptions.gigastaked) {
+        const shouldLimit = await shouldRateLimit(application.id, this.rateLimiterURL, this.cache)
+        if (shouldLimit) {
+          logger.log(
+            'warn',
+            'relay count on application associated with the endpoint has exceeded the rate limit ' + application.id,
+            {
+              requestID: this.requestID,
+              relayType: 'LB',
+              typeID: id,
+              serviceNode: '',
+              origin: this.origin,
+            }
+          )
+        }
+      }
+
       if (gigastakeOptions?.gatewaySettings) {
         application.gatewaySettings = gigastakeOptions.gatewaySettings
       }
@@ -427,6 +449,17 @@ export class V1Controller {
 
       const applicationID = application.id
       const applicationPublicKey = application.gatewayAAT.applicationPublicKey
+
+      const shouldLimit = await shouldRateLimit(applicationID, this.rateLimiterURL, this.cache)
+      if (shouldLimit) {
+        logger.log('warn', 'application relay count has exceeded the rate limit ' + applicationID, {
+          requestID: this.requestID,
+          relayType: 'APP',
+          typeID: id,
+          serviceNode: '',
+          origin: this.origin,
+        })
+      }
 
       const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =
         application?.stickinessOptions || DEFAULT_STICKINESS_PARAMS

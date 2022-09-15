@@ -107,3 +107,46 @@ export async function getBlockedAddresses(redis: Redis, URL: string): Promise<st
 
   return blockedAddresses
 }
+
+export async function getRateLimitedApps(redis: Redis, rateLimiterURL: string): Promise<string[]> {
+  const rateLimitedAppsKey = 'rateLimitedApps'
+  const cachedRateLimitedApps = await redis.get(rateLimitedAppsKey)
+  let rateLimitedApps: string[] = []
+
+  if (!cachedRateLimitedApps) {
+    try {
+      if (rateLimiterURL.length > 0) {
+        const axiosConfig = {
+          method: 'GET',
+          url: rateLimiterURL,
+          timeout: 10000,
+        } as AxiosRequestConfig
+
+        const { data } = await axios(axiosConfig)
+        const { applicationIDs: rateLimitedAppsList } = data
+
+        rateLimitedApps = rateLimitedAppsList ?? []
+      }
+    } catch (e) {
+      logger.log(
+        'error',
+        'Error fetching rate-limited applications list; setting cache to skip rate limited applications lookup for 300 seconds',
+        {
+          error: e?.message,
+        }
+      )
+    } finally {
+      // Cache is set regardless of the result, to avoid repeated calls to rate-limiter service
+      if (rateLimiterURL.length === 0) {
+        logger.log('warn', 'Rate-limiter URL is empty; rate-limiting disabled')
+      } else if (rateLimitedApps.length === 0) {
+        logger.log('warn', 'Rate-limited applications list is empty; rate-limiting disabled')
+      }
+      await redis.set(rateLimitedAppsKey, JSON.stringify(rateLimitedApps), 'EX', 300)
+    }
+  } else {
+    rateLimitedApps = JSON.parse(cachedRateLimitedApps)
+  }
+
+  return rateLimitedApps.map((x) => (x ? x.toLowerCase() : ''))
+}
