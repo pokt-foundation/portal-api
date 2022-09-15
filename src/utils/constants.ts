@@ -20,4 +20,5 @@ export const PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION = 0.7
 export enum CheckMethods {
   SyncCheck = 'synchceck',
   ChainCheck = 'chaincheck',
+  MergeCheck = 'mergecheck',
 }
