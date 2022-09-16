@@ -9,7 +9,7 @@ import { ApplicationConfig } from '@loopback/core'
 import { RepositoryMixin } from '@loopback/repository'
 import { RestApplication, HttpErrors } from '@loopback/rest'
 import { ServiceMixin } from '@loopback/service-proxy'
-import { InfluxDB } from '@influxdata/influxdb-client'
+import { InfluxDB, DEFAULT_WriteOptions } from '@influxdata/influxdb-client'
 
 import AatPlans from './config/aat-plans.json'
 import { getPocketInstance } from './config/pocket-config'
@@ -168,8 +168,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     // Influx DB
     const influxBucket = environment === 'production' ? 'mainnetRelay' : 'mainnetRelayStaging'
     const influxClient = new InfluxDB({ url: influxURL, token: influxToken })
-    const writeApi = influxClient.getWriteApi(influxOrg, influxBucket)
-
+    const writeOptions = { ...DEFAULT_WriteOptions, batchSize: 4000 }
+    const writeApi = influxClient.getWriteApi(influxOrg, influxBucket, 'ms', writeOptions)
     this.bind('influxWriteAPI').to(writeApi)
 
     // Create a UID for this process
