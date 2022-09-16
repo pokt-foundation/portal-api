@@ -1116,9 +1116,7 @@ describe('V1 controller (acceptance)', () => {
   })
 
   describe('Rate-limiting applications and loadbalancers', () => {
-    // TODO: empty list of rate-limited apps: needs per-test setup of axios
-    // TODO: failure in calling the rate-limiter: needs per-test setup of axios
-    it('logs a warning on request with rate-limited app', async () => {
+    it('logs an error on request with rate-limited app & relay throws error', async () => {
       const pocket = pocketMock.object()
       const logSpy = sinon.spy(logger, 'log')
 
@@ -1132,17 +1130,48 @@ describe('V1 controller (acceptance)', () => {
         .expect(200)
 
       expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
-      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
-      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+      expect(response.body).to.have.property('error')
+      expect(response.body.error.message).to.startWith('Rate limit exceeded. Please upgrade your plan.')
 
       const rateLimitWarningLogged = logSpy.calledWith(
-        'warn',
+        'error',
         sinon.match((arg: string) => arg.startsWith('application relay count has exceeded the rate limit'))
       )
       expect(rateLimitWarningLogged).to.be.true()
     })
 
-    it('logs a warning on lb relay request with rate-limited app', async () => {
+    it('logs an error on lb relay request with rate-limited app & relay throws error', async () => {
+      const pocket = pocketMock.object()
+      const logSpy = sinon.spy(logger, 'log')
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/lb/${RATE_LIMITED_LB_ID.lb}`)
+        .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.property('error')
+      expect(response.body.error.message).to.startWith('Rate limit exceeded. Please upgrade your plan.')
+
+      const rateLimitWarningLogged = logSpy.calledWith(
+        'error',
+        sinon.match((arg: string) =>
+          arg.startsWith('relay count on application associated with the endpoint has exceeded the rate limit')
+        )
+      )
+      expect(rateLimitWarningLogged).to.be.true()
+    })
+
+    it('logs warning on empty rate-limiter app list & relay suceeds', async () => {
+      // Mocking empty rate-limited apps list
+      axiosMock.onGet('https://rate.limiter').reply(200, {
+        applicationIDs: [],
+      })
+
       const pocket = pocketMock.object()
       const logSpy = sinon.spy(logger, 'log')
 
@@ -1161,8 +1190,37 @@ describe('V1 controller (acceptance)', () => {
 
       const rateLimitWarningLogged = logSpy.calledWith(
         'warn',
+        sinon.match((arg: string) => arg.startsWith('Rate-limited applications list is empty; rate-limiting disabled'))
+      )
+      expect(rateLimitWarningLogged).to.be.true()
+    })
+
+    it('logs an error on rate-limiter call failure & relay succeeds', async () => {
+      // Mocking empty rate-limited apps list
+      axiosMock.onGet('https://rate.limiter').reply(500)
+
+      const pocket = pocketMock.object()
+      const logSpy = sinon.spy(logger, 'log')
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/lb/${RATE_LIMITED_LB_ID.lb}`)
+        .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+
+      const rateLimitWarningLogged = logSpy.calledWith(
+        'error',
         sinon.match((arg: string) =>
-          arg.startsWith('relay count on application associated with the endpoint has exceeded the rate limit')
+          arg.startsWith(
+            'Error fetching rate-limited applications list; setting cache to skip rate limited applications lookup for 300 seconds'
+          )
         )
       )
       expect(rateLimitWarningLogged).to.be.true()
