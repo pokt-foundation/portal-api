@@ -44,7 +44,11 @@ export class EnvironmentObserver implements LifeCycleObserver {
 
   private static requiredEnvVarsOnlyInProd = []
 
-  private static optionalEnvVars: string[] = ['ALWAYS_REDIRECT_TO_ALTRUISTS', 'REDIS_LOCAL_TTL_FACTOR']
+  private static optionalEnvVars: string[] = [
+    'ALWAYS_REDIRECT_TO_ALTRUISTS',
+    'REDIS_LOCAL_TTL_FACTOR',
+    'RATE_LIMITER_URL',
+  ]
 
   /*
   constructor(

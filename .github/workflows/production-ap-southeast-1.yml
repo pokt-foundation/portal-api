@@ -56,12 +56,14 @@ jobs:
           envkey_LOG_TO_CLOUDWATCH: false
           envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          envkey_COMMIT_HASH: ${{ github.sha }}
           envkey_ARCHIVAL_CHAINS: 0022,0028,0010,000A,000B,000C
           envkey_LOG_TO_DATADOG: true
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
           envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}
+          envkey_RATE_LIMITER_URL: https://rate-limiter.backend.pokt.network/v0/app-ids
           envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.y2p8qe.clustercfg.apse1.cache.amazonaws.com
           envkey_REGION: 'ap-southeast-1'
           envkey_REGION_NAME: 'ap-southeast-1'

@@ -12,6 +12,7 @@ import { BlockchainsRepository } from '../../src/repositories/blockchains.reposi
 import { Cache } from '../../src/services/cache'
 import { ChainChecker, ChainIDFilterOptions } from '../../src/services/chain-checker'
 import { CherryPicker } from '../../src/services/cherry-picker'
+import { MergeChecker, MergeFilterOptions } from '../../src/services/merge-checker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { PocketRelayer } from '../../src/services/pocket-relayer'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../../src/services/sync-checker'
@@ -139,6 +140,7 @@ describe('Pocket relayer service (unit)', () => {
   let cherryPicker: CherryPicker
   let chainChecker: ChainChecker
   let syncChecker: SyncChecker
+  let mergeChecker: MergeChecker
   let metricsRecorder: MetricsRecorder
   let blockchainRepository: BlockchainsRepository
   let cache: Cache
@@ -155,6 +157,7 @@ describe('Pocket relayer service (unit)', () => {
     metricsRecorder = metricsRecorderMock(cache.remote, cherryPicker)
     chainChecker = new ChainChecker(cache, metricsRecorder, origin)
     syncChecker = new SyncChecker(cache, metricsRecorder, 5, origin)
+    mergeChecker = new MergeChecker(cache, metricsRecorder, origin)
     blockchainRepository = new BlockchainsRepository(gatewayTestDB)
 
     pocketMock = new PocketMock()
@@ -171,6 +174,7 @@ describe('Pocket relayer service (unit)', () => {
       metricsRecorder,
       syncChecker,
       chainChecker,
+      mergeChecker,
       cache,
       databaseEncryptionKey: DB_ENCRYPTION_KEY,
       secretKey: '',
@@ -289,6 +293,7 @@ describe('Pocket relayer service (unit)', () => {
       metricsRecorder,
       syncChecker,
       chainChecker,
+      mergeChecker,
       cache,
       databaseEncryptionKey: DB_ENCRYPTION_KEY,
       secretKey: key,
@@ -328,6 +333,7 @@ describe('Pocket relayer service (unit)', () => {
       metricsRecorder,
       syncChecker,
       chainChecker,
+      mergeChecker,
       cache,
       databaseEncryptionKey: DB_ENCRYPTION_KEY,
       secretKey: 'invalid',
@@ -388,13 +394,16 @@ describe('Pocket relayer service (unit)', () => {
     // Returns mock of chain and sync check with the specified amount of nodes as result
     const mockChainAndSyncChecker = (
       chainCheckNodes: SessionNodeAmount,
-      syncCheckNodes: SessionNodeAmount
+      syncCheckNodes: SessionNodeAmount,
+      mergeCheckNodes: SessionNodeAmount
     ): {
       chainChecker: ChainChecker
       syncChecker: SyncChecker
+      mergeChecker: MergeChecker
     } => {
       const mockChainChecker = chainChecker
       const mockSyncChecker = syncChecker
+      const mockMergeChecker = mergeChecker
       const maxAmountOfNodes = 5
 
       sinon.replace(
@@ -435,9 +444,28 @@ describe('Pocket relayer service (unit)', () => {
         }
       )
 
+      sinon.replace(
+        mockMergeChecker,
+        'mergeStatusFilter',
+        ({
+          nodes,
+          requestID,
+          blockchainID,
+          relayer,
+          applicationID,
+          applicationPublicKey,
+          pocketAAT,
+          session,
+          path,
+        }: MergeFilterOptions): Promise<CheckResult> => {
+          return Promise.resolve({ nodes: DEFAULT_NODES.slice(maxAmountOfNodes - mergeCheckNodes), cached: false })
+        }
+      )
+
       return {
         chainChecker: mockChainChecker,
         syncChecker: mockSyncChecker,
+        mergeChecker: mockMergeChecker,
       }
     }
 
@@ -451,7 +479,11 @@ describe('Pocket relayer service (unit)', () => {
     it('sends successful relay response as json', async () => {
       const mock = new PocketMock()
 
-      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+      const {
+        chainChecker: mockChainChecker,
+        syncChecker: mockSyncChecker,
+        mergeChecker: mockMergeChecker,
+      } = mockChainAndSyncChecker(5, 5, 5)
 
       const relayer = mock.object()
 
@@ -465,6 +497,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
+        mergeChecker: mockMergeChecker,
         cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
@@ -504,7 +537,11 @@ describe('Pocket relayer service (unit)', () => {
 
       // mock.relayResponse[rawData] = '{"error": "a relay error"}'
 
-      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+      const {
+        chainChecker: mockChainChecker,
+        syncChecker: mockSyncChecker,
+        mergeChecker: mockMergeChecker,
+      } = mockChainAndSyncChecker(5, 5, 5)
 
       const relayer = mock.object()
 
@@ -518,6 +555,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
+        mergeChecker: mockMergeChecker,
         cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
@@ -552,7 +590,11 @@ describe('Pocket relayer service (unit)', () => {
     it('fails when relay response returns a string', async () => {
       const mock = new PocketMock()
 
-      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+      const {
+        chainChecker: mockChainChecker,
+        syncChecker: mockSyncChecker,
+        mergeChecker: mockMergeChecker,
+      } = mockChainAndSyncChecker(5, 5, 5)
 
       mock.relayResponse[rawData] = 'string response'
 
@@ -568,6 +610,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
+        mergeChecker: mockMergeChecker,
         cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
@@ -619,6 +662,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker,
         chainChecker,
+        mergeChecker,
         cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
@@ -670,6 +714,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker,
         chainChecker,
+        mergeChecker,
         cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
@@ -707,6 +752,9 @@ describe('Pocket relayer service (unit)', () => {
     it('Fails relay due to all nodes in session running out of relays, subsequent relays should not attempt to perform checks', async () => {
       const mock = new PocketMock()
 
+      mock.relayResponse['{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["latest",false],"id":1}'] =
+        '{"jsonrpc":"2.0","id":1,"result":{"number":"0xed14f2","totalDifficulty":"0xc70d815d562d3cfa955"}}'
+
       const maxRelaysError = new EvidenceSealedError(0, 'error')
 
       mock.relayResponse[BLOCKCHAINS[1].chainIDCheck] = Array(5).fill(maxRelaysError)
@@ -730,6 +778,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker,
         chainChecker,
+        mergeChecker,
         cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
@@ -806,7 +855,11 @@ describe('Pocket relayer service (unit)', () => {
 
       mock.relayResponse[rawData] = new EvidenceSealedError(0, 'error')
 
-      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+      const {
+        chainChecker: mockChainChecker,
+        syncChecker: mockSyncChecker,
+        mergeChecker: mockMergeChecker,
+      } = mockChainAndSyncChecker(5, 5, 5)
       const chainCheckerSpy = sinon.spy(chainChecker, 'chainIDFilter')
       const syncCherckerSpy = sinon.spy(syncChecker, 'consensusFilter')
 
@@ -824,6 +877,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
+        mergeChecker: mockMergeChecker,
         cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
@@ -896,7 +950,11 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     it('chainIDCheck / syncCheck succeeds', async () => {
-      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+      const {
+        chainChecker: mockChainChecker,
+        syncChecker: mockSyncChecker,
+        mergeChecker: mockMergeChecker,
+      } = mockChainAndSyncChecker(5, 5, 5)
 
       const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
 
@@ -914,6 +972,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
+        mergeChecker: mockMergeChecker,
         cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: 'invalid secret key',
@@ -948,7 +1007,11 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     it('chainIDCheck fails (no nodes returned)', async () => {
-      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(0, 5)
+      const {
+        chainChecker: mockChainChecker,
+        syncChecker: mockSyncChecker,
+        mergeChecker: mockMergeChecker,
+      } = mockChainAndSyncChecker(0, 5, 5)
 
       const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
 
@@ -966,6 +1029,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
+        mergeChecker: mockMergeChecker,
         cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: 'invalid secret key',
@@ -1004,7 +1068,11 @@ describe('Pocket relayer service (unit)', () => {
     })
 
     it('syncCheck fails (no nodes returned)', async () => {
-      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 0)
+      const {
+        chainChecker: mockChainChecker,
+        syncChecker: mockSyncChecker,
+        mergeChecker: mockMergeChecker,
+      } = mockChainAndSyncChecker(5, 0, 5)
 
       const mockChainCheckerSpy = sinon.spy(mockChainChecker, 'chainIDFilter')
       const syncCherckerSpy = sinon.spy(mockSyncChecker, 'consensusFilter')
@@ -1021,6 +1089,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
+        mergeChecker: mockMergeChecker,
         cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: 'invalid secret key',
@@ -1075,6 +1144,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker,
         chainChecker,
+        mergeChecker,
         cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
@@ -1111,7 +1181,11 @@ describe('Pocket relayer service (unit)', () => {
     it('should succeed if `eth_getLogs` call is within permitted blocks range (no altruist)', async () => {
       const mock = new PocketMock()
 
-      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+      const {
+        chainChecker: mockChainChecker,
+        syncChecker: mockSyncChecker,
+        mergeChecker: mockMergeChecker,
+      } = mockChainAndSyncChecker(5, 5, 5)
 
       rawData =
         '{"method":"eth_getLogs","params":[{"fromBlock":"0xc5bdc9","toBlock":"0xc5bdc9","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}'
@@ -1131,6 +1205,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
+        mergeChecker: mockMergeChecker,
         cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
@@ -1179,7 +1254,11 @@ describe('Pocket relayer service (unit)', () => {
         mock.relayResponse[relayRequest(i)] = relayResponseData(i)
       }
 
-      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+      const {
+        chainChecker: mockChainChecker,
+        syncChecker: mockSyncChecker,
+        mergeChecker: mockMergeChecker,
+      } = mockChainAndSyncChecker(5, 5, 5)
 
       const relayer = mock.object()
 
@@ -1193,6 +1272,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
+        mergeChecker: mockMergeChecker,
         cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
@@ -1260,7 +1340,11 @@ describe('Pocket relayer service (unit)', () => {
 
       mock.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
 
-      const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+      const {
+        chainChecker: mockChainChecker,
+        syncChecker: mockSyncChecker,
+        mergeChecker: mockMergeChecker,
+      } = mockChainAndSyncChecker(5, 5, 5)
 
       const relayer = mock.object()
 
@@ -1274,6 +1358,7 @@ describe('Pocket relayer service (unit)', () => {
         metricsRecorder,
         syncChecker: mockSyncChecker,
         chainChecker: mockChainChecker,
+        mergeChecker: mockMergeChecker,
         cache,
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
@@ -1353,6 +1438,7 @@ describe('Pocket relayer service (unit)', () => {
           metricsRecorder,
           syncChecker,
           chainChecker,
+          mergeChecker,
           cache,
           databaseEncryptionKey: DB_ENCRYPTION_KEY,
           secretKey: 'invalid secret key',
@@ -1413,6 +1499,7 @@ describe('Pocket relayer service (unit)', () => {
           metricsRecorder,
           syncChecker,
           chainChecker,
+          mergeChecker,
           cache,
           databaseEncryptionKey: DB_ENCRYPTION_KEY,
           secretKey: 'invalid secret key',
@@ -1472,6 +1559,7 @@ describe('Pocket relayer service (unit)', () => {
           metricsRecorder,
           syncChecker,
           chainChecker,
+          mergeChecker,
           cache,
           databaseEncryptionKey: DB_ENCRYPTION_KEY,
           secretKey: 'invalid secret key',
@@ -1520,7 +1608,11 @@ describe('Pocket relayer service (unit)', () => {
 
       // Altruist is forced by simulating a chainIDCheck failure
       const getAltruistRelayer = (relayResponse?: string): PocketRelayer => {
-        const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(0, 5)
+        const {
+          chainChecker: mockChainChecker,
+          syncChecker: mockSyncChecker,
+          mergeChecker: mockMergeChecker,
+        } = mockChainAndSyncChecker(0, 5, 5)
         const relayer = pocketMock.object()
 
         if (relayResponse) {
@@ -1537,6 +1629,7 @@ describe('Pocket relayer service (unit)', () => {
           metricsRecorder,
           syncChecker: mockSyncChecker,
           chainChecker: mockChainChecker,
+          mergeChecker: mockMergeChecker,
           cache,
           databaseEncryptionKey: DB_ENCRYPTION_KEY,
           secretKey: 'invalid secret key',
@@ -1763,6 +1856,7 @@ describe('Pocket relayer service (unit)', () => {
           metricsRecorder,
           syncChecker,
           chainChecker,
+          mergeChecker,
           cache,
           databaseEncryptionKey: DB_ENCRYPTION_KEY,
           secretKey: '',
@@ -1841,7 +1935,11 @@ describe('Pocket relayer service (unit)', () => {
 
           const mock = new PocketMock()
 
-          const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+          const {
+            chainChecker: mockChainChecker,
+            syncChecker: mockSyncChecker,
+            mergeChecker: mockMergeChecker,
+          } = mockChainAndSyncChecker(5, 5, 5)
 
           mock.relayResponse[rawData] = connectionErrorRelayResponse
 
@@ -1861,6 +1959,7 @@ describe('Pocket relayer service (unit)', () => {
             metricsRecorder,
             syncChecker: mockSyncChecker,
             chainChecker: mockChainChecker,
+            mergeChecker: mockMergeChecker,
             cache,
             databaseEncryptionKey: DB_ENCRYPTION_KEY,
             secretKey: '',
@@ -1905,7 +2004,11 @@ describe('Pocket relayer service (unit)', () => {
 
           const mock = new PocketMock()
 
-          const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+          const {
+            chainChecker: mockChainChecker,
+            syncChecker: mockSyncChecker,
+            mergeChecker: mockMergeChecker,
+          } = mockChainAndSyncChecker(5, 5, 5)
 
           mock.relayResponse[rawData] = connectionErrorRelayResponse
 
@@ -1925,6 +2028,7 @@ describe('Pocket relayer service (unit)', () => {
             metricsRecorder,
             syncChecker: mockSyncChecker,
             chainChecker: mockChainChecker,
+            mergeChecker: mockMergeChecker,
             cache,
             databaseEncryptionKey: DB_ENCRYPTION_KEY,
             secretKey: '',
@@ -1964,7 +2068,11 @@ describe('Pocket relayer service (unit)', () => {
 
           const mock = new PocketMock()
 
-          const { chainChecker: mockChainChecker, syncChecker: mockSyncChecker } = mockChainAndSyncChecker(5, 5)
+          const {
+            chainChecker: mockChainChecker,
+            syncChecker: mockSyncChecker,
+            mergeChecker: mockMergeChecker,
+          } = mockChainAndSyncChecker(5, 5, 5)
 
           mock.relayResponse[rawData] =
             '{"error":{"code":-32000,"message":"execution reverted"},"id":1,"jsonrpc":"2.0"}'
@@ -1981,6 +2089,7 @@ describe('Pocket relayer service (unit)', () => {
             metricsRecorder,
             syncChecker: mockSyncChecker,
             chainChecker: mockChainChecker,
+            mergeChecker: mockMergeChecker,
             cache,
             databaseEncryptionKey: DB_ENCRYPTION_KEY,
             secretKey: '',

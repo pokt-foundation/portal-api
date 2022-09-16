@@ -8,6 +8,7 @@ import { Applications } from '../models'
 import { BlockchainsRepository } from '../repositories'
 import { ChainChecker, ChainIDFilterOptions } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
+import { MergeFilterOptions, MergeChecker } from '../services/merge-checker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { removeNodeFromSession } from '../utils/cache'
@@ -40,6 +41,7 @@ export class PocketRelayer {
   metricsRecorder: MetricsRecorder
   syncChecker: SyncChecker
   chainChecker: ChainChecker
+  mergeChecker: MergeChecker
   cache: Cache
   databaseEncryptionKey: string
   secretKey: string
@@ -62,6 +64,7 @@ export class PocketRelayer {
     metricsRecorder,
     syncChecker,
     chainChecker,
+    mergeChecker,
     cache,
     databaseEncryptionKey,
     secretKey,
@@ -82,6 +85,7 @@ export class PocketRelayer {
     metricsRecorder: MetricsRecorder
     syncChecker: SyncChecker
     chainChecker: ChainChecker
+    mergeChecker: MergeChecker
     cache: Cache
     databaseEncryptionKey: string
     secretKey: string
@@ -102,6 +106,7 @@ export class PocketRelayer {
     this.metricsRecorder = metricsRecorder
     this.syncChecker = syncChecker
     this.chainChecker = chainChecker
+    this.mergeChecker = mergeChecker
     this.cache = cache
     this.databaseEncryptionKey = databaseEncryptionKey
     this.secretKey = secretKey
@@ -684,6 +689,60 @@ export class PocketRelayer {
         origin: this.origin,
       })
       return new Error("session doesn't have any available nodes")
+    }
+
+    if (blockchainID === '0021' || blockchainID === '0022' || blockchainID === '0028') {
+      const mergeStatusOptions: MergeFilterOptions = {
+        nodes,
+        requestID,
+        blockchainID,
+        pocketAAT: pocketAAT,
+        applicationID,
+        applicationPublicKey,
+        relayer: this.relayer,
+        session,
+        path: blockchainPath,
+      }
+
+      const mergeCheckResult = await this.mergeChecker.mergeStatusFilter(mergeStatusOptions)
+
+      if (mergeCheckResult) {
+        nodes = mergeCheckResult.nodes
+      } else {
+        const error = 'Merge check failure: '
+
+        const method = 'checks'
+
+        this.metricsRecorder
+          .recordMetric({
+            requestID,
+            applicationID,
+            applicationPublicKey,
+            blockchainID,
+            serviceNode: 'session-failure',
+            relayStart,
+            result: 500,
+            bytes: Buffer.byteLength(error, 'utf8'),
+            fallback: false,
+            method,
+            error,
+            code: undefined,
+            origin: this.origin,
+            data,
+            session: this.session,
+            gigastakeAppID: applicationID !== application.id ? application.id : undefined,
+          })
+          .catch(function log(e) {
+            logger.log('error', 'Error recording metrics: ' + e, {
+              requestID,
+              relayType: 'APP',
+              typeID: application.id,
+              serviceNode: 'session-failure',
+            })
+          })
+
+        return new Error('Merge check failure; using fallbacks')
+      }
     }
 
     let syncCheckPromise: Promise<CheckResult>

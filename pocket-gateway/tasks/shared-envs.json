@@ -109,6 +109,10 @@
       "value": "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
     },
     {
+      "key": "COMMIT_HASH",
+      "value": "${{ github.sha }}"
+    },
+    {
       "key": "ARCHIVAL_CHAINS",
       "value": "0022,0028,0010,000A,000B,000C"
     },
@@ -132,6 +136,10 @@
     {
       "key": "LOG_CHERRY_PICKER_STATS",
       "value": "${{ secrets.LOG_CHERRY_PICKER_STATS }}"
+    },
+    {
+      "key": "RATE_LIMITER_URL",
+      "value": "https://rate-limiter.backend.pokt.network/v0/app-ids"
     }
   ]
 }
