@@ -1196,7 +1196,7 @@ describe('V1 controller (acceptance)', () => {
     })
 
     it('logs an error on rate-limiter call failure & relay succeeds', async () => {
-      // Mocking empty rate-limited apps list
+      // Mocking failure to fetch rate-limiter
       axiosMock.onGet('https://rate.limiter').reply(500)
 
       const pocket = pocketMock.object()
