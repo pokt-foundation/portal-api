@@ -93,7 +93,7 @@ jobs:
             DD_PROFILING_ENABLED=true
             DD_SERVICE=/gateway-stress-test/us-west-2/ecs/gateway
             DD_VERSION=${{ github.sha }}
-            DD_ENV=gateway-stress-test
+            DD_ENV=production
             DD_AGENT_HOST=datadog-agent
 
       - name: Fill in the new image ID / us-west-2 - datadog-agent
