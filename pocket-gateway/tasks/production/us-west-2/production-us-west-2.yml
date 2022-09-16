@@ -36,7 +36,7 @@ jobs:
           [[/shared_envs]]
           envkey_REMOTE_REDIS_ENDPOINT: gateway-stress-test-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REGION: 'us-west-2'
-          envkey_REGION_NAME: 'stress-test'
+          envkey_REGION_NAME: '/gateway-stress-test/us-west-2'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
