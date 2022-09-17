@@ -709,38 +709,6 @@ export class PocketRelayer {
       if (mergeCheckResult) {
         nodes = mergeCheckResult.nodes
       } else {
-        const error = 'Merge check failure: '
-
-        const method = 'checks'
-
-        this.metricsRecorder
-          .recordMetric({
-            requestID,
-            applicationID,
-            applicationPublicKey,
-            blockchainID,
-            serviceNode: 'session-failure',
-            relayStart,
-            result: 500,
-            bytes: Buffer.byteLength(error, 'utf8'),
-            fallback: false,
-            method,
-            error,
-            code: undefined,
-            origin: this.origin,
-            data,
-            session: this.session,
-            gigastakeAppID: applicationID !== application.id ? application.id : undefined,
-          })
-          .catch(function log(e) {
-            logger.log('error', 'Error recording metrics: ' + e, {
-              requestID,
-              relayType: 'APP',
-              typeID: application.id,
-              serviceNode: 'session-failure',
-            })
-          })
-
         return new Error('Merge check failure; using fallbacks')
       }
     }
