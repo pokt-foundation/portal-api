@@ -32,7 +32,7 @@ jobs:
         uses: SpicyPizza/create-envfile@v1
         with:
           [[#shared_envs]]
-          envkey_[[key]]: [[&value]]`
+          envkey_[[key]]: [[&value]]
           [[/shared_envs]]
           envkey_REMOTE_REDIS_ENDPOINT: gateway-stress-test-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REGION: 'us-west-2'
