@@ -34,6 +34,8 @@ jobs:
           envkey_REDIS_LOCAL_TTL_FACTOR: ${{ secrets.REDIS_LOCAL_TTL_FACTOR }}
           envkey_MONGO_ENDPOINT: ${{ secrets.MONGO_PRODUCTION_ENDPOINT }}
           envkey_BLOCKED_ADDRESSES_URL: ${{ secrets.BLOCKED_ADDRESSES_URL }}
+          envkey_PHD_BASE_URL: ${{ secrets.PHD_BASE_URL }}
+          envkey_PHD_API_KEY: ${{ secrets.PHD_API_KEY }}
           envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_PRODUCTION_ENCRYPTION_KEY }}
           envkey_DISPATCH_URL: ${{ secrets.DISPATCH_URL }}
           envkey_ALTRUISTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_ALTRUISTS }}

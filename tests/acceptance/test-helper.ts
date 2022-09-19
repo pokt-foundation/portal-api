@@ -32,6 +32,8 @@ export const DUMMY_ENV = {
   AWS_SECRET_ACCESS_KEY: 'test',
   AWS_REGION: 'test',
   BLOCKED_ADDRESSES_URL: 'https://blocked.addresses',
+  PHD_BASE_URL: 'https://phd.base.url',
+  PHD_API_KEY: 'phd-api-key',
   RATE_LIMITER_URL: 'https://rate.limiter',
 }
 

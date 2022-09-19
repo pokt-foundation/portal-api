@@ -21,6 +21,14 @@
       "value": "${{ secrets.BLOCKED_ADDRESSES_URL }}"
     },
     {
+      "key": "PHD_BASE_URL",
+      "value": "${{ secrets.PHD_BASE_URL }}"
+    },
+    {
+      "key": "PHD_API_KEY",
+      "value": "${{ secrets.PHD_API_KEY }}"
+    },
+    {
       "key": "DATABASE_ENCRYPTION_KEY",
       "value": "${{ secrets.DATABASE_PRODUCTION_ENCRYPTION_KEY }}"
     },
