@@ -53,8 +53,8 @@ class PHDClient {
   private baseUrl: string
 
   constructor(baseUrl: string, apiKey: string) {
-    this.apiKey = baseUrl
-    this.baseUrl = apiKey
+    this.baseUrl = baseUrl
+    this.apiKey = apiKey
   }
 
   async find<T extends Entity>({
