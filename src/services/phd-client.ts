@@ -70,7 +70,7 @@ class PHDClient {
 
     try {
       const { data: documents } = await axios.get(url, { headers: { authorization: this.apiKey } })
-      console.debug('[find BLOCKCHAINS] DEBUG - PHD CLIENT', { documents })
+      logger.warn('[find BLOCKCHAINS] DEBUG - PHD CLIENT', { documents })
 
       documents.forEach((document) => {
         if (this.hasAllRequiredModelFields<T>(document, modelFields)) {
@@ -81,10 +81,10 @@ class PHDClient {
       })
     } catch (error) {
       if (fallback) {
-        logger.log('warn', FALLBACK_WARNING, { error })
+        logger.warn('warn', FALLBACK_WARNING, { error })
 
         const documents = await fallback()
-        console.debug('[find - fallback BLOCKCHAINS] DEBUG - PHD CLIENT', { error, documents })
+        logger.warn('[find - fallback BLOCKCHAINS] DEBUG - PHD CLIENT', { error, documents })
 
         documents.forEach((document) => {
           modelsData.push(new model(document))
@@ -92,7 +92,7 @@ class PHDClient {
       } else {
         logger.log('error', FAILURE_ERROR, { error })
 
-        console.debug('[find - error BLOCKCHAINS] DEBUG - PHD CLIENT', { error })
+        logger.warn('[find - error BLOCKCHAINS] DEBUG - PHD CLIENT', { error })
 
         throw error
       }
