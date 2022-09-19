@@ -80,6 +80,7 @@ export class PocketRelayer {
     alwaysRedirectToAltruists = false,
     altruistOnlyChains = [],
     dispatchers,
+    phdClient,
   }: {
     host: string
     origin: string
@@ -102,6 +103,7 @@ export class PocketRelayer {
     alwaysRedirectToAltruists?: boolean
     altruistOnlyChains?: string[]
     dispatchers?: string
+    phdClient: PHDClient
   }) {
     this.host = host
     this.origin = origin
@@ -124,7 +126,7 @@ export class PocketRelayer {
     this.alwaysRedirectToAltruists = alwaysRedirectToAltruists
     this.altruistOnlyChains = altruistOnlyChains
     this.dispatchers = dispatchers
-    this.phdClient = new PHDClient()
+    this.phdClient = phdClient
   }
 
   async sendRelay({

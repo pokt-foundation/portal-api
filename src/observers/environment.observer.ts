@@ -34,6 +34,8 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'INFLUX_ORGS',
     'ARCHIVAL_CHAINS',
     'BLOCKED_ADDRESSES_URL',
+    'PHD_BASE_URL',
+    'PHD_API_KEY',
     // Not required in code, but must be present in .env
     'AWS_ACCESS_KEY_ID',
     'AWS_SECRET_ACCESS_KEY',

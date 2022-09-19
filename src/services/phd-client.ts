@@ -52,9 +52,9 @@ class PHDClient {
   private apiKey: string
   private baseUrl: string
 
-  constructor() {
-    this.apiKey = process.env.PHD_API_KEY
-    this.baseUrl = process.env.PHD_BASE_URL
+  constructor(baseUrl: string, apiKey: string) {
+    this.apiKey = baseUrl
+    this.baseUrl = apiKey
   }
 
   async find<T extends Entity>({

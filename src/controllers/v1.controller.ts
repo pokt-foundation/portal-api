@@ -75,6 +75,7 @@ export class V1Controller {
     @inject('rateLimiterURL') private rateLimiterURL: string,
     @inject('rateLimiterToken') private rateLimiterToken: string,
     @inject('gatewayHost') private gatewayHost: string,
+    @inject('phdClient') private phdClient: PHDClient,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -119,8 +120,8 @@ export class V1Controller {
       alwaysRedirectToAltruists: this.alwaysRedirectToAltruists,
       altruistOnlyChains: this.altruistOnlyChains,
       dispatchers: this.dispatchURL,
+      phdClient: this.phdClient,
     })
-    this.phdClient = new PHDClient()
   }
 
   /**

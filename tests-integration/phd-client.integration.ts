@@ -37,7 +37,7 @@ describe('Pocket HTTP DB Client', () => {
   let logSpy: sinon.SinonSpy
 
   before('setupApplication', async () => {
-    phdClient = new PHDClient()
+    phdClient = new PHDClient(process.env.PHD_BASE_URL, process.env.PHD_API_KEY)
     const datasource = new GatewayDataSource()
     blockchainsRepository = new BlockchainsRepository(datasource)
     applicationsRepository = new ApplicationsRepository(datasource)
