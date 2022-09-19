@@ -1,3 +1,4 @@
+import { inject } from '@loopback/context'
 import { Count, CountSchema, Filter, FilterExcludingWhere, repository, Where } from '@loopback/repository'
 import { param, get, getModelSchemaRef } from '@loopback/rest'
 
@@ -6,14 +7,11 @@ import { BlockchainsRepository } from '../repositories'
 import { PHDClient } from '../services/phd-client'
 
 export class BlockchainsController {
-  phdClient: PHDClient
-
   constructor(
+    @inject('phdClient') private phdClient: PHDClient,
     @repository(BlockchainsRepository)
     public blockchainsRepository: BlockchainsRepository
-  ) {
-    this.phdClient = new PHDClient()
-  }
+  ) {}
 
   @get('/blockchains/count', {
     responses: {

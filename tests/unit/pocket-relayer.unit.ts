@@ -13,6 +13,7 @@ import { Cache } from '../../src/services/cache'
 import { ChainChecker, ChainIDFilterOptions } from '../../src/services/chain-checker'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { MetricsRecorder } from '../../src/services/metrics-recorder'
+import { PHDClient } from '../../src/services/phd-client'
 import { PocketRelayer } from '../../src/services/pocket-relayer'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../../src/services/sync-checker'
 import { checkWhitelist, checkSecretKey } from '../../src/utils/enforcements'
@@ -150,6 +151,7 @@ describe('Pocket relayer service (unit)', () => {
   let pocketRelayer: PocketRelayer
   let axiosMock: MockAdapter
   let logSpy: sinon.SinonSpy
+  let phdClient: PHDClient
 
   const origin = 'unit-test'
 
@@ -160,6 +162,7 @@ describe('Pocket relayer service (unit)', () => {
     chainChecker = new ChainChecker(cache, metricsRecorder, origin)
     syncChecker = new SyncChecker(cache, metricsRecorder, 5, origin)
     blockchainRepository = new BlockchainsRepository(gatewayTestDB)
+    phdClient = new PHDClient(DUMMY_ENV.PHD_BASE_URL, DUMMY_ENV.PHD_API_KEY)
 
     pocketMock = new PocketMock()
 
@@ -184,6 +187,7 @@ describe('Pocket relayer service (unit)', () => {
       aatPlan: AatPlans.FREEMIUM,
       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       dispatchers: DUMMY_ENV.DISPATCH_URL,
+      phdClient,
     })
 
     axiosMock = new MockAdapter(axios)
@@ -305,6 +309,7 @@ describe('Pocket relayer service (unit)', () => {
       aatPlan: AatPlans.FREEMIUM,
       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       dispatchers: DUMMY_ENV.DISPATCH_URL,
+      phdClient,
     })
 
     const application = {
@@ -344,6 +349,7 @@ describe('Pocket relayer service (unit)', () => {
       aatPlan: AatPlans.FREEMIUM,
       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
       dispatchers: DUMMY_ENV.DISPATCH_URL,
+      phdClient,
     })
 
     const isInvalidApp = checkSecretKey(application as unknown as Applications, {
@@ -481,6 +487,7 @@ describe('Pocket relayer service (unit)', () => {
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
+        phdClient,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -534,6 +541,7 @@ describe('Pocket relayer service (unit)', () => {
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
+        phdClient,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -584,6 +592,7 @@ describe('Pocket relayer service (unit)', () => {
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
+        phdClient,
       })
 
       await assert.rejects(
@@ -635,6 +644,7 @@ describe('Pocket relayer service (unit)', () => {
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
+        phdClient,
       })
 
       await assert.rejects(
@@ -686,6 +696,7 @@ describe('Pocket relayer service (unit)', () => {
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
+        phdClient,
       })
 
       await assert.rejects(
@@ -746,6 +757,7 @@ describe('Pocket relayer service (unit)', () => {
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
+        phdClient,
       })
 
       await assert.rejects(
@@ -840,6 +852,7 @@ describe('Pocket relayer service (unit)', () => {
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
+        phdClient,
       })
 
       await assert.rejects(
@@ -930,6 +943,7 @@ describe('Pocket relayer service (unit)', () => {
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
+        phdClient,
       })
 
       const relayResponse = await poktRelayer.sendRelay({
@@ -982,6 +996,7 @@ describe('Pocket relayer service (unit)', () => {
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
+        phdClient,
       })
 
       await assert.rejects(
@@ -1037,6 +1052,7 @@ describe('Pocket relayer service (unit)', () => {
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
+        phdClient,
       })
 
       await assert.rejects(
@@ -1091,6 +1107,7 @@ describe('Pocket relayer service (unit)', () => {
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
+        phdClient,
       })
 
       rawData =
@@ -1147,6 +1164,7 @@ describe('Pocket relayer service (unit)', () => {
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
+        phdClient,
       })
 
       const relayResponse = (await poktRelayer.sendRelay({
@@ -1210,6 +1228,7 @@ describe('Pocket relayer service (unit)', () => {
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
+        phdClient,
       })
 
       for (let i = 0; i < 5; i++) {
@@ -1291,6 +1310,7 @@ describe('Pocket relayer service (unit)', () => {
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
         dispatchers: DUMMY_ENV.DISPATCH_URL,
+        phdClient,
       })
 
       for (let i = 0; i < 5; i++) {
@@ -1369,6 +1389,7 @@ describe('Pocket relayer service (unit)', () => {
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
           dispatchers: DUMMY_ENV.DISPATCH_URL,
+          phdClient,
         })
 
         await assert.rejects(
@@ -1429,6 +1450,7 @@ describe('Pocket relayer service (unit)', () => {
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
           dispatchers: DUMMY_ENV.DISPATCH_URL,
+          phdClient,
         })
 
         await assert.rejects(
@@ -1488,6 +1510,7 @@ describe('Pocket relayer service (unit)', () => {
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
           dispatchers: DUMMY_ENV.DISPATCH_URL,
+          phdClient,
         })
 
         await assert.rejects(
@@ -1553,6 +1576,7 @@ describe('Pocket relayer service (unit)', () => {
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
           dispatchers: DUMMY_ENV.DISPATCH_URL,
+          phdClient,
         }) as PocketRelayer
 
         return poktRelayer
@@ -1778,6 +1802,7 @@ describe('Pocket relayer service (unit)', () => {
           checkDebug: true,
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: 0,
+          phdClient,
         }) as PocketRelayer
 
         const relayResponse = await poktRelayer.sendRelay({
@@ -1877,6 +1902,7 @@ describe('Pocket relayer service (unit)', () => {
             aatPlan: AatPlans.FREEMIUM,
             defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
             dispatchers: DUMMY_ENV.DISPATCH_URL,
+            phdClient,
           })
 
           const relayResponse = await poktRelayer.sendRelay({
@@ -1941,6 +1967,7 @@ describe('Pocket relayer service (unit)', () => {
             aatPlan: AatPlans.FREEMIUM,
             defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
             dispatchers: DUMMY_ENV.DISPATCH_URL,
+            phdClient,
           })
 
           await assert.rejects(
@@ -1997,6 +2024,7 @@ describe('Pocket relayer service (unit)', () => {
             aatPlan: AatPlans.FREEMIUM,
             defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
             dispatchers: DUMMY_ENV.DISPATCH_URL,
+            phdClient,
           })
 
           const relayResponse = await poktRelayer.sendRelay({

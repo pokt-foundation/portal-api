@@ -15,6 +15,7 @@ import AatPlans from './config/aat-plans.json'
 import { getPocketInstance } from './config/pocket-config'
 import { GatewaySequence } from './sequence'
 import { Cache } from './services/cache'
+import { PHDClient } from './services/phd-client'
 import { getRDSCertificate } from './utils/cache'
 const logger = require('./services/logger')
 
@@ -68,7 +69,10 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       ALWAYS_REDIRECT_TO_ALTRUISTS,
       REDIS_LOCAL_TTL_FACTOR,
       RATE_LIMITER_URL,
-    } = await this.get('configuration.environment.values')
+      PHD_BASE_URL,
+      PHD_API_KEY,
+    }: // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any = await this.get('configuration.environment.values')
 
     const environment: string = NODE_ENV || 'production'
     const dispatchURL: string = DISPATCH_URL || ''
@@ -86,6 +90,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const alwaysRedirectToAltruists: boolean = ALWAYS_REDIRECT_TO_ALTRUISTS === 'true'
     const ttlFactor = parseFloat(REDIS_LOCAL_TTL_FACTOR) || 1
     const rateLimiterURL: string = RATE_LIMITER_URL || ''
+    const phdBaseURL: string = PHD_BASE_URL || ''
+    const phdAPIKey: string = PHD_API_KEY || ''
 
     if (aatPlan !== AatPlans.PREMIUM && !AatPlans.values.includes(aatPlan)) {
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
@@ -139,6 +145,11 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const cache = new Cache(remoteRedis as Redis, localRedis, ttlFactor)
 
     this.bind('cache').to(cache)
+
+    // Bind PHD Client
+    const phdClient = new PHDClient(phdBaseURL, phdAPIKey)
+
+    this.bind('phdClient').to(phdClient)
 
     // New metrics postgres for error recording
     const psqlConnection: string = PSQL_CONNECTION || ''

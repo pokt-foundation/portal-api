@@ -75,6 +75,7 @@ export class PocketRelayer {
     defaultLogLimitBlocks,
     alwaysRedirectToAltruists = false,
     dispatchers,
+    phdClient,
   }: {
     host: string
     origin: string
@@ -95,6 +96,7 @@ export class PocketRelayer {
     defaultLogLimitBlocks: number
     alwaysRedirectToAltruists?: boolean
     dispatchers?: string
+    phdClient: PHDClient
   }) {
     this.host = host
     this.origin = origin
@@ -115,7 +117,7 @@ export class PocketRelayer {
     this.defaultLogLimitBlocks = defaultLogLimitBlocks
     this.alwaysRedirectToAltruists = alwaysRedirectToAltruists
     this.dispatchers = dispatchers
-    this.phdClient = new PHDClient()
+    this.phdClient = phdClient
   }
 
   async sendRelay({

@@ -44,7 +44,6 @@ export class V1Controller {
   pocketRelayer: PocketRelayer
   syncChecker: SyncChecker
   chainChecker: ChainChecker
-  phdClient: PHDClient
 
   constructor(
     @inject('secretKey') private secretKey: string,
@@ -70,6 +69,7 @@ export class V1Controller {
     @inject('alwaysRedirectToAltruists') private alwaysRedirectToAltruists: boolean,
     @inject('dispatchURL') private dispatchURL: string,
     @inject('rateLimiterURL') private rateLimiterURL: string,
+    @inject('phdClient') private phdClient: PHDClient,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -111,8 +111,8 @@ export class V1Controller {
       defaultLogLimitBlocks: this.defaultLogLimitBlocks,
       alwaysRedirectToAltruists: this.alwaysRedirectToAltruists,
       dispatchers: this.dispatchURL,
+      phdClient: this.phdClient,
     })
-    this.phdClient = new PHDClient()
   }
 
   /**
