@@ -69,6 +69,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       ALWAYS_REDIRECT_TO_ALTRUISTS,
       REDIS_LOCAL_TTL_FACTOR,
       RATE_LIMITER_URL,
+      RATE_LIMITER_TOKEN,
       PHD_BASE_URL,
       PHD_API_KEY,
     }: // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -90,6 +91,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const alwaysRedirectToAltruists: boolean = ALWAYS_REDIRECT_TO_ALTRUISTS === 'true'
     const ttlFactor = parseFloat(REDIS_LOCAL_TTL_FACTOR) || 1
     const rateLimiterURL: string = RATE_LIMITER_URL || ''
+    const rateLimiterToken: string = RATE_LIMITER_TOKEN || ''
     const phdBaseURL: string = PHD_BASE_URL || ''
     const phdAPIKey: string = PHD_API_KEY || ''
 
@@ -114,6 +116,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('defaultLogLimitBlocks').to(defaultLogLimitBlocks)
     this.bind('alwaysRedirectToAltruists').to(alwaysRedirectToAltruists)
     this.bind('rateLimiterURL').to(rateLimiterURL)
+    this.bind('rateLimiterToken').to(rateLimiterToken)
 
     const redisPort: string = REDIS_PORT || ''
 

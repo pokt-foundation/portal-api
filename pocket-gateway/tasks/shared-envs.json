@@ -143,7 +143,11 @@
     },
     {
       "key": "RATE_LIMITER_URL",
-      "value": "https://rate-limiter.backend.pokt.network/v0/app-ids"
+      "value": "${{ secrets.RATE_LIMITER_URL }}"
+    },
+    {
+      "key": "RATE_LIMITER_TOKEN",
+      "value": "${{ secrets.RATE_LIMITER_TOKEN }}"
     }
   ]
 }

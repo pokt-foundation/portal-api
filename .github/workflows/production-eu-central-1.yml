@@ -64,7 +64,8 @@ jobs:
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
           envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}
-          envkey_RATE_LIMITER_URL: https://rate-limiter.backend.pokt.network/v0/app-ids
+          envkey_RATE_LIMITER_URL: ${{ secrets.RATE_LIMITER_URL }}
+          envkey_RATE_LIMITER_TOKEN: ${{ secrets.RATE_LIMITER_TOKEN }}
           envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.6iq570.clustercfg.euc1.cache.amazonaws.com
           envkey_REGION: 'eu-central-1'
           envkey_REGION_NAME: 'eu-central-1'

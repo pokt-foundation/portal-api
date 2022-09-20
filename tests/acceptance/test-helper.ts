@@ -35,6 +35,7 @@ export const DUMMY_ENV = {
   PHD_BASE_URL: 'https://phd.base.url',
   PHD_API_KEY: 'phd-api-key',
   RATE_LIMITER_URL: 'https://rate.limiter',
+  RATE_LIMITER_TOKEN: 'rate-limiter-token',
 }
 
 export async function setupApplication(pocket?: Relayer, envs?: object): Promise<AppWithClient> {
