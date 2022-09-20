@@ -16,7 +16,7 @@ import { MergeChecker } from '../services/merge-checker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
-import { checkWhitelist, shouldRateLimit } from '../utils/enforcements'
+import { checkWhitelist, RateLimiter, shouldRateLimit } from '../utils/enforcements'
 import { parseRawData, parseRPCID } from '../utils/parsing'
 import { getBlockchainAliasesByDomain, loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
@@ -68,6 +68,7 @@ export class V1Controller {
     @inject('alwaysRedirectToAltruists') private alwaysRedirectToAltruists: boolean,
     @inject('dispatchURL') private dispatchURL: string,
     @inject('rateLimiterURL') private rateLimiterURL: string,
+    @inject('rateLimiterToken') private rateLimiterToken: string,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -317,8 +318,13 @@ export class V1Controller {
         throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('No application found in the load balancer', -32055))
       }
 
+      const rateLimiter: RateLimiter = {
+        URL: this.rateLimiterURL,
+        token: this.rateLimiterToken,
+      }
+
       if (!gigastakeOptions.gigastaked) {
-        const shouldLimit = await shouldRateLimit(application.id, this.rateLimiterURL, this.cache)
+        const shouldLimit = await shouldRateLimit(application.id, rateLimiter, this.cache)
         if (shouldLimit) {
           logger.log(
             'warn',
@@ -450,7 +456,13 @@ export class V1Controller {
       const applicationID = application.id
       const applicationPublicKey = application.gatewayAAT.applicationPublicKey
 
-      const shouldLimit = await shouldRateLimit(applicationID, this.rateLimiterURL, this.cache)
+      const rateLimiter: RateLimiter = {
+        URL: this.rateLimiterURL,
+        token: this.rateLimiterToken,
+      }
+
+      const shouldLimit = await shouldRateLimit(applicationID, rateLimiter, this.cache)
+
       if (shouldLimit) {
         logger.log('warn', 'application relay count has exceeded the rate limit ' + applicationID, {
           requestID: this.requestID,
