@@ -323,21 +323,24 @@ export class V1Controller {
         token: this.rateLimiterToken,
       }
 
-      if (!gigastakeOptions.gigastaked) {
-        const shouldLimit = await shouldRateLimit(application.id, rateLimiter, this.cache)
-        if (shouldLimit) {
-          logger.log(
-            'warn',
-            'relay count on application associated with the endpoint has exceeded the rate limit ' + application.id,
-            {
-              requestID: this.requestID,
-              relayType: 'LB',
-              typeID: id,
-              serviceNode: '',
-              origin: this.origin,
-            }
-          )
-        }
+      // Rate limit original app for gigastake redirected endpoints
+      const rateLimitTargetApp = gigastakeOptions?.originalAppID ? gigastakeOptions?.originalAppID : application?.id
+
+      const shouldLimit = await shouldRateLimit(rateLimitTargetApp, rateLimiter, this.cache)
+
+      if (shouldLimit) {
+        logger.log(
+          'warn',
+          'relay count on application associated with the endpoint has exceeded the rate limit ' +
+            gigastakeOptions?.originalAppID,
+          {
+            requestID: this.requestID,
+            relayType: 'LB',
+            typeID: id,
+            serviceNode: '',
+            origin: this.origin,
+          }
+        )
       }
 
       if (gigastakeOptions?.gatewaySettings) {
