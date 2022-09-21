@@ -20,12 +20,12 @@ export function checkEnforcementJSON(test: string): boolean {
 }
 
 // Returns whether an application should be rate limited
-export async function shouldRateLimit(appID: string, rateLimiterURL: string, cache: Cache): Promise<boolean> {
+export async function shouldRateLimit(appID: string, rateLimiter: RateLimiter, cache: Cache): Promise<boolean> {
   if (appID.length === 0) {
     return false
   }
 
-  const limitedApps = await getRateLimitedApps(cache.local, rateLimiterURL)
+  const limitedApps = await getRateLimitedApps(cache.local, rateLimiter)
   if (limitedApps.length === 0) {
     return false
   }
@@ -79,6 +79,11 @@ export function checkSecretKey(application: Applications, secretKeyDetails: Secr
 export type SecretKeyDetails = {
   databaseEncryptionKey: string
   secretKey: string
+}
+
+export type RateLimiter = {
+  URL: string
+  token: string
 }
 
 export function isRelayError(payload: string): boolean {
