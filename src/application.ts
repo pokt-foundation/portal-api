@@ -140,7 +140,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     const localRedis = new Redis(localRedisConfig.port, localRedisConfig.host)
 
-    const cache = new Cache(remoteRedis as Redis, localRedis, ttlFactor)
+    const cache = new Cache(remoteRedis as Redis.Redis, localRedis, ttlFactor)
 
     this.bind('cache').to(cache)
 
@@ -151,7 +151,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     let rdsCertificate: string
 
     if (environment === 'production') {
-      rdsCertificate = await getRDSCertificate(remoteRedis as Redis, psqlCertificate)
+      rdsCertificate = await getRDSCertificate(remoteRedis as Redis.Redis, psqlCertificate)
     }
 
     const pgPool = new pg.Pool({
