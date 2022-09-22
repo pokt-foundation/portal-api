@@ -340,12 +340,12 @@ export class V1Controller {
             serviceNode: '',
             origin: this.origin,
           }
-          
-          return jsonrpc.error(
-            reqRPCID,
-            new jsonrpc.JsonRpcError('Rate limit exceeded. Please upgrade your plan.', -32068)
-          ) as ErrorObject
         )
+
+        return jsonrpc.error(
+          reqRPCID,
+          new jsonrpc.JsonRpcError('Rate limit exceeded. Please upgrade your plan.', -32068)
+        ) as ErrorObject
       }
 
       if (gigastakeOptions?.gatewaySettings) {
