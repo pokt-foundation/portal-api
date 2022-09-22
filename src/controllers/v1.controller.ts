@@ -330,9 +330,8 @@ export class V1Controller {
 
       if (shouldLimit) {
         logger.log(
-          'warn',
-          'relay count on application associated with the endpoint has exceeded the rate limit ' +
-            gigastakeOptions?.originalAppID,
+          'error',
+          'relay count on application associated with the endpoint has exceeded the rate limit ' + rateLimitTargetApp,
           {
             requestID: this.requestID,
             relayType: 'LB',
@@ -341,6 +340,11 @@ export class V1Controller {
             origin: this.origin,
           }
         )
+
+        return jsonrpc.error(
+          reqRPCID,
+          new jsonrpc.JsonRpcError('Rate limit exceeded. Please upgrade your plan.', -32068)
+        ) as ErrorObject
       }
 
       if (gigastakeOptions?.gatewaySettings) {
@@ -467,13 +471,18 @@ export class V1Controller {
       const shouldLimit = await shouldRateLimit(applicationID, rateLimiter, this.cache)
 
       if (shouldLimit) {
-        logger.log('warn', 'application relay count has exceeded the rate limit ' + applicationID, {
+        logger.log('error', 'application relay count has exceeded the rate limit ' + applicationID, {
           requestID: this.requestID,
           relayType: 'APP',
           typeID: id,
           serviceNode: '',
           origin: this.origin,
         })
+
+        return jsonrpc.error(
+          reqRPCID,
+          new jsonrpc.JsonRpcError('Rate limit exceeded. Please upgrade your plan.', -32068)
+        ) as ErrorObject
       }
 
       const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =
