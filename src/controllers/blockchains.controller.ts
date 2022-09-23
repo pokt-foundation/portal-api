@@ -102,7 +102,7 @@ export class BlockchainsController {
 
     blockchains.forEach(({ id, blockchainAliases, description }) => {
       aliases[description] = {
-        id: id,
+        id,
         prefix: blockchainAliases,
       }
     })
