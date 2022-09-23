@@ -35,7 +35,7 @@ describe('Blockchains controller (acceptance)', () => {
   })
 
   describe('/blockchains/count endpoint', () => {
-    it('retrieves the total count of blockchains from  from the Pocket HTTP DB', async () => {
+    it('retrieves the total count of blockchains from the Pocket HTTP DB', async () => {
       await generateBlockchains(5)
       const res = await client.get('/blockchains/count').expect(200)
       axiosMock
