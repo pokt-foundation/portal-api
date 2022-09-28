@@ -15,7 +15,7 @@ import { ChainChecker } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
 import { MergeChecker } from '../services/merge-checker'
 import { MetricsRecorder } from '../services/metrics-recorder'
-import { PHDClient } from '../services/phd-client'
+import { PHDClient, PHDPaths } from '../services/phd-client'
 import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
 import { checkWhitelist, RateLimiter, shouldRateLimit } from '../utils/enforcements'
@@ -687,7 +687,7 @@ export class V1Controller {
     if (!cachedLoadBalancer) {
       try {
         return await this.phdClient.findById({
-          path: 'load_balancer',
+          path: PHDPaths.LoadBalancer,
           id,
           model: LoadBalancers,
           cache: this.cache,
@@ -707,7 +707,7 @@ export class V1Controller {
     if (!cachedApplication) {
       try {
         return await this.phdClient.findById({
-          path: 'application',
+          path: PHDPaths.Application,
           id,
           model: Applications,
           cache: this.cache,

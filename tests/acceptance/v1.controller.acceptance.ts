@@ -188,14 +188,14 @@ const APPLICATIONS = [
 const LOAD_BALANCERS = [
   {
     id: 'gt4a1s9rfrebaf8g31bsdc04',
-    userID: 'test@test.com',
+    user: 'test@test.com',
     name: 'test load balancer',
     requestTimeout: '5000',
     applicationIDs: APPLICATIONS.map((app) => app.id),
   },
   {
     id: 'gt4a1s9rfrebaf8g31bsdc05',
-    userID: 'test@test.com',
+    user: 'test@test.com',
     name: 'test load balancer sticky rpc',
     requestTimeout: '5000',
     applicationIDs: APPLICATIONS.map((app) => app.id),
@@ -210,7 +210,7 @@ const LOAD_BALANCERS = [
   },
   {
     id: 'df9gjsjg43db9fsajfjg93fk',
-    userID: 'test@test.com',
+    user: 'test@test.com',
     name: 'test load balancer sticky prefix',
     requestTimeout: '5000',
     applicationIDs: APPLICATIONS.map((app) => app.id),
@@ -224,7 +224,7 @@ const LOAD_BALANCERS = [
   },
   {
     id: 'd8ejd7834ht9d9sj345gfsoa',
-    userID: 'test@test.com',
+    user: 'test@test.com',
     name: 'test load balancer sticky prefix with whitelist',
     requestTimeout: '5000',
     applicationIDs: APPLICATIONS.map((app) => app.id),
@@ -239,7 +239,7 @@ const LOAD_BALANCERS = [
   },
   {
     id: GIGASTAKE_LEADER_IDS.lb,
-    userID: 'test@test.com',
+    user: 'test@test.com',
     name: 'gigastaked lb - leader',
     requestTimeout: '5000',
     applicationIDs: [GIGASTAKE_LEADER_IDS.app],
@@ -254,7 +254,7 @@ const LOAD_BALANCERS = [
   },
   {
     id: GIGASTAKE_FOLLOWER_IDS.lb,
-    userID: 'test@test.com',
+    user: 'test@test.com',
     name: 'gigastaked lb - follower',
     requestTimeout: '5000',
     applicationIDs: [GIGASTAKE_FOLLOWER_IDS.app],
@@ -270,7 +270,7 @@ const LOAD_BALANCERS = [
   },
   {
     id: GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb,
-    userID: 'test@test.com',
+    user: 'test@test.com',
     name: 'gigastaked lb - follower',
     requestTimeout: '5000',
     applicationIDs: [GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.app],
@@ -286,7 +286,7 @@ const LOAD_BALANCERS = [
   },
   {
     id: RATE_LIMITED_LB_ID.lb,
-    userID: 'test@test.com',
+    user: 'test@test.com',
     name: 'rate limited lb',
     requestTimeout: '5000',
     applicationIDs: [RATE_LIMITED_LB_ID.app],

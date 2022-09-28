@@ -5,7 +5,7 @@ import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
 import { Blockchains } from '../models'
 import { BlockchainsRepository } from '../repositories'
 import { Cache } from '../services/cache'
-import { PHDClient } from '../services/phd-client'
+import { PHDClient, PHDPaths, PHDCacheKeys } from '../services/phd-client'
 import { SyncCheckOptions } from '../services/sync-checker'
 import { BlockchainDetails, CheckResult, BlockchainRedirect } from './types'
 
@@ -46,9 +46,10 @@ export async function loadBlockchain(
 
   if (!cachedBlockchains) {
     blockchains = await phdClient.find({
-      path: 'blockchain',
+      path: PHDPaths.Blockchain,
       model: Blockchains,
       cache,
+      cacheKey: 'blockchains',
       fallback: () => blockchainsRepository.find(),
     })
   } else {
@@ -154,9 +155,10 @@ export async function getBlockchainAliasesByDomain(
 
   if (!cachedBlockchains) {
     blockchains = await phdClient.find({
-      path: 'blockchain',
+      path: PHDPaths.Blockchain,
       model: Blockchains,
       cache: redis,
+      cacheKey: PHDCacheKeys.Blockchain,
       fallback: () => blockchainsRepository.find(),
     })
   } else {

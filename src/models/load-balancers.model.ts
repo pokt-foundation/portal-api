@@ -60,7 +60,7 @@ export class LoadBalancers extends Entity {
     type: 'string',
     required: true,
   })
-  userID: string
+  user: string
 
   @property({
     type: 'string',

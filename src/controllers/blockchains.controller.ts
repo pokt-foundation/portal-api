@@ -4,7 +4,7 @@ import { param, get, getModelSchemaRef } from '@loopback/rest'
 
 import { Blockchains } from '../models'
 import { BlockchainsRepository } from '../repositories'
-import { PHDClient } from '../services/phd-client'
+import { PHDClient, PHDPaths } from '../services/phd-client'
 
 export class BlockchainsController {
   constructor(
@@ -23,7 +23,7 @@ export class BlockchainsController {
   })
   async count(@param.where(Blockchains) where?: Where<Blockchains>): Promise<Count> {
     return this.phdClient.count({
-      path: 'blockchains',
+      path: PHDPaths.Blockchain,
       model: Blockchains,
       fallback: () => this.blockchainsRepository.count(where),
     })
@@ -46,7 +46,7 @@ export class BlockchainsController {
   })
   async find(@param.filter(Blockchains) filter?: Filter<Blockchains>): Promise<Blockchains[]> {
     return this.phdClient.find({
-      path: 'blockchain',
+      path: PHDPaths.Blockchain,
       model: Blockchains,
       fallback: () => this.blockchainsRepository.find(filter),
     })
@@ -70,7 +70,7 @@ export class BlockchainsController {
     filter?: FilterExcludingWhere<Blockchains>
   ): Promise<Blockchains> {
     return this.phdClient.findById({
-      path: 'blockchain',
+      path: PHDPaths.Blockchain,
       id,
       model: Blockchains,
       fallback: () => this.blockchainsRepository.findById(id, filter),
@@ -93,7 +93,7 @@ export class BlockchainsController {
   })
   async idsMapping(@param.filter(Blockchains) filter?: Filter<Blockchains>): Promise<object> {
     const blockchains = await this.phdClient.find({
-      path: 'blockchain',
+      path: PHDPaths.Blockchain,
       model: Blockchains,
       fallback: () => this.blockchainsRepository.find(filter),
     })

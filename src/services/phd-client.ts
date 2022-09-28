@@ -1,5 +1,4 @@
 import axios from 'axios'
-import 'dotenv/config'
 import { Count, DefaultCrudRepository, Entity } from '@loopback/repository'
 
 import { Applications, LoadBalancers, PocketAccount } from '../models'
@@ -46,6 +45,16 @@ interface PostgresGatewayAAT {
   version: string
 }
 
+export enum PHDPaths {
+  Application = 'application',
+  Blockchain = 'blockchain',
+  LoadBalancer = 'load_balancer',
+}
+
+export enum PHDCacheKeys {
+  Blockchain = 'blockchains',
+}
+
 /** The PHDClient fetches data from the Pocket HTTP DB, and falls back to fetching from the Loopback repositorites
  * (which connect to MongoDB) if the fetch fails or the returned data is missing required fields. */
 class PHDClient {
@@ -57,13 +66,11 @@ class PHDClient {
     this.apiKey = apiKey
   }
 
-  async find<T extends Entity>({
-    path,
-    model,
-    cache,
-    cacheKey = 'blockchains', // Currently .find only used to get blockchains
-    fallback,
-  }: FindParams<T>): Promise<T[]> {
+  async find<T extends Entity>({ path, model, cache, cacheKey, fallback }: FindParams<T>): Promise<T[]> {
+    if (cache && !cacheKey) {
+      throw new Error(`cacheKey not set for path ${path}`)
+    }
+
     const url = `${this.baseUrl}/${path}`
     const modelFields = this.getRequiredModelFields(model)
     const modelsData: T[] = []
