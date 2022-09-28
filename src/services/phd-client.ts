@@ -1,4 +1,5 @@
 import axios from 'axios'
+import 'dotenv/config'
 import { Count, DefaultCrudRepository, Entity } from '@loopback/repository'
 
 import { Applications, LoadBalancers, PocketAccount } from '../models'
