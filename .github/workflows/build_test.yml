@@ -40,10 +40,13 @@ jobs:
 
       - name: Running tests
         run: npm run test
+        env:
+          INTEGRATION_TEST: false
 
       - name: Running Pocket HTTP DB integration tests
         run: npm run test:integration
         env:
+          INTEGRATION_TEST: true
           PHD_BASE_URL: ${{ secrets.PHD_BASE_URL }}
           PHD_API_KEY: ${{ secrets.PHD_API_KEY }}
           MONGO_ENDPOINT: ${{ secrets.MONGO_ENDPOINT_DEV }}
