@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import os from 'os'
 import path from 'path'
 import process from 'process'
+import axios from 'axios'
 import Redis from 'ioredis'
 import pg from 'pg'
 import { BootMixin } from '@loopback/boot'
@@ -166,7 +167,18 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     // Bind PHD Client
     const phdClient = new PHDClient(phdBaseURL, phdAPIKey)
 
-    this.bind('phdClient').to(phdClient)
+    this.bind('phdClient').to(undefined)
+    if (phdClient) {
+      try {
+        await axios({
+          method: 'GET',
+          url: phdBaseURL,
+        })
+        this.bind('phdClient').to(phdClient)
+      } catch (error) {
+        logger.log('warn', 'Error on PHDClient health check: ' + error)
+      }
+    }
 
     // New metrics postgres for error recording
     const psqlConnection: string = PSQL_CONNECTION || ''
