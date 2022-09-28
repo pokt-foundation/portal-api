@@ -3,6 +3,7 @@ import { inject, lifeCycleObserver, LifeCycleObserver } from '@loopback/core'
 import { juggler } from '@loopback/repository'
 import { HttpErrors } from '@loopback/rest'
 
+// Only needed for running tests locally from a .env file
 if (process.env.INTEGRATION_TEST === 'true') {
   dotenv.config()
 }
