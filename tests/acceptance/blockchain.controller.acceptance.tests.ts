@@ -15,8 +15,9 @@ describe('Blockchains controller (acceptance)', () => {
   let axiosMock: MockAdapter
 
   before('setupApplication', async () => {
-    ;({ app, client } = await setupApplication())
     axiosMock = new MockAdapter(axios)
+    axiosMock.onGet('https://phd.base.url').reply(200)
+    ;({ app, client } = await setupApplication())
     blockchainRepository = new BlockchainsRepository(gatewayTestDB)
   })
 

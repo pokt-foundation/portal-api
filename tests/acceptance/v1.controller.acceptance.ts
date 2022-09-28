@@ -329,6 +329,8 @@ describe('V1 controller (acceptance)', () => {
     axiosMock.onGet('https://rate.limiter').reply(200, {
       applicationIDs: ['rateLimitedApp123'],
     })
+
+    axiosMock.onGet(process.env.PHD_BASE_URL).reply(200)
   })
 
   after(async () => {

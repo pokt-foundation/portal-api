@@ -29,6 +29,7 @@
     "pretest": "npm run clean && npm run build",
     "test": "lb-tsc && INTEGRATION_TEST=false SILENT_LOGGING=true MONGO_ENDPOINT=test POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' mocha --exit --recursive dist/tests",
     "test:integration": "lb-tsc && INTEGRATION_TEST=true POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' mocha --exit --recursive dist/tests -f \"Pocket HTTP DB Client\"",
+    "test:one": "lb-tsc && INTEGRATION_TEST=false SILENT_LOGGING=true MONGO_ENDPOINT=test POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' mocha --exit --recursive dist/tests -f",
     "test:file": "lb-tsc && MONGO_ENDPOINT=test POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' mocha --exit",
     "test:log": "lb-tsc && MONGO_ENDPOINT=test POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' mocha --exit --recursive dist/tests",
     "test:parallel": "lb-tsc && SILENT_LOGGING=true MONGO_ENDPOINT=test POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' mocha -p --exit --recursive dist/tests",

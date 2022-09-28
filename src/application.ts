@@ -170,10 +170,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('phdClient').to(undefined)
     if (phdClient) {
       try {
-        await axios({
-          method: 'GET',
-          url: phdBaseURL,
-        })
+        await axios({ method: 'GET', url: phdBaseURL })
+
         this.bind('phdClient').to(phdClient)
       } catch (error) {
         logger.log('warn', 'Error on PHDClient health check: ' + error)
