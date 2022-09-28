@@ -1,6 +1,11 @@
+import * as dotenv from 'dotenv'
 import { inject, lifeCycleObserver, LifeCycleObserver } from '@loopback/core'
 import { juggler } from '@loopback/repository'
 import { HttpErrors } from '@loopback/rest'
+
+if (process.env.INTEGRATION_TEST === 'true') {
+  dotenv.config()
+}
 
 // FIXME: on testing, the environment variable has to be set manually to a dummy
 // due to loopback loading data sources before any code from us, so

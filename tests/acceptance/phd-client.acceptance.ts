@@ -8,8 +8,6 @@ import { PHDClient, PHDPaths } from '../../src/services/phd-client'
 
 const logger = require('../../src/services/logger')
 
-dotenv.config({ path: '../../.env' })
-
 const blockchainRequiredFields = [
   'id',
   'ticker',
@@ -25,10 +23,11 @@ const blockchainRequiredFields = [
   'path',
   'altruist',
 ]
-const loadBalancerRequiredFields = ['userID', 'requestTimeout', 'applicationIDs']
+const loadBalancerRequiredFields = ['user', 'requestTimeout', 'applicationIDs']
 const applicationRequiredFields = ['id', 'freeTierApplicationAccount', 'gatewayAAT', 'gatewaySettings']
 
-describe('Pocket HTTP DB Client', () => {
+const integrationDescribe = process.env.INTEGRATION_TEST === 'true' ? describe : describe.skip
+integrationDescribe('Pocket HTTP DB Client', () => {
   let phdClient: PHDClient
 
   let blockchainsRepository: BlockchainsRepository
@@ -37,9 +36,8 @@ describe('Pocket HTTP DB Client', () => {
 
   let logSpy: sinon.SinonSpy
 
-  before('setupApplication', async () => {
-    dotenv.config({ path: '../../.env' })
-    console.log('IN TEST', process.env.MONGO_ENDPOINT)
+  before('setup', async () => {
+    dotenv.config()
     phdClient = new PHDClient(process.env.PHD_BASE_URL, process.env.PHD_API_KEY)
     const datasource = new GatewayDataSource()
     blockchainsRepository = new BlockchainsRepository(datasource)
@@ -47,8 +45,9 @@ describe('Pocket HTTP DB Client', () => {
     loadBalancersRepository = new LoadBalancersRepository(datasource)
   })
 
-  after('cleanupApplication', async () => {
+  after('cleanup', async () => {
     process.env.MONGO_ENDPOINT = 'test'
+    process.env.INTEGRATION_TEST = 'false'
   })
 
   beforeEach(() => {

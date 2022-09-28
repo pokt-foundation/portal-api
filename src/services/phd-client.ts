@@ -188,6 +188,11 @@ class PHDClient {
     document.applicationIDs = document.Applications.map(({ id: appID }) => appID)
     delete document.Applications
 
+    if (document.userID && !document.user) {
+      document.user = document.userID
+      delete document.userID
+    }
+
     return document
   }
 
