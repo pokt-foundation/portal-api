@@ -178,7 +178,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('pgPool').to(pgPool)
 
     // Influx DB
-    const influxBucket = 'mainnetRelay'
+    const influxBucket = environment === 'production' ? 'mainnetRelay' : 'mainnetRelayStaging'
     const writeOptions = { ...DEFAULT_WriteOptions, batchSize: 4000 }
 
     const influxClient = new InfluxDB({ url: influxURL, token: influxToken })
