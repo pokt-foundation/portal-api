@@ -9,7 +9,7 @@ import { ApplicationConfig } from '@loopback/core'
 import { RepositoryMixin } from '@loopback/repository'
 import { RestApplication, HttpErrors } from '@loopback/rest'
 import { ServiceMixin } from '@loopback/service-proxy'
-import { InfluxDB, DEFAULT_WriteOptions } from '@influxdata/influxdb-client'
+import { InfluxDB, DEFAULT_WriteOptions, WriteApi } from '@influxdata/influxdb-client'
 
 import AatPlans from './config/aat-plans.json'
 import { getPocketInstance } from './config/pocket-config'
@@ -69,6 +69,11 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       REDIS_LOCAL_TTL_FACTOR,
       RATE_LIMITER_URL,
       RATE_LIMITER_TOKEN,
+      // These arrays must have the same length and the index value on each array
+      // correspond to the same influx instance
+      SEC_INFLUX_URLS,
+      SEC_INFLUX_TOKENS,
+      SEC_INFLUX_ORGS,
     }: // eslint-disable-next-line @typescript-eslint/no-explicit-any
     any = await this.get('configuration.environment.values')
 
@@ -90,6 +95,9 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const rateLimiterURL: string = RATE_LIMITER_URL || ''
     const rateLimiterToken: string = RATE_LIMITER_TOKEN || ''
 
+    const secInfluxURLS = (SEC_INFLUX_URLS || '').split(',')
+    const secInfluxTokens = (SEC_INFLUX_TOKENS || '').split(',')
+    const secInfluxOrgs = (SEC_INFLUX_ORGS || '').split(',')
     if (aatPlan !== AatPlans.PREMIUM && !AatPlans.values.includes(aatPlan)) {
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
     }
@@ -170,11 +178,27 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('pgPool').to(pgPool)
 
     // Influx DB
-    const influxBucket = environment === 'production' ? 'mainnetRelay' : 'mainnetRelayStaging'
-    const influxClient = new InfluxDB({ url: influxURL, token: influxToken })
+    const influxBucket = 'mainnetRelay'
     const writeOptions = { ...DEFAULT_WriteOptions, batchSize: 4000 }
+
+    const influxClient = new InfluxDB({ url: influxURL, token: influxToken })
     const writeApi = influxClient.getWriteApi(influxOrg, influxBucket, 'ms', writeOptions)
     this.bind('influxWriteAPI').to(writeApi)
+
+    const influxSecondaryWriteAPIs: WriteApi[] = []
+
+    // TODO: Remove once influx tests are over
+    for (const idx in secInfluxURLS) {
+      influxSecondaryWriteAPIs.push(
+        new InfluxDB({ url: secInfluxURLS[idx], token: secInfluxTokens[idx] }).getWriteApi(
+          secInfluxOrgs[idx],
+          influxBucket,
+          'ms',
+          writeOptions
+        )
+      )
+    }
+    this.bind('influxSecondaryWriteAPIs').to(influxSecondaryWriteAPIs)
 
     // Create a UID for this process
     const parts = [os.hostname(), process.pid, +new Date()]

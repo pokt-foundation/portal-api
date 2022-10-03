@@ -64,6 +64,7 @@ export class V1Controller {
     @inject('aatPlan') private aatPlan: string,
     @inject('defaultLogLimitBlocks') private defaultLogLimitBlocks: number,
     @inject('influxWriteAPI') private influxWriteAPI: WriteApi,
+    @inject('influxSecondaryWriteAPIs') private influxSecondaryWriteAPIs: WriteApi[],
     @inject('archivalChains') private archivalChains: string[],
     @inject('alwaysRedirectToAltruists') private alwaysRedirectToAltruists: boolean,
     @inject('dispatchURL') private dispatchURL: string,
@@ -87,6 +88,7 @@ export class V1Controller {
       pgPool: this.pgPool,
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
+      influxSecondaryWriteAPIs: this.influxSecondaryWriteAPIs,
     })
     this.syncChecker = new SyncChecker(this.cache, this.metricsRecorder, this.defaultSyncAllowance, this.origin)
     this.chainChecker = new ChainChecker(this.cache, this.metricsRecorder, this.origin)
