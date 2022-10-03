@@ -65,6 +65,9 @@ jobs:
           envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}
           envkey_RATE_LIMITER_URL: ${{ secrets.RATE_LIMITER_URL }}
           envkey_RATE_LIMITER_TOKEN: ${{ secrets.RATE_LIMITER_TOKEN }}
+          envkey_SEC_INFLUX_URLS: ${{ secrets.SEC_INFLUX_URLS }}
+          envkey_SEC_INFLUX_TOKENS: ${{ secrets.SEC_INFLUX_TOKENS }}
+          envkey_SEC_INFLUX_ORGS: ${{ secrets.SEC_INFLUX_ORGS }}
           envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.thcgg8.clustercfg.eus1.cache.amazonaws.com
           envkey_REGION: 'eu-south-1'
           envkey_REGION_NAME: 'eu-south-1'

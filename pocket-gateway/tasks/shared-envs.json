@@ -145,5 +145,18 @@
       "key": "RATE_LIMITER_TOKEN",
       "value": "${{ secrets.RATE_LIMITER_TOKEN }}"
     }
+    ,
+    {
+      "key": "SEC_INFLUX_URLS",
+      "value": "${{ secrets.SEC_INFLUX_URLS }}"
+    },
+    {
+      "key": "SEC_INFLUX_TOKENS",
+      "value": "${{ secrets.SEC_INFLUX_TOKENS }}"
+    },
+    {
+      "key": "SEC_INFLUX_ORGS",
+      "value": "${{ secrets.SEC_INFLUX_ORGS }}"
+    }
   ]
 }
