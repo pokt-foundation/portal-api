@@ -15,33 +15,29 @@ const logger = require('../services/logger')
 
 export class MetricsRecorder {
   redis: Redis
-  influxWriteAPI: WriteApi
-  influxSecondaryWriteAPIs: WriteApi[]
+  influxWriteAPIs: WriteApi[]
   pgPool: PGPool
   cherryPicker: CherryPicker
   processUID: string
 
   constructor({
     redis,
-    influxWriteAPI,
+    influxWriteAPIs,
     pgPool,
     cherryPicker,
     processUID,
-    influxSecondaryWriteAPIs,
   }: {
     redis: Redis
-    influxWriteAPI: WriteApi
+    influxWriteAPIs: WriteApi[]
     pgPool: PGPool
     cherryPicker: CherryPicker
     processUID: string
-    influxSecondaryWriteAPIs?: WriteApi[]
   }) {
     this.redis = redis
-    this.influxWriteAPI = influxWriteAPI
+    this.influxWriteAPIs = influxWriteAPIs
     this.pgPool = pgPool
     this.cherryPicker = cherryPicker
     this.processUID = processUID
-    this.influxSecondaryWriteAPIs = influxSecondaryWriteAPIs ? influxSecondaryWriteAPIs : []
   }
 
   // Record relay metrics in redis then push to timescaleDB for analytics
@@ -199,21 +195,21 @@ export class MetricsRecorder {
         .floatField('elapsedTime', elapsedTime.toFixed(4))
         .timestamp(relayTimestamp)
 
-      this.influxWriteAPI.writePoint(pointRelay)
-
       const pointOrigin = new Point('origin')
         .tag('applicationPublicKey', applicationPublicKey)
         .stringField('origin', origin)
         .timestamp(relayTimestamp)
 
-      this.influxWriteAPI.writePoint(pointOrigin)
-
-      if (this.influxSecondaryWriteAPIs.length > 0) {
-        for (const influxWriteAPI of this.influxSecondaryWriteAPIs) {
-          influxWriteAPI.writePoint(pointRelay)
-          influxWriteAPI.writePoint(pointOrigin)
-        }
-      }
+      Promise.allSettled(this.influxWriteAPIs.map((api) => api.writePoint(pointRelay))).catch((err) => {
+        logger.log('error', `error writing to influx`, {
+          error: err,
+        })
+      })
+      Promise.allSettled(this.influxWriteAPIs.map((api) => api.writePoint(pointOrigin))).catch((err) => {
+        logger.log('error', `error writing to influx`, {
+          error: err,
+        })
+      })
 
       // Store errors in redis and every 10 seconds, push to postgres
       const redisErrorKey = 'errors-' + this.processUID
