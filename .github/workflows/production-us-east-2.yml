@@ -48,9 +48,6 @@ jobs:
           envkey_DEFAULT_LOG_LIMIT_BLOCKS: 10000
           envkey_AAT_PLAN: premium
           envkey_NODE_ENV: production
-          envkey_INFLUX_URL: https://influx.portal.pokt.network:8086
-          envkey_INFLUX_ORG: pocket
-          envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
           envkey_PSQL_CONNECTION: ${{ secrets.PSQL_CONNECTION }}
           envkey_PSQL_CERTIFICATE: https://s3.amazonaws.com/rds-downloads/rds-ca-2019-root.pem
           envkey_LOG_TO_CLOUDWATCH: false
@@ -65,9 +62,9 @@ jobs:
           envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}
           envkey_RATE_LIMITER_URL: ${{ secrets.RATE_LIMITER_URL }}
           envkey_RATE_LIMITER_TOKEN: ${{ secrets.RATE_LIMITER_TOKEN }}
-          envkey_SEC_INFLUX_URLS: ${{ secrets.SEC_INFLUX_URLS }}
-          envkey_SEC_INFLUX_TOKENS: ${{ secrets.SEC_INFLUX_TOKENS }}
-          envkey_SEC_INFLUX_ORGS: ${{ secrets.SEC_INFLUX_ORGS }}
+          envkey_INFLUX_URLS: ${{ secrets.INFLUX_URLS }}
+          envkey_INFLUX_TOKENS: ${{ secrets.INFLUX_TOKENS }}
+          envkey_INFLUX_ORGS: ${{ secrets.INFLUX_ORGS }}
           envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.pzdhdc.clustercfg.use2.cache.amazonaws.com
           envkey_REGION: 'us-east-2'
           envkey_REGION_NAME: 'us-east-2'
