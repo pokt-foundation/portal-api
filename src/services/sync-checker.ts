@@ -24,12 +24,20 @@ export class SyncChecker {
   defaultSyncAllowance: number
   origin: string
   sessionErrors: number
+  region: string
 
-  constructor(cache: Cache, metricsRecorder: MetricsRecorder, defaultSyncAllowance: number, origin: string) {
+  constructor(
+    cache: Cache,
+    metricsRecorder: MetricsRecorder,
+    defaultSyncAllowance: number,
+    origin: string,
+    region: string
+  ) {
     this.cache = cache
     this.metricsRecorder = metricsRecorder
     this.defaultSyncAllowance = defaultSyncAllowance
     this.origin = origin
+    this.region = region
     this.sessionErrors = 0
   }
 
@@ -451,6 +459,7 @@ export class SyncChecker {
         path: syncCheckOptions.path,
         node,
         method: '',
+        headers: { region: this.region },
         pocketAAT,
         session,
         options: {

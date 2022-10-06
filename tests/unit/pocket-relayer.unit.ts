@@ -150,14 +150,15 @@ describe('Pocket relayer service (unit)', () => {
   let logSpy: sinon.SinonSpy
 
   const origin = 'unit-test'
+  const region = 'us-east-1'
 
   before('initialize variables', async () => {
     cache = new Cache(new Redis(0, ''), new Redis(1, ''))
     cherryPicker = new CherryPicker({ redis: cache.remote, checkDebug: false })
     metricsRecorder = metricsRecorderMock(cache.remote, cherryPicker)
-    chainChecker = new ChainChecker(cache, metricsRecorder, origin)
-    syncChecker = new SyncChecker(cache, metricsRecorder, 5, origin)
-    mergeChecker = new MergeChecker(cache, metricsRecorder, origin)
+    chainChecker = new ChainChecker(cache, metricsRecorder, origin, region)
+    syncChecker = new SyncChecker(cache, metricsRecorder, 5, origin, region)
+    mergeChecker = new MergeChecker(cache, metricsRecorder, origin, region)
     blockchainRepository = new BlockchainsRepository(gatewayTestDB)
 
     pocketMock = new PocketMock()

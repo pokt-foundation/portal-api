@@ -31,11 +31,13 @@ export class MergeChecker {
   metricsRecorder: MetricsRecorder
   origin: string
   sessionErrors: number
+  region: string
 
-  constructor(cache: Cache, metricsRecorder: MetricsRecorder, origin: string) {
+  constructor(cache: Cache, metricsRecorder: MetricsRecorder, origin: string, region: string) {
     this.cache = cache
     this.metricsRecorder = metricsRecorder
     this.origin = origin
+    this.region = region
   }
 
   async mergeStatusFilter({
@@ -288,6 +290,7 @@ export class MergeChecker {
         blockchain: blockchainID,
         data: MERGE_CHECK_PAYLOAD,
         method: '',
+        headers: { region: this.region },
         path,
         node,
         pocketAAT,

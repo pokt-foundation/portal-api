@@ -48,6 +48,7 @@ export class V1Controller {
     @inject('secretKey') private secretKey: string,
     @inject('host') private host: string,
     @inject('origin') private origin: string,
+    @inject('region') private region: string,
     @inject('userAgent') private userAgent: string,
     @inject('contentType') private contentType: string,
     @inject('ipAddress') private ipAddress: string,
@@ -88,9 +89,15 @@ export class V1Controller {
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
     })
-    this.syncChecker = new SyncChecker(this.cache, this.metricsRecorder, this.defaultSyncAllowance, this.origin)
-    this.chainChecker = new ChainChecker(this.cache, this.metricsRecorder, this.origin)
-    this.mergeChecker = new MergeChecker(this.cache, this.metricsRecorder, this.origin)
+    this.syncChecker = new SyncChecker(
+      this.cache,
+      this.metricsRecorder,
+      this.defaultSyncAllowance,
+      this.origin,
+      this.region
+    )
+    this.chainChecker = new ChainChecker(this.cache, this.metricsRecorder, this.origin, this.region)
+    this.mergeChecker = new MergeChecker(this.cache, this.metricsRecorder, this.origin, this.region)
     this.pocketRelayer = new PocketRelayer({
       host: this.host,
       origin: this.origin,
@@ -355,6 +362,7 @@ export class V1Controller {
         rawData,
         relayPath: this.relayPath,
         httpMethod: this.httpMethod,
+        headers: { region: this.region },
         application,
         requestID: this.requestID,
         requestTimeOut: parseInt(loadBalancer.requestTimeOut),
@@ -509,6 +517,7 @@ export class V1Controller {
         application,
         relayPath: this.relayPath,
         httpMethod: this.httpMethod,
+        headers: { region: this.region },
         requestID: this.requestID,
         stickinessOptions: {
           stickiness,

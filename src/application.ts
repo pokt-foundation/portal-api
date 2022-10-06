@@ -69,6 +69,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       REDIS_LOCAL_TTL_FACTOR,
       RATE_LIMITER_URL,
       RATE_LIMITER_TOKEN,
+      REGION,
     }: // eslint-disable-next-line @typescript-eslint/no-explicit-any
     any = await this.get('configuration.environment.values')
 
@@ -89,6 +90,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const ttlFactor = parseFloat(REDIS_LOCAL_TTL_FACTOR) || 1
     const rateLimiterURL: string = RATE_LIMITER_URL || ''
     const rateLimiterToken: string = RATE_LIMITER_TOKEN || ''
+    const region: string = REGION || ''
 
     if (aatPlan !== AatPlans.PREMIUM && !AatPlans.values.includes(aatPlan)) {
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
@@ -112,6 +114,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('alwaysRedirectToAltruists').to(alwaysRedirectToAltruists)
     this.bind('rateLimiterURL').to(rateLimiterURL)
     this.bind('rateLimiterToken').to(rateLimiterToken)
+    this.bind('region').to(region)
 
     const redisPort: string = REDIS_PORT || ''
 

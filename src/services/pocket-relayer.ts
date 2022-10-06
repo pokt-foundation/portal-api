@@ -1,5 +1,5 @@
 import { EvidenceSealedError, Relayer } from '@pokt-foundation/pocketjs-relayer'
-import { Session, Node, PocketAAT, HTTPMethod } from '@pokt-foundation/pocketjs-types'
+import { Session, Node, PocketAAT, HTTPMethod, RelayHeaders } from '@pokt-foundation/pocketjs-types'
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
 import AatPlans from '../config/aat-plans.json'
@@ -34,6 +34,7 @@ const logger = require('../services/logger')
 export class PocketRelayer {
   host: string
   origin: string
+  headers?: RelayHeaders
   userAgent: string
   ipAddress: string
   relayer: Relayer
@@ -57,6 +58,7 @@ export class PocketRelayer {
   constructor({
     host,
     origin,
+    headers = {},
     userAgent,
     ipAddress,
     relayer,
@@ -78,6 +80,7 @@ export class PocketRelayer {
   }: {
     host: string
     origin: string
+    headers?: RelayHeaders
     userAgent: string
     ipAddress: string
     relayer: Relayer
@@ -99,6 +102,7 @@ export class PocketRelayer {
   }) {
     this.host = host
     this.origin = origin
+    this.headers = headers
     this.userAgent = userAgent
     this.ipAddress = ipAddress
     this.relayer = relayer
@@ -881,6 +885,7 @@ export class PocketRelayer {
         blockchain: blockchainID,
         data,
         method: '',
+        headers: this.headers,
         node,
         path: relayPath,
         pocketAAT,
