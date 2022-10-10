@@ -63,7 +63,7 @@ export class V1Controller {
     @inject('defaultSyncAllowance') private defaultSyncAllowance: number,
     @inject('aatPlan') private aatPlan: string,
     @inject('defaultLogLimitBlocks') private defaultLogLimitBlocks: number,
-    @inject('influxWriteAPI') private influxWriteAPI: WriteApi,
+    @inject('influxWriteAPIs') private influxWriteAPIs: WriteApi[],
     @inject('archivalChains') private archivalChains: string[],
     @inject('alwaysRedirectToAltruists') private alwaysRedirectToAltruists: boolean,
     @inject('dispatchURL') private dispatchURL: string,
@@ -83,7 +83,7 @@ export class V1Controller {
     })
     this.metricsRecorder = new MetricsRecorder({
       redis: this.cache.remote,
-      influxWriteAPI: this.influxWriteAPI,
+      influxWriteAPIs: this.influxWriteAPIs,
       pgPool: this.pgPool,
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
