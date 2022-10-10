@@ -32,9 +32,9 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'DEFAULT_SYNC_ALLOWANCE',
     'DEFAULT_LOG_LIMIT_BLOCKS',
     'AAT_PLAN',
-    'INFLUX_URL',
-    'INFLUX_TOKEN',
-    'INFLUX_ORG',
+    'INFLUX_URLS',
+    'INFLUX_TOKENS',
+    'INFLUX_ORGS',
     'ARCHIVAL_CHAINS',
     'BLOCKED_ADDRESSES_URL',
     // Not required in code, but must be present in .env

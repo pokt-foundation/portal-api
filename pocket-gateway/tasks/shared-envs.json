@@ -77,18 +77,6 @@
       "value": "production"
     },
     {
-      "key": "INFLUX_URL",
-      "value": "https://influx.portal.pokt.network:8086"
-    },
-    {
-      "key": "INFLUX_ORG",
-      "value": "pocket"
-    },
-    {
-      "key": "INFLUX_TOKEN",
-      "value": "${{ secrets.INFLUX_TOKEN }}"
-    },
-    {
       "key": "PSQL_CONNECTION",
       "value": "${{ secrets.PSQL_CONNECTION }}"
     },
@@ -144,6 +132,19 @@
     {
       "key": "RATE_LIMITER_TOKEN",
       "value": "${{ secrets.RATE_LIMITER_TOKEN }}"
+    }
+    ,
+    {
+      "key": "INFLUX_URLS",
+      "value": "${{ secrets.INFLUX_URLS }}"
+    },
+    {
+      "key": "INFLUX_TOKENS",
+      "value": "${{ secrets.INFLUX_TOKENS }}"
+    },
+    {
+      "key": "INFLUX_ORGS",
+      "value": "${{ secrets.INFLUX_ORGS }}"
     }
   ]
 }
