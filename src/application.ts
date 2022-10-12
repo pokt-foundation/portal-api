@@ -71,6 +71,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       REDIS_LOCAL_TTL_FACTOR,
       RATE_LIMITER_URL,
       RATE_LIMITER_TOKEN,
+      PUBLIC_RPC_ETH_ADDRESS,
     }: // eslint-disable-next-line @typescript-eslint/no-explicit-any
     any = await this.get('configuration.environment.values')
 
@@ -88,6 +89,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const ttlFactor = parseFloat(REDIS_LOCAL_TTL_FACTOR) || 1
     const rateLimiterURL: string = RATE_LIMITER_URL || ''
     const rateLimiterToken: string = RATE_LIMITER_TOKEN || ''
+    const publicRPCEthAddress: string = PUBLIC_RPC_ETH_ADDRESS || ''
 
     const influxURLs = (INFLUX_URLS || '').split(',')
     const influxTokens = (INFLUX_TOKENS || '').split(',')
@@ -114,6 +116,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('alwaysRedirectToAltruists').to(alwaysRedirectToAltruists)
     this.bind('rateLimiterURL').to(rateLimiterURL)
     this.bind('rateLimiterToken').to(rateLimiterToken)
+    this.bind('publicRPCEthAddress').to(publicRPCEthAddress)
 
     const redisPort: string = REDIS_PORT || ''
 

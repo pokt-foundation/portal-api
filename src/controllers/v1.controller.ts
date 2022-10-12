@@ -77,6 +77,7 @@ export class V1Controller {
     @inject('dispatchURL') private dispatchURL: string,
     @inject('rateLimiterURL') private rateLimiterURL: string,
     @inject('rateLimiterToken') private rateLimiterToken: string,
+    @inject('publicRPCEthAddress') private publicRPCEthAddress: string,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -242,7 +243,7 @@ export class V1Controller {
 
       // MEV: Where should this actually live???
       if (blockchainRequest.toLowerCase() === 'eth-rpc' && isEthSendMethod(parsedRawData)) {
-        const BEVResponse = await handleBEVRequest(this.requestID, parsedRawData)
+        const BEVResponse = await handleBEVRequest(this.requestID, parsedRawData, this.publicRPCEthAddress)
         if (BEVResponse) {
           return JSON.stringify({ jsonrpc: '2.0', id: reqRPCID, result: BEVResponse })
         }

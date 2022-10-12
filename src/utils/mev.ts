@@ -55,9 +55,9 @@ export async function submitBevRequest(requestId, txRawData, bundleHash) {
   return false
 }
 
-export async function handleBEVRequest(id, parsedRawData) {
+export async function handleBEVRequest(id, parsedRawData, address) {
   // store address in Github secrets
-  const checkBevResult = await checkBevRequest(id, parsedRawData, '0xb4a70626bde821df5101af2d0f8b080df681f448')
+  const checkBevResult = await checkBevRequest(id, parsedRawData, address)
   logger.log('Check BEV result:', checkBevResult)
 
   if (!checkBevResult) {
