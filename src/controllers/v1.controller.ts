@@ -1,5 +1,6 @@
 import { Relayer } from '@pokt-foundation/pocketjs-relayer'
 import { HTTPMethod } from '@pokt-foundation/pocketjs-types'
+import { ethers } from 'ethers'
 import jsonrpc, { ErrorObject, JsonRpcError } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
@@ -17,6 +18,13 @@ import { MetricsRecorder } from '../services/metrics-recorder'
 import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
 import { checkWhitelist, RateLimiter, shouldRateLimit } from '../utils/enforcements'
+import {
+  checkAndSubmitBevRequest,
+  checkBevRequest,
+  handleBEVRequest,
+  isEthSendMethod,
+  submitBevRequest,
+} from '../utils/mev'
 import { parseRawData, parseRPCID } from '../utils/parsing'
 import { getBlockchainAliasesByDomain, loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
@@ -229,6 +237,16 @@ export class V1Controller {
       const parsedRawData = parseRawData(rawData)
 
       reqRPCID = parseRPCID(parsedRawData)
+
+      const [blockchainRequest] = this.host.split('.')
+
+      // MEV: Where should this actually live???
+      if (blockchainRequest.toLowerCase() === 'eth-rpc' && isEthSendMethod(parsedRawData)) {
+        const BEVResponse = await handleBEVRequest(this.requestID, parsedRawData)
+        if (BEVResponse) {
+          return JSON.stringify({ jsonrpc: '2.0', id: reqRPCID, result: BEVResponse })
+        }
+      }
 
       let loadBalancer = await this.fetchLoadBalancer(id, filter)
 
