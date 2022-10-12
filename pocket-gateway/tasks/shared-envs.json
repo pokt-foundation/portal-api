@@ -145,6 +145,10 @@
     {
       "key": "INFLUX_ORGS",
       "value": "${{ secrets.INFLUX_ORGS }}"
+    },
+    {
+      "key": "PUBLIC_RPC_ETH_ADDRESS",
+      "value": "${{ secrets.PUBLIC_RPC_ETH_ADDRESS }}"
     }
   ]
 }

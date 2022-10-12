@@ -18,13 +18,7 @@ import { MetricsRecorder } from '../services/metrics-recorder'
 import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
 import { checkWhitelist, RateLimiter, shouldRateLimit } from '../utils/enforcements'
-import {
-  checkAndSubmitBevRequest,
-  checkBevRequest,
-  handleBEVRequest,
-  isEthSendMethod,
-  submitBevRequest,
-} from '../utils/mev'
+import { handleBEVRequest, isEthSendMethod } from '../utils/mev'
 import { parseRawData, parseRPCID } from '../utils/parsing'
 import { getBlockchainAliasesByDomain, loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'

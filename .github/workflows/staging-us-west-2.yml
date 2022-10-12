@@ -65,6 +65,7 @@ jobs:
           envkey_INFLUX_URLS: ${{ secrets.INFLUX_URLS }}
           envkey_INFLUX_TOKENS: ${{ secrets.INFLUX_TOKENS }}
           envkey_INFLUX_ORGS: ${{ secrets.INFLUX_ORGS }}
+          envkey_PUBLIC_RPC_ETH_ADDRESS: ${{ secrets.PUBLIC_RPC_ETH_ADDRESS }}
           envkey_REMOTE_REDIS_ENDPOINT: gateway-staging-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REGION: 'us-west-2'
           envkey_REGION_NAME: 'staging'
