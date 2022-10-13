@@ -15,26 +15,26 @@ const logger = require('../services/logger')
 
 export class MetricsRecorder {
   redis: Redis
-  influxWriteAPI: WriteApi
+  influxWriteAPIs: WriteApi[]
   pgPool: PGPool
   cherryPicker: CherryPicker
   processUID: string
 
   constructor({
     redis,
-    influxWriteAPI,
+    influxWriteAPIs,
     pgPool,
     cherryPicker,
     processUID,
   }: {
     redis: Redis
-    influxWriteAPI: WriteApi
+    influxWriteAPIs: WriteApi[]
     pgPool: PGPool
     cherryPicker: CherryPicker
     processUID: string
   }) {
     this.redis = redis
-    this.influxWriteAPI = influxWriteAPI
+    this.influxWriteAPIs = influxWriteAPIs
     this.pgPool = pgPool
     this.cherryPicker = cherryPicker
     this.processUID = processUID
@@ -195,14 +195,21 @@ export class MetricsRecorder {
         .floatField('elapsedTime', elapsedTime.toFixed(4))
         .timestamp(relayTimestamp)
 
-      this.influxWriteAPI.writePoint(pointRelay)
-
       const pointOrigin = new Point('origin')
         .tag('applicationPublicKey', applicationPublicKey)
         .stringField('origin', origin)
         .timestamp(relayTimestamp)
 
-      this.influxWriteAPI.writePoint(pointOrigin)
+      Promise.allSettled(this.influxWriteAPIs.map((api) => api.writePoint(pointRelay))).catch((err) => {
+        logger.log('error', `error writing to influx`, {
+          error: err,
+        })
+      })
+      Promise.allSettled(this.influxWriteAPIs.map((api) => api.writePoint(pointOrigin))).catch((err) => {
+        logger.log('error', `error writing to influx`, {
+          error: err,
+        })
+      })
 
       // Store errors in redis and every 10 seconds, push to postgres
       const redisErrorKey = 'errors-' + this.processUID

@@ -3,7 +3,7 @@ import { parseMethod } from '../parsing'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function extractContractAddress(rawData: Record<string, any>): { fromAddress: string; toAddress: string } {
-  const params = rawData.params
+  const params = rawData.params !== undefined ? rawData.params : {}
   const method = parseMethod(rawData)
 
   switch (method) {

@@ -9,7 +9,7 @@ import { ApplicationConfig } from '@loopback/core'
 import { RepositoryMixin } from '@loopback/repository'
 import { RestApplication, HttpErrors } from '@loopback/rest'
 import { ServiceMixin } from '@loopback/service-proxy'
-import { InfluxDB } from '@influxdata/influxdb-client'
+import { InfluxDB, DEFAULT_WriteOptions, WriteApi } from '@influxdata/influxdb-client'
 
 import AatPlans from './config/aat-plans.json'
 import { getPocketInstance } from './config/pocket-config'
@@ -61,13 +61,18 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       DEFAULT_SYNC_ALLOWANCE,
       DEFAULT_LOG_LIMIT_BLOCKS,
       AAT_PLAN,
-      INFLUX_URL,
-      INFLUX_TOKEN,
-      INFLUX_ORG,
+      // These arrays must have the same length and the index value on each array
+      // correspond to the same influx instance
+      INFLUX_URLS,
+      INFLUX_TOKENS,
+      INFLUX_ORGS,
       ARCHIVAL_CHAINS,
       ALWAYS_REDIRECT_TO_ALTRUISTS,
       REDIS_LOCAL_TTL_FACTOR,
-    } = await this.get('configuration.environment.values')
+      RATE_LIMITER_URL,
+      RATE_LIMITER_TOKEN,
+    }: // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any = await this.get('configuration.environment.values')
 
     const environment: string = NODE_ENV || 'production'
     const dispatchURL: string = DISPATCH_URL || ''
@@ -78,13 +83,15 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const defaultSyncAllowance: number = parseInt(DEFAULT_SYNC_ALLOWANCE) || -1
     const defaultLogLimitBlocks: number = parseInt(DEFAULT_LOG_LIMIT_BLOCKS) || 10000
     const aatPlan = AAT_PLAN || AatPlans.PREMIUM
-    const influxURL: string = INFLUX_URL || ''
-    const influxToken: string = INFLUX_TOKEN || ''
-    const influxOrg: string = INFLUX_ORG || ''
     const archivalChains: string[] = (ARCHIVAL_CHAINS || '').replace(' ', '').split(',')
     const alwaysRedirectToAltruists: boolean = ALWAYS_REDIRECT_TO_ALTRUISTS === 'true'
     const ttlFactor = parseFloat(REDIS_LOCAL_TTL_FACTOR) || 1
+    const rateLimiterURL: string = RATE_LIMITER_URL || ''
+    const rateLimiterToken: string = RATE_LIMITER_TOKEN || ''
 
+    const influxURLs = (INFLUX_URLS || '').split(',')
+    const influxTokens = (INFLUX_TOKENS || '').split(',')
+    const influxOrgs = (INFLUX_ORGS || '').split(',')
     if (aatPlan !== AatPlans.PREMIUM && !AatPlans.values.includes(aatPlan)) {
       throw new HttpErrors.InternalServerError('Unrecognized AAT Plan')
     }
@@ -105,6 +112,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('defaultSyncAllowance').to(defaultSyncAllowance)
     this.bind('defaultLogLimitBlocks').to(defaultLogLimitBlocks)
     this.bind('alwaysRedirectToAltruists').to(alwaysRedirectToAltruists)
+    this.bind('rateLimiterURL').to(rateLimiterURL)
+    this.bind('rateLimiterToken').to(rateLimiterToken)
 
     const redisPort: string = REDIS_PORT || ''
 
@@ -164,10 +173,20 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
 
     // Influx DB
     const influxBucket = environment === 'production' ? 'mainnetRelay' : 'mainnetRelayStaging'
-    const influxClient = new InfluxDB({ url: influxURL, token: influxToken })
-    const writeApi = influxClient.getWriteApi(influxOrg, influxBucket)
-
-    this.bind('influxWriteAPI').to(writeApi)
+    const writeOptions = { ...DEFAULT_WriteOptions, batchSize: 4000 }
+    const influxWriteAPIs: WriteApi[] = []
+    // TODO: Remove once influx tests are over
+    for (const idx in influxURLs) {
+      influxWriteAPIs.push(
+        new InfluxDB({ url: influxURLs[idx], token: influxTokens[idx] }).getWriteApi(
+          influxOrgs[idx],
+          influxBucket,
+          'ms',
+          writeOptions
+        )
+      )
+    }
+    this.bind('influxWriteAPIs').to(influxWriteAPIs)
 
     // Create a UID for this process
     const parts = [os.hostname(), process.pid, +new Date()]
