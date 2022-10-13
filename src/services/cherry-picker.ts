@@ -283,8 +283,8 @@ export class CherryPicker {
         results: results,
         medianSuccessLatency: elapsedTime.toFixed(5),
         weightedSuccessLatency: elapsedTime.toFixed(5),
-        sessionKey: session?.key,
-        sessionHeight: session?.header?.sessionBlockHeight,
+        sessionKey: session.key,
+        sessionHeight: session.header.sessionBlockHeight,
         metadata: {
           p90: bucketedServiceQuality.p90,
           attempts: 1,
