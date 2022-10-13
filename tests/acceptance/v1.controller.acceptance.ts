@@ -1982,5 +1982,38 @@ describe('V1 controller (acceptance)', () => {
       expect(response.body).to.have.property('error')
       expect(response.body.error.message).to.startWith('Restricted endpoint: contract address not allowed')
     })
+
+    it('invokes GET /v1/{appId} and successfully relays a request only through the altruist', async () => {
+      const pocket = pocketMock.object()
+      const logSpy = sinon.spy(logger, 'log')
+
+      ;({ app, client } = await setupApplication(pocket, { ALTRUIST_ONLY_CHAINS: '0041' }))
+
+      const response = await client
+        .post('/v1/sd9fj31d714kgos42e68f9gh')
+        .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+
+      const expectedAltruistLog = logSpy.calledWith(
+        'info',
+        sinon.match((arg: string) => arg.startsWith('SUCCESS FALLBACK RELAYING 0041'))
+      )
+
+      expect(expectedAltruistLog).to.be.true()
+
+      // No session is being dispatched, hence is only being called through the altruist
+      const notExpectedLog = logSpy.calledWith(
+        'info',
+        sinon.match((arg: string) => arg.startsWith('success dispatcher call to obtain session'))
+      )
+
+      expect(notExpectedLog).to.be.false()
+    })
   })
 })
