@@ -230,8 +230,9 @@ export class PocketRelayer {
 
     const fallbackAvailable = blockchainAltruist ? true : false
 
+    const notForceFallback = !this.altruistOnlyChains.includes(blockchainID) && !this.alwaysRedirectToAltruists
     try {
-      if (!this.altruistOnlyChains.includes(blockchainID) && !this.alwaysRedirectToAltruists) {
+      if (notForceFallback) {
         // Retries if applicable
         for (let x = 0; x <= this.relayRetries; x++) {
           const relayStart = process.hrtime()
@@ -491,6 +492,7 @@ export class PocketRelayer {
               data,
               session: this.session,
               gigastakeAppID: applicationID !== application.id ? application.id : undefined,
+              forcedFallback: !notForceFallback,
             })
             .catch(function log(e) {
               logger.log('error', 'Error recording metrics: ' + e, {
@@ -511,6 +513,7 @@ export class PocketRelayer {
             serviceNode: 'fallback:' + redactedAltruistURL,
             blockchainID,
             origin: this.origin,
+            forcedFallback: !notForceFallback,
           })
         }
       } catch (e) {
@@ -522,6 +525,7 @@ export class PocketRelayer {
           serviceNode: 'fallback:' + redactedAltruistURL,
           blockchainID,
           origin: this.origin,
+          forcedFallback: !notForceFallback,
         })
       }
     }

@@ -1983,7 +1983,8 @@ describe('V1 controller (acceptance)', () => {
       expect(response.body.error.message).to.startWith('Restricted endpoint: contract address not allowed')
     })
 
-    it('invokes POST /v1/{appId} and successfully relays a request only through the altruist', async () => {
+    // eslint-disable-next-line mocha/no-exclusive-tests
+    it.only('invokes POST /v1/{appId} and successfully relays a request only through the altruist', async () => {
       const pocket = pocketMock.object()
       const logSpy = sinon.spy(logger, 'log')
 
@@ -2002,7 +2003,8 @@ describe('V1 controller (acceptance)', () => {
 
       const expectedAltruistLog = logSpy.calledWith(
         'info',
-        sinon.match((arg: string) => arg.startsWith('SUCCESS FALLBACK RELAYING 0041'))
+        sinon.match((arg: string) => arg.startsWith('SUCCESS FALLBACK RELAYING 0041')),
+        sinon.match((log: object) => log['forcedFallback'] === true)
       )
 
       expect(expectedAltruistLog).to.be.true()
