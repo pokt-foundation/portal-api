@@ -266,7 +266,7 @@ export class CherryPicker {
           p90: bucketedServiceQuality.p90,
           attempts: unsortedLog.attempts,
           successRate: unsortedLog.successRate,
-          applicationPublicKey: session?.header?.applicationPubKey,
+          applicationPublicKey: session.header.applicationPubKey,
         }
       } else {
         await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, session)
@@ -289,7 +289,7 @@ export class CherryPicker {
           p90: bucketedServiceQuality.p90,
           attempts: 1,
           successRate: unsortedLog.successRate,
-          applicationPublicKey: session?.header?.applicationPubKey,
+          applicationPublicKey: session.header.applicationPubKey,
         },
       }
     }
