@@ -65,6 +65,7 @@ jobs:
           envkey_INFLUX_URLS: ${{ secrets.INFLUX_URLS }}
           envkey_INFLUX_TOKENS: ${{ secrets.INFLUX_TOKENS }}
           envkey_INFLUX_ORGS: ${{ secrets.INFLUX_ORGS }}
+          envkey_ALTRUIST_ONLY_CHAINS: ${{ secrets.ALTRUIST_ONLY_CHAINS }}
           envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.dj2dgc.clustercfg.euw1.cache.amazonaws.com
           envkey_REGION: 'eu-west-1'
           envkey_REGION_NAME: 'eu-west-1'

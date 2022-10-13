@@ -145,6 +145,10 @@
     {
       "key": "INFLUX_ORGS",
       "value": "${{ secrets.INFLUX_ORGS }}"
+    },
+    {
+      "key": "ALTRUIST_ONLY_CHAINS",
+      "value": "${{ secrets.ALTRUIST_ONLY_CHAINS }}"
     }
   ]
 }
