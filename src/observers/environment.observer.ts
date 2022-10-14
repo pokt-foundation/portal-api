@@ -43,6 +43,7 @@ export class EnvironmentObserver implements LifeCycleObserver {
 
   private static optionalEnvVars: string[] = [
     'ALWAYS_REDIRECT_TO_ALTRUISTS',
+    'ALTRUIST_ONLY_CHAINS',
     'REDIS_LOCAL_TTL_FACTOR',
     'RATE_LIMITER_URL',
     'RATE_LIMITER_TOKEN',

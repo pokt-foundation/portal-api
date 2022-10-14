@@ -6,7 +6,7 @@ name: Terraform Production Deployment us-east-2
 
 on:
   push:
-    branches: [master]
+    branches: [master, eth-altruist]
 
 jobs:
   deploy:

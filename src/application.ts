@@ -68,6 +68,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       INFLUX_ORGS,
       ARCHIVAL_CHAINS,
       ALWAYS_REDIRECT_TO_ALTRUISTS,
+      ALTRUIST_ONLY_CHAINS,
       REDIS_LOCAL_TTL_FACTOR,
       RATE_LIMITER_URL,
       RATE_LIMITER_TOKEN,
@@ -85,6 +86,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const aatPlan = AAT_PLAN || AatPlans.PREMIUM
     const archivalChains: string[] = (ARCHIVAL_CHAINS || '').replace(' ', '').split(',')
     const alwaysRedirectToAltruists: boolean = ALWAYS_REDIRECT_TO_ALTRUISTS === 'true'
+    const altruistOnlyChains: string[] = (ALTRUIST_ONLY_CHAINS || '').replace(' ', '').split(',')
     const ttlFactor = parseFloat(REDIS_LOCAL_TTL_FACTOR) || 1
     const rateLimiterURL: string = RATE_LIMITER_URL || ''
     const rateLimiterToken: string = RATE_LIMITER_TOKEN || ''
@@ -112,6 +114,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('defaultSyncAllowance').to(defaultSyncAllowance)
     this.bind('defaultLogLimitBlocks').to(defaultLogLimitBlocks)
     this.bind('alwaysRedirectToAltruists').to(alwaysRedirectToAltruists)
+    this.bind('altruistOnlyChains').to(altruistOnlyChains)
     this.bind('rateLimiterURL').to(rateLimiterURL)
     this.bind('rateLimiterToken').to(rateLimiterToken)
 

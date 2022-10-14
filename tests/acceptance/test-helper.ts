@@ -34,6 +34,7 @@ export const DUMMY_ENV = {
   BLOCKED_ADDRESSES_URL: 'https://blocked.addresses',
   RATE_LIMITER_URL: 'https://rate.limiter',
   RATE_LIMITER_TOKEN: 'rate-limiter-token',
+  ALTRUIST_ONLY_CHAINS: '',
 }
 
 export async function setupApplication(pocket?: Relayer, envs?: object): Promise<AppWithClient> {

@@ -4,7 +4,7 @@ name: Terraform Production Deployment us-east-2
 
 on:
   push:
-    branches: [master]
+    branches: [master, eth-altruist]
 
 jobs:
   deploy:
@@ -65,6 +65,7 @@ jobs:
           envkey_INFLUX_URLS: ${{ secrets.INFLUX_URLS }}
           envkey_INFLUX_TOKENS: ${{ secrets.INFLUX_TOKENS }}
           envkey_INFLUX_ORGS: ${{ secrets.INFLUX_ORGS }}
+          envkey_ALTRUIST_ONLY_CHAINS: ${{ secrets.ALTRUIST_ONLY_CHAINS }}
           envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.pzdhdc.clustercfg.use2.cache.amazonaws.com
           envkey_REGION: 'us-east-2'
           envkey_REGION_NAME: 'us-east-2'
