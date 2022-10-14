@@ -62,6 +62,7 @@ export class MetricsRecorder {
     sticky,
     elapsedTime = 0,
     gigastakeAppID,
+    forcedFallback = false,
   }: {
     requestID: string
     applicationID: string
@@ -83,6 +84,7 @@ export class MetricsRecorder {
     sticky?: string
     elapsedTime?: number
     gigastakeAppID?: string
+    forcedFallback?: boolean
   }): Promise<void> {
     try {
       const { key: sessionKey } = session || {}
@@ -129,9 +131,10 @@ export class MetricsRecorder {
           blockchainID,
           sessionKey,
           sticky,
-          sessionBlockHeight: session.header.sessionBlockHeight,
-          blockHeight: session.blockHeight,
+          sessionBlockHeight: session?.header.sessionBlockHeight,
+          blockHeight: session?.blockHeight,
           responseStart,
+          forcedFallback,
         })
       } else if (result === 500) {
         logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -150,6 +153,7 @@ export class MetricsRecorder {
           sticky,
           sessionBlockHeight: session.header.sessionBlockHeight,
           blockHeight: session.blockHeight,
+          forcedFallback,
         })
       } else if (result === 503) {
         logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -168,11 +172,12 @@ export class MetricsRecorder {
           sticky,
           sessionBlockHeight: session.header.sessionBlockHeight,
           blockHeight: session.blockHeight,
+          forcedFallback,
         })
       }
 
       // Update service node quality with cherry picker
-      if (serviceNode && !Object.values(CheckMethods).includes(method as CheckMethods)) {
+      if (!fallback && serviceNode && !Object.values(CheckMethods).includes(method as CheckMethods)) {
         await this.cherryPicker.updateServiceQuality(blockchainID, serviceNode, elapsedTime, result, session, timeout)
       }
 
