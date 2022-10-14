@@ -52,6 +52,7 @@ export class PocketRelayer {
   defaultLogLimitBlocks: number
   session: Session
   alwaysRedirectToAltruists: boolean
+  altruistOnlyChains: string[]
   dispatchers: string
 
   constructor({
@@ -74,6 +75,7 @@ export class PocketRelayer {
     aatPlan,
     defaultLogLimitBlocks,
     alwaysRedirectToAltruists = false,
+    altruistOnlyChains = [],
     dispatchers,
   }: {
     host: string
@@ -95,6 +97,7 @@ export class PocketRelayer {
     aatPlan: string
     defaultLogLimitBlocks: number
     alwaysRedirectToAltruists?: boolean
+    altruistOnlyChains?: string[]
     dispatchers?: string
   }) {
     this.host = host
@@ -116,6 +119,7 @@ export class PocketRelayer {
     this.aatPlan = aatPlan
     this.defaultLogLimitBlocks = defaultLogLimitBlocks
     this.alwaysRedirectToAltruists = alwaysRedirectToAltruists
+    this.altruistOnlyChains = altruistOnlyChains
     this.dispatchers = dispatchers
   }
 
@@ -226,8 +230,9 @@ export class PocketRelayer {
 
     const fallbackAvailable = blockchainAltruist ? true : false
 
+    const notForceFallback = !this.altruistOnlyChains.includes(blockchainID) && !this.alwaysRedirectToAltruists
     try {
-      if (!this.alwaysRedirectToAltruists) {
+      if (notForceFallback) {
         // Retries if applicable
         for (let x = 0; x <= this.relayRetries; x++) {
           const relayStart = process.hrtime()
@@ -487,6 +492,7 @@ export class PocketRelayer {
               data,
               session: this.session,
               gigastakeAppID: applicationID !== application.id ? application.id : undefined,
+              forcedFallback: !notForceFallback,
             })
             .catch(function log(e) {
               logger.log('error', 'Error recording metrics: ' + e, {
@@ -507,6 +513,7 @@ export class PocketRelayer {
             serviceNode: 'fallback:' + redactedAltruistURL,
             blockchainID,
             origin: this.origin,
+            forcedFallback: !notForceFallback,
           })
         }
       } catch (e) {
@@ -518,6 +525,7 @@ export class PocketRelayer {
           serviceNode: 'fallback:' + redactedAltruistURL,
           blockchainID,
           origin: this.origin,
+          forcedFallback: !notForceFallback,
         })
       }
     }

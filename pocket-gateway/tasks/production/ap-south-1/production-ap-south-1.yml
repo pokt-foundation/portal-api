@@ -6,7 +6,7 @@ name: Terraform Production Deployment ap-south-1
 
 on:
   push:
-    branches: [master]
+    branches: [master, eth-altruist]
 
 jobs:
   deploy:
