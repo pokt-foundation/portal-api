@@ -54,18 +54,22 @@ export async function loadBlockchain(
   let blockchainFilter: any
 
   // Search by blockchain alias
-  blockchainFilter = blockchains.filter((b: { blockchainAliases: string[] }) =>
+  const [blockchainAliasFilter] = blockchains.filter((b: { blockchainAliases: string[] }) =>
     b.blockchainAliases.some((alias) => alias.toLowerCase() === blockchainRequest.toLowerCase())
   )
 
+  blockchainFilter = blockchainAliasFilter
+
   // If no match using alias, try with domain
-  if (!blockchainFilter) {
-    blockchainFilter = blockchains.filter((b: { redirects: BlockchainRedirect[] }) =>
+  if (!blockchainAliasFilter) {
+    const [blockchainDomainFilter] = blockchains.filter((b: { redirects: BlockchainRedirect[] }) =>
       b.redirects?.some((rdr) => rdr.domain.toLowerCase() === host.toLowerCase())
     )
 
+    blockchainFilter = blockchainDomainFilter
+
     // No blockchain match with either alias/domain. Blockchain must be incorrect.
-    if (!blockchainFilter) {
+    if (!blockchainDomainFilter) {
       throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${host}`, -32057))
     }
   }
