@@ -4,7 +4,7 @@ name: Staging Deployment us-west-2
 
 on:
   push:
-    branches: [staging]
+    branches: [staging, blockchain-subdomain-facet]
 
 jobs:
   deploy:

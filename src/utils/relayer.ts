@@ -51,12 +51,23 @@ export async function loadBlockchain(
   // Split off the first part of the request's host and check for matches
   const [blockchainRequest] = host.split('.')
 
-  const [blockchainFilter] = blockchains.filter((b: { blockchainAliases: string[] }) =>
+  let blockchainFilter: any
+
+  // Search by blockchain alias
+  blockchainFilter = blockchains.filter((b: { blockchainAliases: string[] }) =>
     b.blockchainAliases.some((alias) => alias.toLowerCase() === blockchainRequest.toLowerCase())
   )
 
+  // If no match using alias, try with domain
   if (!blockchainFilter) {
-    throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${host}`, -32057))
+    blockchainFilter = blockchains.filter((b: { redirects: BlockchainRedirect[] }) =>
+      b.redirects?.some((rdr) => rdr.domain.toLowerCase() === host.toLowerCase())
+    )
+
+    // No blockchain match with either alias/domain. Blockchain must be incorrect.
+    if (!blockchainFilter) {
+      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError(`Incorrect blockchain: ${host}`, -32057))
+    }
   }
 
   let blockchainEnforceResult = ''
@@ -69,11 +80,8 @@ export async function loadBlockchain(
   let blockchainRedirects = [] as BlockchainRedirect[]
   const blockchainSyncCheck = {} as SyncCheckOptions
 
-  const blockchain = blockchainFilter.blockchainAliases.find((alias: string) => {
-    if (alias.toLowerCase() === blockchainRequest.toLowerCase()) {
-      return alias // ex. 'eth-mainnet'
-    }
-  })
+  // ex. 'eth-mainnet', 'eth-rpc', 'poly-mainnet'
+  const blockchain = blockchainRequest
 
   blockchainID = blockchainFilter.hash as string // ex. '0021'
 
@@ -131,39 +139,4 @@ export async function loadBlockchain(
     blockchainAltruist,
     blockchainRedirects,
   } as BlockchainDetails)
-}
-
-// Get blockchain's alias by it's redirect domain
-export async function getBlockchainAliasesByDomain(
-  host: string,
-  redis: Cache,
-  blockchainsRepository: BlockchainsRepository,
-  rpcID: number
-): Promise<{ blockchainAliases: string[] }> {
-  // Load the requested blockchain
-  const cachedBlockchains = await redis.get('blockchains')
-  let blockchains
-
-  if (!cachedBlockchains) {
-    blockchains = await blockchainsRepository.find()
-    await redis.set('blockchains', JSON.stringify(blockchains), 'EX', 60)
-  } else {
-    blockchains = JSON.parse(cachedBlockchains)
-  }
-
-  const [blockchainFilter] = blockchains.filter((b: { redirects: BlockchainRedirect[] }) =>
-    b.redirects?.some((rdr) => rdr.domain.toLowerCase() === host.toLowerCase())
-  )
-
-  if (!blockchainFilter) {
-    throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError(`Unable to find a blockchain with domain: ${host}`, -32057))
-  }
-
-  let blockchainAliases: string[]
-
-  if (blockchainFilter.blockchainAliases) {
-    blockchainAliases = blockchainFilter.blockchainAliases
-  }
-
-  return Promise.resolve({ blockchainAliases })
 }
