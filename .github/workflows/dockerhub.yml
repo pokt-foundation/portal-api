@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - 'develop'
-      - 'task/T-14853_dockerhub'
       - 'v*.*.*'
   pull_request:
     branches:
