@@ -45,6 +45,7 @@ export class MetricsRecorder {
     requestID,
     applicationID,
     applicationPublicKey,
+    blockchain,
     blockchainID,
     serviceNode,
     relayStart,
@@ -67,6 +68,7 @@ export class MetricsRecorder {
     requestID: string
     applicationID: string
     applicationPublicKey: string
+    blockchain: string
     blockchainID: string
     serviceNode: string | undefined
     relayStart?: [number, number]
@@ -128,6 +130,7 @@ export class MetricsRecorder {
           serviceDomain,
           elapsedTime,
           origin,
+          blockchainSubdomain: blockchain,
           blockchainID,
           sessionKey,
           sticky,
@@ -148,6 +151,7 @@ export class MetricsRecorder {
           elapsedTime,
           error,
           origin,
+          blockchainSubdomain: blockchain,
           blockchainID,
           sessionKey,
           sticky,
@@ -167,6 +171,7 @@ export class MetricsRecorder {
           elapsedTime,
           error,
           origin,
+          blockchainSubdomain: blockchain,
           blockchainID,
           sessionKey,
           sticky,
@@ -194,6 +199,7 @@ export class MetricsRecorder {
         .tag('method', method)
         .tag('result', result.toString())
         .tag('blockchain', blockchainID) // 0021
+        .tag('blockchainSubdomain', blockchain) // eth-mainnet
         .tag('host', os.hostname())
         .tag('region', process.env.REGION || '')
         .floatField('bytes', bytes)

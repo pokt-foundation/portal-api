@@ -158,6 +158,7 @@ export class PocketRelayer {
     const rpcID = parseRPCID(parsedRawData)
 
     const {
+      blockchain,
       blockchainEnforceResult,
       blockchainSyncCheck,
       blockchainIDCheck,
@@ -263,6 +264,7 @@ export class PocketRelayer {
             applicationID,
             applicationPublicKey,
             requestTimeOut,
+            blockchain,
             blockchainID,
             blockchainEnforceResult,
             blockchainSyncCheck,
@@ -303,6 +305,7 @@ export class PocketRelayer {
                 requestID,
                 applicationID,
                 applicationPublicKey,
+                blockchain,
                 blockchainID,
                 serviceNode: relay.serviceNode.publicKey,
                 relayStart,
@@ -362,6 +365,7 @@ export class PocketRelayer {
                 requestID,
                 applicationID,
                 applicationPublicKey,
+                blockchain,
                 blockchainID,
                 serviceNode: relay.servicer_node,
                 relayStart,
@@ -478,6 +482,7 @@ export class PocketRelayer {
               requestID,
               applicationID,
               applicationPublicKey,
+              blockchain,
               blockchainID,
               serviceNode: 'fallback:' + redactedAltruistURL,
               relayStart,
@@ -556,6 +561,7 @@ export class PocketRelayer {
     blockchainSyncCheck,
     blockchainSyncBackup,
     blockchainIDCheck,
+    blockchain,
     blockchainID,
     blockchainChainID,
     blockchainPath,
@@ -574,6 +580,7 @@ export class PocketRelayer {
     blockchainSyncCheck: SyncCheckOptions
     blockchainSyncBackup: string
     blockchainIDCheck: string
+    blockchain: string
     blockchainID: string
     blockchainChainID: string
     blockchainPath: string
@@ -781,6 +788,7 @@ export class PocketRelayer {
             requestID,
             applicationID,
             applicationPublicKey,
+            blockchain,
             blockchainID,
             serviceNode: 'session-failure',
             relayStart,
@@ -820,6 +828,7 @@ export class PocketRelayer {
             requestID,
             applicationID,
             applicationPublicKey,
+            blockchain,
             blockchainID,
             serviceNode: 'session-failure',
             relayStart,
