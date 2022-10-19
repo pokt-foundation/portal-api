@@ -140,6 +140,12 @@ export class V1Controller {
 
       rpcID = parseRPCID(parsedRawData)
 
+      const [blockchainRequest] = this.host.split('.')
+
+      logger.log('info', `PUBLIC RPC REQUEST PROCESSED FOR ${blockchainRequest}`, {
+        blockchainSubdomain: blockchainRequest,
+      })
+
       // Since we only have non-gateway url, let's fetch a blockchain that contains this domain
       const { blockchainAliases } = await getBlockchainAliasesByDomain(
         this.host,
