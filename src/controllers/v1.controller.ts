@@ -142,7 +142,7 @@ export class V1Controller {
 
       const [blockchainRequest] = this.host.split('.')
 
-      logger.log('info', `PUBLIC RPC REQUEST PROCESSED FOR ${blockchainRequest}`, {
+      logger.log('info', `PUBLIC RPC RELAY PROCESSED FOR ${blockchainRequest}`, {
         blockchainSubdomain: blockchainRequest,
       })
 
