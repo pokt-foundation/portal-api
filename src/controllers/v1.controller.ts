@@ -143,6 +143,7 @@ export class V1Controller {
       const [blockchainRequest] = this.host.split('.')
 
       logger.log('info', `PUBLIC RPC RELAY REDIRECTED FOR ${blockchainRequest}`, {
+        requestBody: parsedRawData,
         blockchainSubdomain: blockchainRequest,
       })
 
