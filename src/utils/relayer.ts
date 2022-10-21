@@ -51,6 +51,7 @@ export async function loadBlockchain(
   // Split off the first part of the request's host and check for matches
   const [blockchainRequest] = host.split('.')
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let blockchainFilter: any
 
   // Search by blockchain alias (f.g. match 'eth-mainnet')

@@ -98,6 +98,32 @@ const BLOCKCHAINS = [
     logLimitBlocks: 10000,
     altruist: 'https://user:pass@backups.example.org:18553',
   },
+  {
+    hash: '0042',
+    ticker: 'ETHR',
+    networkID: '1',
+    network: 'ETH-2R',
+    description: 'Ethereum Redirects',
+    index: 3,
+    blockchain: 'eth-mainnet-redirects',
+    blockchainAliases: ['eth-mainnet-redirects'],
+    active: true,
+    nodeCount: 1,
+    chainIDCheck: '{"method":"eth_chainId","id":15,"jsonrpc":"2.0"}',
+    syncCheckOptions: {
+      body: '{"method":"eth_blockNumber","id":15,"jsonrpc":"2.0"}',
+      resultKey: 'result',
+    } as SyncCheckOptions,
+    logLimitBlocks: 10000,
+    altruist: 'https://user:pass@backups.example.org:18553',
+    redirects: [
+      {
+        alias: 'eth-mainnet-redirects',
+        domain: 'eth-rpc.gateway.pokt.network',
+        loadBalancerID: 'a21fj31d714kgos42e72gcv3',
+      },
+    ],
+  },
 ]
 
 const APPLICATION = {
@@ -226,7 +252,7 @@ describe('Pocket relayer service (unit)', () => {
   it('loads all blockchains from db, caches them and returns config of requested blockchain', async () => {
     const dbBlockchains = await blockchainRepository.createAll(BLOCKCHAINS)
 
-    expect(dbBlockchains).to.have.length(3)
+    expect(dbBlockchains).to.have.length(4)
 
     const repositorySpy = sinon.spy(blockchainRepository, 'find')
     const cacheGetSpy = sinon.spy(cache, 'get')
@@ -258,6 +284,50 @@ describe('Pocket relayer service (unit)', () => {
 
     expect(blockchainResult).to.be.ok()
     expect(blockchainResult.blockchainID).to.be.equal(BLOCKCHAINS[0].hash)
+
+    expect(repositorySpy.callCount).to.be.equal(1)
+    expect(cacheGetSpy.callCount).to.be.equal(2)
+    expect(cacheSetSpy.callCount).to.be.equal(1)
+  })
+
+  it('returns config of requested blockchain using redirect domain', async () => {
+    const dbBlockchains = await blockchainRepository.createAll(BLOCKCHAINS)
+
+    expect(dbBlockchains).to.have.length(4)
+
+    const repositorySpy = sinon.spy(blockchainRepository, 'find')
+    const cacheGetSpy = sinon.spy(cache, 'get')
+    const cacheSetSpy = sinon.spy(cache, 'set')
+
+    // Request comes from redirected domain
+    pocketRelayer.host = 'eth-rpc.gateway.pokt.network'
+
+    let blockchainResult = await loadBlockchain(
+      pocketRelayer.host,
+      pocketRelayer.cache,
+      pocketRelayer.blockchainsRepository,
+      pocketRelayer.defaultLogLimitBlocks,
+      1
+    )
+
+    expect(blockchainResult).to.be.ok()
+    expect(blockchainResult.blockchainID).to.be.equal(BLOCKCHAINS[3].hash)
+
+    expect(repositorySpy.callCount).to.be.equal(1)
+    expect(cacheGetSpy.callCount).to.be.equal(1)
+    expect(cacheSetSpy.callCount).to.be.equal(1)
+
+    // Subsequent calls should retrieve results from cache instead
+    blockchainResult = await loadBlockchain(
+      pocketRelayer.host,
+      pocketRelayer.cache,
+      pocketRelayer.blockchainsRepository,
+      pocketRelayer.defaultLogLimitBlocks,
+      1
+    )
+
+    expect(blockchainResult).to.be.ok()
+    expect(blockchainResult.blockchainID).to.be.equal(BLOCKCHAINS[3].hash)
 
     expect(repositorySpy.callCount).to.be.equal(1)
     expect(cacheGetSpy.callCount).to.be.equal(2)
@@ -385,7 +455,7 @@ describe('Pocket relayer service (unit)', () => {
     const createBlockchain = async () => {
       const dbBlockchain = await blockchainRepository.createAll(BLOCKCHAINS)
 
-      expect(dbBlockchain).to.have.length(3)
+      expect(dbBlockchain).to.have.length(4)
     }
 
     // Possible ammount of nodes that a session or blockchain check can return
