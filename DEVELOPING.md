@@ -35,7 +35,7 @@ Install the following extensions:
    this command manually whenever you have new changes to test. Test failures
    and linter errors will be printed to the terminal.
 
-## PR workflow
+### PR workflow
 
 1. Create a branch for your feature
 2. Make your changes
