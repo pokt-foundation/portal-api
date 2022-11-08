@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - 'develop'
-    tags:        
-      - "v*"
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - 'develop'
