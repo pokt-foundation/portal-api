@@ -2,6 +2,7 @@ name: Tag and release
 on:
   push:
     branches:
+      - develop
       - master
 
 jobs:
