@@ -28,12 +28,13 @@ describe('Chain checker service (unit)', () => {
   let axiosMock: MockAdapter
 
   const origin = 'unit-test'
+  const region = 'us-east-1'
 
   before('initialize variables', async () => {
     cache = new Cache(new Redis(0, ''), new Redis(1, ''))
     cherryPicker = new CherryPicker({ redis: cache.remote, checkDebug: false })
     metricsRecorder = metricsRecorderMock(cache.remote, cherryPicker)
-    chainChecker = new ChainChecker(cache, metricsRecorder, origin)
+    chainChecker = new ChainChecker(cache, metricsRecorder, origin, region)
 
     axiosMock = new MockAdapter(axios)
     axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
