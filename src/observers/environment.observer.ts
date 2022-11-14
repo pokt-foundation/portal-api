@@ -37,6 +37,7 @@ export class EnvironmentObserver implements LifeCycleObserver {
     // Not required in code, but must be present in .env
     'AWS_ACCESS_KEY_ID',
     'AWS_SECRET_ACCESS_KEY',
+    'GATEWAY_HOST',
   ]
 
   private static requiredEnvVarsOnlyInProd = []
