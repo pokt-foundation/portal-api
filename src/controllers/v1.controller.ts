@@ -18,7 +18,7 @@ import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
 import { checkWhitelist, RateLimiter, shouldRateLimit } from '../utils/enforcements'
 import { parseRawData, parseRPCID } from '../utils/parsing'
-import { getBlockchainAliasesByDomain, loadBlockchain } from '../utils/relayer'
+import { loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
 const logger = require('../services/logger')
 
@@ -140,25 +140,6 @@ export class V1Controller {
 
       rpcID = parseRPCID(parsedRawData)
 
-      const [blockchainRequest] = this.host.split('.')
-
-      logger.log('info', `PUBLIC RPC RELAY REDIRECTED FOR ${blockchainRequest}`, {
-        requestBody: parsedRawData,
-        blockchainSubdomain: blockchainRequest,
-      })
-
-      // Since we only have non-gateway url, let's fetch a blockchain that contains this domain
-      const { blockchainAliases } = await getBlockchainAliasesByDomain(
-        this.host,
-        this.cache,
-        this.blockchainsRepository,
-        rpcID
-      )
-
-      // Any alias works to load a specific blockchain
-      // TODO: Move URL to ENV
-      this.host = `${blockchainAliases[0]}.gateway.pokt.network`
-
       const { blockchainRedirects, blockchainPath } = await loadBlockchain(
         this.host,
         this.cache,
@@ -169,10 +150,6 @@ export class V1Controller {
 
       for (const redirect of blockchainRedirects) {
         if (this.pocketRelayer.host.toLowerCase().includes(redirect.domain)) {
-          // Modify the host using the stored blockchain name in DB
-          this.pocketRelayer.host = redirect.alias
-          this.host = redirect.alias
-
           // convert the slashes to tildes for processing in the loadBalancerRelay route
           const lbID = `${redirect.loadBalancerID}${blockchainPath}`.replace(/\//gi, '~')
 
@@ -280,7 +257,7 @@ export class V1Controller {
           if (!loadBalancer?.id) {
             throw new ErrorObject(
               reqRPCID,
-              new jsonrpc.JsonRpcError(`GS (${redirect.alias}) load balancer not found`, -32054)
+              new jsonrpc.JsonRpcError(`${redirect.alias} gigastake load balancer not found`, -32054)
             )
           }
 
@@ -774,7 +751,10 @@ export class V1Controller {
     const loadBalancer = await this.fetchLoadBalancer(redirect.loadBalancerID, filter)
 
     if (!loadBalancer?.id) {
-      throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError(`GS (${redirect.alias}) load balancer not found`, -32054))
+      throw new ErrorObject(
+        rpcID,
+        new jsonrpc.JsonRpcError(`${redirect.alias} gigastake load balancer not found`, -32054)
+      )
     }
 
     const application = await this.fetchLoadBalancerApplication(

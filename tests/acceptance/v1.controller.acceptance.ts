@@ -1983,8 +1983,7 @@ describe('V1 controller (acceptance)', () => {
       expect(response.body.error.message).to.startWith('Restricted endpoint: contract address not allowed')
     })
 
-    // eslint-disable-next-line mocha/no-exclusive-tests
-    it.only('invokes POST /v1/{appId} and successfully relays a request only through the altruist', async () => {
+    it('invokes POST /v1/{appId} and successfully relays a request only through the altruist', async () => {
       const pocket = pocketMock.object()
       const logSpy = sinon.spy(logger, 'log')
 
