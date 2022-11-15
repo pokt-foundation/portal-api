@@ -123,7 +123,7 @@ const options = {
     host: lokiHost,
     basicAuth: lokiBasicAuth,
     json: true,
-    labels: { app: 'portal-api' },
+    labels: { app: logName },
     format: format.json(),
     replaceTimestamp: true,
     onConnectionError: (err) => console.error(err),
