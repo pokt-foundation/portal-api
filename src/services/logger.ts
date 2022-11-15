@@ -6,8 +6,9 @@ import { HttpErrors } from '@loopback/rest'
 
 require('dotenv').config()
 const DatadogWinston = require('datadog-winston')
-
 const { createLogger, format, transports: winstonTransports } = require('winston')
+const LokiWinston = require('winston-loki')
+
 const { printf } = format
 
 interface Log {
@@ -36,6 +37,10 @@ const region = process.env.REGION || ''
 const logToDataDog = process.env.LOG_TO_DATADOG === 'true'
 const ddApiKey = process.env.DATADOG_API_KEY || ''
 const silent = process.env.SILENT_LOGGING === 'true'
+
+const logToLoki = process.env.LOG_TO_LOKI === 'true'
+const lokiHost = process.env.LOKI_HOST || 'http://127.0.0.1:3100'
+const lokiBasicAuth = process.env.LOKI_BASIC_AUTH || ''
 
 const timestampUTC = () => {
   const timestamp = new Date()
@@ -114,6 +119,15 @@ const options = {
     intakeRegion: 'eu',
     ddtags: `region:${region}`,
   },
+  loki: {
+    host: lokiHost,
+    basicAuth: lokiBasicAuth,
+    json: true,
+    labels: { app: logName },
+    format: format.json(),
+    replaceTimestamp: true,
+    onConnectionError: (err) => console.error(err),
+  },
 }
 
 const getTransports = () => {
@@ -136,6 +150,14 @@ const getTransports = () => {
       }
 
       transports.push(new DatadogWinston(options.datadog))
+    }
+
+    if (logToLoki) {
+      if (!lokiHost) {
+        throw new HttpErrors.InternalServerError('LOKI_HOST required in ENV')
+      }
+
+      transports.push(new LokiWinston(options.loki))
     }
   }
 
