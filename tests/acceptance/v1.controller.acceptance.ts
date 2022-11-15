@@ -815,9 +815,13 @@ describe('V1 controller (acceptance)', () => {
   })
 
   it('redirects empty path with specific load balancer', async () => {
+    const gatewayHost = 'custom-host'
+    const gatewayHostKey = 'gatewayHost'
     const pocket = pocketMock.object()
 
-    ;({ app, client } = await setupApplication(pocket))
+    ;({ app, client } = await setupApplication(pocket, {
+      GATEWAY_HOST: gatewayHost,
+    }))
 
     const response = await client
       .post('/')
@@ -826,6 +830,7 @@ describe('V1 controller (acceptance)', () => {
       .set('host', 'eth-mainnet-x')
       .expect(200)
 
+    expect(app.find(gatewayHostKey)[0].getValue(app.getOwnerContext(gatewayHostKey))).equal(gatewayHost)
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
     expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
     expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
