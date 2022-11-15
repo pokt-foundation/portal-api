@@ -66,6 +66,7 @@ jobs:
           envkey_INFLUX_TOKENS: ${{ secrets.INFLUX_TOKENS }}
           envkey_INFLUX_ORGS: ${{ secrets.INFLUX_ORGS }}
           envkey_ALTRUIST_ONLY_CHAINS: ${{ secrets.ALTRUIST_ONLY_CHAINS }}
+          envkey_GATEWAY_HOST: ${{ secrets.GATEWAY_HOST }}
           envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.hmerc8.clustercfg.ape1.cache.amazonaws.com
           envkey_REGION: 'ap-east-1'
           envkey_REGION_NAME: 'ap-east-1'

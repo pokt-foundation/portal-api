@@ -70,6 +70,7 @@ export class V1Controller {
     @inject('dispatchURL') private dispatchURL: string,
     @inject('rateLimiterURL') private rateLimiterURL: string,
     @inject('rateLimiterToken') private rateLimiterToken: string,
+    @inject('gatewayHost') private gatewayHost: string,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -156,8 +157,7 @@ export class V1Controller {
       )
 
       // Any alias works to load a specific blockchain
-      // TODO: Move URL to ENV
-      this.host = `${blockchainAliases[0]}.gateway.pokt.network`
+      this.host = `${blockchainAliases[0]}.${this.gatewayHost}`
 
       const { blockchainRedirects, blockchainPath } = await loadBlockchain(
         this.host,
