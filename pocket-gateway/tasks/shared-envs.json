@@ -160,6 +160,10 @@
     {
       "key": "ALTRUIST_ONLY_CHAINS",
       "value": "${{ secrets.ALTRUIST_ONLY_CHAINS }}"
+    },
+    {
+      "key": "GATEWAY_HOST",
+      "value": "${{ secrets.GATEWAY_HOST }}"
     }
   ]
 }
