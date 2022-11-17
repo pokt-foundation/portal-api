@@ -528,6 +528,7 @@ export class PocketRelayer {
           relayType: 'FALLBACK',
           typeID: application.id,
           serviceNode: 'fallback:' + redactedAltruistURL,
+          rawAltruist: JSON.stringify(redactedAltruistURL),
           blockchainID,
           origin: this.origin,
           forcedFallback: !notForceFallback,
