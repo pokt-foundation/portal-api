@@ -88,7 +88,7 @@ const options = {
     level: 'debug',
     handleExceptions: true,
     colorize: true,
-    format: logFormat,
+    format: format.json(),
     silent,
   },
   aws: {
