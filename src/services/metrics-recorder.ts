@@ -64,6 +64,7 @@ export class MetricsRecorder {
     elapsedTime = 0,
     gigastakeAppID,
     forcedFallback = false,
+    url,
   }: {
     requestID: string
     applicationID: string
@@ -87,6 +88,7 @@ export class MetricsRecorder {
     elapsedTime?: number
     gigastakeAppID?: string
     forcedFallback?: boolean
+    url?: string
   }): Promise<void> {
     try {
       const { key: sessionKey } = session || {}
@@ -138,6 +140,7 @@ export class MetricsRecorder {
           blockHeight: session?.blockHeight,
           responseStart,
           forcedFallback,
+          url,
         })
       } else if (result === 500) {
         logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
@@ -158,6 +161,7 @@ export class MetricsRecorder {
           sessionBlockHeight: session.header.sessionBlockHeight,
           blockHeight: session.blockHeight,
           forcedFallback,
+          url,
         })
       } else if (result === 503) {
         logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
