@@ -55,7 +55,7 @@ export class PocketRelayer {
   alwaysRedirectToAltruists: boolean
   altruistOnlyChains: string[]
   dispatchers: string
-  request: Request
+  requestURL: string
 
   constructor({
     host,
@@ -125,7 +125,7 @@ export class PocketRelayer {
     this.alwaysRedirectToAltruists = alwaysRedirectToAltruists
     this.altruistOnlyChains = altruistOnlyChains
     this.dispatchers = dispatchers
-    this.request = request
+    this.requestURL = `${request?.headers?.host}${request?.url}`
   }
 
   async sendRelay({
@@ -325,7 +325,7 @@ export class PocketRelayer {
                 session: this.session,
                 sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relay.serviceNode.publicKey),
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
-                url: new URL(this.request.url, `http://${this.request.headers.host}`).toString(),
+                url: this.requestURL,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -387,7 +387,7 @@ export class PocketRelayer {
                 session: this.session,
                 sticky,
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
-                url: new URL(this.request.url, `http://${this.request.headers.host}`).toString(),
+                url: this.requestURL,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -505,7 +505,7 @@ export class PocketRelayer {
               session: this.session,
               gigastakeAppID: applicationID !== application.id ? application.id : undefined,
               forcedFallback: !notForceFallback,
-              url: new URL(this.request.url, `http://${this.request.headers.host}`).toString(),
+              url: this.requestURL,
             })
             .catch(function log(e) {
               logger.log('error', 'Error recording metrics: ' + e, {
