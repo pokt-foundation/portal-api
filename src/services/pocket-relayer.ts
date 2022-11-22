@@ -2,6 +2,7 @@ import { EvidenceSealedError, Relayer } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT, HTTPMethod } from '@pokt-foundation/pocketjs-types'
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
+import { Request } from '@loopback/rest'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
 import { Applications } from '../models'
@@ -54,6 +55,7 @@ export class PocketRelayer {
   alwaysRedirectToAltruists: boolean
   altruistOnlyChains: string[]
   dispatchers: string
+  requestURL: string
 
   constructor({
     host,
@@ -77,6 +79,7 @@ export class PocketRelayer {
     alwaysRedirectToAltruists = false,
     altruistOnlyChains = [],
     dispatchers,
+    request,
   }: {
     host: string
     origin: string
@@ -99,6 +102,7 @@ export class PocketRelayer {
     alwaysRedirectToAltruists?: boolean
     altruistOnlyChains?: string[]
     dispatchers?: string
+    request?: Request
   }) {
     this.host = host
     this.origin = origin
@@ -121,6 +125,7 @@ export class PocketRelayer {
     this.alwaysRedirectToAltruists = alwaysRedirectToAltruists
     this.altruistOnlyChains = altruistOnlyChains
     this.dispatchers = dispatchers
+    this.requestURL = `${request?.headers?.host}${request?.url}`
   }
 
   async sendRelay({
@@ -320,6 +325,7 @@ export class PocketRelayer {
                 session: this.session,
                 sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relay.serviceNode.publicKey),
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
+                url: this.requestURL,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -381,6 +387,7 @@ export class PocketRelayer {
                 session: this.session,
                 sticky,
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
+                url: this.requestURL,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -498,6 +505,7 @@ export class PocketRelayer {
               session: this.session,
               gigastakeAppID: applicationID !== application.id ? application.id : undefined,
               forcedFallback: !notForceFallback,
+              url: this.requestURL,
             })
             .catch(function log(e) {
               logger.log('error', 'Error recording metrics: ' + e, {
