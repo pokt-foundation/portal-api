@@ -285,7 +285,6 @@ export class SyncChecker {
             error: `OUT OF SYNC: current block height on chain ${blockchainID}: ${highestNodeBlockHeight} - altruist block height: ${altruistBlockHeight} - nodes height: ${blockHeight} - sync allowance: ${syncAllowance}`,
             code: undefined,
             origin: this.origin,
-            data: undefined,
             session,
           })
           .catch(function log(e) {
@@ -521,7 +520,6 @@ export class SyncChecker {
           error: typeof relay.message === 'object' ? JSON.stringify(relay.message) : relay.message,
           code: undefined,
           origin: this.origin,
-          data: undefined,
           session,
         })
         .catch(function log(e) {
@@ -559,7 +557,6 @@ export class SyncChecker {
           error: JSON.stringify(relay),
           code: undefined,
           origin: this.origin,
-          data: undefined,
           session,
         })
         .catch(function log(e) {
