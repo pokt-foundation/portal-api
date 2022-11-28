@@ -35,6 +35,7 @@ export const DUMMY_ENV = {
   RATE_LIMITER_URL: 'https://rate.limiter',
   RATE_LIMITER_TOKEN: 'rate-limiter-token',
   ALTRUIST_ONLY_CHAINS: '',
+  GATEWAY_HOST: 'localhost',
 }
 
 export async function setupApplication(pocket?: Relayer, envs?: object): Promise<AppWithClient> {

@@ -50,20 +50,19 @@ export class MetricsRecorder {
     serviceNode,
     relayStart,
     result,
-    responseStart,
     bytes,
     fallback,
     method,
     error,
     code,
     origin,
-    data,
     session,
     timeout,
     sticky,
     elapsedTime = 0,
     gigastakeAppID,
     forcedFallback = false,
+    url,
   }: {
     requestID: string
     applicationID: string
@@ -73,20 +72,19 @@ export class MetricsRecorder {
     serviceNode: string | undefined
     relayStart?: [number, number]
     result: number
-    responseStart?: string | undefined
     bytes: number
     fallback: boolean
     method: string | undefined
     error: string | undefined
     code: string | undefined
     origin: string | undefined
-    data: string | undefined
     session: Session | undefined
     timeout?: number
     sticky?: string
     elapsedTime?: number
     gigastakeAppID?: string
     forcedFallback?: boolean
+    url?: string
   }): Promise<void> {
     try {
       const { key: sessionKey } = session || {}
@@ -120,7 +118,7 @@ export class MetricsRecorder {
 
       // Parse value if coming as BigInt
       if (result === 200) {
-        logger.log('info', 'SUCCESS' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
+        logger.log('info', 'SUCCESS' + fallbackTag + ' RELAYING ' + blockchainID, {
           requestID,
           relayType: 'APP',
           typeID: applicationID,
@@ -129,18 +127,17 @@ export class MetricsRecorder {
           serviceURL,
           serviceDomain,
           elapsedTime,
-          origin,
           blockchainSubdomain: blockchain,
           blockchainID,
           sessionKey,
           sticky,
           sessionBlockHeight: session?.header.sessionBlockHeight,
           blockHeight: session?.blockHeight,
-          responseStart,
           forcedFallback,
+          url,
         })
       } else if (result === 500) {
-        logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
+        logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID, {
           requestID,
           relayType: 'APP',
           typeID: applicationID,
@@ -150,7 +147,6 @@ export class MetricsRecorder {
           serviceDomain,
           elapsedTime,
           error,
-          origin,
           blockchainSubdomain: blockchain,
           blockchainID,
           sessionKey,
@@ -158,9 +154,10 @@ export class MetricsRecorder {
           sessionBlockHeight: session.header.sessionBlockHeight,
           blockHeight: session.blockHeight,
           forcedFallback,
+          url,
         })
       } else if (result === 503) {
-        logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
+        logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID, {
           requestID,
           relayType: 'APP',
           typeID: applicationID,
@@ -170,7 +167,6 @@ export class MetricsRecorder {
           serviceDomain,
           elapsedTime,
           error,
-          origin,
           blockchainSubdomain: blockchain,
           blockchainID,
           sessionKey,
