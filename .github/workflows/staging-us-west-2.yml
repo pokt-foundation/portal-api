@@ -57,6 +57,9 @@ jobs:
           envkey_ARCHIVAL_CHAINS: 0022,0028,0010,000A,000B,000C
           envkey_LOG_TO_DATADOG: true
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          envkey_LOG_TO_LOKI: ${{ secrets.LOG_TO_LOKI }}
+          envkey_LOKI_BASIC_AUTH: ${{ secrets.LOKI_BASIC_AUTH }}
+          envkey_LOKI_HOST: ${{ secrets.LOKI_HOST }}
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
           envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}
@@ -66,6 +69,7 @@ jobs:
           envkey_INFLUX_TOKENS: ${{ secrets.INFLUX_TOKENS }}
           envkey_INFLUX_ORGS: ${{ secrets.INFLUX_ORGS }}
           envkey_ALTRUIST_ONLY_CHAINS: ${{ secrets.ALTRUIST_ONLY_CHAINS }}
+          envkey_GATEWAY_HOST: ${{ secrets.GATEWAY_HOST }}
           envkey_REMOTE_REDIS_ENDPOINT: gateway-staging-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REGION: 'us-west-2'
           envkey_REGION_NAME: 'staging'

@@ -34,3 +34,17 @@ Install the following extensions:
    suite and lint the code for both programming and style errors. You should run
    this command manually whenever you have new changes to test. Test failures
    and linter errors will be printed to the terminal.
+
+### PR workflow
+
+1. Create a branch for your feature
+2. Make your changes
+3. Push your branch to GitHub
+4. Open a pull request
+5. Make sure the tests pass
+6. Merge your pull request
+7. Delete your branch
+
+the `release-on-push` action will run on all changes to master, and create a new tag and release on GitHub. A dockerimage build will be triggered by the new tag, and published to the container registry.
+
+> NOTES on PR workflow: if the PR has the label `release:major`, `release:minor`, or `release:patch`, this will override `bump_version_scheme`.
