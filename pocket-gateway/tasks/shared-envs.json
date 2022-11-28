@@ -114,7 +114,7 @@
     },
     {
       "key": "LOG_TO_LOKI",
-      "value": true
+      "value": false
     },
     {
       "key": "LOKI_BASIC_AUTH",
