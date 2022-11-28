@@ -4,7 +4,7 @@ import jsonrpc, { ErrorObject, JsonRpcError } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
 import { FilterExcludingWhere, repository } from '@loopback/repository'
-import { get, param, post, requestBody } from '@loopback/rest'
+import { get, param, post, requestBody, Request, RestBindings } from '@loopback/rest'
 import { WriteApi } from '@influxdata/influxdb-client'
 import { Applications, GatewaySettings, LoadBalancers } from '../models'
 import { StickinessOptions } from '../models/load-balancers.model'
@@ -45,6 +45,7 @@ export class V1Controller {
   mergeChecker: MergeChecker
 
   constructor(
+    @inject(RestBindings.Http.REQUEST) private request: Request,
     @inject('secretKey') private secretKey: string,
     @inject('host') private host: string,
     @inject('origin') private origin: string,
@@ -70,6 +71,7 @@ export class V1Controller {
     @inject('dispatchURL') private dispatchURL: string,
     @inject('rateLimiterURL') private rateLimiterURL: string,
     @inject('rateLimiterToken') private rateLimiterToken: string,
+    @inject('gatewayHost') private gatewayHost: string,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -114,6 +116,7 @@ export class V1Controller {
       alwaysRedirectToAltruists: this.alwaysRedirectToAltruists,
       altruistOnlyChains: this.altruistOnlyChains,
       dispatchers: this.dispatchURL,
+      request: this.request,
     })
   }
 
@@ -156,8 +159,7 @@ export class V1Controller {
       )
 
       // Any alias works to load a specific blockchain
-      // TODO: Move URL to ENV
-      this.host = `${blockchainAliases[0]}.gateway.pokt.network`
+      this.host = `${blockchainAliases[0]}.${this.gatewayHost}`
 
       const { blockchainRedirects, blockchainPath } = await loadBlockchain(
         this.host,

@@ -112,7 +112,18 @@
       "key": "DATADOG_API_KEY",
       "value": "${{ secrets.DATADOG_API_KEY }}"
     },
-
+    {
+      "key": "LOG_TO_LOKI",
+      "value": "${{ secrets.LOG_TO_LOKI }}"
+    },
+    {
+      "key": "LOKI_BASIC_AUTH",
+      "value": "${{ secrets.LOKI_BASIC_AUTH }}"
+    },
+    {
+      "key": "LOKI_HOST",
+      "value": "${{ secrets.LOKI_HOST }}"
+    },
     {
       "key": "ALWAYS_REDIRECT_TO_ALTRUISTS",
       "value": "${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}"
@@ -132,8 +143,7 @@
     {
       "key": "RATE_LIMITER_TOKEN",
       "value": "${{ secrets.RATE_LIMITER_TOKEN }}"
-    }
-    ,
+    },
     {
       "key": "INFLUX_URLS",
       "value": "${{ secrets.INFLUX_URLS }}"
@@ -149,6 +159,10 @@
     {
       "key": "ALTRUIST_ONLY_CHAINS",
       "value": "${{ secrets.ALTRUIST_ONLY_CHAINS }}"
+    },
+    {
+      "key": "GATEWAY_HOST",
+      "value": "${{ secrets.GATEWAY_HOST }}"
     }
   ]
 }
