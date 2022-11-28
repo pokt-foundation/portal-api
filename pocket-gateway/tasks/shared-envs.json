@@ -114,7 +114,7 @@
     },
     {
       "key": "LOG_TO_LOKI",
-      "value": true
+      "value": "${{ secrets.LOG_TO_LOKI }}"
     },
     {
       "key": "LOKI_BASIC_AUTH",
@@ -143,8 +143,7 @@
     {
       "key": "RATE_LIMITER_TOKEN",
       "value": "${{ secrets.RATE_LIMITER_TOKEN }}"
-    }
-    ,
+    },
     {
       "key": "INFLUX_URLS",
       "value": "${{ secrets.INFLUX_URLS }}"
