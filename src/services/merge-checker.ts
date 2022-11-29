@@ -358,7 +358,6 @@ export class MergeChecker {
           error: typeof relay.message === 'object' ? JSON.stringify(relay.message) : relay.message,
           code: undefined,
           origin: this.origin,
-          data: undefined,
           session,
         })
         .catch(function log(e) {
@@ -396,7 +395,6 @@ export class MergeChecker {
           error: JSON.stringify(relay),
           code: undefined,
           origin: this.origin,
-          data: undefined,
           session,
         })
         .catch(function log(e) {
