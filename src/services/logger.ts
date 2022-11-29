@@ -72,15 +72,6 @@ const consoleFormat = printf(
 
 const startTime = new Date().toISOString()
 
-const logFormat = format.combine(
-  format.colorize(),
-  format.simple(),
-  format.timestamp({
-    format: 'YYYY-MM-DD HH:mm:ss.SSS',
-  }),
-  consoleFormat
-)
-
 const logName = (process.env.REGION_NAME || '') + '/ecs/gateway'
 
 const options = {
