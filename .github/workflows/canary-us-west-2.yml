@@ -4,7 +4,7 @@ name: Terraform canary Deployment us-west-2
 
 on:
   push:
-    branches: [canary, canary-deployments]
+    branches: [canary, relay-replay]
 
 jobs:
   deploy:

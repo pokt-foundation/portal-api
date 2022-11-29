@@ -278,6 +278,7 @@ export class PocketRelayer {
             nodeSticker,
             appPublicKey: applicationPubKey,
             blockchainSyncBackup: String(blockchainAltruist),
+            altruistURL,
           })
 
           // TODO: Remove references of relayResponse and change for pocketjs v2 Response object
@@ -565,6 +566,7 @@ export class PocketRelayer {
     blockchainPath,
     nodeSticker,
     appPublicKey,
+    altruistURL,
   }: {
     data: string
     relayPath: string
@@ -584,6 +586,7 @@ export class PocketRelayer {
     blockchainPath: string
     nodeSticker: NodeSticker
     appPublicKey: string
+    altruistURL: string
   }): Promise<RelayResponse | Error> {
     const secretKeyDetails: SecretKeyDetails = {
       secretKey: this.secretKey,
@@ -888,29 +891,75 @@ export class PocketRelayer {
     let relay: RelayResponse | Error
 
     try {
-      relay = await this.relayer.relay({
-        blockchain: blockchainID,
-        data,
-        method: '',
-        node,
-        path: relayPath,
-        pocketAAT,
-        session,
-        options: {
-          timeout: requestTimeOut || DEFAULT_ALTRUIST_TIMEOUT,
-        },
-      })
+      const relayRequests = []
+
+      // Network Relay
+      relayRequests.push(
+        this.relayer.relay({
+          blockchain: blockchainID,
+          data,
+          method: '',
+          node,
+          path: relayPath,
+          pocketAAT,
+          session,
+          options: {
+            timeout: requestTimeOut || DEFAULT_ALTRUIST_TIMEOUT,
+          },
+        })
+      )
+
+      // Internal Relay
+      // const redactedAltruistURL = blockchainSyncBackup?.replace(/[\w]*:\/\/[^\/]*@/g, '')
+
+      let axiosConfig: AxiosRequestConfig = {}
+
+      if (httpMethod === 'POST') {
+        axiosConfig = {
+          method: 'POST',
+          url: altruistURL,
+          data,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      } else {
+        axiosConfig = {
+          method: httpMethod as Method,
+          url: altruistURL,
+          data,
+        }
+      }
+
+      if (requestTimeOut) {
+        axiosConfig.timeout = DEFAULT_ALTRUIST_TIMEOUT
+      }
+
+      relayRequests.push(axios(axiosConfig))
+
+      const [networkRelay, altruistRelay] = await Promise.allSettled(relayRequests)
+
+      if (networkRelay.status === 'fulfilled' && altruistRelay.status === 'fulfilled') {
+        relay = networkRelay.value
+      }
     } catch (error) {
       relay = error
     }
 
     if (this.checkDebug) {
+      // Network Relay Debug
       logger.log('debug', JSON.stringify(relay), {
         requestID,
         relayType: 'APP',
         typeID: application.id,
         serviceNode: node?.publicKey,
       })
+
+      // // Internal Relay Debug
+      // logger.log('debug', JSON.stringify(fallbackResponse.data), {
+      //   requestID,
+      //   relayType: 'FALLBACK',
+      //   typeID: application.id,
+      //   serviceNode: 'fallback:' + redactedAltruistURL,
+      // })
     }
 
     // Success
