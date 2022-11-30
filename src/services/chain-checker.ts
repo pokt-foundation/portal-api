@@ -272,7 +272,7 @@ export class ChainChecker {
         blockchain: blockchainID,
         data: chainCheck,
         method: '',
-        headers: { region: this.region },
+        headers: { 'Content-Type': 'application/json', region: this.region },
         path,
         node,
         pocketAAT,

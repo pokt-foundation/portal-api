@@ -459,7 +459,7 @@ export class SyncChecker {
         path: syncCheckOptions.path,
         node,
         method: '',
-        headers: { region: this.region },
+        headers: { 'Content-Type': 'application/json', region: this.region },
         pocketAAT,
         session,
         options: {

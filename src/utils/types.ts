@@ -1,4 +1,4 @@
-import { Node, HTTPMethod, StakingStatus, RelayHeaders } from '@pokt-foundation/pocketjs-types'
+import { Node, HTTPMethod, StakingStatus } from '@pokt-foundation/pocketjs-types'
 import { Applications } from '../models'
 import { SyncCheckOptions } from '../services/sync-checker'
 
@@ -19,7 +19,6 @@ export type SendRelayOptions = {
   application: Applications
   stickinessOptions: StickinessOptions
   httpMethod: HTTPMethod
-  headers?: RelayHeaders
   overallTimeOut?: number
   rawData: object | string
   relayPath: string

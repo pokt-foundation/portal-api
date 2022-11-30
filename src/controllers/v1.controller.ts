@@ -101,6 +101,7 @@ export class V1Controller {
     this.pocketRelayer = new PocketRelayer({
       host: this.host,
       origin: this.origin,
+      headers: { 'Content-Type': 'application/json', region: this.region },
       userAgent: this.userAgent,
       ipAddress: this.ipAddress,
       relayer: this.relayer,
@@ -362,7 +363,6 @@ export class V1Controller {
         rawData,
         relayPath: this.relayPath,
         httpMethod: this.httpMethod,
-        headers: { region: this.region },
         application,
         requestID: this.requestID,
         requestTimeOut: parseInt(loadBalancer.requestTimeOut),
@@ -517,7 +517,6 @@ export class V1Controller {
         application,
         relayPath: this.relayPath,
         httpMethod: this.httpMethod,
-        headers: { region: this.region },
         requestID: this.requestID,
         stickinessOptions: {
           stickiness,

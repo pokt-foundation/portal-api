@@ -290,7 +290,7 @@ export class MergeChecker {
         blockchain: blockchainID,
         data: MERGE_CHECK_PAYLOAD,
         method: '',
-        headers: { region: this.region },
+        headers: { 'Content-Type': 'application/json', region: this.region },
         path,
         node,
         pocketAAT,
