@@ -18,7 +18,7 @@ services:
     depends_on:
       - db
       - cache
-      - metricsdb
+      - errorsdb
     networks:
       - pocket
 
@@ -57,9 +57,9 @@ services:
       - pocket
 
   # DB to store errors
-  metricsdb:
-    container_name: metricsdb
-    image: timescale/timescaledb:2.0.2-pg12
+  errorsdb:
+    image: postgres:15.1
+    container_name: errorsdb
     environment:
       - POSTGRES_USER=pguser
       - POSTGRES_PASSWORD=pgpassword
@@ -69,7 +69,7 @@ services:
     networks:
       - pocket
     volumes:
-      - ./local.init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ../scripts/error.init.sql:/docker-entrypoint-initdb.d/init.sql
 
   influxdb:
     image: quay.io/influxdb/influxdb:v2.0.3
