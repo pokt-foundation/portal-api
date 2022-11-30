@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - develop
+      - develop-k8s
       - master
 
 jobs:
