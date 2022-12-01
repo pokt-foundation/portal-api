@@ -16,8 +16,15 @@ import { Cache } from './cache'
 
 const logger = require('../services/logger')
 
-const MERGE_BLOCK_NUMBER = 15537394
-const TERMINAL_TOTAL_DIFFICULTY = BigInt('58750003716598352816469')
+const MERGE_BLOCK_NUMBER = {
+  ethereum: 15537394,
+  gnosis: 15537394, // Needs to be updated to the proper block height
+}
+
+const TERMINAL_TOTAL_DIFFICULTY = {
+  ethereum: BigInt('58750003716598352816469'),
+  gnosis: BigInt('8626000000000000000000058750000000000000000000'),
+}
 
 const MERGE_CHECK_PAYLOAD = JSON.stringify({
   jsonrpc: '2.0',
@@ -42,6 +49,7 @@ export class MergeChecker {
     nodes,
     requestID,
     blockchainID,
+    blockchainPrefix,
     relayer,
     applicationID,
     applicationPublicKey,
@@ -123,7 +131,10 @@ export class MergeChecker {
       const { serviceUrl: serviceURL } = node
       const serviceDomain = extractDomain(serviceURL)
 
-      if (BigInt(nodeTotalDifficulty) === TERMINAL_TOTAL_DIFFICULTY && nodeBlockNumber >= MERGE_BLOCK_NUMBER) {
+      if (
+        BigInt(nodeTotalDifficulty) === TERMINAL_TOTAL_DIFFICULTY[blockchainPrefix] &&
+        nodeBlockNumber >= MERGE_BLOCK_NUMBER[blockchainPrefix]
+      ) {
         logger.log(
           'info',
           'MERGE CHECK SUCCESS: ' +
@@ -442,6 +453,7 @@ export type MergeFilterOptions = {
   nodes: Node[]
   requestID: string
   blockchainID: string
+  blockchainPrefix: string
   relayer: Relayer
   applicationID: string
   applicationPublicKey: string

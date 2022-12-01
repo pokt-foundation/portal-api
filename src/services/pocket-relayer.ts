@@ -702,11 +702,25 @@ export class PocketRelayer {
       return new Error("session doesn't have any available nodes")
     }
 
-    if (blockchainID === '0021' || blockchainID === '0022' || blockchainID === '0028') {
+    if (
+      blockchainID === '0021' || // Ethereum Mainnet
+      blockchainID === '0022' || // Ethereum Rinkeby
+      blockchainID === '0028' || // Ethereum Archival Trace
+      blockchainID === '0027' || // Gnosis Chain
+      blockchainID === '000C' // Gnosis Chain Archival
+    ) {
+      let blockchainPrefix = 'ethereum'
+
+      // Gnosis Chain Merge
+      if (blockchainID === '0027' || blockchainID === '000C') {
+        blockchainPrefix = 'gnosis'
+      }
+
       const mergeStatusOptions: MergeFilterOptions = {
         nodes,
         requestID,
         blockchainID,
+        blockchainPrefix,
         pocketAAT: pocketAAT,
         applicationID,
         applicationPublicKey,
