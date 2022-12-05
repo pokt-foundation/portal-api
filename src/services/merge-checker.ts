@@ -9,7 +9,13 @@ import extractDomain from 'extract-domain'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { removeChecksCache, removeNodeFromSession, removeSessionCache } from '../utils/cache'
-import { CheckMethods, CHECK_TIMEOUT, PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION } from '../utils/constants'
+import {
+  CheckMethods,
+  CHECK_TIMEOUT,
+  ETHEREUM_BLOCKCHAIN_IDS,
+  GNOSIS_BLOCKCHAIN_IDS,
+  PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION,
+} from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { CheckResult, RelayResponse } from '../utils/types'
 import { Cache } from './cache'
@@ -23,7 +29,7 @@ const MERGE_BLOCK_NUMBER = {
 
 const TERMINAL_TOTAL_DIFFICULTY = {
   ethereum: BigInt('58750003716598352816469'),
-  gnosis: BigInt('8626000000000000000000058750000000000000000000'),
+  gnosis: BigInt('8626000000000000000000058750000000000000000000'), // Needs to be updated to the precise value
 }
 
 const MERGE_CHECK_PAYLOAD = JSON.stringify({
@@ -49,7 +55,6 @@ export class MergeChecker {
     nodes,
     requestID,
     blockchainID,
-    blockchainPrefix,
     relayer,
     applicationID,
     applicationPublicKey,
@@ -131,9 +136,17 @@ export class MergeChecker {
       const { serviceUrl: serviceURL } = node
       const serviceDomain = extractDomain(serviceURL)
 
+      let blockchain = ''
+
+      if (ETHEREUM_BLOCKCHAIN_IDS.includes(blockchainID)) {
+        blockchain = 'ethereum'
+      } else if (GNOSIS_BLOCKCHAIN_IDS.includes(blockchainID)) {
+        blockchain = 'gnosis'
+      }
+
       if (
-        BigInt(nodeTotalDifficulty) === TERMINAL_TOTAL_DIFFICULTY[blockchainPrefix] &&
-        nodeBlockNumber >= MERGE_BLOCK_NUMBER[blockchainPrefix]
+        BigInt(nodeTotalDifficulty) === TERMINAL_TOTAL_DIFFICULTY[blockchain] &&
+        nodeBlockNumber >= MERGE_BLOCK_NUMBER[blockchain]
       ) {
         logger.log(
           'info',
@@ -453,7 +466,6 @@ export type MergeFilterOptions = {
   nodes: Node[]
   requestID: string
   blockchainID: string
-  blockchainPrefix: string
   relayer: Relayer
   applicationID: string
   applicationPublicKey: string

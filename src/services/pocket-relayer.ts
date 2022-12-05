@@ -13,7 +13,7 @@ import { MergeFilterOptions, MergeChecker } from '../services/merge-checker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { removeNodeFromSession } from '../utils/cache'
-import { SESSION_TIMEOUT, DEFAULT_ALTRUIST_TIMEOUT } from '../utils/constants'
+import { SESSION_TIMEOUT, DEFAULT_ALTRUIST_TIMEOUT, MERGE_CHECK_BLOCKCHAIN_IDS } from '../utils/constants'
 import {
   checkEnforcementJSON,
   isRelayError,
@@ -702,25 +702,11 @@ export class PocketRelayer {
       return new Error("session doesn't have any available nodes")
     }
 
-    if (
-      blockchainID === '0021' || // Ethereum Mainnet
-      blockchainID === '0022' || // Ethereum Rinkeby
-      blockchainID === '0028' || // Ethereum Archival Trace
-      blockchainID === '0027' || // Gnosis Chain
-      blockchainID === '000C' // Gnosis Chain Archival
-    ) {
-      let blockchainPrefix = 'ethereum'
-
-      // Gnosis Chain Merge
-      if (blockchainID === '0027' || blockchainID === '000C') {
-        blockchainPrefix = 'gnosis'
-      }
-
+    if (MERGE_CHECK_BLOCKCHAIN_IDS.includes(blockchainID)) {
       const mergeStatusOptions: MergeFilterOptions = {
         nodes,
         requestID,
         blockchainID,
-        blockchainPrefix,
         pocketAAT: pocketAAT,
         applicationID,
         applicationPublicKey,
