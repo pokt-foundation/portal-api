@@ -116,6 +116,11 @@ export class MetricsRecorder {
         fallbackTag = ' FALLBACK'
       }
 
+      // Reduce multi-method calls for metrics/logging purposes
+      if (method && method.split(',').length > 1) {
+        method = 'multiple'
+      }
+
       // Parse value if coming as BigInt
       if (result === 200) {
         logger.log('info', 'SUCCESS' + fallbackTag + ' RELAYING ' + blockchainID, {
