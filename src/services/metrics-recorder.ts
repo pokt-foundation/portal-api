@@ -116,6 +116,9 @@ export class MetricsRecorder {
         fallbackTag = ' FALLBACK'
       }
 
+      // Save raw methods for the errors db
+      const rawMethods = method
+
       // Reduce multi-method calls for metrics/logging purposes
       if (method && method.split(',').length > 1) {
         method = 'multiple'
@@ -237,7 +240,7 @@ export class MetricsRecorder {
         serviceNode,
         elapsedTime,
         bytes,
-        method,
+        rawMethods,
         error,
         code,
       ]
