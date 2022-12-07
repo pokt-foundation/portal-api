@@ -116,14 +116,6 @@ export class MetricsRecorder {
         fallbackTag = ' FALLBACK'
       }
 
-      // Save raw methods for the errors db
-      const rawMethods = method
-
-      // Reduce multi-method calls for metrics/logging purposes
-      if (method && method.split(',').length > 1) {
-        method = 'multiple'
-      }
-
       // Parse value if coming as BigInt
       if (result === 200) {
         logger.log('info', 'SUCCESS' + fallbackTag + ' RELAYING ' + blockchainID, {
@@ -131,7 +123,7 @@ export class MetricsRecorder {
           relayType: 'APP',
           typeID: applicationID,
           gigastakeAppID,
-          rawMethods,
+          method,
           serviceNode,
           serviceURL,
           serviceDomain,
@@ -151,7 +143,7 @@ export class MetricsRecorder {
           relayType: 'APP',
           typeID: applicationID,
           gigastakeAppID,
-          rawMethods,
+          method,
           serviceNode,
           serviceURL,
           serviceDomain,
@@ -172,7 +164,7 @@ export class MetricsRecorder {
           relayType: 'APP',
           typeID: applicationID,
           gigastakeAppID,
-          rawMethods,
+          method,
           serviceNode,
           serviceURL,
           serviceDomain,
@@ -199,11 +191,18 @@ export class MetricsRecorder {
       // Redis timestamp for bulk logs
       const redisTimestamp = Math.floor(new Date().getTime() / 1000)
 
+      // Reduce multi-method calls for metrics/logging purposes
+      let simplifiedMethod: string
+
+      if (method && method.split(',').length > 1) {
+        simplifiedMethod = 'multiple'
+      }
+
       // InfluxDB
       const pointRelay = new Point('relay')
         .tag('applicationPublicKey', applicationPublicKey)
         .tag('nodePublicKey', serviceNode && !fallback ? 'network' : 'fallback')
-        .tag('method', method)
+        .tag('method', simplifiedMethod)
         .tag('result', result.toString())
         .tag('blockchain', blockchainID) // 0021
         .tag('blockchainSubdomain', blockchain) // eth-mainnet
@@ -240,7 +239,7 @@ export class MetricsRecorder {
         serviceNode,
         elapsedTime,
         bytes,
-        rawMethods,
+        method,
         error,
         code,
       ]
