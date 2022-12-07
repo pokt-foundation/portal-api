@@ -192,7 +192,7 @@ export class MetricsRecorder {
       const redisTimestamp = Math.floor(new Date().getTime() / 1000)
 
       // Reduce multi-method calls for metrics/logging purposes
-      let simplifiedMethod: string
+      let simplifiedMethod = method
 
       if (method && method.split(',').length > 1) {
         simplifiedMethod = 'multiple'
