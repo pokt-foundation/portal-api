@@ -20,4 +20,14 @@ describe('Metrics recorder (unit)', () => {
 
     expect(method).to.to.be.equal('eth_getBlockByNumber')
   })
+
+  it('Does not fail when method is undefined', () => {
+    let method = undefined
+
+    if (method && method.split(',').length > 1) {
+      method = 'multiple'
+    }
+
+    expect(method).to.to.be.equal(undefined)
+  })
 })
