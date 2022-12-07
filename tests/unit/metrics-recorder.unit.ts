@@ -7,7 +7,6 @@ import { MetricsRecorder } from '../../src/services/metrics-recorder'
 
 // import { metricsRecorderMock } from '../mocks/metrics-recorder'
 
-const os = require('os')
 const Redis = require('ioredis-mock')
 
 describe('Metrics Recorder (unit)', () => {
@@ -90,7 +89,6 @@ describe('Metrics Recorder (unit)', () => {
           .tag('result', '500')
           .tag('blockchain', '0021') // 0021
           .tag('blockchainSubdomain', 'eth-mainnet') // eth-mainnet
-          .tag('host', os.hostname())
           .tag('region', process.env.REGION || '')
           .floatField('bytes', 5)
 
@@ -139,7 +137,6 @@ describe('Metrics Recorder (unit)', () => {
           .tag('result', '500')
           .tag('blockchain', '0021') // 0021
           .tag('blockchainSubdomain', 'eth-mainnet') // eth-mainnet
-          .tag('host', os.hostname())
           .tag('region', process.env.REGION || '')
           .floatField('bytes', 5)
 

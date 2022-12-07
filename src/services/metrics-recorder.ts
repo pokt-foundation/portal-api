@@ -10,7 +10,6 @@ import { Point, WriteApi } from '@influxdata/influxdb-client'
 
 import { BLOCK_TIMING_ERROR, CheckMethods } from '../utils/constants'
 import { CherryPicker } from './cherry-picker'
-const os = require('os')
 const logger = require('../services/logger')
 
 export class MetricsRecorder {
@@ -206,7 +205,6 @@ export class MetricsRecorder {
         .tag('result', result.toString())
         .tag('blockchain', blockchainID) // 0021
         .tag('blockchainSubdomain', blockchain) // eth-mainnet
-        .tag('host', os.hostname())
         .tag('region', process.env.REGION || '')
         .floatField('bytes', bytes)
         .floatField('elapsedTime', elapsedTime.toFixed(4))
