@@ -49,7 +49,6 @@ describe('Metrics Recorder (unit)', () => {
     sinon.restore()
   })
 
-  // eslint-disable-next-line mocha/no-exclusive-tests
   it('Should reduce multi-method calls for metrics/logging purposes', async () => {
     await metricsRecorder
       .recordMetric({
@@ -99,7 +98,6 @@ describe('Metrics Recorder (unit)', () => {
       })
   })
 
-  // eslint-disable-next-line mocha/no-exclusive-tests
   it('Should not reduce single method call for metrics/logging purposes', async () => {
     await metricsRecorder
       .recordMetric({
