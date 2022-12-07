@@ -191,11 +191,18 @@ export class MetricsRecorder {
       // Redis timestamp for bulk logs
       const redisTimestamp = Math.floor(new Date().getTime() / 1000)
 
+      // Reduce multi-method calls for metrics/logging purposes
+      let simplifiedMethod = method
+
+      if (method && method.split(',').length > 1) {
+        simplifiedMethod = 'multiple'
+      }
+
       // InfluxDB
       const pointRelay = new Point('relay')
         .tag('applicationPublicKey', applicationPublicKey)
         .tag('nodePublicKey', serviceNode && !fallback ? 'network' : 'fallback')
-        .tag('method', method)
+        .tag('method', simplifiedMethod)
         .tag('result', result.toString())
         .tag('blockchain', blockchainID) // 0021
         .tag('blockchainSubdomain', blockchain) // eth-mainnet
