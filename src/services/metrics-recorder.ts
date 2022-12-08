@@ -10,7 +10,6 @@ import { Point, WriteApi } from '@influxdata/influxdb-client'
 
 import { BLOCK_TIMING_ERROR, CheckMethods } from '../utils/constants'
 import { CherryPicker } from './cherry-picker'
-const os = require('os')
 const logger = require('../services/logger')
 
 export class MetricsRecorder {
@@ -191,15 +190,21 @@ export class MetricsRecorder {
       // Redis timestamp for bulk logs
       const redisTimestamp = Math.floor(new Date().getTime() / 1000)
 
+      // Reduce multi-method calls for metrics/logging purposes
+      let simplifiedMethod = method
+
+      if (method && method.split(',').length > 1) {
+        simplifiedMethod = 'multiple'
+      }
+
       // InfluxDB
       const pointRelay = new Point('relay')
         .tag('applicationPublicKey', applicationPublicKey)
         .tag('nodePublicKey', serviceNode && !fallback ? 'network' : 'fallback')
-        .tag('method', method)
+        .tag('method', simplifiedMethod)
         .tag('result', result.toString())
         .tag('blockchain', blockchainID) // 0021
         .tag('blockchainSubdomain', blockchain) // eth-mainnet
-        .tag('host', os.hostname())
         .tag('region', process.env.REGION || '')
         .floatField('bytes', bytes)
         .floatField('elapsedTime', elapsedTime.toFixed(4))
