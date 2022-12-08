@@ -24,12 +24,12 @@ const logger = require('../services/logger')
 
 const MERGE_BLOCK_NUMBER = {
   ethereum: 15537394,
-  gnosis: 15537394, // Needs to be updated to the proper block height
+  gnosis: 25349536,
 }
 
 const TERMINAL_TOTAL_DIFFICULTY = {
   ethereum: BigInt('58750003716598352816469'),
-  gnosis: BigInt('8626000000000000000000058750000000000000000000'), // Needs to be updated to the precise value
+  gnosis: BigInt('8626000110427538733349499292577475819600160930'),
 }
 
 const MERGE_CHECK_PAYLOAD = JSON.stringify({
