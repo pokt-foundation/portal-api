@@ -22,3 +22,16 @@ export enum CheckMethods {
   ChainCheck = 'chaincheck',
   MergeCheck = 'mergecheck',
 }
+
+export const GNOSIS_BLOCKCHAIN_IDS = [
+  '0027', // Gnosis Chain
+  '000C', // Gnosis Chain Archival
+]
+
+export const ETHEREUM_BLOCKCHAIN_IDS = [
+  '0021', // Ethereum Mainnet
+  '0022', // Ethereum Rinkeby
+  '0028', // Ethereum Archival Trace
+]
+
+export const MERGE_CHECK_BLOCKCHAIN_IDS = [...ETHEREUM_BLOCKCHAIN_IDS, ...GNOSIS_BLOCKCHAIN_IDS]
