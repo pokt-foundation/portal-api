@@ -18,8 +18,16 @@ const MERGE_CHECK_PAYLOAD = '{"jsonrpc":"2.0","method":"eth_getBlockByNumber","p
 const SUCCESS_MERGE_CHECK_RESPONSE =
   '{"jsonrpc":"2.0","id":1,"result":{"number":"0xed14f2","totalDifficulty":"0xc70d815d562d3cfa955"}}'
 
+// Gnosis Success (merged node)
+const SUCCESS_GNOSIS_MERGE_CHECK_RESPONSE =
+  '{"jsonrpc":"2.0","id":1,"result":{"number":"0x182cda0","totalDifficulty":"0x182cd9fffffffffffffffffffffffffea9528a2"}}'
+
 // Failure (non-merged node)
 const FAILURE_MERGE_CHECK_RESPONSE =
+  '{"jsonrpc":"2.0","id":1,"result":{"number":"0xed1353","totalDifficulty":"0xc7098c61d0934e949f3"}}'
+
+// Failure (non-merged node)
+const FAILURE_GNOSIS_MERGE_CHECK_RESPONSE =
   '{"jsonrpc":"2.0","id":1,"result":{"number":"0xed1353","totalDifficulty":"0xc7098c61d0934e949f3"}}'
 
 const { POCKET_AAT } = DEFAULT_MOCK_VALUES
@@ -185,7 +193,7 @@ describe('Merge checker service (unit)', () => {
     })
   })
 
-  it('performs the merge check successfully', async () => {
+  it('performs the ETH merge check successfully', async () => {
     const nodes = DEFAULT_NODES
 
     const relayer = pocketMock.object()
@@ -231,11 +239,82 @@ describe('Merge checker service (unit)', () => {
     expect(cacheSetSpy.callCount).to.be.equal(2)
   })
 
-  it('fails the merge check', async () => {
+  it('performs the GNO merge check successfully', async () => {
+    pocketMock.relayResponse[MERGE_CHECK_PAYLOAD] = SUCCESS_GNOSIS_MERGE_CHECK_RESPONSE
+
+    const nodes = DEFAULT_NODES
+
+    const relayer = pocketMock.object()
+    const session = await relayer.getNewSession(undefined)
+
+    const cacheGetSpy = sinon.spy(cache, 'get')
+    const cacheSetSpy = sinon.spy(cache, 'set')
+
+    let checkedNodes = (
+      await mergeChecker.mergeStatusFilter({
+        nodes,
+        requestID: '1234',
+        blockchainID: '0027',
+        relayer,
+        applicationID: '',
+        applicationPublicKey: '',
+        pocketAAT: POCKET_AAT,
+        session,
+      })
+    ).nodes
+
+    expect(checkedNodes).to.be.Array()
+    expect(checkedNodes).to.have.length(5)
+
+    expect(cacheGetSpy.callCount).to.be.equal(2)
+    expect(cacheSetSpy.callCount).to.be.equal(2)
+
+    // Subsequent calls should retrieve results from cache instead
+    checkedNodes = (
+      await mergeChecker.mergeStatusFilter({
+        nodes,
+        requestID: '1234',
+        blockchainID: '0021',
+        relayer,
+        applicationID: '',
+        applicationPublicKey: '',
+        pocketAAT: POCKET_AAT,
+        session,
+      })
+    ).nodes
+
+    expect(cacheGetSpy.callCount).to.be.equal(3)
+    expect(cacheSetSpy.callCount).to.be.equal(2)
+  })
+
+  it('fails the ETH merge check', async () => {
     const nodes = DEFAULT_NODES
 
     // By default, nodes pass the merge check
     pocketMock.relayResponse[MERGE_CHECK_PAYLOAD] = FAILURE_MERGE_CHECK_RESPONSE
+    const relayer = pocketMock.object()
+    const session = await relayer.getNewSession(undefined)
+
+    const { nodes: checkedNodes } = await mergeChecker.mergeStatusFilter({
+      nodes,
+      requestID: '1234',
+      blockchainID: '0021',
+      relayer,
+      applicationID: '',
+      applicationPublicKey: '',
+      pocketAAT: POCKET_AAT,
+      session,
+    })
+
+    expect(checkedNodes).to.be.Array()
+    expect(checkedNodes).to.have.length(0)
+  })
+
+  it('fails the GNO merge check', async () => {
+    const nodes = DEFAULT_NODES
+
+    // By default, nodes pass the merge check
+    pocketMock.relayResponse[MERGE_CHECK_PAYLOAD] = FAILURE_GNOSIS_MERGE_CHECK_RESPONSE
     const relayer = pocketMock.object()
     const session = await relayer.getNewSession(undefined)
 

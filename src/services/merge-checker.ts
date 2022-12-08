@@ -145,6 +145,7 @@ export class MergeChecker {
       }
 
       if (
+        blockchain &&
         BigInt(nodeTotalDifficulty) === TERMINAL_TOTAL_DIFFICULTY[blockchain] &&
         nodeBlockNumber >= MERGE_BLOCK_NUMBER[blockchain]
       ) {
