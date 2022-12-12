@@ -14,7 +14,7 @@
   ],
   "main": "index.js",
   "engines": {
-    "node": ">=12.16.0 <=16.14"
+    "node": ">=12.16.0 <=16.17"
   },
   "scripts": {
     "build": "lb-tsc",
@@ -99,7 +99,8 @@
     "strong-cryptor": "^2.2.0",
     "winston": "^3.3.3",
     "winston-cloudwatch": "^6.0.1",
-    "winston-logzio": "^5.1.2"
+    "winston-logzio": "^5.1.2",
+    "winston-loki": "^6.0.6"
   },
   "devDependencies": {
     "@loopback/build": "^9.0.1",

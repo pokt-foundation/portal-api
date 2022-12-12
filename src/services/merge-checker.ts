@@ -9,14 +9,37 @@ import extractDomain from 'extract-domain'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { removeChecksCache, removeNodeFromSession, removeSessionCache } from '../utils/cache'
-import { CheckMethods, CHECK_TIMEOUT, PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION } from '../utils/constants'
+import {
+  CheckMethods,
+  CHECK_TIMEOUT,
+  ETHEREUM_BLOCKCHAIN_IDS,
+  GNOSIS_BLOCKCHAIN_IDS,
+  PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION,
+} from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { CheckResult, RelayResponse } from '../utils/types'
 import { Cache } from './cache'
 
 const logger = require('../services/logger')
 
-export class ChainChecker {
+const MERGE_BLOCK_NUMBER = {
+  ethereum: 15537394,
+  gnosis: 25349536,
+}
+
+const TERMINAL_TOTAL_DIFFICULTY = {
+  ethereum: BigInt('58750003716598352816469'),
+  gnosis: BigInt('8626000110427538733349499292577475819600160930'),
+}
+
+const MERGE_CHECK_PAYLOAD = JSON.stringify({
+  jsonrpc: '2.0',
+  method: 'eth_getBlockByNumber',
+  params: ['latest', false],
+  id: 1,
+})
+
+export class MergeChecker {
   cache: Cache
   metricsRecorder: MetricsRecorder
   origin: string
@@ -28,11 +51,9 @@ export class ChainChecker {
     this.origin = origin
   }
 
-  async chainIDFilter({
+  async mergeStatusFilter({
     nodes,
     requestID,
-    chainCheck,
-    chainID,
     blockchainID,
     relayer,
     applicationID,
@@ -40,14 +61,14 @@ export class ChainChecker {
     pocketAAT,
     session,
     path,
-  }: ChainIDFilterOptions): Promise<CheckResult> {
+  }: MergeFilterOptions): Promise<CheckResult> {
     const { key: sessionKey } = session
 
     const CheckedNodes: Node[] = []
     let CheckedNodesList: string[] = []
 
-    // Value is an array of node public keys that have passed Chain checks for this session in the past 5 minutes
-    const checkedNodesKey = `chain-check-${sessionKey}`
+    // Value is an array of node public keys that have passed Merge checks for this session in the past 5 minutes
+    const checkedNodesKey = `merge-check-${sessionKey}`
     const CheckedNodesCached = await this.cache.get(checkedNodesKey)
 
     const cached = Boolean(CheckedNodesCached)
@@ -59,27 +80,26 @@ export class ChainChecker {
           CheckedNodes.push(node)
         }
       }
-      // logger.log('info', 'CHAIN CHECK CACHE: ' + CheckedNodes.length + ' nodes returned');
+      // logger.log('info', 'MERGE CHECK CACHE: ' + CheckedNodes.length + ' nodes returned');
       return { nodes: CheckedNodes, cached }
     }
 
     // Cache is stale, start a new cache fill
     // First check cache lock key; if lock key exists, return full node set
-    const ChainLock = await this.cache.get('lock-' + checkedNodesKey)
+    const MergeLock = await this.cache.get('lock-' + checkedNodesKey)
 
-    if (ChainLock) {
+    if (MergeLock) {
       return { nodes, cached }
     } else {
-      // Set lock as this thread checks the Chain with 60 second ttl.
+      // Set lock as this thread checks the Merge status with 60 second ttl.
       // If any major errors happen below, it will retry the Chain check every 60 seconds.
       await this.cache.set('lock-' + checkedNodesKey, 'true', 'EX', 60)
     }
 
-    // Fires all Chain checks Chainhronously then assembles the results
-    const options: GetNodesChainLogsOptions = {
+    // Fires all Merge checks then assembles the results
+    const options: GetNodesMergeLogsOptions = {
       nodes,
       requestID,
-      chainCheck,
       blockchainID,
       applicationID,
       applicationPublicKey,
@@ -88,7 +108,7 @@ export class ChainChecker {
       session,
       path,
     }
-    const nodeChainLogs = await this.getNodeChainLogs(options)
+    const nodeMergeLogs = await this.getMergeCheckLogs(options)
 
     // Check for percentange of check session errors to determined if session should be
     // removed, as pocket nodes might get out of sync during session rollovers and
@@ -111,32 +131,58 @@ export class ChainChecker {
     }
 
     // Go through nodes and add all nodes that are current or within 1 block -- this allows for block processing times
-    for (const nodeChainLog of nodeChainLogs) {
-      const { node, chainID: nodeChainID } = nodeChainLog
+    for (const nodeMergeLog of nodeMergeLogs) {
+      const { node, totalDifficulty: nodeTotalDifficulty, blockNumber: nodeBlockNumber } = nodeMergeLog
       const { serviceUrl: serviceURL } = node
       const serviceDomain = extractDomain(serviceURL)
 
-      if (nodeChainID === chainID) {
-        logger.log('info', 'CHAIN CHECK SUCCESS: ' + node.publicKey + ' chainID: ' + nodeChainID, {
-          requestID: requestID,
-          serviceNode: node.publicKey,
-          blockchainID,
-          origin: this.origin,
-          serviceURL,
-          serviceDomain,
-          sessionKey,
-        })
+      let blockchain = ''
 
-        // Correct chain: add to nodes list
-        CheckedNodes.push(nodeChainLog.node)
-        CheckedNodesList.push(nodeChainLog.node.publicKey)
+      if (ETHEREUM_BLOCKCHAIN_IDS.includes(blockchainID)) {
+        blockchain = 'ethereum'
+      } else if (GNOSIS_BLOCKCHAIN_IDS.includes(blockchainID)) {
+        blockchain = 'gnosis'
+      }
+
+      if (
+        blockchain &&
+        BigInt(nodeTotalDifficulty) === TERMINAL_TOTAL_DIFFICULTY[blockchain] &&
+        nodeBlockNumber >= MERGE_BLOCK_NUMBER[blockchain]
+      ) {
+        logger.log(
+          'info',
+          'MERGE CHECK SUCCESS: ' +
+            node.publicKey +
+            ' difficulty: ' +
+            BigInt(nodeTotalDifficulty) +
+            ' block number: ' +
+            nodeBlockNumber,
+          {
+            requestID: requestID,
+            serviceNode: node.publicKey,
+            blockchainID,
+            origin: this.origin,
+            serviceURL,
+            serviceDomain,
+            sessionKey,
+          }
+        )
+
+        // Pass merge check: add to nodes list
+        CheckedNodes.push(nodeMergeLog.node)
+        CheckedNodesList.push(nodeMergeLog.node.publicKey)
       } else {
         logger.log(
           'info',
-          'CHAIN CHECK FAILURE: ' + nodeChainLog.node.publicKey + ' chainID: ' + nodeChainLog.chainID,
+          'MERGE CHECK FAILURE: ' +
+            nodeMergeLog.node.publicKey +
+            ' difficulty: ' +
+            BigInt(nodeTotalDifficulty) +
+            ' block number: ' +
+            nodeBlockNumber,
           {
             requestID: requestID,
-            serviceNode: nodeChainLog.node.publicKey,
+            serviceNode: nodeMergeLog.node.publicKey,
             blockchainID,
             origin: this.origin,
             serviceURL,
@@ -147,7 +193,7 @@ export class ChainChecker {
       }
     }
 
-    logger.log('info', 'CHAIN CHECK COMPLETE: ' + CheckedNodes.length + ' nodes on chain', {
+    logger.log('info', 'MERGE CHECK COMPLETE: ' + CheckedNodes.length + ' nodes properly merged', {
       requestID: requestID,
       typeID: applicationID,
       blockchainID,
@@ -159,20 +205,19 @@ export class ChainChecker {
       checkedNodesKey,
       JSON.stringify(CheckedNodesList),
       'EX',
-      CheckedNodes.length > 0 ? 600 : 30 // will retry Chain check every 30 seconds if no nodes are in Chain
+      CheckedNodes.length > 0 ? 600 : 30 // will retry Merge check every 30 seconds if no nodes are merged
     )
 
     // TODO: Implement Consensus challenge
-    // If one or more nodes of this session are not in Chain, fire a consensus relay with the same check.
-    // This will penalize the out-of-Chain nodes and cause them to get slashed for reporting incorrect data.
+    // If one or more nodes of this session are not merged, fire a consensus relay with the same check.
+    // This will penalize the unmerged nodes and cause them to get slashed for reporting incorrect data.
 
     return { nodes: CheckedNodes, cached }
   }
 
-  async getNodeChainLogs({
+  async getMergeCheckLogs({
     nodes,
     requestID,
-    chainCheck,
     blockchainID,
     applicationID,
     applicationPublicKey,
@@ -180,24 +225,23 @@ export class ChainChecker {
     pocketAAT,
     session,
     path,
-  }: GetNodesChainLogsOptions): Promise<NodeChainLog[]> {
-    const nodeChainLogs: NodeChainLog[] = []
-    const promiseStack: Promise<NodeChainLog>[] = []
+  }: GetNodesMergeLogsOptions): Promise<MergeCheckLog[]> {
+    const nodeMergeLogs: MergeCheckLog[] = []
+    const promiseStack: Promise<MergeCheckLog>[] = []
 
     // Set to junk values first so that the Promise stack can fill them later
-    const rawNodeChainLogs: NodeChainLog[] = [
-      <NodeChainLog>{},
-      <NodeChainLog>{},
-      <NodeChainLog>{},
-      <NodeChainLog>{},
-      <NodeChainLog>{},
+    const rawNodeMergeLogs: MergeCheckLog[] = [
+      <MergeCheckLog>{},
+      <MergeCheckLog>{},
+      <MergeCheckLog>{},
+      <MergeCheckLog>{},
+      <MergeCheckLog>{},
     ]
 
     for (const node of nodes) {
-      const options: GetNodeChainLogOptions = {
+      const options: GetNodeMergeLogOptions = {
         node,
         requestID,
-        chainCheck,
         blockchainID,
         applicationID,
         applicationPublicKey,
@@ -207,47 +251,46 @@ export class ChainChecker {
         path,
       }
 
-      promiseStack.push(this.getNodeChainLog(options))
+      promiseStack.push(this.getNodeMergeLog(options))
     }
 
     ;[
-      rawNodeChainLogs[0],
-      rawNodeChainLogs[1],
-      rawNodeChainLogs[2],
-      rawNodeChainLogs[3],
-      rawNodeChainLogs[4],
-      rawNodeChainLogs[5],
-      rawNodeChainLogs[6],
-      rawNodeChainLogs[8],
-      rawNodeChainLogs[9],
-      rawNodeChainLogs[10],
-      rawNodeChainLogs[11],
-      rawNodeChainLogs[12],
-      rawNodeChainLogs[13],
-      rawNodeChainLogs[14],
-      rawNodeChainLogs[15],
-      rawNodeChainLogs[16],
-      rawNodeChainLogs[17],
-      rawNodeChainLogs[18],
-      rawNodeChainLogs[19],
-      rawNodeChainLogs[20],
-      rawNodeChainLogs[21],
-      rawNodeChainLogs[22],
-      rawNodeChainLogs[23],
+      rawNodeMergeLogs[0],
+      rawNodeMergeLogs[1],
+      rawNodeMergeLogs[2],
+      rawNodeMergeLogs[3],
+      rawNodeMergeLogs[4],
+      rawNodeMergeLogs[5],
+      rawNodeMergeLogs[6],
+      rawNodeMergeLogs[8],
+      rawNodeMergeLogs[9],
+      rawNodeMergeLogs[10],
+      rawNodeMergeLogs[11],
+      rawNodeMergeLogs[12],
+      rawNodeMergeLogs[13],
+      rawNodeMergeLogs[14],
+      rawNodeMergeLogs[15],
+      rawNodeMergeLogs[16],
+      rawNodeMergeLogs[17],
+      rawNodeMergeLogs[18],
+      rawNodeMergeLogs[19],
+      rawNodeMergeLogs[20],
+      rawNodeMergeLogs[21],
+      rawNodeMergeLogs[22],
+      rawNodeMergeLogs[23],
     ] = await Promise.all(promiseStack)
 
-    for (const rawNodeChainLog of rawNodeChainLogs) {
-      if (typeof rawNodeChainLog === 'object' && (rawNodeChainLog?.chainID as unknown as string) !== '') {
-        nodeChainLogs.push(rawNodeChainLog)
+    for (const rawNodeMergeLog of rawNodeMergeLogs) {
+      if (typeof rawNodeMergeLog === 'object' && (rawNodeMergeLog?.totalDifficulty as unknown as string) !== '') {
+        nodeMergeLogs.push(rawNodeMergeLog)
       }
     }
-    return nodeChainLogs
+    return nodeMergeLogs
   }
 
-  async getNodeChainLog({
+  async getNodeMergeLog({
     node,
     requestID,
-    chainCheck,
     blockchainID,
     relayer,
     applicationID,
@@ -255,12 +298,12 @@ export class ChainChecker {
     pocketAAT,
     session,
     path,
-  }: GetNodeChainLogOptions): Promise<NodeChainLog> {
+  }: GetNodeMergeLogOptions): Promise<MergeCheckLog> {
     const { key } = session || {}
     const { serviceUrl: serviceURL } = node
     const serviceDomain = extractDomain(serviceURL)
 
-    // Pull the current block from each node using the blockchain's chainCheck as the relay
+    // Pull the difficulty from each node using the merge check payload as the relay
     const relayStart = process.hrtime()
 
     let relay: RelayResponse | Error
@@ -268,7 +311,7 @@ export class ChainChecker {
     try {
       relay = await relayer.relay({
         blockchain: blockchainID,
-        data: chainCheck,
+        data: MERGE_CHECK_PAYLOAD,
         method: '',
         path,
         node,
@@ -287,13 +330,14 @@ export class ChainChecker {
     if (!(relay instanceof Error) && checkEnforcementJSON(relay.response)) {
       const payload = JSON.parse(relay.response)
 
-      // Create a NodeChainLog for each node with current chainID
-      const nodeChainLog = {
+      // Create a NodeMergeLog for each node with difficulty and block number
+      const nodeMergeLog = {
         node: node,
-        chainID: blockHexToDecimal(payload.result),
-      } as NodeChainLog
+        totalDifficulty: String(payload.result.totalDifficulty),
+        blockNumber: blockHexToDecimal(payload.result.number),
+      } as MergeCheckLog
 
-      logger.log('info', 'CHAIN CHECK RESULT: ' + JSON.stringify(nodeChainLog), {
+      logger.log('info', 'MERGE CHECK RESULT: ' + JSON.stringify(nodeMergeLog), {
         requestID: requestID,
         serviceNode: node.publicKey,
         blockchainID,
@@ -304,9 +348,9 @@ export class ChainChecker {
       })
 
       // Success
-      return nodeChainLog
+      return nodeMergeLog
     } else if (relay instanceof Error) {
-      logger.log('error', 'CHAIN CHECK ERROR: ' + JSON.stringify(relay), {
+      logger.log('error', 'MERGE CHECK ERROR: ' + JSON.stringify(relay), {
         requestID: requestID,
         serviceNode: node.publicKey,
         blockchainID,
@@ -333,9 +377,9 @@ export class ChainChecker {
           serviceNode: node.publicKey,
           relayStart,
           result: 500,
-          bytes: Buffer.byteLength('WRONG CHAIN', 'utf8'),
+          bytes: Buffer.byteLength('NOT MERGED CHAIN', 'utf8'),
           fallback: false,
-          method: CheckMethods.ChainCheck,
+          method: CheckMethods.MergeCheck,
           error: typeof relay.message === 'object' ? JSON.stringify(relay.message) : relay.message,
           code: undefined,
           origin: this.origin,
@@ -350,7 +394,7 @@ export class ChainChecker {
           })
         })
     } else {
-      logger.log('error', 'CHAIN CHECK ERROR UNHANDLED: ' + JSON.stringify(relay), {
+      logger.log('error', 'MERGE CHECK ERROR UNHANDLED: ' + JSON.stringify(relay), {
         requestID: requestID,
         serviceNode: node.publicKey,
         blockchainID,
@@ -370,9 +414,9 @@ export class ChainChecker {
           serviceNode: node.publicKey,
           relayStart,
           result: 500,
-          bytes: Buffer.byteLength('WRONG CHAIN', 'utf8'),
+          bytes: Buffer.byteLength('NOT MERGED CHAIN', 'utf8'),
           fallback: false,
-          method: CheckMethods.ChainCheck,
+          method: CheckMethods.MergeCheck,
           error: JSON.stringify(relay),
           code: undefined,
           origin: this.origin,
@@ -388,20 +432,20 @@ export class ChainChecker {
         })
     }
     // Failed
-    const nodeChainLog = { node: node, chainID: 0 } as NodeChainLog
+    const nodeMergeLog = { node: node, totalDifficulty: '0', blockNumber: 0 } as MergeCheckLog
 
-    return nodeChainLog
+    return nodeMergeLog
   }
 }
 
-type NodeChainLog = {
+type MergeCheckLog = {
   node: Node
-  chainID: number
+  totalDifficulty: string
+  blockNumber: number
 }
 
-interface BaseChainLogOptions {
+interface BaseMergeLogOptions {
   requestID: string
-  chainCheck: string
   blockchainID: string
   applicationID: string
   applicationPublicKey: string
@@ -411,19 +455,17 @@ interface BaseChainLogOptions {
   path?: string
 }
 
-interface GetNodesChainLogsOptions extends BaseChainLogOptions {
+interface GetNodesMergeLogsOptions extends BaseMergeLogOptions {
   nodes: Node[]
 }
 
-interface GetNodeChainLogOptions extends BaseChainLogOptions {
+interface GetNodeMergeLogOptions extends BaseMergeLogOptions {
   node: Node
 }
 
-export type ChainIDFilterOptions = {
+export type MergeFilterOptions = {
   nodes: Node[]
   requestID: string
-  chainCheck: string
-  chainID: number
   blockchainID: string
   relayer: Relayer
   applicationID: string

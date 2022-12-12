@@ -4,7 +4,7 @@ import jsonrpc, { ErrorObject, JsonRpcError } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
 import { FilterExcludingWhere, repository } from '@loopback/repository'
-import { get, param, post, requestBody } from '@loopback/rest'
+import { get, param, post, requestBody, Request, RestBindings } from '@loopback/rest'
 import { WriteApi } from '@influxdata/influxdb-client'
 import { Applications, GatewaySettings, LoadBalancers } from '../models'
 import { StickinessOptions } from '../models/load-balancers.model'
@@ -12,10 +12,11 @@ import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository 
 import { Cache } from '../services/cache'
 import { ChainChecker } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
+import { MergeChecker } from '../services/merge-checker'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { PocketRelayer } from '../services/pocket-relayer'
 import { SyncChecker } from '../services/sync-checker'
-import { checkWhitelist, shouldRateLimit } from '../utils/enforcements'
+import { checkWhitelist, RateLimiter, shouldRateLimit } from '../utils/enforcements'
 import { parseRawData, parseRPCID } from '../utils/parsing'
 import { getBlockchainAliasesByDomain, loadBlockchain } from '../utils/relayer'
 import { SendRelayOptions } from '../utils/types'
@@ -41,8 +42,10 @@ export class V1Controller {
   pocketRelayer: PocketRelayer
   syncChecker: SyncChecker
   chainChecker: ChainChecker
+  mergeChecker: MergeChecker
 
   constructor(
+    @inject(RestBindings.Http.REQUEST) private request: Request,
     @inject('secretKey') private secretKey: string,
     @inject('host') private host: string,
     @inject('origin') private origin: string,
@@ -61,12 +64,15 @@ export class V1Controller {
     @inject('defaultSyncAllowance') private defaultSyncAllowance: number,
     @inject('aatPlan') private aatPlan: string,
     @inject('defaultLogLimitBlocks') private defaultLogLimitBlocks: number,
-    @inject('influxWriteAPI') private influxWriteAPI: WriteApi,
+    @inject('influxWriteAPIs') private influxWriteAPIs: WriteApi[],
     @inject('archivalChains') private archivalChains: string[],
     @inject('alwaysRedirectToAltruists') private alwaysRedirectToAltruists: boolean,
+    @inject('altruistOnlyChains') private altruistOnlyChains: string[],
     @inject('dispatchURL') private dispatchURL: string,
     @inject('rateLimiterURL') private rateLimiterURL: string,
     @inject('relaySecurityURL') private relaySecurityURL: string,
+    @inject('rateLimiterToken') private rateLimiterToken: string,
+    @inject('gatewayHost') private gatewayHost: string,
     @repository(ApplicationsRepository)
     public applicationsRepository: ApplicationsRepository,
     @repository(BlockchainsRepository)
@@ -81,13 +87,14 @@ export class V1Controller {
     })
     this.metricsRecorder = new MetricsRecorder({
       redis: this.cache.remote,
-      influxWriteAPI: this.influxWriteAPI,
+      influxWriteAPIs: this.influxWriteAPIs,
       pgPool: this.pgPool,
       cherryPicker: this.cherryPicker,
       processUID: this.processUID,
     })
     this.syncChecker = new SyncChecker(this.cache, this.metricsRecorder, this.defaultSyncAllowance, this.origin)
     this.chainChecker = new ChainChecker(this.cache, this.metricsRecorder, this.origin)
+    this.mergeChecker = new MergeChecker(this.cache, this.metricsRecorder, this.origin)
     this.pocketRelayer = new PocketRelayer({
       host: this.host,
       origin: this.origin,
@@ -98,6 +105,7 @@ export class V1Controller {
       metricsRecorder: this.metricsRecorder,
       syncChecker: this.syncChecker,
       chainChecker: this.chainChecker,
+      mergeChecker: this.mergeChecker,
       cache: this.cache,
       databaseEncryptionKey: this.databaseEncryptionKey,
       secretKey: this.secretKey,
@@ -107,8 +115,10 @@ export class V1Controller {
       aatPlan: this.aatPlan,
       defaultLogLimitBlocks: this.defaultLogLimitBlocks,
       alwaysRedirectToAltruists: this.alwaysRedirectToAltruists,
+      altruistOnlyChains: this.altruistOnlyChains,
       dispatchers: this.dispatchURL,
       relaySecurityURL: this.relaySecurityURL,
+      request: this.request,
     })
   }
 
@@ -135,6 +145,13 @@ export class V1Controller {
 
       rpcID = parseRPCID(parsedRawData)
 
+      const [blockchainRequest] = this.host.split('.')
+
+      logger.log('info', `PUBLIC RPC RELAY REDIRECTED FOR ${blockchainRequest}`, {
+        requestBody: parsedRawData,
+        blockchainSubdomain: blockchainRequest,
+      })
+
       // Since we only have non-gateway url, let's fetch a blockchain that contains this domain
       const { blockchainAliases } = await getBlockchainAliasesByDomain(
         this.host,
@@ -144,8 +161,7 @@ export class V1Controller {
       )
 
       // Any alias works to load a specific blockchain
-      // TODO: Move URL to ENV
-      this.host = `${blockchainAliases[0]}.gateway.pokt.network`
+      this.host = `${blockchainAliases[0]}.${this.gatewayHost}`
 
       const { blockchainRedirects, blockchainPath } = await loadBlockchain(
         this.host,
@@ -315,21 +331,33 @@ export class V1Controller {
         throw new ErrorObject(reqRPCID, new jsonrpc.JsonRpcError('No application found in the load balancer', -32055))
       }
 
-      if (!gigastakeOptions.gigastaked) {
-        const shouldLimit = await shouldRateLimit(application.id, this.rateLimiterURL, this.cache)
-        if (shouldLimit) {
-          logger.log(
-            'warn',
-            'relay count on application associated with the endpoint has exceeded the rate limit ' + application.id,
-            {
-              requestID: this.requestID,
-              relayType: 'LB',
-              typeID: id,
-              serviceNode: '',
-              origin: this.origin,
-            }
-          )
-        }
+      const rateLimiter: RateLimiter = {
+        URL: this.rateLimiterURL,
+        token: this.rateLimiterToken,
+      }
+
+      // Rate limit original app for gigastake redirected endpoints
+      const rateLimitTargetApp = gigastakeOptions?.originalAppID ? gigastakeOptions?.originalAppID : application?.id
+
+      const shouldLimit = await shouldRateLimit(rateLimitTargetApp, rateLimiter, this.cache)
+
+      if (shouldLimit) {
+        logger.log(
+          'error',
+          'relay count on application associated with the endpoint has exceeded the rate limit ' + rateLimitTargetApp,
+          {
+            requestID: this.requestID,
+            relayType: 'LB',
+            typeID: id,
+            serviceNode: '',
+            origin: this.origin,
+          }
+        )
+
+        return jsonrpc.error(
+          reqRPCID,
+          new jsonrpc.JsonRpcError('Rate limit exceeded. Please upgrade your plan.', -32068)
+        ) as ErrorObject
       }
 
       if (gigastakeOptions?.gatewaySettings) {
@@ -448,15 +476,26 @@ export class V1Controller {
       const applicationID = application.id
       const applicationPublicKey = application.gatewayAAT.applicationPublicKey
 
-      const shouldLimit = await shouldRateLimit(applicationID, this.rateLimiterURL, this.cache)
+      const rateLimiter: RateLimiter = {
+        URL: this.rateLimiterURL,
+        token: this.rateLimiterToken,
+      }
+
+      const shouldLimit = await shouldRateLimit(applicationID, rateLimiter, this.cache)
+
       if (shouldLimit) {
-        logger.log('warn', 'application relay count has exceeded the rate limit ' + applicationID, {
+        logger.log('error', 'application relay count has exceeded the rate limit ' + applicationID, {
           requestID: this.requestID,
           relayType: 'APP',
           typeID: id,
           serviceNode: '',
           origin: this.origin,
         })
+
+        return jsonrpc.error(
+          reqRPCID,
+          new jsonrpc.JsonRpcError('Rate limit exceeded. Please upgrade your plan.', -32068)
+        ) as ErrorObject
       }
 
       const { stickiness, duration, useRPCID, relaysLimit, stickyOrigins } =

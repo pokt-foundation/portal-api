@@ -17,9 +17,9 @@ export const DUMMY_ENV = {
   LOCAL_REDIS_ENDPOINT: 'local-cache:6380',
   PSQL_CONNECTION: 'postgres://pguser:pgpassword@metricsdb:5432/gateway',
   PSQL_CERTIFICATE: 'PG_PRODUCTION_CERTIFICATE',
-  INFLUX_URL: 'http://influxdb:8086',
-  INFLUX_TOKEN: 'abcde',
-  INFLUX_ORG: 'myorg',
+  INFLUX_URLS: ['http://influxdb:8086'],
+  INFLUX_TOKENS: ['abcde'],
+  INFLUX_ORGS: ['myorg'],
   DISPATCH_URL: 'https://node1.dispatcher.pokt.network/',
   POCKET_SESSION_BLOCK_FREQUENCY: 4,
   POCKET_BLOCK_TIME: 1038000,
@@ -34,6 +34,9 @@ export const DUMMY_ENV = {
   BLOCKED_ADDRESSES_URL: 'https://blocked.addresses',
   RATE_LIMITER_URL: 'https://rate.limiter',
   RELAY_SECURITY_URL: '',
+  RATE_LIMITER_TOKEN: 'rate-limiter-token',
+  ALTRUIST_ONLY_CHAINS: '',
+  GATEWAY_HOST: 'localhost',
 }
 
 export async function setupApplication(pocket?: Relayer, envs?: object): Promise<AppWithClient> {

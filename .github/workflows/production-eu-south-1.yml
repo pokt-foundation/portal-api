@@ -4,7 +4,7 @@ name: Terraform Production Deployment eu-south-1
 
 on:
   push:
-    branches: [master]
+    branches: [master, eth-altruist]
 
 jobs:
   deploy:
@@ -48,21 +48,28 @@ jobs:
           envkey_DEFAULT_LOG_LIMIT_BLOCKS: 10000
           envkey_AAT_PLAN: premium
           envkey_NODE_ENV: production
-          envkey_INFLUX_URL: https://influx.portal.pokt.network:8086
-          envkey_INFLUX_ORG: pocket
-          envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
           envkey_PSQL_CONNECTION: ${{ secrets.PSQL_CONNECTION }}
           envkey_PSQL_CERTIFICATE: https://s3.amazonaws.com/rds-downloads/rds-ca-2019-root.pem
           envkey_LOG_TO_CLOUDWATCH: false
           envkey_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          envkey_COMMIT_HASH: ${{ github.sha }}
           envkey_ARCHIVAL_CHAINS: 0022,0028,0010,000A,000B,000C
           envkey_LOG_TO_DATADOG: true
           envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          envkey_LOG_TO_LOKI: ${{ secrets.LOG_TO_LOKI }}
+          envkey_LOKI_BASIC_AUTH: ${{ secrets.LOKI_BASIC_AUTH }}
+          envkey_LOKI_HOST: ${{ secrets.LOKI_HOST }}
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
           envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}
-          envkey_RATE_LIMITER_URL: https://rate-limiter.backend.pokt.network/v0/app-ids
+          envkey_RATE_LIMITER_URL: ${{ secrets.RATE_LIMITER_URL }}
+          envkey_RATE_LIMITER_TOKEN: ${{ secrets.RATE_LIMITER_TOKEN }}
+          envkey_INFLUX_URLS: ${{ secrets.INFLUX_URLS }}
+          envkey_INFLUX_TOKENS: ${{ secrets.INFLUX_TOKENS }}
+          envkey_INFLUX_ORGS: ${{ secrets.INFLUX_ORGS }}
+          envkey_ALTRUIST_ONLY_CHAINS: ${{ secrets.ALTRUIST_ONLY_CHAINS }}
+          envkey_GATEWAY_HOST: ${{ secrets.GATEWAY_HOST }}
           envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.thcgg8.clustercfg.eus1.cache.amazonaws.com
           envkey_REGION: 'eu-south-1'
           envkey_REGION_NAME: 'eu-south-1'

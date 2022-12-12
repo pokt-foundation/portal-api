@@ -334,6 +334,8 @@ describe('V1 controller (acceptance)', () => {
       '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}': '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}',
       '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","toBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}':
         '{"jsonrpc":"2.0","id":1,"result":[{"address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff","blockHash":"0x2ad90e24266edd835bb03071c0c0b58ee8356c2feb4576d15b3c2c2b2ef319c5","blockNumber":"0xc5bdc9","data":"0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000767fe9edc9e0df98e07454847909b5e959d7ca0e0000000000000000000000000000000000000000000000019274b259f653fc110000000000000000000000000000000000000000000000104bf2ffa4dcbf8de5","logIndex":"0x4c","removed":false,"topics":["0x0f6672f78a59ba8e5e5b5d38df3ebc67f3c792e2c9259b8d97d7f00dd78ba1b3","0x000000000000000000000000e5feeac09d36b18b3fa757e5cf3f8da6b8e27f4c"],"transactionHash":"0x14430f1e344b5f95ea68a5f4c0538fc732cc97efdc68f6ee0ba20e2c633542f6","transactionIndex":"0x1a"}]}',
+      '{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["latest",false],"id":1}':
+        '{"jsonrpc":"2.0","id":1,"result":{"number":"0xed14f2","totalDifficulty":"0xc70d815d562d3cfa955"}}',
     }
 
     axiosMock
@@ -813,9 +815,13 @@ describe('V1 controller (acceptance)', () => {
   })
 
   it('redirects empty path with specific load balancer', async () => {
+    const gatewayHost = 'custom-host'
+    const gatewayHostKey = 'gatewayHost'
     const pocket = pocketMock.object()
 
-    ;({ app, client } = await setupApplication(pocket))
+    ;({ app, client } = await setupApplication(pocket, {
+      GATEWAY_HOST: gatewayHost,
+    }))
 
     const response = await client
       .post('/')
@@ -824,6 +830,7 @@ describe('V1 controller (acceptance)', () => {
       .set('host', 'eth-mainnet-x')
       .expect(200)
 
+    expect(app.find(gatewayHostKey)[0].getValue(app.getOwnerContext(gatewayHostKey))).equal(gatewayHost)
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
     expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
     expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
@@ -1114,9 +1121,7 @@ describe('V1 controller (acceptance)', () => {
   })
 
   describe('Rate-limiting applications and loadbalancers', () => {
-    // TODO: empty list of rate-limited apps: needs per-test setup of axios
-    // TODO: failure in calling the rate-limiter: needs per-test setup of axios
-    it('logs a warning on request with rate-limited app', async () => {
+    it('logs an error on request with rate-limited app & relay throws error', async () => {
       const pocket = pocketMock.object()
       const logSpy = sinon.spy(logger, 'log')
 
@@ -1130,17 +1135,48 @@ describe('V1 controller (acceptance)', () => {
         .expect(200)
 
       expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
-      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
-      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+      expect(response.body).to.have.property('error')
+      expect(response.body.error.message).to.startWith('Rate limit exceeded. Please upgrade your plan.')
 
       const rateLimitWarningLogged = logSpy.calledWith(
-        'warn',
+        'error',
         sinon.match((arg: string) => arg.startsWith('application relay count has exceeded the rate limit'))
       )
       expect(rateLimitWarningLogged).to.be.true()
     })
 
-    it('logs a warning on lb relay request with rate-limited app', async () => {
+    it('logs an error on lb relay request with rate-limited app & relay throws error', async () => {
+      const pocket = pocketMock.object()
+      const logSpy = sinon.spy(logger, 'log')
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/lb/${RATE_LIMITED_LB_ID.lb}`)
+        .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.property('error')
+      expect(response.body.error.message).to.startWith('Rate limit exceeded. Please upgrade your plan.')
+
+      const rateLimitWarningLogged = logSpy.calledWith(
+        'error',
+        sinon.match((arg: string) =>
+          arg.startsWith('relay count on application associated with the endpoint has exceeded the rate limit')
+        )
+      )
+      expect(rateLimitWarningLogged).to.be.true()
+    })
+
+    it('logs warning on empty rate-limiter app list & relay suceeds', async () => {
+      // Mocking empty rate-limited apps list
+      axiosMock.onGet('https://rate.limiter').reply(200, {
+        applicationIDs: [],
+      })
+
       const pocket = pocketMock.object()
       const logSpy = sinon.spy(logger, 'log')
 
@@ -1159,8 +1195,37 @@ describe('V1 controller (acceptance)', () => {
 
       const rateLimitWarningLogged = logSpy.calledWith(
         'warn',
+        sinon.match((arg: string) => arg.startsWith('Rate-limited applications list is empty; rate-limiting disabled'))
+      )
+      expect(rateLimitWarningLogged).to.be.true()
+    })
+
+    it('logs an error on rate-limiter call failure & relay succeeds', async () => {
+      // Mocking failure to fetch rate-limiter
+      axiosMock.onGet('https://rate.limiter').reply(500)
+
+      const pocket = pocketMock.object()
+      const logSpy = sinon.spy(logger, 'log')
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/lb/${RATE_LIMITED_LB_ID.lb}`)
+        .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+
+      const rateLimitWarningLogged = logSpy.calledWith(
+        'error',
         sinon.match((arg: string) =>
-          arg.startsWith('relay count on application associated with the endpoint has exceeded the rate limit')
+          arg.startsWith(
+            'Error fetching rate-limited applications list; setting cache to skip rate limited applications lookup for 300 seconds'
+          )
         )
       )
       expect(rateLimitWarningLogged).to.be.true()
@@ -1921,6 +1986,40 @@ describe('V1 controller (acceptance)', () => {
       expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
       expect(response.body).to.have.property('error')
       expect(response.body.error.message).to.startWith('Restricted endpoint: contract address not allowed')
+    })
+
+    it('invokes POST /v1/{appId} and successfully relays a request only through the altruist', async () => {
+      const pocket = pocketMock.object()
+      const logSpy = sinon.spy(logger, 'log')
+
+      ;({ app, client } = await setupApplication(pocket, { ALTRUIST_ONLY_CHAINS: '0041' }))
+
+      const response = await client
+        .post('/v1/sd9fj31d714kgos42e68f9gh')
+        .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+
+      const expectedAltruistLog = logSpy.calledWith(
+        'info',
+        sinon.match((arg: string) => arg.startsWith('SUCCESS FALLBACK RELAYING 0041')),
+        sinon.match((log: object) => log['forcedFallback'] === true)
+      )
+
+      expect(expectedAltruistLog).to.be.true()
+
+      // No session is being dispatched, hence is only being called through the altruist
+      const notExpectedLog = logSpy.calledWith(
+        'info',
+        sinon.match((arg: string) => arg.startsWith('success dispatcher call to obtain session'))
+      )
+
+      expect(notExpectedLog).to.be.false()
     })
   })
 })

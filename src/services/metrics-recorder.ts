@@ -10,31 +10,30 @@ import { Point, WriteApi } from '@influxdata/influxdb-client'
 
 import { BLOCK_TIMING_ERROR, CheckMethods } from '../utils/constants'
 import { CherryPicker } from './cherry-picker'
-const os = require('os')
 const logger = require('../services/logger')
 
 export class MetricsRecorder {
   redis: Redis
-  influxWriteAPI: WriteApi
+  influxWriteAPIs: WriteApi[]
   pgPool: PGPool
   cherryPicker: CherryPicker
   processUID: string
 
   constructor({
     redis,
-    influxWriteAPI,
+    influxWriteAPIs,
     pgPool,
     cherryPicker,
     processUID,
   }: {
     redis: Redis
-    influxWriteAPI: WriteApi
+    influxWriteAPIs: WriteApi[]
     pgPool: PGPool
     cherryPicker: CherryPicker
     processUID: string
   }) {
     this.redis = redis
-    this.influxWriteAPI = influxWriteAPI
+    this.influxWriteAPIs = influxWriteAPIs
     this.pgPool = pgPool
     this.cherryPicker = cherryPicker
     this.processUID = processUID
@@ -45,44 +44,46 @@ export class MetricsRecorder {
     requestID,
     applicationID,
     applicationPublicKey,
+    blockchain,
     blockchainID,
     serviceNode,
     relayStart,
     result,
-    responseStart,
     bytes,
     fallback,
     method,
     error,
     code,
     origin,
-    data,
     session,
     timeout,
     sticky,
     elapsedTime = 0,
     gigastakeAppID,
+    forcedFallback = false,
+    url,
   }: {
     requestID: string
     applicationID: string
     applicationPublicKey: string
+    blockchain: string
     blockchainID: string
     serviceNode: string | undefined
     relayStart?: [number, number]
     result: number
-    responseStart?: string | undefined
     bytes: number
     fallback: boolean
     method: string | undefined
     error: string | undefined
     code: string | undefined
     origin: string | undefined
-    data: string | undefined
     session: Session | undefined
     timeout?: number
     sticky?: string
     elapsedTime?: number
     gigastakeAppID?: string
+    forcedFallback?: boolean
+    url?: string
   }): Promise<void> {
     try {
       const { key: sessionKey } = session || {}
@@ -116,63 +117,70 @@ export class MetricsRecorder {
 
       // Parse value if coming as BigInt
       if (result === 200) {
-        logger.log('info', 'SUCCESS' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
+        logger.log('info', 'SUCCESS' + fallbackTag + ' RELAYING ' + blockchainID, {
           requestID,
           relayType: 'APP',
           typeID: applicationID,
           gigastakeAppID,
+          method,
           serviceNode,
           serviceURL,
           serviceDomain,
           elapsedTime,
-          origin,
+          blockchainSubdomain: blockchain,
           blockchainID,
           sessionKey,
           sticky,
-          sessionBlockHeight: session.header.sessionBlockHeight,
-          blockHeight: session.blockHeight,
-          responseStart,
+          sessionBlockHeight: session?.header.sessionBlockHeight,
+          blockHeight: session?.blockHeight,
+          forcedFallback,
+          url,
         })
       } else if (result === 500) {
-        logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
+        logger.log('error', 'FAILURE' + fallbackTag + ' RELAYING ' + blockchainID, {
           requestID,
           relayType: 'APP',
           typeID: applicationID,
           gigastakeAppID,
+          method,
           serviceNode,
           serviceURL,
           serviceDomain,
           elapsedTime,
           error,
-          origin,
+          blockchainSubdomain: blockchain,
           blockchainID,
           sessionKey,
           sticky,
           sessionBlockHeight: session.header.sessionBlockHeight,
           blockHeight: session.blockHeight,
+          forcedFallback,
+          url,
         })
       } else if (result === 503) {
-        logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID + ' req: ' + data, {
+        logger.log('error', 'INVALID RESPONSE' + fallbackTag + ' RELAYING ' + blockchainID, {
           requestID,
           relayType: 'APP',
           typeID: applicationID,
           gigastakeAppID,
+          method,
           serviceNode,
           serviceURL,
           serviceDomain,
           elapsedTime,
           error,
-          origin,
+          blockchainSubdomain: blockchain,
           blockchainID,
           sessionKey,
           sticky,
           sessionBlockHeight: session.header.sessionBlockHeight,
           blockHeight: session.blockHeight,
+          forcedFallback,
         })
       }
 
       // Update service node quality with cherry picker
-      if (serviceNode && !Object.values(CheckMethods).includes(method as CheckMethods)) {
+      if (!fallback && serviceNode && !Object.values(CheckMethods).includes(method as CheckMethods)) {
         await this.cherryPicker.updateServiceQuality(blockchainID, serviceNode, elapsedTime, result, session, timeout)
       }
 
@@ -182,27 +190,41 @@ export class MetricsRecorder {
       // Redis timestamp for bulk logs
       const redisTimestamp = Math.floor(new Date().getTime() / 1000)
 
+      // Reduce multi-method calls for metrics/logging purposes
+      let simplifiedMethod = method
+
+      if (method && method.split(',').length > 1) {
+        simplifiedMethod = 'multiple'
+      }
+
       // InfluxDB
       const pointRelay = new Point('relay')
         .tag('applicationPublicKey', applicationPublicKey)
         .tag('nodePublicKey', serviceNode && !fallback ? 'network' : 'fallback')
-        .tag('method', method)
+        .tag('method', simplifiedMethod)
         .tag('result', result.toString())
         .tag('blockchain', blockchainID) // 0021
-        .tag('host', os.hostname())
+        .tag('blockchainSubdomain', blockchain) // eth-mainnet
         .tag('region', process.env.REGION || '')
         .floatField('bytes', bytes)
         .floatField('elapsedTime', elapsedTime.toFixed(4))
         .timestamp(relayTimestamp)
-
-      this.influxWriteAPI.writePoint(pointRelay)
 
       const pointOrigin = new Point('origin')
         .tag('applicationPublicKey', applicationPublicKey)
         .stringField('origin', origin)
         .timestamp(relayTimestamp)
 
-      this.influxWriteAPI.writePoint(pointOrigin)
+      Promise.allSettled(this.influxWriteAPIs.map((api) => api.writePoint(pointRelay))).catch((err) => {
+        logger.log('error', `error writing to influx`, {
+          error: err,
+        })
+      })
+      Promise.allSettled(this.influxWriteAPIs.map((api) => api.writePoint(pointOrigin))).catch((err) => {
+        logger.log('error', `error writing to influx`, {
+          error: err,
+        })
+      })
 
       // Store errors in redis and every 10 seconds, push to postgres
       const redisErrorKey = 'errors-' + this.processUID
