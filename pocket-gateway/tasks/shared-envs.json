@@ -113,14 +113,17 @@
       "value": "0022,0028,0010,000A,000B,000C"
     },
     {
-      "key": "LOG_TO_DATADOG",
-      "value": true
+      "key": "LOG_TO_LOKI",
+      "value": "${{ secrets.LOG_TO_LOKI }}"
     },
     {
-      "key": "DATADOG_API_KEY",
-      "value": "${{ secrets.DATADOG_API_KEY }}"
+      "key": "LOKI_BASIC_AUTH",
+      "value": "${{ secrets.LOKI_BASIC_AUTH }}"
     },
-
+    {
+      "key": "LOKI_HOST",
+      "value": "${{ secrets.LOKI_HOST }}"
+    },
     {
       "key": "ALWAYS_REDIRECT_TO_ALTRUISTS",
       "value": "${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}"
