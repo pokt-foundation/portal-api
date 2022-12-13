@@ -29,13 +29,9 @@ interface Log {
   gigastakeAppID: string
 }
 
-const environment = process.env.NODE_ENV || 'production'
-const logToCloudWatch = process.env.LOG_TO_CLOUDWATCH === 'true'
 const accessKeyID = process.env.AWS_ACCESS_KEY_ID || ''
 const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || ''
 const region = process.env.REGION || ''
-const logToDataDog = process.env.LOG_TO_DATADOG === 'true'
-const ddApiKey = process.env.DATADOG_API_KEY || ''
 const silent = process.env.SILENT_LOGGING === 'true'
 
 const logToLoki = process.env.LOG_TO_LOKI === 'true'
@@ -47,28 +43,6 @@ const timestampUTC = () => {
 
   return timestamp.toISOString()
 }
-
-const consoleFormat = printf(
-  ({
-    level,
-    message,
-    requestID = '',
-    relayType = '',
-    typeID = '',
-    error = '',
-    elapsedTime,
-    blockchainID = '',
-    origin = '',
-    serviceNode = '',
-    serviceURL = '',
-    serviceDomain = '',
-    sessionKey = '',
-    sticky = 'NONE',
-    gigastakeAppID = '',
-  }: Log) => {
-    return `[${timestampUTC()}] [${level}] [${requestID}] [${relayType}] [${typeID}] [${serviceNode}] [${serviceURL}] [${serviceDomain}] [${sessionKey}] [${error}] [${elapsedTime}] [${blockchainID}] [${origin}] [sticky: ${sticky}] [${gigastakeAppID}] ${message}`
-  }
-)
 
 const startTime = new Date().toISOString()
 
@@ -111,14 +85,6 @@ const options = {
       })
     },
   },
-  datadog: {
-    apiKey: ddApiKey,
-    hostname: os.hostname(),
-    service: logName,
-    ddsource: 'nodejs',
-    intakeRegion: 'eu',
-    ddtags: `region:${region}`,
-  },
   loki: {
     host: lokiHost,
     basicAuth: lokiBasicAuth,
@@ -133,32 +99,12 @@ const options = {
 const getTransports = () => {
   const transports = [new winstonTransports.Console(options.console)]
 
-  if (environment === 'production' || environment === 'staging') {
-    if (logToCloudWatch || logToDataDog) {
-      if (!region) {
-        throw new HttpErrors.InternalServerError('REGION required in ENV')
-      }
+  if (logToLoki) {
+    if (!lokiHost) {
+      throw new HttpErrors.InternalServerError('LOKI_HOST required in ENV')
     }
 
-    if (logToCloudWatch) {
-      transports.push(new WinstonCloudwatch(options.aws))
-    }
-
-    if (logToDataDog) {
-      if (!ddApiKey) {
-        throw new HttpErrors.InternalServerError('DATADOG_API_KEY required in ENV')
-      }
-
-      transports.push(new DatadogWinston(options.datadog))
-    }
-
-    if (logToLoki) {
-      if (!lokiHost) {
-        throw new HttpErrors.InternalServerError('LOKI_HOST required in ENV')
-      }
-
-      transports.push(new LokiWinston(options.loki))
-    }
+    transports.push(new LokiWinston(options.loki))
   }
 
   return transports
