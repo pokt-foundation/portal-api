@@ -105,14 +105,6 @@
       "value": "0022,0028,0010,000A,000B,000C"
     },
     {
-      "key": "LOG_TO_DATADOG",
-      "value": true
-    },
-    {
-      "key": "DATADOG_API_KEY",
-      "value": "${{ secrets.DATADOG_API_KEY }}"
-    },
-    {
       "key": "LOG_TO_LOKI",
       "value": "${{ secrets.LOG_TO_LOKI }}"
     },
