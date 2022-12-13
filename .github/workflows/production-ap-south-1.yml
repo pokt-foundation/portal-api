@@ -42,7 +42,6 @@ jobs:
           envkey_REDIRECTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_REDIRECTS }}
           envkey_LOCAL_REDIS_ENDPOINT: 172.17.0.1:6379
           envkey_REDIS_PORT: 6379
-          envkey_POCKET_NETWORK_NODE_URL: ${{ secrets.POCKET_NETWORK_MAINNET_NODE_URL }}
           envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
           envkey_POCKET_BLOCK_TIME: 1038000
           envkey_POCKET_RELAY_RETRIES: 0

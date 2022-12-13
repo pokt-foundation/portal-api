@@ -1,33 +1,11 @@
 import crypto from 'crypto'
 import os from 'os'
 import { LogEntry } from 'winston'
-import WinstonCloudwatch from 'winston-cloudwatch'
 import { HttpErrors } from '@loopback/rest'
 
 require('dotenv').config()
-const DatadogWinston = require('datadog-winston')
 const { createLogger, format, transports: winstonTransports } = require('winston')
 const LokiWinston = require('winston-loki')
-
-const { printf } = format
-
-interface Log {
-  level: string
-  message: string
-  requestID: string
-  relayType: string
-  typeID: string
-  serviceNode: string
-  error: string | undefined
-  elapsedTime: number
-  blockchainID: string
-  origin: string
-  serviceURL: string
-  serviceDomain: string
-  sessionKey: string
-  sticky: string
-  gigastakeAppID: string
-}
 
 const accessKeyID = process.env.AWS_ACCESS_KEY_ID || ''
 const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || ''
