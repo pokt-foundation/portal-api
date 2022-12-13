@@ -45,10 +45,6 @@
       "value": 6379
     },
     {
-      "key": "POCKET_NETWORK_NODE_URL",
-      "value": "${{ secrets.POCKET_NETWORK_MAINNET_NODE_URL }}"
-    },
-    {
       "key": "POCKET_SESSION_BLOCK_FREQUENCY",
       "value": 4
     },
@@ -103,14 +99,6 @@
     {
       "key": "ARCHIVAL_CHAINS",
       "value": "0022,0028,0010,000A,000B,000C"
-    },
-    {
-      "key": "LOG_TO_DATADOG",
-      "value": true
-    },
-    {
-      "key": "DATADOG_API_KEY",
-      "value": "${{ secrets.DATADOG_API_KEY }}"
     },
     {
       "key": "LOG_TO_LOKI",
