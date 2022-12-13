@@ -91,33 +91,11 @@ jobs:
           task-definition: pocket-gateway/tasks/canary/ecs-task-definition.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
-          # Needs to be set at container level to be read by the dd agent
-          environment-variables: |
-            DD_RUNTIME_METRICS_ENABLED=true
-            DD_PROFILING_ENABLED=true
-            DD_SERVICE=/canary/us-west-2/ecs/gateway
-            DD_VERSION=${{ github.sha }}
-            DD_ENV=canary
-            DD_AGENT_HOST=datadog-agent
-
-      - name: Fill in the new image ID / us-west-2 - datadog-agent
-        id: task-def-us-west-2-datadog-agent
-        uses: aws-actions/amazon-ecs-render-task-definition@master
-        with:
-          task-definition: ${{ steps.task-def-us-west-2-gateway.outputs.task-definition }}
-          container-name: datadog-agent
-          image: gcr.io/datadoghq/agent:latest
-          environment-variables: |
-            DD_API_KEY=${{ secrets.DATADOG_API_KEY }}
-            DD_SITE=datadoghq.eu
-            DD_LOGS_ENABLED=false
-            DD_APM_ENABLED=false
-            DD_DOGSTATSD_NON_LOCAL_TRAFFIC=false
 
       - name: Deploy / us-west-2
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def-us-west-2-datadog-agent.outputs.task-definition }}
+          task-definition: ${{ steps.task-def-us-west-2-gateway.outputs.task-definition }}
           service: gateway-canary
           cluster: gateway-canary
           wait-for-service-stability: true
