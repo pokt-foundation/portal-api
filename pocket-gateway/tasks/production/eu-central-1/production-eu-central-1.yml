@@ -6,7 +6,7 @@ name: Terraform Production Deployment eu-central-1
 
 on:
   push:
-    branches: [master]
+    branches: [master, disable-dd-logging]
 
 jobs:
   deploy:

@@ -4,7 +4,7 @@ name: Terraform Production Deployment eu-west-3
 
 on:
   push:
-    branches: [master, eth-altruist]
+    branches: [master, disable-dd-logging]
 
 jobs:
   deploy:
