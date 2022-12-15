@@ -4,7 +4,7 @@ name: Terraform Production Deployment us-west-2
 
 on:
   push:
-    branches: [master]
+    branches: [master, reload-influx-envs]
 
 jobs:
   deploy:

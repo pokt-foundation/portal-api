@@ -4,7 +4,7 @@ name: Terraform Production Deployment ap-northeast-1
 
 on:
   push:
-    branches: [master]
+    branches: [master, reload-influx-envs]
 
 jobs:
   deploy:
