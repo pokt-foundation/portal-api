@@ -30,7 +30,6 @@ describe('Blockchains controller (acceptance)', () => {
     const expected = Object.assign(
       {},
       {
-        _id: '0024',
         ticker: 'POA',
         networkID: '42',
         network: 'POA-42',
@@ -41,16 +40,13 @@ describe('Blockchains controller (acceptance)', () => {
         active: true,
         evm: true,
         enforceResult: 'JSON',
-        nodeCount: 23,
         hash: '1234',
-        syncCheck: '',
         syncCheckOptions: {
           body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
           resultKey: 'result',
           allowance: 2,
         },
         logLimitBlocks: 10,
-        altruist: 'https://user:pass@backups.example.org:18546',
         redirects: [
           {
             alias: '',
@@ -80,10 +76,39 @@ describe('Blockchains controller (acceptance)', () => {
 
   it('retrieves the information of a specific blockchain', async () => {
     const [blockchain] = await generateBlockchains(1)
+    const expected = Object.assign(
+      {},
+      {
+        ticker: 'POA',
+        networkID: '42',
+        network: 'POA-42',
+        description: 'Kovan',
+        index: 6,
+        blockchain: 'poa-kovan',
+        blockchainAliases: ['poa-kovan'],
+        active: true,
+        evm: true,
+        enforceResult: 'JSON',
+        hash: '0',
+        syncCheckOptions: {
+          body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+          resultKey: 'result',
+          allowance: 2,
+        },
+        logLimitBlocks: 10,
+        redirects: [
+          {
+            alias: '',
+            domain: '',
+            loadBalancerID: '',
+          },
+        ],
+      }
+    )
     const res = await client.get(`/blockchains/${blockchain.hash}`).expect(200)
 
     expect(res.body).to.be.Object()
-    expect(res.body).to.containEql(blockchain)
+    expect(res.body).to.containEql(expected)
 
     // Blockchain that doesn't exist
     await client.get('/blockchains/nope').expect(404)
