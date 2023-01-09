@@ -129,6 +129,12 @@ describe('Blockchains controller (acceptance)', () => {
     expect(res.body[blockchainID].id).to.be.equal('0')
   })
 
+  it('returns 404 on not found hash', async () => {
+    await generateBlockchains(10)
+
+    await client.get('/blockchains/invalid').expect(404)
+  })
+
   async function generateBlockchains(amount: number): Promise<Partial<Blockchains>[]> {
     const blockchains = []
 
