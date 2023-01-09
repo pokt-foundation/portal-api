@@ -2,7 +2,6 @@ import crypto from 'crypto'
 import os from 'os'
 import path from 'path'
 import process from 'process'
-import axios from 'axios'
 import Redis from 'ioredis'
 import pg from 'pg'
 import { BootMixin } from '@loopback/boot'
@@ -73,13 +72,10 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       ALTRUIST_ONLY_CHAINS,
       REDIS_LOCAL_TTL_FACTOR,
       RATE_LIMITER_URL,
-<<<<<<< HEAD
       RATE_LIMITER_TOKEN,
       GATEWAY_HOST,
-=======
       PHD_BASE_URL,
       PHD_API_KEY,
->>>>>>> 88900831 (fix: inject PHD client)
     }: // eslint-disable-next-line @typescript-eslint/no-explicit-any
     any = await this.get('configuration.environment.values')
 
@@ -97,13 +93,10 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const altruistOnlyChains: string[] = (ALTRUIST_ONLY_CHAINS || '').replace(' ', '').split(',')
     const ttlFactor = parseFloat(REDIS_LOCAL_TTL_FACTOR) || 1
     const rateLimiterURL: string = RATE_LIMITER_URL || ''
-<<<<<<< HEAD
     const rateLimiterToken: string = RATE_LIMITER_TOKEN || ''
     const gatewayHost: string = GATEWAY_HOST || 'localhost'
-=======
     const phdBaseURL: string = PHD_BASE_URL || ''
     const phdAPIKey: string = PHD_API_KEY || ''
->>>>>>> 88900831 (fix: inject PHD client)
 
     const influxURLs = (INFLUX_URLS || '').split(',')
     const influxTokens = (INFLUX_TOKENS || '').split(',')
@@ -167,16 +160,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     // Bind PHD Client
     const phdClient = new PHDClient(phdBaseURL, phdAPIKey)
 
-    this.bind('phdClient').to(undefined)
-    if (phdClient) {
-      try {
-        await axios({ method: 'GET', url: phdBaseURL })
-
-        this.bind('phdClient').to(phdClient)
-      } catch (error) {
-        logger.log('warn', 'Error on PHDClient health check: ' + error)
-      }
-    }
+    this.bind('phdClient').to(phdClient)
 
     // New metrics postgres for error recording
     const psqlConnection: string = PSQL_CONNECTION || ''

@@ -3,7 +3,7 @@ import MockAdapter from 'axios-mock-adapter'
 import { Client, expect, sinon } from '@loopback/testlab'
 
 import { PocketGatewayApplication } from '../..'
-import { Blockchains } from '../../src/models/blockchains.model'
+import { Blockchains, blockchainToBlockchainResponse } from '../../src/models/blockchains.model'
 import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
 import { gatewayTestDB } from '../fixtures/test.datasource'
 import { setupApplication } from './test-helper'
@@ -57,6 +57,49 @@ describe('Blockchains controller (acceptance)', () => {
       expect(res.body).to.have.property('count')
       expect(res.body.count).to.equal(5)
     })
+
+    it('retrieves list of available blockchains', async () => {
+      const expected = Object.assign(
+        {},
+        {
+          id: '0024',
+          chainID: '42',
+          ticker: 'POA',
+          networkID: '42',
+          network: 'POA-42',
+          description: 'Kovan',
+          index: 6,
+          blockchain: 'poa-kovan',
+          blockchainAliases: ['poa-kovan'],
+          active: true,
+          evm: true,
+          enforceResult: 'JSON',
+          hash: '1234',
+          path: '/path',
+          syncCheckOptions: {
+            path: '',
+            body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+            resultKey: 'result',
+            allowance: 2,
+          },
+          logLimitBlocks: 10,
+          redirects: [
+            {
+              alias: '',
+              domain: '',
+              loadBalancerID: '',
+            },
+          ],
+        }
+      )
+
+      await blockchainRepository.create(expected)
+      const res = await client.get('/blockchains').expect(200)
+
+      expect(res.body).to.be.Array()
+      expect(res.body).to.have.length(1)
+      expect(res.body[0]).to.containEql(blockchainToBlockchainResponse(expected as any))
+    })
   })
 
   describe('/blockchains endpoint', () => {
@@ -69,7 +112,7 @@ describe('Blockchains controller (acceptance)', () => {
       expect(axiosMock.history.get.length).to.equal(1)
       expect(res.body).to.be.Array()
       expect(res.body).to.have.length(1)
-      expect(res.body[0]).to.containEql(mockChain)
+      expect(res.body[0]).to.containEql(blockchainToBlockchainResponse(mockChain as any))
     })
 
     it('falls back to the fetching data from the repository if the PHD throws an error', async () => {
@@ -81,7 +124,7 @@ describe('Blockchains controller (acceptance)', () => {
       expect(axiosMock.history.get.length).to.equal(1)
       expect(res.body).to.be.Array()
       expect(res.body).to.have.length(1)
-      expect(res.body[0]).to.containEql(mockChain)
+      expect(res.body[0]).to.containEql(blockchainToBlockchainResponse(mockChain as any))
     })
 
     it('falls back to the fetching data from the repository if the PHD data is missing required fields', async () => {
@@ -95,7 +138,7 @@ describe('Blockchains controller (acceptance)', () => {
       expect(axiosMock.history.get.length).to.equal(1)
       expect(res.body).to.be.Array()
       expect(res.body).to.have.length(1)
-      expect(res.body[0]).to.containEql(mockChain)
+      expect(res.body[0]).to.containEql(blockchainToBlockchainResponse(mockChain as any))
     })
   })
 
@@ -107,7 +150,15 @@ describe('Blockchains controller (acceptance)', () => {
       const res = await client.get(`/blockchains/${blockchain.id}`).expect(200)
 
       expect(res.body).to.be.Object()
-      expect(res.body).to.containEql(blockchain)
+      expect(res.body).to.containEql(blockchainToBlockchainResponse(blockchain as any))
+    })
+
+    it('retrieves the information of a specific blockchain', async () => {
+      const [blockchain] = await generateBlockchains(1)
+      const res = await client.get(`/blockchains/${blockchain.id}`).expect(200)
+
+      expect(res.body).to.be.Object()
+      expect(res.body).to.containEql(blockchainToBlockchainResponse(mockChain as any))
 
       // Blockchain that doesn't exist
       await client.get('/blockchains/nope').expect(404)
@@ -120,7 +171,7 @@ describe('Blockchains controller (acceptance)', () => {
       const res = await client.get(`/blockchains/${blockchain.id}`).expect(200)
 
       expect(res.body).to.be.Object()
-      expect(res.body).to.containEql(blockchain)
+      expect(res.body).to.containEql(blockchainToBlockchainResponse(blockchain as any))
 
       // Blockchain that doesn't exist
       await client.get('/blockchains/nope').expect(404)
@@ -159,6 +210,12 @@ describe('Blockchains controller (acceptance)', () => {
       expect(res.body[blockchainID].id).to.be.String()
       expect(res.body[blockchainID].id).to.be.equal('0024')
     })
+  })
+
+  it('returns 404 on not found hash', async () => {
+    await generateBlockchains(10)
+
+    await client.get('/blockchains/invalid').expect(404)
   })
 
   async function generateBlockchains(amount: number): Promise<Partial<Blockchains>[]> {
@@ -203,5 +260,7 @@ const mockChain = Object.assign(
       path: '',
       allowance: 0,
     },
+    hash: '0',
+    evm: false,
   }
 )

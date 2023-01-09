@@ -148,12 +148,6 @@ export class Blockchains extends Entity {
   altruist?: string
 
   @property({
-    type: 'string',
-    required: false,
-  })
-  enforceResult: string
-
-  @property({
     type: 'object',
   })
   redirects?: BlockchainRedirect[];
@@ -193,7 +187,7 @@ export type BlockchainsResponse = {
   }[]
 }
 
-export function blockchainToBlockhainResponse(bl: Blockchains): BlockchainsResponse {
+export function blockchainToBlockchainResponse(bl: Blockchains): BlockchainsResponse {
   return {
     ticker: bl.ticker,
     hash: bl.hash,
