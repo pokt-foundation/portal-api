@@ -151,6 +151,55 @@ export class Blockchains extends Entity {
   }
 }
 
+export type BlockchainsResponse = {
+  ticker: string
+  hash: string
+  networkID: string
+  network: string
+  description?: string
+  index: number
+  blockchain: string
+  blockchainAliases: string[]
+  active: boolean
+  syncCheck?: {
+    path?: string
+    body: string
+    resultKey: string
+    allowance?: number
+  }
+  logLimitBlocks?: number
+  path?: string
+  evm?: boolean
+  redirects?: {
+    alias: string
+    domain: string
+  }[]
+}
+
+export function blockchainToBlockhainResponse(bl: Blockchains): BlockchainsResponse {
+  return {
+    ticker: bl.ticker,
+    hash: bl.hash,
+    networkID: bl.networkID,
+    network: bl.network,
+    description: bl.description,
+    index: bl.index,
+    blockchain: bl.blockchain,
+    blockchainAliases: bl.blockchainAliases,
+    active: bl.active,
+    syncCheck: {
+      path: bl?.syncCheckOptions?.path,
+      body: bl?.syncCheckOptions?.body,
+      resultKey: bl?.syncCheckOptions?.resultKey,
+      allowance: bl?.syncCheckOptions?.allowance,
+    },
+    logLimitBlocks: bl?.logLimitBlocks,
+    path: bl?.path,
+    evm: bl?.evm,
+    redirects: bl?.redirects,
+  }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface BlockchainsRelations {
   // describe navigational properties here
