@@ -2,7 +2,8 @@ import { inject } from '@loopback/context'
 import { Count, CountSchema, Filter, FilterExcludingWhere, repository, Where } from '@loopback/repository'
 import { param, get, getModelSchemaRef } from '@loopback/rest'
 
-import { Blockchains } from '../models'
+import { Blockchains, BlockchainsResponse } from '../models'
+import { blockchainToBlockhainResponse } from '../models/blockchains.model'
 import { BlockchainsRepository } from '../repositories'
 import { PHDClient, PHDPaths } from '../services/phd-client'
 
@@ -44,13 +45,13 @@ export class BlockchainsController {
       },
     },
   })
-  async find(@param.filter(Blockchains) filter?: Filter<Blockchains>): Promise<Blockchains[]> {
-    return this.phdClient.find({
+  async find(@param.filter(Blockchains) filter?: Filter<Blockchains>): Promise<BlockchainsResponse[]> {
+    return (await this.phdClient.find({
       path: PHDPaths.Blockchain,
       model: Blockchains,
       fallback: () => this.blockchainsRepository.find(filter),
-    })
-  }
+    })).map((bl) => blockchainToBlockhainResponse(bl))
+  } 
 
   @get('/blockchains/{id}', {
     responses: {
@@ -68,13 +69,13 @@ export class BlockchainsController {
     @param.path.string('id') id: string,
     @param.filter(Blockchains, { exclude: 'where' })
     filter?: FilterExcludingWhere<Blockchains>
-  ): Promise<Blockchains> {
-    return this.phdClient.findById({
+  ): Promise<BlockchainsResponse> {
+    return blockchainToBlockhainResponse(await this.phdClient.findById({
       path: PHDPaths.Blockchain,
       id,
       model: Blockchains,
       fallback: () => this.blockchainsRepository.findById(id, filter),
-    })
+    }))
   }
 
   @get('/blockchains/ids', {

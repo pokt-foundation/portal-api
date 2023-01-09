@@ -27,7 +27,6 @@
     "eslint": "lb-eslint --report-unused-disable-directives .",
     "eslint:fix": "npm run eslint -- --fix",
     "pretest": "npm run clean && npm run build",
-<<<<<<< HEAD
     "test": "lb-tsc && INTEGRATION_TEST=false SILENT_LOGGING=true MONGO_ENDPOINT=test POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' mocha --exit --recursive dist/tests",
     "test:integration": "lb-tsc && INTEGRATION_TEST=true POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' mocha --exit --recursive dist/tests -f \"Pocket HTTP DB Client\"",
     "test:one": "lb-tsc && INTEGRATION_TEST=false SILENT_LOGGING=true MONGO_ENDPOINT=test POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' mocha --exit --recursive dist/tests -f",
@@ -35,12 +34,6 @@
     "test:log": "lb-tsc && MONGO_ENDPOINT=test POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' mocha --exit --recursive dist/tests",
     "test:parallel": "lb-tsc && SILENT_LOGGING=true MONGO_ENDPOINT=test POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' mocha -p --exit --recursive dist/tests",
     "test:cover": "lb-tsc && SILENT_LOGGING=true MONGO_ENDPOINT=test POCKET_NETWORK_NODE_URL='https://user:pass@backups.example.org:18081' nyc mocha --exit --recursive dist/tests",
-=======
-    "test": "lb-tsc && SILENT_LOGGING=true MONGO_ENDPOINT=test mocha --exit --recursive dist/tests",
-    "test:log": "lb-tsc && MONGO_ENDPOINT=test mocha --exit --recursive dist/tests",
-    "test:parallel": "lb-tsc && SILENT_LOGGING=true MONGO_ENDPOINT=test mocha -p --exit --recursive dist/tests",
-    "test:cover": "lb-tsc && SILENT_LOGGING=true MONGO_ENDPOINT=test nyc mocha --exit --recursive dist/tests",
->>>>>>> 778b2208 (feat: remove dd from task defs, cleanup)
     "test:dev": "lb-mocha --allow-console-logs dist/tests/**/*.js && npm run posttest",
     "docker:build": "docker build -t pocket-gateway .",
     "docker:run": "docker run -p 3000:3000 -d pocket-gateway",
