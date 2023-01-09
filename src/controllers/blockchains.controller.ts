@@ -81,7 +81,6 @@ export class BlockchainsController {
       })
     )
   }
-
   @get('/blockchains/ids', {
     responses: {
       '200': {
