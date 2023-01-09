@@ -1,7 +1,7 @@
 import { Count, CountSchema, Filter, FilterExcludingWhere, repository, Where } from '@loopback/repository'
 import { param, get, getModelSchemaRef } from '@loopback/rest'
 import { Blockchains, BlockchainsResponse } from '../models'
-import { blockchainToBlockhainResponse } from '../models/blockchains.model'
+import { blockchainToBlockchainResponse } from '../models/blockchains.model'
 import { BlockchainsRepository } from '../repositories'
 
 export class BlockchainsController {
@@ -38,7 +38,7 @@ export class BlockchainsController {
     },
   })
   async find(@param.filter(Blockchains) filter?: Filter<Blockchains>): Promise<BlockchainsResponse[]> {
-    return (await this.blockchainsRepository.find(filter)).map((bl) => blockchainToBlockhainResponse(bl))
+    return (await this.blockchainsRepository.find(filter)).map((bl) => blockchainToBlockchainResponse(bl))
   }
 
   @get('/blockchains/{id}', {
@@ -58,7 +58,7 @@ export class BlockchainsController {
     @param.filter(Blockchains, { exclude: 'where' })
     filter?: FilterExcludingWhere<Blockchains>
   ): Promise<BlockchainsResponse> {
-    return blockchainToBlockhainResponse(await this.blockchainsRepository.findById(id, filter))
+    return blockchainToBlockchainResponse(await this.blockchainsRepository.findById(id, filter))
   }
 
   @get('/blockchains/ids', {

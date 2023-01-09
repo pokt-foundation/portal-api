@@ -183,7 +183,7 @@ export type BlockchainsResponse = {
   }[]
 }
 
-export function blockchainToBlockhainResponse(bl: Blockchains): BlockchainsResponse {
+export function blockchainToBlockchainResponse(bl: Blockchains): BlockchainsResponse {
   return {
     ticker: bl.ticker,
     hash: bl.hash,
