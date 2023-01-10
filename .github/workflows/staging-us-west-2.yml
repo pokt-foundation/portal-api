@@ -1,10 +1,10 @@
 # .github/workflows: DO NOT MODIFY HERE BUT RATHER REFER TO THEIR CORRESPONDING
 # TEMPLATE IN THE POCKET-GATEWWAY FOLDER OTHERWISE YOUR CHANGES WILL BE OVERWRITTEN
-name: Staging Deployment us-west-2
+name: Terraform canary Deployment us-west-2
 
 on:
   push:
-    branches: [staging, enable-gateway-awslogs]
+    branches: [canary, canary-deployments]
 
 jobs:
   deploy:
@@ -40,6 +40,7 @@ jobs:
           envkey_REDIRECTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_REDIRECTS }}
           envkey_LOCAL_REDIS_ENDPOINT: 172.17.0.1:6379
           envkey_REDIS_PORT: 6379
+          envkey_POCKET_NETWORK_NODE_URL: ${{ secrets.POCKET_NETWORK_MAINNET_NODE_URL }}
           envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
           envkey_POCKET_BLOCK_TIME: 1038000
           envkey_POCKET_RELAY_RETRIES: 0
@@ -54,6 +55,8 @@ jobs:
           envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           envkey_COMMIT_HASH: ${{ github.sha }}
           envkey_ARCHIVAL_CHAINS: 0022,0028,0010,000A,000B,000C
+          envkey_LOG_TO_DATADOG: true
+          envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           envkey_LOG_TO_LOKI: ${{ secrets.LOG_TO_LOKI }}
           envkey_LOKI_BASIC_AUTH: ${{ secrets.LOKI_BASIC_AUTH }}
           envkey_LOKI_HOST: ${{ secrets.LOKI_HOST }}
@@ -67,16 +70,16 @@ jobs:
           envkey_INFLUX_ORGS: ${{ secrets.INFLUX_ORGS }}
           envkey_ALTRUIST_ONLY_CHAINS: ${{ secrets.ALTRUIST_ONLY_CHAINS }}
           envkey_GATEWAY_HOST: ${{ secrets.GATEWAY_HOST }}
-          envkey_REMOTE_REDIS_ENDPOINT: gateway-staging-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
+          envkey_REMOTE_REDIS_ENDPOINT: gateway-canary-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REGION: 'us-west-2'
-          envkey_REGION_NAME: 'staging'
+          envkey_REGION_NAME: '/canary/us-west-2'
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: gateway-staging
+          ECR_REPOSITORY: gateway-canary
           IMAGE_TAG: latest
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
@@ -87,14 +90,36 @@ jobs:
         id: task-def-us-west-2-gateway
         uses: aws-actions/amazon-ecs-render-task-definition@master
         with:
-          task-definition: pocket-gateway/tasks/staging/ecs-task-definition.json
+          task-definition: pocket-gateway/tasks/canary/ecs-task-definition.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
+          # Needs to be set at container level to be read by the dd agent
+          environment-variables: |
+            DD_RUNTIME_METRICS_ENABLED=true
+            DD_PROFILING_ENABLED=true
+            DD_SERVICE=/canary/us-west-2/ecs/gateway
+            DD_VERSION=${{ github.sha }}
+            DD_ENV=canary
+            DD_AGENT_HOST=datadog-agent
+
+      - name: Fill in the new image ID / us-west-2 - datadog-agent
+        id: task-def-us-west-2-datadog-agent
+        uses: aws-actions/amazon-ecs-render-task-definition@master
+        with:
+          task-definition: ${{ steps.task-def-us-west-2-gateway.outputs.task-definition }}
+          container-name: datadog-agent
+          image: gcr.io/datadoghq/agent:latest
+          environment-variables: |
+            DD_API_KEY=${{ secrets.DATADOG_API_KEY }}
+            DD_SITE=datadoghq.eu
+            DD_LOGS_ENABLED=false
+            DD_APM_ENABLED=false
+            DD_DOGSTATSD_NON_LOCAL_TRAFFIC=false
 
       - name: Deploy / us-west-2
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def-us-west-2-gateway.outputs.task-definition }}
-          service: gateway-staging
-          cluster: gateway-staging
+          task-definition: ${{ steps.task-def-us-west-2-datadog-agent.outputs.task-definition }}
+          service: gateway-canary
+          cluster: gateway-canary
           wait-for-service-stability: true
