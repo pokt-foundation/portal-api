@@ -7,6 +7,7 @@ require('dotenv').config()
 const { createLogger, format, transports: winstonTransports } = require('winston')
 const LokiWinston = require('winston-loki')
 
+const environment = process.env.NODE_ENV || 'production'
 const accessKeyID = process.env.AWS_ACCESS_KEY_ID || ''
 const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || ''
 const region = process.env.REGION || ''
@@ -77,12 +78,18 @@ const options = {
 const getTransports = () => {
   const transports = [new winstonTransports.Console(options.console)]
 
-  if (logToLoki) {
-    if (!lokiHost) {
-      throw new HttpErrors.InternalServerError('LOKI_HOST required in ENV')
-    }
+  if (environment === 'production' || environment === 'staging') {
+    if (logToLoki) {
+      if (!lokiHost) {
+        throw new HttpErrors.InternalServerError('LOKI_HOST required in ENV')
+      }
 
-    transports.push(new LokiWinston(options.loki))
+      if (!region) {
+        throw new HttpErrors.InternalServerError('REGION required in ENV')
+      }
+
+      transports.push(new LokiWinston(options.loki))
+    }
   }
 
   return transports
