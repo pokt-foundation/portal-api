@@ -6,10 +6,12 @@
 			"dnsSearchDomains": null,
 			"environmentFiles": null,
 			"logConfiguration": {
-				"logDriver": "json-file",
+				"logDriver": "awslogs",
 				"options": {
-					"max-size": "10m",
-					"max-file": "3"
+					"awslogs-group": "gateway-container",
+					"awslogs-region": "us-west-2",
+					"awslogs-create-group": "true",
+					"awslogs-stream-prefix": "gateway"
 				}
 			},
 			"entryPoint": [],
