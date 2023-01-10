@@ -33,6 +33,7 @@ export const DUMMY_ENV = {
   AWS_REGION: 'test',
   BLOCKED_ADDRESSES_URL: 'https://blocked.addresses',
   RATE_LIMITER_URL: 'https://rate.limiter',
+  RELAY_SECURITY_URL: '',
   RATE_LIMITER_TOKEN: 'rate-limiter-token',
   ALTRUIST_ONLY_CHAINS: '',
   GATEWAY_HOST: 'localhost',

@@ -47,6 +47,8 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'ALTRUIST_ONLY_CHAINS',
     'REDIS_LOCAL_TTL_FACTOR',
     'RATE_LIMITER_URL',
+    'RELAY_SECURITY_URL',
+    'RELAY_SECURITY_HEALTHCHECK_PATH',
     'RATE_LIMITER_TOKEN',
   ]
 

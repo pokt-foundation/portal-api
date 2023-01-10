@@ -26,6 +26,7 @@ import { enforceEVMRestrictions } from '../utils/evm/restrictions'
 import { getApplicationPublicKey } from '../utils/helpers'
 import { parseJSONRPCError, parseMethod, parseRawData, parseRPCID } from '../utils/parsing'
 import { filterCheckedNodes, isCheckPromiseResolved, loadBlockchain } from '../utils/relayer'
+import { sendRelayForVerification } from '../utils/security/security'
 import { CheckResult, RelayResponse, SendRelayOptions } from '../utils/types'
 import { Cache } from './cache'
 import { NodeSticker } from './node-sticker'
@@ -55,6 +56,7 @@ export class PocketRelayer {
   alwaysRedirectToAltruists: boolean
   altruistOnlyChains: string[]
   dispatchers: string
+  relaySecurityURL: string
   requestURL: string
 
   constructor({
@@ -79,6 +81,7 @@ export class PocketRelayer {
     alwaysRedirectToAltruists = false,
     altruistOnlyChains = [],
     dispatchers,
+    relaySecurityURL,
     request,
   }: {
     host: string
@@ -102,6 +105,7 @@ export class PocketRelayer {
     alwaysRedirectToAltruists?: boolean
     altruistOnlyChains?: string[]
     dispatchers?: string
+    relaySecurityURL?: string
     request?: Request
   }) {
     this.host = host
@@ -125,6 +129,7 @@ export class PocketRelayer {
     this.alwaysRedirectToAltruists = alwaysRedirectToAltruists
     this.altruistOnlyChains = altruistOnlyChains
     this.dispatchers = dispatchers
+    this.relaySecurityURL = relaySecurityURL
     this.requestURL = `${request?.headers?.host}${request?.url}`
   }
 
@@ -333,6 +338,31 @@ export class PocketRelayer {
                   serviceNode: relay.serviceNode.publicKey,
                 })
               })
+            // Send relay for security check
+            if (this.relaySecurityURL) {
+              sendRelayForVerification(
+                this.relaySecurityURL,
+                {
+                  applicationID,
+                  blockchainID,
+                  applicationPublicKey,
+                  sessionKey: this.session.key,
+                  nodePublicKey: relay.serviceNode.publicKey,
+                  request: rawData.toString(),
+                  response: relay.response,
+                  altruist: blockchainAltruist + blockchainPath,
+                  blockHeightRequest: blockchainSyncCheck.body,
+                  syncCheckThreshold: blockchainSyncCheck?.allowance,
+                },
+                this.cache
+              ).catch(function (error) {
+                logger.log('warn', 'error sending relay for verification: ' + error, {
+                  requestID,
+                  typeID: application.id,
+                  serviceNode: relay.serviceNode.publicKey,
+                })
+              })
+            }
 
             // Clear error log
             // TODO: Implement servicerPubKey and uncomment
@@ -680,7 +710,6 @@ export class PocketRelayer {
     let nodes: Node[] = session.nodes
 
     this.session = session
-    // sessionKey = "blockchain and a hash of the all the nodes in this session, sorted by public key"
     const { key } = session
 
     this.session = session

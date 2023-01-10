@@ -70,6 +70,7 @@ export class V1Controller {
     @inject('altruistOnlyChains') private altruistOnlyChains: string[],
     @inject('dispatchURL') private dispatchURL: string,
     @inject('rateLimiterURL') private rateLimiterURL: string,
+    @inject('relaySecurityURL') private relaySecurityURL: string,
     @inject('rateLimiterToken') private rateLimiterToken: string,
     @inject('gatewayHost') private gatewayHost: string,
     @repository(ApplicationsRepository)
@@ -116,6 +117,7 @@ export class V1Controller {
       alwaysRedirectToAltruists: this.alwaysRedirectToAltruists,
       altruistOnlyChains: this.altruistOnlyChains,
       dispatchers: this.dispatchURL,
+      relaySecurityURL: this.relaySecurityURL,
       request: this.request,
     })
   }
