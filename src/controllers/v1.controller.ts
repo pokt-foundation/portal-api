@@ -46,7 +46,6 @@ export class V1Controller {
   syncChecker: SyncChecker
   chainChecker: ChainChecker
   mergeChecker: MergeChecker
-  phdClient: PHDClient
 
   constructor(
     @inject('secretKey') private secretKey: string,

@@ -49,7 +49,7 @@ jobs:
           INTEGRATION_TEST: true
           PHD_BASE_URL: ${{ secrets.PHD_BASE_URL }}
           PHD_API_KEY: ${{ secrets.PHD_API_KEY }}
-          MONGO_ENDPOINT: ${{ secrets.MONGO_ENDPOINT_DEV }}
+          MONGO_ENDPOINT: ${{ secrets.MONGO_PRODUCTION_ENDPOINT }}
 
       - name: Running lint
         run: npm run lint
