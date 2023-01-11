@@ -148,12 +148,6 @@ export class Blockchains extends Entity {
   altruist?: string
 
   @property({
-    type: 'string',
-    required: false,
-  })
-  enforceResult: string
-
-  @property({
     type: 'object',
   })
   redirects?: BlockchainRedirect[];

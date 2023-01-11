@@ -120,6 +120,7 @@ export class V1Controller {
       alwaysRedirectToAltruists: this.alwaysRedirectToAltruists,
       altruistOnlyChains: this.altruistOnlyChains,
       dispatchers: this.dispatchURL,
+      phdClient: this.phdClient,
       request: this.request,
     })
   }
