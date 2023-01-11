@@ -4,7 +4,7 @@ import jsonrpc, { ErrorObject, JsonRpcError } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
 import { FilterExcludingWhere, repository } from '@loopback/repository'
-import { get, param, post, requestBody } from '@loopback/rest'
+import { get, param, post, requestBody, Request, RestBindings } from '@loopback/rest'
 import { WriteApi } from '@influxdata/influxdb-client'
 
 import { Applications, GatewaySettings, LoadBalancers } from '../models'
@@ -48,6 +48,7 @@ export class V1Controller {
   mergeChecker: MergeChecker
 
   constructor(
+    @inject(RestBindings.Http.REQUEST) private request: Request,
     @inject('secretKey') private secretKey: string,
     @inject('host') private host: string,
     @inject('origin') private origin: string,
@@ -119,7 +120,7 @@ export class V1Controller {
       alwaysRedirectToAltruists: this.alwaysRedirectToAltruists,
       altruistOnlyChains: this.altruistOnlyChains,
       dispatchers: this.dispatchURL,
-      phdClient: this.phdClient,
+      request: this.request,
     })
   }
 

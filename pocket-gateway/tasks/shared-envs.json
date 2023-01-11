@@ -139,8 +139,7 @@
     {
       "key": "RATE_LIMITER_TOKEN",
       "value": "${{ secrets.RATE_LIMITER_TOKEN }}"
-    }
-    ,
+    },
     {
       "key": "INFLUX_URLS",
       "value": "${{ secrets.INFLUX_URLS }}"

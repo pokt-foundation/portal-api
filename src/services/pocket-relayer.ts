@@ -3,6 +3,7 @@ import { Session, Node, PocketAAT, HTTPMethod } from '@pokt-foundation/pocketjs-
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
 
+import { Request } from '@loopback/rest'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
 import { Applications } from '../models'
@@ -14,7 +15,7 @@ import { MetricsRecorder } from '../services/metrics-recorder'
 import { PHDClient } from '../services/phd-client'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { removeNodeFromSession } from '../utils/cache'
-import { SESSION_TIMEOUT, DEFAULT_ALTRUIST_TIMEOUT } from '../utils/constants'
+import { SESSION_TIMEOUT, DEFAULT_ALTRUIST_TIMEOUT, MERGE_CHECK_BLOCKCHAIN_IDS } from '../utils/constants'
 import {
   checkEnforcementJSON,
   isRelayError,
@@ -57,6 +58,7 @@ export class PocketRelayer {
   altruistOnlyChains: string[]
   dispatchers: string
   phdClient: PHDClient
+  requestURL: string
 
   constructor({
     host,
@@ -81,6 +83,7 @@ export class PocketRelayer {
     altruistOnlyChains = [],
     dispatchers,
     phdClient,
+    request,
   }: {
     host: string
     origin: string
@@ -104,6 +107,7 @@ export class PocketRelayer {
     altruistOnlyChains?: string[]
     dispatchers?: string
     phdClient: PHDClient
+    request?: Request
   }) {
     this.host = host
     this.origin = origin
@@ -127,6 +131,7 @@ export class PocketRelayer {
     this.altruistOnlyChains = altruistOnlyChains
     this.dispatchers = dispatchers
     this.phdClient = phdClient
+    this.requestURL = `${request?.headers?.host}${request?.url}`
   }
 
   async sendRelay({
@@ -182,7 +187,7 @@ export class PocketRelayer {
       rpcID
     ).catch((e) => {
       logger.log('error', `Incorrect blockchain: ${this.host}`, {
-        origin: this.origin,
+        applicationID,
       })
       throw e
     })
@@ -231,7 +236,6 @@ export class PocketRelayer {
         relayType: 'APP',
         error: `${restriction.error.message}`,
         typeID: application.id,
-        origin: this.origin,
       })
       return restriction
     }
@@ -323,10 +327,10 @@ export class PocketRelayer {
                 error: userErrorMessage,
                 code: userErrorCode,
                 origin: this.origin,
-                data,
                 session: this.session,
                 sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relay.serviceNode.publicKey),
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
+                url: this.requestURL,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -383,11 +387,11 @@ export class PocketRelayer {
                 error,
                 code: String(relay.code),
                 origin: this.origin,
-                data,
                 // TODO: Add pocket session again
                 session: this.session,
                 sticky,
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
+                url: this.requestURL,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -413,7 +417,6 @@ export class PocketRelayer {
         relayType: 'APP',
         typeID: application.id,
         error: e,
-        origin: this.origin,
         trace: e.stack,
       })
     }
@@ -454,7 +457,6 @@ export class PocketRelayer {
             relayType: 'FALLBACK',
             typeID: application.id,
             serviceNode: 'fallback:' + redactedAltruistURL,
-            origin: this.origin,
           })
         }
 
@@ -494,17 +496,16 @@ export class PocketRelayer {
               serviceNode: 'fallback:' + redactedAltruistURL,
               relayStart,
               result: 200,
-              responseStart: Buffer.from(JSON.stringify(responseParsed)).toString('utf-8', 0, 200),
               bytes: Buffer.byteLength(JSON.stringify(responseParsed), 'utf8'),
               fallback: true,
               method: method,
               error: undefined,
               code: undefined,
               origin: this.origin,
-              data,
               session: this.session,
               gigastakeAppID: applicationID !== application.id ? application.id : undefined,
               forcedFallback: !notForceFallback,
+              url: this.requestURL,
             })
             .catch(function log(e) {
               logger.log('error', 'Error recording metrics: ' + e, {
@@ -524,7 +525,6 @@ export class PocketRelayer {
             typeID: application.id,
             serviceNode: 'fallback:' + redactedAltruistURL,
             blockchainID,
-            origin: this.origin,
             forcedFallback: !notForceFallback,
           })
         }
@@ -536,7 +536,6 @@ export class PocketRelayer {
           typeID: application.id,
           serviceNode: 'fallback:' + redactedAltruistURL,
           blockchainID,
-          origin: this.origin,
           forcedFallback: !notForceFallback,
         })
       }
@@ -548,7 +547,6 @@ export class PocketRelayer {
       relayType: 'EXHAUSTED',
       typeID: application.id,
       blockchainID,
-      origin: this.origin,
     })
 
     throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('Internal JSON-RPC error.', -32603))
@@ -674,7 +672,6 @@ export class PocketRelayer {
       logger.log('error', 'ERROR obtaining a session: ' + error, {
         relayType: 'APP',
         typeID: application.id,
-        origin: this.origin,
         blockchainID,
         requestID,
         error: error.message,
@@ -708,12 +705,11 @@ export class PocketRelayer {
         relayType: 'APP',
         typeID: application.id,
         blockchainID,
-        origin: this.origin,
       })
       return new Error("session doesn't have any available nodes")
     }
 
-    if (blockchainID === '0021' || blockchainID === '0022' || blockchainID === '0028') {
+    if (MERGE_CHECK_BLOCKCHAIN_IDS.includes(blockchainID)) {
       const mergeStatusOptions: MergeFilterOptions = {
         nodes,
         requestID,
@@ -806,7 +802,6 @@ export class PocketRelayer {
             error,
             code: undefined,
             origin: this.origin,
-            data,
             session: this.session,
             gigastakeAppID: applicationID !== application.id ? application.id : undefined,
           })
@@ -846,7 +841,6 @@ export class PocketRelayer {
             error,
             code: undefined,
             origin: this.origin,
-            data,
             session: this.session,
             gigastakeAppID: applicationID !== application.id ? application.id : undefined,
           })

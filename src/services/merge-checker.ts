@@ -9,15 +9,28 @@ import extractDomain from 'extract-domain'
 import { MetricsRecorder } from '../services/metrics-recorder'
 import { blockHexToDecimal } from '../utils/block'
 import { removeChecksCache, removeNodeFromSession, removeSessionCache } from '../utils/cache'
-import { CheckMethods, CHECK_TIMEOUT, PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION } from '../utils/constants'
+import {
+  CheckMethods,
+  CHECK_TIMEOUT,
+  ETHEREUM_BLOCKCHAIN_IDS,
+  GNOSIS_BLOCKCHAIN_IDS,
+  PERCENTAGE_THRESHOLD_TO_REMOVE_SESSION,
+} from '../utils/constants'
 import { checkEnforcementJSON } from '../utils/enforcements'
 import { CheckResult, RelayResponse } from '../utils/types'
 import { Cache } from './cache'
 
 const logger = require('../services/logger')
 
-const MERGE_BLOCK_NUMBER = 15537394
-const TERMINAL_TOTAL_DIFFICULTY = BigInt('58750003716598352816469')
+const MERGE_BLOCK_NUMBER = {
+  ethereum: 15537394,
+  gnosis: 25349536,
+}
+
+const TERMINAL_TOTAL_DIFFICULTY = {
+  ethereum: BigInt('58750003716598352816469'),
+  gnosis: BigInt('8626000110427538733349499292577475819600160930'),
+}
 
 const MERGE_CHECK_PAYLOAD = JSON.stringify({
   jsonrpc: '2.0',
@@ -123,7 +136,19 @@ export class MergeChecker {
       const { serviceUrl: serviceURL } = node
       const serviceDomain = extractDomain(serviceURL)
 
-      if (BigInt(nodeTotalDifficulty) === TERMINAL_TOTAL_DIFFICULTY && nodeBlockNumber >= MERGE_BLOCK_NUMBER) {
+      let blockchain = ''
+
+      if (ETHEREUM_BLOCKCHAIN_IDS.includes(blockchainID)) {
+        blockchain = 'ethereum'
+      } else if (GNOSIS_BLOCKCHAIN_IDS.includes(blockchainID)) {
+        blockchain = 'gnosis'
+      }
+
+      if (
+        blockchain &&
+        BigInt(nodeTotalDifficulty) === TERMINAL_TOTAL_DIFFICULTY[blockchain] &&
+        nodeBlockNumber >= MERGE_BLOCK_NUMBER[blockchain]
+      ) {
         logger.log(
           'info',
           'MERGE CHECK SUCCESS: ' +
@@ -358,7 +383,6 @@ export class MergeChecker {
           error: typeof relay.message === 'object' ? JSON.stringify(relay.message) : relay.message,
           code: undefined,
           origin: this.origin,
-          data: undefined,
           session,
         })
         .catch(function log(e) {
@@ -396,7 +420,6 @@ export class MergeChecker {
           error: JSON.stringify(relay),
           code: undefined,
           origin: this.origin,
-          data: undefined,
           session,
         })
         .catch(function log(e) {
