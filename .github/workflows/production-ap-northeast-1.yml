@@ -40,7 +40,6 @@ jobs:
           envkey_REDIRECTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_REDIRECTS }}
           envkey_LOCAL_REDIS_ENDPOINT: 172.17.0.1:6379
           envkey_REDIS_PORT: 6379
-          envkey_POCKET_NETWORK_NODE_URL: ${{ secrets.POCKET_NETWORK_MAINNET_NODE_URL }}
           envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
           envkey_POCKET_BLOCK_TIME: 1038000
           envkey_POCKET_RELAY_RETRIES: 0
@@ -55,8 +54,6 @@ jobs:
           envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           envkey_COMMIT_HASH: ${{ github.sha }}
           envkey_ARCHIVAL_CHAINS: 0022,0028,0010,000A,000B,000C
-          envkey_LOG_TO_DATADOG: true
-          envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           envkey_LOG_TO_LOKI: ${{ secrets.LOG_TO_LOKI }}
           envkey_LOKI_BASIC_AUTH: ${{ secrets.LOKI_BASIC_AUTH }}
           envkey_LOKI_HOST: ${{ secrets.LOKI_HOST }}
@@ -93,33 +90,11 @@ jobs:
           task-definition: pocket-gateway/tasks/production/ecs-task-definition.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
-          # Needs to be set at container level to be read by the dd agent
-          environment-variables: |
-            DD_RUNTIME_METRICS_ENABLED=true
-            DD_PROFILING_ENABLED=true
-            DD_SERVICE=/ap-northeast-1/ecs/gateway
-            DD_VERSION=${{ github.sha }}
-            DD_ENV=production
-            DD_AGENT_HOST=datadog-agent
-
-      - name: Fill in the new image ID / ap-northeast-1 - datadog-agent
-        id: task-def-ap-northeast-1-datadog-agent
-        uses: aws-actions/amazon-ecs-render-task-definition@master
-        with:
-          task-definition: ${{ steps.task-def-ap-northeast-1-gateway.outputs.task-definition }}
-          container-name: datadog-agent
-          image: gcr.io/datadoghq/agent:latest
-          environment-variables: |
-            DD_API_KEY=${{ secrets.DATADOG_API_KEY }}
-            DD_SITE=datadoghq.eu
-            DD_LOGS_ENABLED=false
-            DD_APM_ENABLED=true
-            DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
 
       - name: Deploy / ap-northeast-1
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def-ap-northeast-1-datadog-agent.outputs.task-definition }}
+          task-definition: ${{ steps.task-def-ap-northeast-1-gateway.outputs.task-definition }}
           service: gateway-prod
           cluster: gateway-prod
           wait-for-service-stability: true

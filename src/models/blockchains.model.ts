@@ -138,6 +138,12 @@ export class Blockchains extends Entity {
   altruist?: string
 
   @property({
+    type: 'string',
+    required: false,
+  })
+  enforceResult: string
+
+  @property({
     type: 'object',
   })
   redirects?: BlockchainRedirect[];
@@ -148,6 +154,57 @@ export class Blockchains extends Entity {
 
   constructor(data?: Partial<Blockchains>) {
     super(data)
+  }
+}
+
+export type BlockchainsResponse = {
+  ticker: string
+  hash: string
+  networkID: string
+  network: string
+  description?: string
+  index: number
+  blockchain: string
+  blockchainAliases: string[]
+  active: boolean
+  syncCheckOptions?: {
+    path?: string
+    body: string
+    resultKey: string
+    allowance?: number
+  }
+  enforceResult?: string
+  logLimitBlocks?: number
+  path?: string
+  evm?: boolean
+  redirects?: {
+    alias: string
+    domain: string
+  }[]
+}
+
+export function blockchainToBlockchainResponse(bl: Blockchains): BlockchainsResponse {
+  return {
+    ticker: bl.ticker,
+    hash: bl.hash,
+    networkID: bl.networkID,
+    network: bl.network,
+    description: bl.description,
+    index: bl.index,
+    blockchain: bl.blockchain,
+    blockchainAliases: bl.blockchainAliases,
+    active: bl.active,
+    syncCheckOptions: {
+      path: bl?.syncCheckOptions?.path,
+      body: bl?.syncCheckOptions?.body,
+      resultKey: bl?.syncCheckOptions?.resultKey,
+      allowance: bl?.syncCheckOptions?.allowance,
+    },
+    enforceResult: bl?.enforceResult,
+    logLimitBlocks: bl?.logLimitBlocks,
+    path: bl?.path,
+    evm: bl?.evm,
+    redirects: bl?.redirects,
   }
 }
 
