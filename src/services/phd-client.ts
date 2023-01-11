@@ -76,6 +76,8 @@ class PHDClient {
     const modelFields = this.getRequiredModelFields(model)
     const modelsData: T[] = []
 
+    console.log({ url })
+
     try {
       const { data: documents } = await axios.get(url, { headers: { authorization: this.apiKey } })
 
@@ -123,6 +125,7 @@ class PHDClient {
       }[path]
 
       const processedDocument = processMethod?.() || document
+      console.log('ERROR', { processedDocument, modelFields })
 
       if (this.hasAllRequiredModelFields<T>(processedDocument, modelFields)) {
         modelData = new model(processedDocument)

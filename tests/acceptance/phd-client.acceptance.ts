@@ -124,7 +124,7 @@ integrationDescribe('Pocket HTTP DB Client', () => {
 
     describe('load_balancer', () => {
       it('fetches a load balancer from PHD', async () => {
-        const testId = '6307c50471e59c00380027cb'
+        const testId = '280023ecacf59129e9497bc2'
 
         const loadBalancer = await phdClient.findById<LoadBalancers>({
           path: PHDPaths.LoadBalancer,
@@ -135,12 +135,12 @@ integrationDescribe('Pocket HTTP DB Client', () => {
 
         expect(logSpy.calledOnceWith('warn')).to.be.false()
         expect(loadBalancer).not.to.be.undefined()
-        expect(loadBalancer.name).to.equal('PascalsTestApp')
+        expect(loadBalancer.name).to.equal('Pascals_test_app_DO-NOT-DELETE')
         expect(loadBalancer).to.have.properties(loadBalancerRequiredFields)
       })
 
       it('fetches a load balancer from MongoDB if PHD fetch fails', async () => {
-        const testId = '6307c50471e59c00380027cb'
+        const testId = '280023ecacf59129e9497bc2'
 
         const loadBalancer = await phdClient.findById<LoadBalancers>({
           path: PHDPaths.LoadBalancer,
@@ -151,7 +151,7 @@ integrationDescribe('Pocket HTTP DB Client', () => {
 
         expect(logSpy.calledOnceWith('warn')).to.be.true()
         expect(loadBalancer).not.to.be.undefined()
-        expect(loadBalancer.name).to.equal('PascalsTestApp')
+        expect(loadBalancer.name).to.equal('Pascals_test_app_DO-NOT-DELETE')
         expect(loadBalancer).to.have.properties(loadBalancerRequiredFields)
       })
     })

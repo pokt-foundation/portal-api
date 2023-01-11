@@ -177,7 +177,7 @@ export type BlockchainsResponse = {
     resultKey: string
     allowance?: number
   }
-  enforceResult?: string
+  enforceResult: string
   logLimitBlocks?: number
   path?: string
   evm?: boolean
