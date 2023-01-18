@@ -19,12 +19,10 @@ const APPLICATION = {
   id: 'sd9fj31d714kgos42e68f9gh',
   name: 'Test',
   owner: 'test',
-  icon: '',
   publicPocketAccount: {
     address: 'zbsh21mrn411umuyv2xh7e85cme3tf7er1assuop',
     publicKey: '9c1osndf3hj5wvkgi5ounpqwdhzcyzfy0qrk6z7o',
   },
-  freeTier: true,
   freeTierApplicationAccount: {
     address: 'qglysyptu3ga0tq8qfi4pxvdxo1cg629oh6s8uom',
     publicKey: '74xyfz6bey09pmtayj0ma7vvqq15cb8y7w7vv4jfrf1tjsh7o6fppk0xbw4zlcbr',
@@ -39,12 +37,6 @@ const APPLICATION = {
     whitelistContracts: [],
     whitelistMethods: [],
   },
-  freeTierAAT: {
-    version: '0.0.1',
-    clientPublicKey: 'zxllicp807cz107r9b4vpeenepmr4quhz8dlek85f2faj1nwaey7oo7emamdf6nq',
-    applicationPublicKey: '4jsdmxn9zbej57dejhnjcp355ezq20locf6wypr6lndwzmpt4akiiofxdqn8naqe',
-  },
-  updatingStatus: false,
   gatewayAAT: {
     version: '0.0.1',
     clientPublicKey: 'f8sqxrxhzjt59mk1vmm4v3r1l62rf1xwt5e6yrc3vaktnfvmf0x9ggs8jkjxlp4c',
@@ -52,6 +44,7 @@ const APPLICATION = {
     applicationSignature:
       '87ux2poyr319tp9un97nflybr3l66umrjf4p5ifmwb6aq3frpgl9mqolikt1xcpu4d1o321pbm0edizck8tsnr8e8fdmazxskr9c5zx0ab9z1so2g8x29xazaffse8c0',
   },
+  url: 'https://test-portal-url.com',
 }
 
 const GIGASTAKE_LEADER_IDS = {
@@ -79,7 +72,7 @@ const GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS = {
 // Might not actually reflect real-world values
 const BLOCKCHAINS = [
   {
-    hash: '0001',
+    id: '0001',
     ticker: 'POKT',
     networkID: 'mainnet',
     network: 'POKT-mainnet',
@@ -91,6 +84,8 @@ const BLOCKCHAINS = [
     enforceResult: 'JSON',
     nodeCount: 1,
     chainID: '21',
+    chainIDCheck: '{}',
+    path: '',
     altruist: 'https://user:pass@backups.example.org:18081',
     redirects: [
       {
@@ -101,7 +96,7 @@ const BLOCKCHAINS = [
     ],
   },
   {
-    hash: '0021',
+    id: '0021',
     ticker: 'ETH',
     networkID: '1',
     network: 'ETH-1',
@@ -114,6 +109,7 @@ const BLOCKCHAINS = [
     nodeCount: 1,
     chainID: '100',
     chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
+    path: '',
     syncCheckOptions: {
       body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
       resultKey: 'result',
@@ -130,7 +126,7 @@ const BLOCKCHAINS = [
     ],
   },
   {
-    hash: '0040',
+    id: '0040',
     ticker: 'ETHS',
     networkID: '1',
     network: 'ETH-1S',
@@ -139,11 +135,19 @@ const BLOCKCHAINS = [
     blockchain: 'eth-mainnet-string',
     blockchainAliases: ['eth-mainnet-string'],
     active: true,
+    enforceResult: 'JSON',
     nodeCount: 1,
     chainID: '64',
+    chainIDCheck: '',
+    path: '',
+    syncCheckOptions: {
+      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+      resultKey: 'result',
+      allowance: 5,
+    },
   },
   {
-    hash: '0041',
+    id: '0041',
     ticker: 'ETHX',
     networkID: '1',
     network: 'ETH-2',
@@ -155,6 +159,8 @@ const BLOCKCHAINS = [
     enforceResult: 'JSON',
     nodeCount: 1,
     chainID: '137',
+    chainIDCheck: '',
+    path: '',
     syncCheckOptions: {
       body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
       resultKey: 'result',
@@ -184,14 +190,14 @@ const LOAD_BALANCERS = [
     id: 'gt4a1s9rfrebaf8g31bsdc04',
     user: 'test@test.com',
     name: 'test load balancer',
-    requestTimeout: 5000,
+    requestTimeout: '5000',
     applicationIDs: APPLICATIONS.map((app) => app.id),
   },
   {
     id: 'gt4a1s9rfrebaf8g31bsdc05',
     user: 'test@test.com',
     name: 'test load balancer sticky rpc',
-    requestTimeout: 5000,
+    requestTimeout: '5000',
     applicationIDs: APPLICATIONS.map((app) => app.id),
     logLimitBlocks: 25000,
     stickinessOptions: {
@@ -206,7 +212,7 @@ const LOAD_BALANCERS = [
     id: 'df9gjsjg43db9fsajfjg93fk',
     user: 'test@test.com',
     name: 'test load balancer sticky prefix',
-    requestTimeout: 5000,
+    requestTimeout: '5000',
     applicationIDs: APPLICATIONS.map((app) => app.id),
     logLimitBlocks: 25000,
     stickinessOptions: {
@@ -220,7 +226,7 @@ const LOAD_BALANCERS = [
     id: 'd8ejd7834ht9d9sj345gfsoa',
     user: 'test@test.com',
     name: 'test load balancer sticky prefix with whitelist',
-    requestTimeout: 5000,
+    requestTimeout: '5000',
     applicationIDs: APPLICATIONS.map((app) => app.id),
     logLimitBlocks: 25000,
     stickinessOptions: {
@@ -235,7 +241,7 @@ const LOAD_BALANCERS = [
     id: GIGASTAKE_LEADER_IDS.lb,
     user: 'test@test.com',
     name: 'gigastaked lb - leader',
-    requestTimeout: 5000,
+    requestTimeout: '5000',
     applicationIDs: [GIGASTAKE_LEADER_IDS.app],
     logLimitBlocks: 25000,
     stickinessOptions: {
@@ -250,7 +256,7 @@ const LOAD_BALANCERS = [
     id: GIGASTAKE_FOLLOWER_IDS.lb,
     user: 'test@test.com',
     name: 'gigastaked lb - follower',
-    requestTimeout: 5000,
+    requestTimeout: '5000',
     applicationIDs: [GIGASTAKE_FOLLOWER_IDS.app],
     logLimitBlocks: 25000,
     gigastakeRedirect: true,
@@ -266,7 +272,7 @@ const LOAD_BALANCERS = [
     id: GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb,
     user: 'test@test.com',
     name: 'gigastaked lb - follower',
-    requestTimeout: 5000,
+    requestTimeout: '5000',
     applicationIDs: [GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.app],
     logLimitBlocks: 25000,
     gigastakeRedirect: true,
@@ -282,7 +288,7 @@ const LOAD_BALANCERS = [
     id: RATE_LIMITED_LB_ID.lb,
     user: 'test@test.com',
     name: 'rate limited lb',
-    requestTimeout: 5000,
+    requestTimeout: '5000',
     applicationIDs: [RATE_LIMITED_LB_ID.app],
     logLimitBlocks: 25000,
     gigastakeRedirect: false,
@@ -323,6 +329,8 @@ describe('V1 controller (acceptance)', () => {
     axiosMock.onGet('https://rate.limiter').reply(200, {
       applicationIDs: ['rateLimitedApp123'],
     })
+
+    axiosMock.onGet(process.env.PHD_BASE_URL).reply(200)
   })
 
   after(async () => {
@@ -365,6 +373,36 @@ describe('V1 controller (acceptance)', () => {
 
   after(async () => {
     axiosMock.restore()
+  })
+
+  it('Fetches all data from Pocket HTTP DB, invokes GET /v1/{appId} and successfully relays a request', async () => {
+    const pocket = pocketMock.object()
+
+    relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+    ;({ app, client } = await setupApplication(pocket))
+
+    axiosMock.onGet(`${process.env.PHD_BASE_URL}/application/${APPLICATION.id}`).replyOnce(200, APPLICATION)
+    axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain`).replyOnce(200, BLOCKCHAINS)
+    axiosMock.onGet(`${process.env.PHD_BASE_URL}/load_balancer/${GIGASTAKE_LEADER_IDS.lb}`).replyOnce(
+      200,
+      LOAD_BALANCERS.find(({ id }) => id === GIGASTAKE_LEADER_IDS.lb)
+    )
+    axiosMock.onGet(`${process.env.PHD_BASE_URL}/application/${GIGASTAKE_LEADER_IDS.app}`).replyOnce(
+      200,
+      APPLICATIONS.find(({ id }) => id === GIGASTAKE_LEADER_IDS.app)
+    )
+
+    const response = await client
+      .post(`/v1/${APPLICATION.id}`)
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet-x')
+      .expect(200)
+
+    expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+    expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
   })
 
   it('invokes GET /v1/{appId} and successfully relays a request', async () => {
@@ -1264,6 +1302,8 @@ describe('V1 controller (acceptance)', () => {
         .set('host', 'eth-mainnet')
         .set('origin', 'localhost')
         .expect(200)
+
+      console.log('ERROR HERE', response.body.error.message)
 
       expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
       expect(response.body).to.have.property('error')

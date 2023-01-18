@@ -2,8 +2,10 @@ import { Node } from '@pokt-foundation/pocketjs-types'
 import { Redis } from 'ioredis'
 import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
 
+import { Blockchains } from '../models'
 import { BlockchainsRepository } from '../repositories'
 import { Cache } from '../services/cache'
+import { PHDClient, PHDPaths, PHDCacheKeys } from '../services/phd-client'
 import { SyncCheckOptions } from '../services/sync-checker'
 import { BlockchainDetails, CheckResult, BlockchainRedirect } from './types'
 
@@ -32,6 +34,7 @@ export function filterCheckedNodes(syncCheckNodes: Node[], chainCheckedNodes: No
 // Load requested blockchain by parsing the URL
 export async function loadBlockchain(
   host: string,
+  phdClient: PHDClient,
   cache: Cache,
   blockchainsRepository: BlockchainsRepository,
   defaultLogLimitBlocks: number,
@@ -39,11 +42,16 @@ export async function loadBlockchain(
 ): Promise<BlockchainDetails> {
   // Load the requested blockchain
   const cachedBlockchains = await cache.get('blockchains')
-  let blockchains
+  let blockchains: Blockchains[]
 
   if (!cachedBlockchains) {
-    blockchains = await blockchainsRepository.find()
-    await cache.set('blockchains', JSON.stringify(blockchains), 'EX', 60)
+    blockchains = await phdClient.find({
+      path: PHDPaths.Blockchain,
+      model: Blockchains,
+      cache,
+      cacheKey: 'blockchains',
+      fallback: () => blockchainsRepository.find(),
+    })
   } else {
     blockchains = JSON.parse(cachedBlockchains)
   }
@@ -75,7 +83,7 @@ export async function loadBlockchain(
     }
   })
 
-  blockchainID = blockchainFilter.hash as string // ex. '0021'
+  blockchainID = blockchainFilter.id as string // ex. '0021'
 
   // Record the necessary format for the result; example: JSON
   if (blockchainFilter.enforceResult) {
@@ -90,7 +98,7 @@ export async function loadBlockchain(
     blockchainSyncCheck.path = blockchainFilter.syncCheckOptions.path || ''
 
     // Allowance of blocks a data node can be behind
-    blockchainSyncCheck.allowance = parseInt(blockchainFilter.syncCheckOptions.allowance || 0)
+    blockchainSyncCheck.allowance = Number(blockchainFilter.syncCheckOptions.allowance || 0)
   }
   // Chain ID Check to determine correct chain
   if (blockchainFilter.chainIDCheck) {
@@ -99,7 +107,7 @@ export async function loadBlockchain(
   }
   // Max number of blocks to request logs for, if not available, result to env
   if ((blockchainFilter.logLimitBlocks as number) > 0) {
-    blockchainLogLimitBlocks = parseInt(blockchainFilter.logLimitBlocks)
+    blockchainLogLimitBlocks = Number(blockchainFilter.logLimitBlocks)
   } else if (defaultLogLimitBlocks > 0) {
     blockchainLogLimitBlocks = defaultLogLimitBlocks
   }
@@ -136,22 +144,28 @@ export async function loadBlockchain(
 // Get blockchain's alias by it's redirect domain
 export async function getBlockchainAliasesByDomain(
   host: string,
+  phdClient: PHDClient,
   redis: Cache,
   blockchainsRepository: BlockchainsRepository,
   rpcID: number
 ): Promise<{ blockchainAliases: string[] }> {
   // Load the requested blockchain
   const cachedBlockchains = await redis.get('blockchains')
-  let blockchains
+  let blockchains: Blockchains[]
 
   if (!cachedBlockchains) {
-    blockchains = await blockchainsRepository.find()
-    await redis.set('blockchains', JSON.stringify(blockchains), 'EX', 60)
+    blockchains = await phdClient.find({
+      path: PHDPaths.Blockchain,
+      model: Blockchains,
+      cache: redis,
+      cacheKey: PHDCacheKeys.Blockchain,
+      fallback: () => blockchainsRepository.find(),
+    })
   } else {
     blockchains = JSON.parse(cachedBlockchains)
   }
 
-  const [blockchainFilter] = blockchains.filter((b: { redirects: BlockchainRedirect[] }) =>
+  const [blockchainFilter] = blockchains.filter((b) =>
     b.redirects?.some((rdr) => rdr.domain.toLowerCase() === host.toLowerCase())
   )
 

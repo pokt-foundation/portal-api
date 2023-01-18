@@ -50,21 +50,38 @@ class BlockchainRedirect {
 export class Blockchains extends Entity {
   @property({
     type: 'string',
+    id: true,
+    generated: false,
+    required: true,
+  })
+  id: string
+
+  @property({
+    type: 'string',
     required: true,
   })
   ticker: string
 
   @property({
     type: 'string',
-    id: true,
     generated: false,
     required: true,
   })
-  hash: string
+  chainID: string
+
+  @property({
+    type: 'string',
+  })
+  chainIDCheck: string
 
   @property({
     type: 'string',
     required: true,
+  })
+  enforceResult: string
+
+  @property({
+    type: 'string',
   })
   networkID: string
 
@@ -81,7 +98,6 @@ export class Blockchains extends Entity {
 
   @property({
     type: 'number',
-    required: true,
   })
   index: number
 
@@ -122,26 +138,14 @@ export class Blockchains extends Entity {
 
   @property({
     type: 'string',
-    required: false,
     default: '',
   })
   path?: string
 
   @property({
-    type: 'boolean',
-  })
-  evm?: boolean
-
-  @property({
     type: 'string',
   })
   altruist?: string
-
-  @property({
-    type: 'string',
-    required: false,
-  })
-  enforceResult: string
 
   @property({
     type: 'object',
@@ -173,7 +177,7 @@ export type BlockchainsResponse = {
     resultKey: string
     allowance?: number
   }
-  enforceResult?: string
+  enforceResult: string
   logLimitBlocks?: number
   path?: string
   evm?: boolean

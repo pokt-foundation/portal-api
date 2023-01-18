@@ -11,6 +11,7 @@ import { ChainChecker, ChainIDFilterOptions } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
 import { MergeFilterOptions, MergeChecker } from '../services/merge-checker'
 import { MetricsRecorder } from '../services/metrics-recorder'
+import { PHDClient } from '../services/phd-client'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { removeNodeFromSession } from '../utils/cache'
 import { SESSION_TIMEOUT, DEFAULT_ALTRUIST_TIMEOUT, MERGE_CHECK_BLOCKCHAIN_IDS } from '../utils/constants'
@@ -55,6 +56,7 @@ export class PocketRelayer {
   alwaysRedirectToAltruists: boolean
   altruistOnlyChains: string[]
   dispatchers: string
+  phdClient: PHDClient
   requestURL: string
 
   constructor({
@@ -79,6 +81,7 @@ export class PocketRelayer {
     alwaysRedirectToAltruists = false,
     altruistOnlyChains = [],
     dispatchers,
+    phdClient,
     request,
   }: {
     host: string
@@ -102,6 +105,7 @@ export class PocketRelayer {
     alwaysRedirectToAltruists?: boolean
     altruistOnlyChains?: string[]
     dispatchers?: string
+    phdClient: PHDClient
     request?: Request
   }) {
     this.host = host
@@ -125,6 +129,7 @@ export class PocketRelayer {
     this.alwaysRedirectToAltruists = alwaysRedirectToAltruists
     this.altruistOnlyChains = altruistOnlyChains
     this.dispatchers = dispatchers
+    this.phdClient = phdClient
     this.requestURL = `${request?.headers?.host}${request?.url}`
   }
 
@@ -174,6 +179,7 @@ export class PocketRelayer {
       blockchainAltruist,
     } = await loadBlockchain(
       this.host,
+      this.phdClient,
       this.cache,
       this.blockchainsRepository,
       this.defaultLogLimitBlocks,
