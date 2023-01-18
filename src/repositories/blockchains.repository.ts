@@ -5,7 +5,7 @@ import { Blockchains, BlockchainsRelations } from '../models'
 
 export class BlockchainsRepository extends DefaultCrudRepository<
   Blockchains,
-  typeof Blockchains.prototype.hash,
+  typeof Blockchains.prototype.id,
   BlockchainsRelations
 > {
   constructor(@inject('datasources.gateway') dataSource: GatewayDataSource) {

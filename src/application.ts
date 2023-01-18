@@ -15,6 +15,7 @@ import AatPlans from './config/aat-plans.json'
 import { getPocketInstance } from './config/pocket-config'
 import { GatewaySequence } from './sequence'
 import { Cache } from './services/cache'
+import { PHDClient } from './services/phd-client'
 import { getRDSCertificate } from './utils/cache'
 const logger = require('./services/logger')
 
@@ -73,6 +74,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       RATE_LIMITER_URL,
       RATE_LIMITER_TOKEN,
       GATEWAY_HOST,
+      PHD_BASE_URL,
+      PHD_API_KEY,
     }: // eslint-disable-next-line @typescript-eslint/no-explicit-any
     any = await this.get('configuration.environment.values')
 
@@ -92,6 +95,8 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const rateLimiterURL: string = RATE_LIMITER_URL || ''
     const rateLimiterToken: string = RATE_LIMITER_TOKEN || ''
     const gatewayHost: string = GATEWAY_HOST || 'localhost'
+    const phdBaseURL: string = PHD_BASE_URL || ''
+    const phdAPIKey: string = PHD_API_KEY || ''
 
     const influxURLs = (INFLUX_URLS || '').split(',')
     const influxTokens = (INFLUX_TOKENS || '').split(',')
@@ -151,6 +156,11 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const cache = new Cache(remoteRedis as Redis, localRedis, ttlFactor)
 
     this.bind('cache').to(cache)
+
+    // Bind PHD Client
+    const phdClient = new PHDClient(phdBaseURL, phdAPIKey)
+
+    this.bind('phdClient').to(phdClient)
 
     // New metrics postgres for error recording
     const psqlConnection: string = PSQL_CONNECTION || ''
