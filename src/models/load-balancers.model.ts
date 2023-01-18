@@ -69,6 +69,12 @@ export class LoadBalancers extends Entity {
   name: string
 
   @property({
+    type: 'string',
+    required: true,
+  })
+  requestTimeout: string
+
+  @property({
     type: 'array',
     itemType: 'string',
     required: true,
@@ -79,25 +85,6 @@ export class LoadBalancers extends Entity {
     type: 'number',
   })
   logLimitBlocks?: number
-
-  @property({
-    type: 'boolean',
-    required: false,
-  })
-  stickiness?: boolean
-
-  @property({
-    type: 'number',
-    required: false,
-  })
-  stickinessDuration?: number
-
-  @property({
-    type: 'number',
-    required: false,
-    default: true,
-  })
-  useRPCID?: boolean
 
   @property({
     type: 'object',
