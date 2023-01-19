@@ -227,6 +227,7 @@ export class CherryPicker {
         p90: number
         attempts: number
         successRate: number
+        applicationPublicKey: string
       }
     }
 
@@ -265,6 +266,7 @@ export class CherryPicker {
           p90: bucketedServiceQuality.p90,
           attempts: unsortedLog.attempts,
           successRate: unsortedLog.successRate,
+          applicationPublicKey: session.header.applicationPubKey,
         }
       } else {
         await this.updateBadNodeTimeoutQuality(blockchain, id, elapsedTime, timeout, session)
@@ -287,6 +289,7 @@ export class CherryPicker {
           p90: bucketedServiceQuality.p90,
           attempts: 1,
           successRate: unsortedLog.successRate,
+          applicationPublicKey: session.header.applicationPubKey,
         },
       }
     }
@@ -483,7 +486,7 @@ export class CherryPicker {
         // If previously marked as failure, erase that
         if (failure) {
           failure = false
-          await this.redis.set(`{${blockchain}}-${id}-failure`, 'false', 'EX', 60 * 60 * 24 * 30)
+          await this.redis.set(`{${blockchain}}-${id}-failure`, 'false', 'EX', 60 * 60 * 2)
         }
         successRate = parsedLog.results['200'] / attempts
         medianSuccessLatency = parseFloat(parseFloat(parsedLog.medianSuccessLatency).toFixed(5))

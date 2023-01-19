@@ -17,7 +17,7 @@ export const metricsRecorderMock = (redis: Redis, cherryPicker: CherryPicker): M
   return new MetricsRecorder({
     redis,
     pgPool,
-    influxWriteAPI: writeApi,
+    influxWriteAPIs: [writeApi],
     cherryPicker,
     processUID: '1234',
   })

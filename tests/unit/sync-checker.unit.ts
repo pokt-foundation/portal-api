@@ -1,7 +1,6 @@
 import { EvidenceSealedError } from '@pokt-foundation/pocketjs-relayer'
 import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
-import RedisMock from 'ioredis-mock'
 import { expect, sinon } from '@loopback/testlab'
 import { Cache } from '../../src/services/cache'
 import { CherryPicker } from '../../src/services/cherry-picker'
@@ -9,6 +8,7 @@ import { MetricsRecorder } from '../../src/services/metrics-recorder'
 import { SyncChecker } from '../../src/services/sync-checker'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_MOCK_VALUES, DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
+const Redis = require('ioredis-mock')
 
 const logger = require('../../src/services/logger')
 
@@ -23,7 +23,7 @@ const { POCKET_AAT } = DEFAULT_MOCK_VALUES
 
 const blockchains = {
   '0021': {
-    hash: '0021',
+    id: '0021',
     ticker: 'ETH',
     networkID: '1',
     network: 'ETH-1',
@@ -43,7 +43,7 @@ const blockchains = {
     altruist: 'https://eth-mainnet:pass@backups.example.org:18081',
   },
   '0006': {
-    hash: '0006',
+    id: '0006',
     ticker: 'SOL',
     networkID: '6',
     network: 'SOL',
@@ -62,7 +62,7 @@ const blockchains = {
     altruist: 'https://solana:pass@backups.example.org:18081',
   },
   '0001': {
-    hash: '0001',
+    id: '0001',
     ticker: 'POKT',
     networkID: 'mainnet',
     network: 'POKT-mainnet',
@@ -81,7 +81,7 @@ const blockchains = {
     altruist: 'https://pocket:pass@backups.example.org:18081',
   },
   '0099': {
-    hash: '0099',
+    id: '0099',
     ticker: 'NOT_POKT',
     networkID: 'not_mainnet',
     network: 'POKT-mainnet',
@@ -113,7 +113,7 @@ describe('Sync checker service (unit)', () => {
   const origin = 'unit-test'
 
   before('initialize variables', async () => {
-    cache = new Cache(new RedisMock(0, ''), new RedisMock(1, ''))
+    cache = new Cache(new Redis(0, ''), new Redis(1, ''))
     cherryPicker = new CherryPicker({ redis: cache.remote, checkDebug: false })
     metricsRecorder = metricsRecorderMock(cache.remote, cherryPicker)
     syncChecker = new SyncChecker(cache, metricsRecorder, DEFAULT_SYNC_ALLOWANCE, origin)
@@ -178,7 +178,7 @@ describe('Sync checker service (unit)', () => {
         node,
         '1234',
         blockchains['0021'].syncCheckOptions,
-        blockchains['0021'].hash,
+        blockchains['0021'].id,
         '',
         '',
         relayer,
@@ -190,7 +190,7 @@ describe('Sync checker service (unit)', () => {
 
       expect(nodeSyncLog.node).to.be.equal(node)
       expect(nodeSyncLog.blockHeight).to.be.equal(expectedBlockHeight)
-      expect(nodeSyncLog.blockchainID).to.be.equal(blockchains['0021'].hash)
+      expect(nodeSyncLog.blockchainID).to.be.equal(blockchains['0021'].id)
     })
 
     it('Fails gracefully on handled error result', async () => {
@@ -205,7 +205,7 @@ describe('Sync checker service (unit)', () => {
         node,
         '1234',
         blockchains['0021'].syncCheckOptions,
-        blockchains['0021'].hash,
+        blockchains['0021'].id,
         '',
         '',
         relayer,
@@ -217,7 +217,7 @@ describe('Sync checker service (unit)', () => {
 
       expect(nodeSyncLog.node).to.be.equal(node)
       expect(nodeSyncLog.blockHeight).to.be.equal(expectedBlockHeight)
-      expect(nodeSyncLog.blockchainID).to.be.equal(blockchains['0021'].hash)
+      expect(nodeSyncLog.blockchainID).to.be.equal(blockchains['0021'].id)
     })
 
     it('Fails gracefully on unhandled error result', async () => {
@@ -234,7 +234,7 @@ describe('Sync checker service (unit)', () => {
         node,
         '1234',
         blockchains['0021'].syncCheckOptions,
-        blockchains['0021'].hash,
+        blockchains['0021'].id,
         '',
         '',
         relayer,
@@ -246,7 +246,7 @@ describe('Sync checker service (unit)', () => {
 
       expect(nodeSyncLog.node).to.be.equal(node)
       expect(nodeSyncLog.blockHeight).to.be.equal(expectedBlockHeight)
-      expect(nodeSyncLog.blockchainID).to.be.equal(blockchains['0021'].hash)
+      expect(nodeSyncLog.blockchainID).to.be.equal(blockchains['0021'].id)
     })
   })
 
@@ -286,7 +286,7 @@ describe('Sync checker service (unit)', () => {
       nodes,
       '1234',
       blockchains['0021'].syncCheckOptions,
-      blockchains['0021'].hash,
+      blockchains['0021'].id,
       '',
       '',
       relayer,
@@ -316,7 +316,7 @@ describe('Sync checker service (unit)', () => {
         await syncChecker.consensusFilter({
           nodes,
           requestID: '1234',
-          blockchainID: blockchains['0021'].hash,
+          blockchainID: blockchains['0021'].id,
           syncCheckOptions: blockchains['0021'].syncCheckOptions,
           relayer,
           applicationID: '',
@@ -337,7 +337,7 @@ describe('Sync checker service (unit)', () => {
         await syncChecker.consensusFilter({
           nodes,
           requestID: '1234',
-          blockchainID: blockchains['0021'].hash,
+          blockchainID: blockchains['0021'].id,
           syncCheckOptions: blockchains['0021'].syncCheckOptions,
           relayer,
           applicationID: '',
@@ -365,7 +365,7 @@ describe('Sync checker service (unit)', () => {
         await syncChecker.consensusFilter({
           nodes,
           requestID: '1234',
-          blockchainID: blockchains['0099'].hash,
+          blockchainID: blockchains['0099'].id,
           syncCheckOptions: blockchains['0099'].syncCheckOptions,
           relayer,
           applicationID: '',
@@ -386,7 +386,7 @@ describe('Sync checker service (unit)', () => {
         await syncChecker.consensusFilter({
           nodes,
           requestID: '1234',
-          blockchainID: blockchains['0099'].hash,
+          blockchainID: blockchains['0099'].id,
           syncCheckOptions: blockchains['0099'].syncCheckOptions,
           relayer,
           applicationID: '',
@@ -414,7 +414,7 @@ describe('Sync checker service (unit)', () => {
         await syncChecker.consensusFilter({
           nodes,
           requestID: '1234',
-          blockchainID: blockchains['0006'].hash,
+          blockchainID: blockchains['0006'].id,
           syncCheckOptions: blockchains['0006'].syncCheckOptions,
           relayer,
           applicationID: '',
@@ -435,7 +435,7 @@ describe('Sync checker service (unit)', () => {
         await syncChecker.consensusFilter({
           nodes,
           requestID: '1234',
-          blockchainID: blockchains['0006'].hash,
+          blockchainID: blockchains['0006'].id,
           syncCheckOptions: blockchains['0006'].syncCheckOptions,
           relayer,
           applicationID: '',
@@ -463,7 +463,7 @@ describe('Sync checker service (unit)', () => {
         await syncChecker.consensusFilter({
           nodes,
           requestID: '1234',
-          blockchainID: blockchains['0001'].hash,
+          blockchainID: blockchains['0001'].id,
           syncCheckOptions: blockchains['0001'].syncCheckOptions,
           relayer,
           applicationID: '',
@@ -484,7 +484,7 @@ describe('Sync checker service (unit)', () => {
         await syncChecker.consensusFilter({
           nodes,
           requestID: '1234',
-          blockchainID: blockchains['0001'].hash,
+          blockchainID: blockchains['0001'].id,
           syncCheckOptions: blockchains['0001'].syncCheckOptions,
           relayer,
           applicationID: '',
@@ -510,7 +510,7 @@ describe('Sync checker service (unit)', () => {
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchainID: blockchains['0006'].hash,
+        blockchainID: blockchains['0006'].id,
         syncCheckOptions: blockchains['0006'].syncCheckOptions,
         relayer,
         applicationID: '',
@@ -543,7 +543,7 @@ describe('Sync checker service (unit)', () => {
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchainID: blockchains['0021'].hash,
+        blockchainID: blockchains['0021'].id,
         syncCheckOptions: blockchains['0021'].syncCheckOptions,
         relayer,
         applicationID: '',
@@ -574,7 +574,7 @@ describe('Sync checker service (unit)', () => {
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchainID: blockchains['0021'].hash,
+        blockchainID: blockchains['0021'].id,
         syncCheckOptions: blockchains['0021'].syncCheckOptions,
         relayer,
         applicationID: '',
@@ -612,7 +612,7 @@ describe('Sync checker service (unit)', () => {
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchainID: blockchains['0021'].hash,
+        blockchainID: blockchains['0021'].id,
         syncCheckOptions: blockchains['0021'].syncCheckOptions,
         relayer,
         applicationID: '',
@@ -643,7 +643,7 @@ describe('Sync checker service (unit)', () => {
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchainID: blockchains['0021'].hash,
+        blockchainID: blockchains['0021'].id,
         syncCheckOptions: blockchains['0021'].syncCheckOptions,
         relayer,
         applicationID: '',
@@ -667,7 +667,7 @@ describe('Sync checker service (unit)', () => {
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchainID: blockchains['0021'].hash,
+        blockchainID: blockchains['0021'].id,
         syncCheckOptions: blockchains['0021'].syncCheckOptions,
         relayer,
         applicationID: '',
@@ -705,7 +705,7 @@ describe('Sync checker service (unit)', () => {
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchainID: blockchains['0021'].hash,
+        blockchainID: blockchains['0021'].id,
         syncCheckOptions: blockchains['0021'].syncCheckOptions,
         relayer,
         applicationID: '',
@@ -738,7 +738,7 @@ describe('Sync checker service (unit)', () => {
     //   const { nodes: syncedNodes } = await syncChecker.consensusFilter({
     //     nodes,
     //     requestID: '1234',
-    //     blockchainID: blockchains['0021'].hash,
+    //     blockchainID: blockchains['0021'].id,
     //     syncCheckOptions: blockchains['0021'].syncCheckOptions,
     //     relayer,
     //     applicationID: '',
@@ -782,7 +782,7 @@ describe('Sync checker service (unit)', () => {
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchainID: blockchains['0021'].hash,
+        blockchainID: blockchains['0021'].id,
         syncCheckOptions: blockchains['0021'].syncCheckOptions,
         relayer,
         applicationID: '',
@@ -818,7 +818,7 @@ describe('Sync checker service (unit)', () => {
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchainID: blockchains['0021'].hash,
+        blockchainID: blockchains['0021'].id,
         syncCheckOptions: blockchains['0021'].syncCheckOptions,
         relayer,
         applicationID: '',
@@ -851,7 +851,7 @@ describe('Sync checker service (unit)', () => {
       const { nodes: syncedNodes } = await syncChecker.consensusFilter({
         nodes,
         requestID: '1234',
-        blockchainID: blockchains['0021'].hash,
+        blockchainID: blockchains['0021'].id,
         syncCheckOptions: blockchains['0021'].syncCheckOptions,
         relayer,
         applicationID: '',

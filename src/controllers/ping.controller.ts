@@ -31,19 +31,20 @@ const PING_RESPONSE: ResponseObject = {
 /**
  * OpenAPI response for version()
  */
-const VERSION_RESPONSE: ResponseObject = {
-  description: 'Version response',
-  content: {
-    'application/json': {
-      schema: {
-        type: 'object',
-        properties: {
-          commit: { type: 'string' },
-        },
-      },
-    },
-  },
-}
+// TODO: Enable again when activating cache prefix
+// const VERSION_RESPONSE: ResponseObject = {
+//   description: 'Version response',
+//   content: {
+//     'application/json': {
+//       schema: {
+//         type: 'object',
+//         properties: {
+//           commit: { type: 'string' },
+//         },
+//       },
+//     },
+//   },
+// }
 
 /**
  * A simple controller to bounce back http requests and provide version info
@@ -82,13 +83,14 @@ export class PingController {
     }
   }
 
-  @get('/version', {
-    responses: {
-      '200': VERSION_RESPONSE,
-    },
-  })
-  version(): object {
-    // Reply with the current project's commit
-    return { commit: process.env.COMMIT_HASH }
-  }
+  // TODO: Enable again when activating cache prefix
+  // @get('/version', {
+  //   responses: {
+  //     '200': VERSION_RESPONSE,
+  //   },
+  // })
+  // version(): object {
+  //   // Reply with the current project's commit
+  //   return { commit: process.env.COMMIT_HASH }
+  // }
 }

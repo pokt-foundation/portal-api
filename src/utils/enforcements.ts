@@ -1,5 +1,7 @@
 import { Decryptor } from 'strong-cryptor'
 import { Applications } from '../models'
+import { Cache } from '../services/cache'
+import { getRateLimitedApps } from './cache'
 import { isUserErrorEVM } from './errors'
 
 export function checkEnforcementJSON(test: string): boolean {
@@ -15,6 +17,20 @@ export function checkEnforcementJSON(test: string): boolean {
   test = test.replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']')
   test = test.replace(/(?:^|:|,)(?:\s*\[)+/g, '')
   return /^[\],:{}\s]*$/.test(test)
+}
+
+// Returns whether an application should be rate limited
+export async function shouldRateLimit(appID: string, rateLimiter: RateLimiter, cache: Cache): Promise<boolean> {
+  if (appID.length === 0) {
+    return false
+  }
+
+  const limitedApps = await getRateLimitedApps(cache.local, rateLimiter)
+  if (limitedApps.length === 0) {
+    return false
+  }
+
+  return limitedApps.includes(appID.toLowerCase())
 }
 
 // Check passed in string against an array of whitelisted items
@@ -63,6 +79,11 @@ export function checkSecretKey(application: Applications, secretKeyDetails: Secr
 export type SecretKeyDetails = {
   databaseEncryptionKey: string
   secretKey: string
+}
+
+export type RateLimiter = {
+  URL: string
+  token: string
 }
 
 export function isRelayError(payload: string): boolean {

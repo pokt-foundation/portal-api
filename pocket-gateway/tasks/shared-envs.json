@@ -17,6 +17,18 @@
       "value": "${{ secrets.MONGO_PRODUCTION_ENDPOINT }}"
     },
     {
+      "key": "BLOCKED_ADDRESSES_URL",
+      "value": "${{ secrets.BLOCKED_ADDRESSES_URL }}"
+    },
+    {
+      "key": "PHD_BASE_URL",
+      "value": "${{ secrets.PHD_BASE_URL }}"
+    },
+    {
+      "key": "PHD_API_KEY",
+      "value": "${{ secrets.PHD_API_KEY }}"
+    },
+    {
       "key": "DATABASE_ENCRYPTION_KEY",
       "value": "${{ secrets.DATABASE_PRODUCTION_ENCRYPTION_KEY }}"
     },
@@ -39,10 +51,6 @@
     {
       "key": "REDIS_PORT",
       "value": 6379
-    },
-    {
-      "key": "POCKET_NETWORK_NODE_URL",
-      "value": "${{ secrets.POCKET_NETWORK_MAINNET_NODE_URL }}"
     },
     {
       "key": "POCKET_SESSION_BLOCK_FREQUENCY",
@@ -73,18 +81,6 @@
       "value": "production"
     },
     {
-      "key": "INFLUX_URL",
-      "value": "https://influx.portal.pokt.network:8086"
-    },
-    {
-      "key": "INFLUX_ORG",
-      "value": "pocket"
-    },
-    {
-      "key": "INFLUX_TOKEN",
-      "value": "${{ secrets.INFLUX_TOKEN }}"
-    },
-    {
       "key": "PSQL_CONNECTION",
       "value": "${{ secrets.PSQL_CONNECTION }}"
     },
@@ -113,14 +109,17 @@
       "value": "0022,0028,0010,000A,000B,000C"
     },
     {
-      "key": "LOG_TO_DATADOG",
-      "value": true
+      "key": "LOG_TO_LOKI",
+      "value": "${{ secrets.LOG_TO_LOKI }}"
     },
     {
-      "key": "DATADOG_API_KEY",
-      "value": "${{ secrets.DATADOG_API_KEY }}"
+      "key": "LOKI_BASIC_AUTH",
+      "value": "${{ secrets.LOKI_BASIC_AUTH }}"
     },
-
+    {
+      "key": "LOKI_HOST",
+      "value": "${{ secrets.LOKI_HOST }}"
+    },
     {
       "key": "ALWAYS_REDIRECT_TO_ALTRUISTS",
       "value": "${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}"
@@ -132,6 +131,34 @@
     {
       "key": "LOG_CHERRY_PICKER_STATS",
       "value": "${{ secrets.LOG_CHERRY_PICKER_STATS }}"
+    },
+    {
+      "key": "RATE_LIMITER_URL",
+      "value": "${{ secrets.RATE_LIMITER_URL }}"
+    },
+    {
+      "key": "RATE_LIMITER_TOKEN",
+      "value": "${{ secrets.RATE_LIMITER_TOKEN }}"
+    },
+    {
+      "key": "INFLUX_URLS",
+      "value": "${{ secrets.INFLUX_URLS }}"
+    },
+    {
+      "key": "INFLUX_TOKENS",
+      "value": "${{ secrets.INFLUX_TOKENS }}"
+    },
+    {
+      "key": "INFLUX_ORGS",
+      "value": "${{ secrets.INFLUX_ORGS }}"
+    },
+    {
+      "key": "ALTRUIST_ONLY_CHAINS",
+      "value": "${{ secrets.ALTRUIST_ONLY_CHAINS }}"
+    },
+    {
+      "key": "GATEWAY_HOST",
+      "value": "${{ secrets.GATEWAY_HOST }}"
     }
   ]
 }

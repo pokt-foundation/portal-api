@@ -24,26 +24,33 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'LOCAL_REDIS_ENDPOINT',
     'PSQL_CONNECTION',
     'PSQL_CERTIFICATE',
-    'INFLUX_URL',
-    'INFLUX_TOKEN',
-    'INFLUX_ORG',
     'DISPATCH_URL',
     'POCKET_RELAY_RETRIES',
     'DEFAULT_SYNC_ALLOWANCE',
     'DEFAULT_LOG_LIMIT_BLOCKS',
     'AAT_PLAN',
-    'INFLUX_URL',
-    'INFLUX_TOKEN',
-    'INFLUX_ORG',
+    'INFLUX_URLS',
+    'INFLUX_TOKENS',
+    'INFLUX_ORGS',
     'ARCHIVAL_CHAINS',
+    'BLOCKED_ADDRESSES_URL',
+    'PHD_BASE_URL',
+    'PHD_API_KEY',
     // Not required in code, but must be present in .env
     'AWS_ACCESS_KEY_ID',
     'AWS_SECRET_ACCESS_KEY',
+    'GATEWAY_HOST',
   ]
 
-  private static requiredEnvVarsOnlyInProd = ['COMMIT_HASH']
+  private static requiredEnvVarsOnlyInProd = []
 
-  private static optionalEnvVars: string[] = ['ALWAYS_REDIRECT_TO_ALTRUISTS', 'REDIS_LOCAL_TTL_FACTOR']
+  private static optionalEnvVars: string[] = [
+    'ALWAYS_REDIRECT_TO_ALTRUISTS',
+    'ALTRUIST_ONLY_CHAINS',
+    'REDIS_LOCAL_TTL_FACTOR',
+    'RATE_LIMITER_URL',
+    'RATE_LIMITER_TOKEN',
+  ]
 
   /*
   constructor(

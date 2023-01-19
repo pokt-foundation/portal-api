@@ -1,16 +1,16 @@
 import { Node } from '@pokt-foundation/pocketjs-types'
-import RedisMock from 'ioredis-mock'
 import { expect } from '@loopback/testlab'
 import { Applications } from '../../src/models'
 import { CherryPicker } from '../../src/services/cherry-picker'
 import { DEFAULT_MOCK_VALUES, PocketMock } from '../mocks/pocketjs'
+const Redis = require('ioredis-mock')
 
 describe('Cherry picker service (unit)', () => {
   let cherryPicker: CherryPicker
-  let redis: RedisMock.Redis
+  let redis: typeof Redis
 
   before('initialize instance', async () => {
-    redis = new RedisMock(0, '')
+    redis = new Redis(0, '')
 
     cherryPicker = new CherryPicker({ redis, checkDebug: true, archivalChains: ['1234', '4567'] })
   })
@@ -53,7 +53,6 @@ describe('Cherry picker service (unit)', () => {
 
       const app: Partial<Applications> = {
         id: '24676c9f7sf4552f0b9cad',
-        freeTier: true,
       }
 
       const blockchain = '0027'
@@ -139,7 +138,6 @@ describe('Cherry picker service (unit)', () => {
 
       const app: Partial<Applications> = {
         id: '24676c9f7sf4552f0b9cad',
-        freeTier: true,
       }
 
       const blockchain = '0027'
@@ -240,6 +238,7 @@ describe('Cherry picker service (unit)', () => {
       const blockchain = '0027'
       const elapseTime = 0.22333
       const result = 500
+      const session = await new PocketMock().object().getNewSession(undefined)
       const expectedLogs = JSON.stringify({
         medianSuccessLatency: '0.00000',
         weightedSuccessLatency: '0.00000',
@@ -251,6 +250,7 @@ describe('Cherry picker service (unit)', () => {
         metadata: {
           attempts: 1,
           successRate: 1,
+          applicationPublicKey: session.header.applicationPubKey,
         },
       })
       let logs: string
@@ -258,8 +258,6 @@ describe('Cherry picker service (unit)', () => {
       // no values set for the service yet
       logs = await redis.get(`{${blockchain}}-${id}-service`)
       expect(logs).to.be.null()
-
-      const session = await new PocketMock().object().getNewSession(undefined)
 
       await cherryPicker.updateServiceQuality(blockchain, id, elapseTime, result, session)
 
@@ -272,6 +270,7 @@ describe('Cherry picker service (unit)', () => {
       const blockchain = '0027'
       const elapseTime = 0.22333 // logs are set to be up to 5 decimal points
       const result = 200
+      const session = await new PocketMock().object().getNewSession(undefined)
       const expectedLogs = JSON.stringify({
         medianSuccessLatency: '0.25000',
         weightedSuccessLatency: '0.32860', // average after calculation from fn
@@ -283,6 +282,7 @@ describe('Cherry picker service (unit)', () => {
           attempts: 26,
           p90: 0.262,
           successRate: 0.9230769230769231,
+          applicationPublicKey: session.header.applicationPubKey,
         },
       })
 
@@ -294,7 +294,6 @@ describe('Cherry picker service (unit)', () => {
         'EX',
         60
       )
-      const session = await new PocketMock().object().getNewSession(undefined)
 
       await cherryPicker.updateServiceQuality(blockchain, id, elapseTime, result, session)
       const logs = await redis.get(`{${blockchain}}-${id}-service`)

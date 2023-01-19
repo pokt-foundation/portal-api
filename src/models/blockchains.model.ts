@@ -50,21 +50,38 @@ class BlockchainRedirect {
 export class Blockchains extends Entity {
   @property({
     type: 'string',
+    id: true,
+    generated: false,
+    required: true,
+  })
+  id: string
+
+  @property({
+    type: 'string',
     required: true,
   })
   ticker: string
 
   @property({
     type: 'string',
-    id: true,
     generated: false,
     required: true,
   })
-  hash: string
+  chainID: string
+
+  @property({
+    type: 'string',
+  })
+  chainIDCheck: string
 
   @property({
     type: 'string',
     required: true,
+  })
+  enforceResult: string
+
+  @property({
+    type: 'string',
   })
   networkID: string
 
@@ -81,7 +98,6 @@ export class Blockchains extends Entity {
 
   @property({
     type: 'number',
-    required: true,
   })
   index: number
 
@@ -122,15 +138,9 @@ export class Blockchains extends Entity {
 
   @property({
     type: 'string',
-    required: false,
     default: '',
   })
   path?: string
-
-  @property({
-    type: 'boolean',
-  })
-  evm?: boolean
 
   @property({
     type: 'string',
@@ -148,6 +158,57 @@ export class Blockchains extends Entity {
 
   constructor(data?: Partial<Blockchains>) {
     super(data)
+  }
+}
+
+export type BlockchainsResponse = {
+  ticker: string
+  hash: string
+  networkID: string
+  network: string
+  description?: string
+  index: number
+  blockchain: string
+  blockchainAliases: string[]
+  active: boolean
+  syncCheckOptions?: {
+    path?: string
+    body: string
+    resultKey: string
+    allowance?: number
+  }
+  enforceResult: string
+  logLimitBlocks?: number
+  path?: string
+  evm?: boolean
+  redirects?: {
+    alias: string
+    domain: string
+  }[]
+}
+
+export function blockchainToBlockchainResponse(bl: Blockchains): BlockchainsResponse {
+  return {
+    ticker: bl.ticker,
+    hash: bl.hash,
+    networkID: bl.networkID,
+    network: bl.network,
+    description: bl.description,
+    index: bl.index,
+    blockchain: bl.blockchain,
+    blockchainAliases: bl.blockchainAliases,
+    active: bl.active,
+    syncCheckOptions: {
+      path: bl?.syncCheckOptions?.path,
+      body: bl?.syncCheckOptions?.body,
+      resultKey: bl?.syncCheckOptions?.resultKey,
+      allowance: bl?.syncCheckOptions?.allowance,
+    },
+    enforceResult: bl?.enforceResult,
+    logLimitBlocks: bl?.logLimitBlocks,
+    path: bl?.path,
+    evm: bl?.evm,
+    redirects: bl?.redirects,
   }
 }
 

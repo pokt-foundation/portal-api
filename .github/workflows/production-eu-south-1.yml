@@ -4,7 +4,7 @@ name: Terraform Production Deployment eu-south-1
 
 on:
   push:
-    branches: [master]
+    branches: [master, eth-altruist]
 
 jobs:
   deploy:
@@ -33,13 +33,15 @@ jobs:
           envkey_GATEWAY_CLIENT_PASSPHRASE: ${{ secrets.POCKET_NETWORK_PRODUCTION_CLIENT_PASSPHRASE }}
           envkey_REDIS_LOCAL_TTL_FACTOR: ${{ secrets.REDIS_LOCAL_TTL_FACTOR }}
           envkey_MONGO_ENDPOINT: ${{ secrets.MONGO_PRODUCTION_ENDPOINT }}
+          envkey_BLOCKED_ADDRESSES_URL: ${{ secrets.BLOCKED_ADDRESSES_URL }}
+          envkey_PHD_BASE_URL: ${{ secrets.PHD_BASE_URL }}
+          envkey_PHD_API_KEY: ${{ secrets.PHD_API_KEY }}
           envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_PRODUCTION_ENCRYPTION_KEY }}
           envkey_DISPATCH_URL: ${{ secrets.DISPATCH_URL }}
           envkey_ALTRUISTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_ALTRUISTS }}
           envkey_REDIRECTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_REDIRECTS }}
           envkey_LOCAL_REDIS_ENDPOINT: 172.17.0.1:6379
           envkey_REDIS_PORT: 6379
-          envkey_POCKET_NETWORK_NODE_URL: ${{ secrets.POCKET_NETWORK_MAINNET_NODE_URL }}
           envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
           envkey_POCKET_BLOCK_TIME: 1038000
           envkey_POCKET_RELAY_RETRIES: 0
@@ -47,9 +49,6 @@ jobs:
           envkey_DEFAULT_LOG_LIMIT_BLOCKS: 10000
           envkey_AAT_PLAN: premium
           envkey_NODE_ENV: production
-          envkey_INFLUX_URL: https://influx.portal.pokt.network:8086
-          envkey_INFLUX_ORG: pocket
-          envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
           envkey_PSQL_CONNECTION: ${{ secrets.PSQL_CONNECTION }}
           envkey_PSQL_CERTIFICATE: https://s3.amazonaws.com/rds-downloads/rds-ca-2019-root.pem
           envkey_LOG_TO_CLOUDWATCH: false
@@ -57,11 +56,19 @@ jobs:
           envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           envkey_COMMIT_HASH: ${{ github.sha }}
           envkey_ARCHIVAL_CHAINS: 0022,0028,0010,000A,000B,000C
-          envkey_LOG_TO_DATADOG: true
-          envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          envkey_LOG_TO_LOKI: ${{ secrets.LOG_TO_LOKI }}
+          envkey_LOKI_BASIC_AUTH: ${{ secrets.LOKI_BASIC_AUTH }}
+          envkey_LOKI_HOST: ${{ secrets.LOKI_HOST }}
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: ${{ secrets.ALWAYS_REDIRECT_TO_ALTRUISTS }}
           envkey_SILENT_LOGGING: true
           envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}
+          envkey_RATE_LIMITER_URL: ${{ secrets.RATE_LIMITER_URL }}
+          envkey_RATE_LIMITER_TOKEN: ${{ secrets.RATE_LIMITER_TOKEN }}
+          envkey_INFLUX_URLS: ${{ secrets.INFLUX_URLS }}
+          envkey_INFLUX_TOKENS: ${{ secrets.INFLUX_TOKENS }}
+          envkey_INFLUX_ORGS: ${{ secrets.INFLUX_ORGS }}
+          envkey_ALTRUIST_ONLY_CHAINS: ${{ secrets.ALTRUIST_ONLY_CHAINS }}
+          envkey_GATEWAY_HOST: ${{ secrets.GATEWAY_HOST }}
           envkey_REMOTE_REDIS_ENDPOINT: gateway-prod-redis.thcgg8.clustercfg.eus1.cache.amazonaws.com
           envkey_REGION: 'eu-south-1'
           envkey_REGION_NAME: 'eu-south-1'
@@ -85,33 +92,11 @@ jobs:
           task-definition: pocket-gateway/tasks/production/ecs-task-definition.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
-          # Needs to be set at container level to be read by the dd agent
-          environment-variables: |
-            DD_RUNTIME_METRICS_ENABLED=true
-            DD_PROFILING_ENABLED=true
-            DD_SERVICE=/eu-south-1/ecs/gateway
-            DD_VERSION=${{ github.sha }}
-            DD_ENV=production
-            DD_AGENT_HOST=datadog-agent
-
-      - name: Fill in the new image ID / eu-south-1 - datadog-agent
-        id: task-def-eu-south-1-datadog-agent
-        uses: aws-actions/amazon-ecs-render-task-definition@master
-        with:
-          task-definition: ${{ steps.task-def-eu-south-1-gateway.outputs.task-definition }}
-          container-name: datadog-agent
-          image: gcr.io/datadoghq/agent:latest
-          environment-variables: |
-            DD_API_KEY=${{ secrets.DATADOG_API_KEY }}
-            DD_SITE=datadoghq.eu
-            DD_LOGS_ENABLED=false
-            DD_APM_ENABLED=true
-            DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
 
       - name: Deploy / eu-south-1
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def-eu-south-1-datadog-agent.outputs.task-definition }}
+          task-definition: ${{ steps.task-def-eu-south-1-gateway.outputs.task-definition }}
           service: gateway-prod
           cluster: gateway-prod
           wait-for-service-stability: true

@@ -2,16 +2,19 @@ import { EvidenceSealedError, Relayer } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT, HTTPMethod } from '@pokt-foundation/pocketjs-types'
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
+import { Request } from '@loopback/rest'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
 import { Applications } from '../models'
 import { BlockchainsRepository } from '../repositories'
 import { ChainChecker, ChainIDFilterOptions } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
+import { MergeFilterOptions, MergeChecker } from '../services/merge-checker'
 import { MetricsRecorder } from '../services/metrics-recorder'
+import { PHDClient } from '../services/phd-client'
 import { ConsensusFilterOptions, SyncChecker, SyncCheckOptions } from '../services/sync-checker'
 import { removeNodeFromSession } from '../utils/cache'
-import { SESSION_TIMEOUT, DEFAULT_ALTRUIST_TIMEOUT } from '../utils/constants'
+import { SESSION_TIMEOUT, DEFAULT_ALTRUIST_TIMEOUT, MERGE_CHECK_BLOCKCHAIN_IDS } from '../utils/constants'
 import {
   checkEnforcementJSON,
   isRelayError,
@@ -40,6 +43,7 @@ export class PocketRelayer {
   metricsRecorder: MetricsRecorder
   syncChecker: SyncChecker
   chainChecker: ChainChecker
+  mergeChecker: MergeChecker
   cache: Cache
   databaseEncryptionKey: string
   secretKey: string
@@ -50,7 +54,10 @@ export class PocketRelayer {
   defaultLogLimitBlocks: number
   session: Session
   alwaysRedirectToAltruists: boolean
+  altruistOnlyChains: string[]
   dispatchers: string
+  phdClient: PHDClient
+  requestURL: string
 
   constructor({
     host,
@@ -62,6 +69,7 @@ export class PocketRelayer {
     metricsRecorder,
     syncChecker,
     chainChecker,
+    mergeChecker,
     cache,
     databaseEncryptionKey,
     secretKey,
@@ -71,7 +79,10 @@ export class PocketRelayer {
     aatPlan,
     defaultLogLimitBlocks,
     alwaysRedirectToAltruists = false,
+    altruistOnlyChains = [],
     dispatchers,
+    phdClient,
+    request,
   }: {
     host: string
     origin: string
@@ -82,6 +93,7 @@ export class PocketRelayer {
     metricsRecorder: MetricsRecorder
     syncChecker: SyncChecker
     chainChecker: ChainChecker
+    mergeChecker: MergeChecker
     cache: Cache
     databaseEncryptionKey: string
     secretKey: string
@@ -91,7 +103,10 @@ export class PocketRelayer {
     aatPlan: string
     defaultLogLimitBlocks: number
     alwaysRedirectToAltruists?: boolean
+    altruistOnlyChains?: string[]
     dispatchers?: string
+    phdClient: PHDClient
+    request?: Request
   }) {
     this.host = host
     this.origin = origin
@@ -102,6 +117,7 @@ export class PocketRelayer {
     this.metricsRecorder = metricsRecorder
     this.syncChecker = syncChecker
     this.chainChecker = chainChecker
+    this.mergeChecker = mergeChecker
     this.cache = cache
     this.databaseEncryptionKey = databaseEncryptionKey
     this.secretKey = secretKey
@@ -111,7 +127,10 @@ export class PocketRelayer {
     this.aatPlan = aatPlan
     this.defaultLogLimitBlocks = defaultLogLimitBlocks
     this.alwaysRedirectToAltruists = alwaysRedirectToAltruists
+    this.altruistOnlyChains = altruistOnlyChains
     this.dispatchers = dispatchers
+    this.phdClient = phdClient
+    this.requestURL = `${request?.headers?.host}${request?.url}`
   }
 
   async sendRelay({
@@ -149,6 +168,7 @@ export class PocketRelayer {
     const rpcID = parseRPCID(parsedRawData)
 
     const {
+      blockchain,
       blockchainEnforceResult,
       blockchainSyncCheck,
       blockchainIDCheck,
@@ -159,13 +179,14 @@ export class PocketRelayer {
       blockchainAltruist,
     } = await loadBlockchain(
       this.host,
+      this.phdClient,
       this.cache,
       this.blockchainsRepository,
       this.defaultLogLimitBlocks,
       rpcID
     ).catch((e) => {
       logger.log('error', `Incorrect blockchain: ${this.host}`, {
-        origin: this.origin,
+        applicationID,
       })
       throw e
     })
@@ -214,15 +235,15 @@ export class PocketRelayer {
         relayType: 'APP',
         error: `${restriction.error.message}`,
         typeID: application.id,
-        origin: this.origin,
       })
       return restriction
     }
 
-    const fallbackAvailable = blockchainAltruist !== undefined ? true : false
+    const fallbackAvailable = blockchainAltruist ? true : false
 
+    const notForceFallback = !this.altruistOnlyChains.includes(blockchainID) && !this.alwaysRedirectToAltruists
     try {
-      if (!this.alwaysRedirectToAltruists) {
+      if (notForceFallback) {
         // Retries if applicable
         for (let x = 0; x <= this.relayRetries; x++) {
           const relayStart = process.hrtime()
@@ -253,6 +274,7 @@ export class PocketRelayer {
             applicationID,
             applicationPublicKey,
             requestTimeOut,
+            blockchain,
             blockchainID,
             blockchainEnforceResult,
             blockchainSyncCheck,
@@ -293,6 +315,7 @@ export class PocketRelayer {
                 requestID,
                 applicationID,
                 applicationPublicKey,
+                blockchain,
                 blockchainID,
                 serviceNode: relay.serviceNode.publicKey,
                 relayStart,
@@ -303,10 +326,10 @@ export class PocketRelayer {
                 error: userErrorMessage,
                 code: userErrorCode,
                 origin: this.origin,
-                data,
                 session: this.session,
                 sticky: await NodeSticker.stickyRelayResult(preferredNodeAddress, relay.serviceNode.publicKey),
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
+                url: this.requestURL,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -330,11 +353,6 @@ export class PocketRelayer {
             }
             return relay.response
           } else if (relay instanceof RelayError) {
-            // Record failure metric, retry if possible or fallback
-            // Increment error log
-            await this.cache.incr(blockchainID + '-' + relay.servicer_node + '-errors')
-            await this.cache.expire(blockchainID + '-' + relay.servicer_node + '-errors', 3600)
-
             let error = relay.message
 
             if (typeof relay.message === 'object') {
@@ -357,6 +375,7 @@ export class PocketRelayer {
                 requestID,
                 applicationID,
                 applicationPublicKey,
+                blockchain,
                 blockchainID,
                 serviceNode: relay.servicer_node,
                 relayStart,
@@ -367,11 +386,11 @@ export class PocketRelayer {
                 error,
                 code: String(relay.code),
                 origin: this.origin,
-                data,
                 // TODO: Add pocket session again
                 session: this.session,
                 sticky,
                 gigastakeAppID: applicationID !== application.id ? application.id : undefined,
+                url: this.requestURL,
               })
               .catch(function log(e) {
                 logger.log('error', 'Error recording metrics: ' + e, {
@@ -397,7 +416,6 @@ export class PocketRelayer {
         relayType: 'APP',
         typeID: application.id,
         error: e,
-        origin: this.origin,
         trace: e.stack,
       })
     }
@@ -438,7 +456,6 @@ export class PocketRelayer {
             relayType: 'FALLBACK',
             typeID: application.id,
             serviceNode: 'fallback:' + redactedAltruistURL,
-            origin: this.origin,
           })
         }
 
@@ -473,6 +490,7 @@ export class PocketRelayer {
               requestID,
               applicationID,
               applicationPublicKey,
+              blockchain,
               blockchainID,
               serviceNode: 'fallback:' + redactedAltruistURL,
               relayStart,
@@ -483,9 +501,10 @@ export class PocketRelayer {
               error: undefined,
               code: undefined,
               origin: this.origin,
-              data,
               session: this.session,
               gigastakeAppID: applicationID !== application.id ? application.id : undefined,
+              forcedFallback: !notForceFallback,
+              url: this.requestURL,
             })
             .catch(function log(e) {
               logger.log('error', 'Error recording metrics: ' + e, {
@@ -505,7 +524,7 @@ export class PocketRelayer {
             typeID: application.id,
             serviceNode: 'fallback:' + redactedAltruistURL,
             blockchainID,
-            origin: this.origin,
+            forcedFallback: !notForceFallback,
           })
         }
       } catch (e) {
@@ -516,7 +535,7 @@ export class PocketRelayer {
           typeID: application.id,
           serviceNode: 'fallback:' + redactedAltruistURL,
           blockchainID,
-          origin: this.origin,
+          forcedFallback: !notForceFallback,
         })
       }
     }
@@ -527,7 +546,6 @@ export class PocketRelayer {
       relayType: 'EXHAUSTED',
       typeID: application.id,
       blockchainID,
-      origin: this.origin,
     })
 
     throw new ErrorObject(rpcID, new jsonrpc.JsonRpcError('Internal JSON-RPC error.', -32603))
@@ -547,6 +565,7 @@ export class PocketRelayer {
     blockchainSyncCheck,
     blockchainSyncBackup,
     blockchainIDCheck,
+    blockchain,
     blockchainID,
     blockchainChainID,
     blockchainPath,
@@ -565,6 +584,7 @@ export class PocketRelayer {
     blockchainSyncCheck: SyncCheckOptions
     blockchainSyncBackup: string
     blockchainIDCheck: string
+    blockchain: string
     blockchainID: string
     blockchainChainID: string
     blockchainPath: string
@@ -622,13 +642,6 @@ export class PocketRelayer {
       if (cachedSession) {
         session = JSON.parse(cachedSession)
       } else {
-        logger.log('info', 'call to dispatcher to obtain session', {
-          requestID,
-          blockchainID,
-          gatewayPublicKey: application?.gatewayAAT.applicationPublicKey,
-          typeID: application.id,
-        })
-
         session = await this.relayer.getNewSession({
           chain: blockchainID,
           applicationPubKey: application?.gatewayAAT.applicationPublicKey,
@@ -637,6 +650,15 @@ export class PocketRelayer {
             rejectSelfSignedCertificates: false,
             timeout: SESSION_TIMEOUT,
           },
+        })
+
+        logger.log('info', 'success dispatcher call to obtain session', {
+          requestID,
+          blockchainID,
+          gatewayPublicKey: application?.gatewayAAT.applicationPublicKey,
+          typeID: application.id,
+          blockHeight: session?.blockHeight,
+          sessionBlockHeight: session?.header?.sessionBlockHeight,
         })
 
         // TODO: Remove when sdk does it internally
@@ -649,7 +671,6 @@ export class PocketRelayer {
       logger.log('error', 'ERROR obtaining a session: ' + error, {
         relayType: 'APP',
         typeID: application.id,
-        origin: this.origin,
         blockchainID,
         requestID,
         error: error.message,
@@ -683,9 +704,30 @@ export class PocketRelayer {
         relayType: 'APP',
         typeID: application.id,
         blockchainID,
-        origin: this.origin,
       })
       return new Error("session doesn't have any available nodes")
+    }
+
+    if (MERGE_CHECK_BLOCKCHAIN_IDS.includes(blockchainID)) {
+      const mergeStatusOptions: MergeFilterOptions = {
+        nodes,
+        requestID,
+        blockchainID,
+        pocketAAT: pocketAAT,
+        applicationID,
+        applicationPublicKey,
+        relayer: this.relayer,
+        session,
+        path: blockchainPath,
+      }
+
+      const mergeCheckResult = await this.mergeChecker.mergeStatusFilter(mergeStatusOptions)
+
+      if (mergeCheckResult) {
+        nodes = mergeCheckResult.nodes
+      } else {
+        return new Error('Merge check failure; using fallbacks')
+      }
     }
 
     let syncCheckPromise: Promise<CheckResult>
@@ -748,6 +790,7 @@ export class PocketRelayer {
             requestID,
             applicationID,
             applicationPublicKey,
+            blockchain,
             blockchainID,
             serviceNode: 'session-failure',
             relayStart,
@@ -758,7 +801,6 @@ export class PocketRelayer {
             error,
             code: undefined,
             origin: this.origin,
-            data,
             session: this.session,
             gigastakeAppID: applicationID !== application.id ? application.id : undefined,
           })
@@ -787,6 +829,7 @@ export class PocketRelayer {
             requestID,
             applicationID,
             applicationPublicKey,
+            blockchain,
             blockchainID,
             serviceNode: 'session-failure',
             relayStart,
@@ -797,7 +840,6 @@ export class PocketRelayer {
             error,
             code: undefined,
             origin: this.origin,
-            data,
             session: this.session,
             gigastakeAppID: applicationID !== application.id ? application.id : undefined,
           })
@@ -934,7 +976,8 @@ export class PocketRelayer {
           requestID,
           rpcID,
           logLimitBlocks,
-          altruist
+          altruist,
+          this.cache
         )
 
         // If any of the bundled tx triggers a restriction, return
@@ -951,7 +994,8 @@ export class PocketRelayer {
         requestID,
         rpcID,
         logLimitBlocks,
-        altruist
+        altruist,
+        this.cache
       )
     }
 

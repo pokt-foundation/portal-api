@@ -19,12 +19,10 @@ const APPLICATION = {
   id: 'sd9fj31d714kgos42e68f9gh',
   name: 'Test',
   owner: 'test',
-  icon: '',
   publicPocketAccount: {
     address: 'zbsh21mrn411umuyv2xh7e85cme3tf7er1assuop',
     publicKey: '9c1osndf3hj5wvkgi5ounpqwdhzcyzfy0qrk6z7o',
   },
-  freeTier: true,
   freeTierApplicationAccount: {
     address: 'qglysyptu3ga0tq8qfi4pxvdxo1cg629oh6s8uom',
     publicKey: '74xyfz6bey09pmtayj0ma7vvqq15cb8y7w7vv4jfrf1tjsh7o6fppk0xbw4zlcbr',
@@ -39,12 +37,6 @@ const APPLICATION = {
     whitelistContracts: [],
     whitelistMethods: [],
   },
-  freeTierAAT: {
-    version: '0.0.1',
-    clientPublicKey: 'zxllicp807cz107r9b4vpeenepmr4quhz8dlek85f2faj1nwaey7oo7emamdf6nq',
-    applicationPublicKey: '4jsdmxn9zbej57dejhnjcp355ezq20locf6wypr6lndwzmpt4akiiofxdqn8naqe',
-  },
-  updatingStatus: false,
   gatewayAAT: {
     version: '0.0.1',
     clientPublicKey: 'f8sqxrxhzjt59mk1vmm4v3r1l62rf1xwt5e6yrc3vaktnfvmf0x9ggs8jkjxlp4c',
@@ -52,6 +44,7 @@ const APPLICATION = {
     applicationSignature:
       '87ux2poyr319tp9un97nflybr3l66umrjf4p5ifmwb6aq3frpgl9mqolikt1xcpu4d1o321pbm0edizck8tsnr8e8fdmazxskr9c5zx0ab9z1so2g8x29xazaffse8c0',
   },
+  url: 'https://test-portal-url.com',
 }
 
 const GIGASTAKE_LEADER_IDS = {
@@ -63,6 +56,13 @@ const GIGASTAKE_FOLLOWER_IDS = {
   lb: 'df9f9f9gdklkwotn5o3ixuso',
 }
 
+const RATE_LIMITED_APPLICATION = { ...APPLICATION, id: 'rateLimitedApp123' }
+
+const RATE_LIMITED_LB_ID = {
+  app: RATE_LIMITED_APPLICATION.id,
+  lb: '1bc8y2dp3h7c38vbybeeaf7b',
+}
+
 // Follower app that has restricted gateway settings
 const GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS = {
   app: '5ifmwb6aq3frpgl9mqolike1',
@@ -72,7 +72,7 @@ const GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS = {
 // Might not actually reflect real-world values
 const BLOCKCHAINS = [
   {
-    hash: '0001',
+    id: '0001',
     ticker: 'POKT',
     networkID: 'mainnet',
     network: 'POKT-mainnet',
@@ -84,6 +84,8 @@ const BLOCKCHAINS = [
     enforceResult: 'JSON',
     nodeCount: 1,
     chainID: '21',
+    chainIDCheck: '{}',
+    path: '',
     altruist: 'https://user:pass@backups.example.org:18081',
     redirects: [
       {
@@ -94,7 +96,7 @@ const BLOCKCHAINS = [
     ],
   },
   {
-    hash: '0021',
+    id: '0021',
     ticker: 'ETH',
     networkID: '1',
     network: 'ETH-1',
@@ -107,6 +109,7 @@ const BLOCKCHAINS = [
     nodeCount: 1,
     chainID: '100',
     chainIDCheck: '{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}',
+    path: '',
     syncCheckOptions: {
       body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
       resultKey: 'result',
@@ -123,7 +126,7 @@ const BLOCKCHAINS = [
     ],
   },
   {
-    hash: '0040',
+    id: '0040',
     ticker: 'ETHS',
     networkID: '1',
     network: 'ETH-1S',
@@ -132,11 +135,19 @@ const BLOCKCHAINS = [
     blockchain: 'eth-mainnet-string',
     blockchainAliases: ['eth-mainnet-string'],
     active: true,
+    enforceResult: 'JSON',
     nodeCount: 1,
     chainID: '64',
+    chainIDCheck: '',
+    path: '',
+    syncCheckOptions: {
+      body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
+      resultKey: 'result',
+      allowance: 5,
+    },
   },
   {
-    hash: '0041',
+    id: '0041',
     ticker: 'ETHX',
     networkID: '1',
     network: 'ETH-2',
@@ -148,6 +159,8 @@ const BLOCKCHAINS = [
     enforceResult: 'JSON',
     nodeCount: 1,
     chainID: '137',
+    chainIDCheck: '',
+    path: '',
     syncCheckOptions: {
       body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
       resultKey: 'result',
@@ -177,14 +190,14 @@ const LOAD_BALANCERS = [
     id: 'gt4a1s9rfrebaf8g31bsdc04',
     user: 'test@test.com',
     name: 'test load balancer',
-    requestTimeout: 5000,
+    requestTimeout: '5000',
     applicationIDs: APPLICATIONS.map((app) => app.id),
   },
   {
     id: 'gt4a1s9rfrebaf8g31bsdc05',
     user: 'test@test.com',
     name: 'test load balancer sticky rpc',
-    requestTimeout: 5000,
+    requestTimeout: '5000',
     applicationIDs: APPLICATIONS.map((app) => app.id),
     logLimitBlocks: 25000,
     stickinessOptions: {
@@ -199,7 +212,7 @@ const LOAD_BALANCERS = [
     id: 'df9gjsjg43db9fsajfjg93fk',
     user: 'test@test.com',
     name: 'test load balancer sticky prefix',
-    requestTimeout: 5000,
+    requestTimeout: '5000',
     applicationIDs: APPLICATIONS.map((app) => app.id),
     logLimitBlocks: 25000,
     stickinessOptions: {
@@ -213,7 +226,7 @@ const LOAD_BALANCERS = [
     id: 'd8ejd7834ht9d9sj345gfsoa',
     user: 'test@test.com',
     name: 'test load balancer sticky prefix with whitelist',
-    requestTimeout: 5000,
+    requestTimeout: '5000',
     applicationIDs: APPLICATIONS.map((app) => app.id),
     logLimitBlocks: 25000,
     stickinessOptions: {
@@ -228,7 +241,7 @@ const LOAD_BALANCERS = [
     id: GIGASTAKE_LEADER_IDS.lb,
     user: 'test@test.com',
     name: 'gigastaked lb - leader',
-    requestTimeout: 5000,
+    requestTimeout: '5000',
     applicationIDs: [GIGASTAKE_LEADER_IDS.app],
     logLimitBlocks: 25000,
     stickinessOptions: {
@@ -243,7 +256,7 @@ const LOAD_BALANCERS = [
     id: GIGASTAKE_FOLLOWER_IDS.lb,
     user: 'test@test.com',
     name: 'gigastaked lb - follower',
-    requestTimeout: 5000,
+    requestTimeout: '5000',
     applicationIDs: [GIGASTAKE_FOLLOWER_IDS.app],
     logLimitBlocks: 25000,
     gigastakeRedirect: true,
@@ -259,10 +272,26 @@ const LOAD_BALANCERS = [
     id: GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb,
     user: 'test@test.com',
     name: 'gigastaked lb - follower',
-    requestTimeout: 5000,
+    requestTimeout: '5000',
     applicationIDs: [GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.app],
     logLimitBlocks: 25000,
     gigastakeRedirect: true,
+    stickinessOptions: {
+      stickiness: true,
+      duration: 300,
+      useRPCID: false,
+      relaysLimit: 1e6,
+      stickyOrigins: ['localhost'],
+    },
+  },
+  {
+    id: RATE_LIMITED_LB_ID.lb,
+    user: 'test@test.com',
+    name: 'rate limited lb',
+    requestTimeout: '5000',
+    applicationIDs: [RATE_LIMITED_LB_ID.app],
+    logLimitBlocks: 25000,
+    gigastakeRedirect: false,
     stickinessOptions: {
       stickiness: true,
       duration: 300,
@@ -292,6 +321,16 @@ describe('V1 controller (acceptance)', () => {
     axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
       service_url: 'https://localhost:443',
     })
+
+    axiosMock.onGet('https://blocked.addresses').reply(200, {
+      blockedAddresses: ['0x5d13399e7a59941734900157381e2d0b9d29c971', '0xea674fdde714fd979de3edf0f56aa9716b898ec8'],
+    })
+
+    axiosMock.onGet('https://rate.limiter').reply(200, {
+      applicationIDs: ['rateLimitedApp123'],
+    })
+
+    axiosMock.onGet(process.env.PHD_BASE_URL).reply(200)
   })
 
   after(async () => {
@@ -303,6 +342,8 @@ describe('V1 controller (acceptance)', () => {
       '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}': '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}',
       '{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6","toBlock":"0x9c5bb6","address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff"}],"id":1,"jsonrpc":"2.0"}':
         '{"jsonrpc":"2.0","id":1,"result":[{"address":"0xdef1c0ded9bec7f1a1670819833240f027b25eff","blockHash":"0x2ad90e24266edd835bb03071c0c0b58ee8356c2feb4576d15b3c2c2b2ef319c5","blockNumber":"0xc5bdc9","data":"0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000767fe9edc9e0df98e07454847909b5e959d7ca0e0000000000000000000000000000000000000000000000019274b259f653fc110000000000000000000000000000000000000000000000104bf2ffa4dcbf8de5","logIndex":"0x4c","removed":false,"topics":["0x0f6672f78a59ba8e5e5b5d38df3ebc67f3c792e2c9259b8d97d7f00dd78ba1b3","0x000000000000000000000000e5feeac09d36b18b3fa757e5cf3f8da6b8e27f4c"],"transactionHash":"0x14430f1e344b5f95ea68a5f4c0538fc732cc97efdc68f6ee0ba20e2c633542f6","transactionIndex":"0x1a"}]}',
+      '{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["latest",false],"id":1}':
+        '{"jsonrpc":"2.0","id":1,"result":{"number":"0xed14f2","totalDifficulty":"0xc70d815d562d3cfa955"}}',
     }
 
     axiosMock
@@ -319,6 +360,7 @@ describe('V1 controller (acceptance)', () => {
     await loadBalancersRepository.createAll(LOAD_BALANCERS)
     await blockchainsRepository.createAll(BLOCKCHAINS)
     await applicationsRepository.createAll(APPLICATIONS)
+    await applicationsRepository.create(RATE_LIMITED_APPLICATION)
   })
 
   afterEach(async () => {
@@ -331,6 +373,36 @@ describe('V1 controller (acceptance)', () => {
 
   after(async () => {
     axiosMock.restore()
+  })
+
+  it('Fetches all data from Pocket HTTP DB, invokes GET /v1/{appId} and successfully relays a request', async () => {
+    const pocket = pocketMock.object()
+
+    relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
+      '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
+    ;({ app, client } = await setupApplication(pocket))
+
+    axiosMock.onGet(`${process.env.PHD_BASE_URL}/application/${APPLICATION.id}`).replyOnce(200, APPLICATION)
+    axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain`).replyOnce(200, BLOCKCHAINS)
+    axiosMock.onGet(`${process.env.PHD_BASE_URL}/load_balancer/${GIGASTAKE_LEADER_IDS.lb}`).replyOnce(
+      200,
+      LOAD_BALANCERS.find(({ id }) => id === GIGASTAKE_LEADER_IDS.lb)
+    )
+    axiosMock.onGet(`${process.env.PHD_BASE_URL}/application/${GIGASTAKE_LEADER_IDS.app}`).replyOnce(
+      200,
+      APPLICATIONS.find(({ id }) => id === GIGASTAKE_LEADER_IDS.app)
+    )
+
+    const response = await client
+      .post(`/v1/${APPLICATION.id}`)
+      .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+      .set('Accept', 'application/json')
+      .set('host', 'eth-mainnet-x')
+      .expect(200)
+
+    expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+    expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+    expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
   })
 
   it('invokes GET /v1/{appId} and successfully relays a request', async () => {
@@ -781,9 +853,13 @@ describe('V1 controller (acceptance)', () => {
   })
 
   it('redirects empty path with specific load balancer', async () => {
+    const gatewayHost = 'custom-host'
+    const gatewayHostKey = 'gatewayHost'
     const pocket = pocketMock.object()
 
-    ;({ app, client } = await setupApplication(pocket))
+    ;({ app, client } = await setupApplication(pocket, {
+      GATEWAY_HOST: gatewayHost,
+    }))
 
     const response = await client
       .post('/')
@@ -792,6 +868,7 @@ describe('V1 controller (acceptance)', () => {
       .set('host', 'eth-mainnet-x')
       .expect(200)
 
+    expect(app.find(gatewayHostKey)[0].getValue(app.getOwnerContext(gatewayHostKey))).equal(gatewayHost)
     expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
     expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
     expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
@@ -1081,6 +1158,118 @@ describe('V1 controller (acceptance)', () => {
     expect(gigastakeAppID).to.be.true()
   })
 
+  describe('Rate-limiting applications and loadbalancers', () => {
+    it('logs an error on request with rate-limited app & relay throws error', async () => {
+      const pocket = pocketMock.object()
+      const logSpy = sinon.spy(logger, 'log')
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${RATE_LIMITED_APPLICATION.id}`)
+        .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.property('error')
+      expect(response.body.error.message).to.startWith('Rate limit exceeded. Please upgrade your plan.')
+
+      const rateLimitWarningLogged = logSpy.calledWith(
+        'error',
+        sinon.match((arg: string) => arg.startsWith('application relay count has exceeded the rate limit'))
+      )
+      expect(rateLimitWarningLogged).to.be.true()
+    })
+
+    it('logs an error on lb relay request with rate-limited app & relay throws error', async () => {
+      const pocket = pocketMock.object()
+      const logSpy = sinon.spy(logger, 'log')
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/lb/${RATE_LIMITED_LB_ID.lb}`)
+        .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.property('error')
+      expect(response.body.error.message).to.startWith('Rate limit exceeded. Please upgrade your plan.')
+
+      const rateLimitWarningLogged = logSpy.calledWith(
+        'error',
+        sinon.match((arg: string) =>
+          arg.startsWith('relay count on application associated with the endpoint has exceeded the rate limit')
+        )
+      )
+      expect(rateLimitWarningLogged).to.be.true()
+    })
+
+    it('logs warning on empty rate-limiter app list & relay suceeds', async () => {
+      // Mocking empty rate-limited apps list
+      axiosMock.onGet('https://rate.limiter').reply(200, {
+        applicationIDs: [],
+      })
+
+      const pocket = pocketMock.object()
+      const logSpy = sinon.spy(logger, 'log')
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/lb/${RATE_LIMITED_LB_ID.lb}`)
+        .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+
+      const rateLimitWarningLogged = logSpy.calledWith(
+        'warn',
+        sinon.match((arg: string) => arg.startsWith('Rate-limited applications list is empty; rate-limiting disabled'))
+      )
+      expect(rateLimitWarningLogged).to.be.true()
+    })
+
+    it('logs an error on rate-limiter call failure & relay succeeds', async () => {
+      // Mocking failure to fetch rate-limiter
+      axiosMock.onGet('https://rate.limiter').reply(500)
+
+      const pocket = pocketMock.object()
+      const logSpy = sinon.spy(logger, 'log')
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/lb/${RATE_LIMITED_LB_ID.lb}`)
+        .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+
+      const rateLimitWarningLogged = logSpy.calledWith(
+        'error',
+        sinon.match((arg: string) =>
+          arg.startsWith(
+            'Error fetching rate-limited applications list; setting cache to skip rate limited applications lookup for 300 seconds'
+          )
+        )
+      )
+      expect(rateLimitWarningLogged).to.be.true()
+    })
+  })
+
   describe('Contract/method whitelisting', () => {
     it('fails on request with restricted contract whitelist (eth_call)', async () => {
       const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
@@ -1113,6 +1302,8 @@ describe('V1 controller (acceptance)', () => {
         .set('host', 'eth-mainnet')
         .set('origin', 'localhost')
         .expect(200)
+
+      console.log('ERROR HERE', response.body.error.message)
 
       expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
       expect(response.body).to.have.property('error')
@@ -1798,6 +1989,77 @@ describe('V1 controller (acceptance)', () => {
       expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
       expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
       expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+    })
+
+    it('fails on request with blocked contract address', async () => {
+      const appWithSecurity = { ...APPLICATION, id: 'recordApp123' }
+
+      appWithSecurity.gatewaySettings = {
+        secretKey: '',
+        secretKeyRequired: false,
+        whitelistBlockchains: [],
+        whitelistOrigins: [],
+        whitelistUserAgents: [],
+        whitelistContracts: [],
+        whitelistMethods: [],
+      }
+
+      const dbApp = await applicationsRepository.create(appWithSecurity)
+
+      const pocket = pocketMock.object()
+
+      ;({ app, client } = await setupApplication(pocket))
+
+      const response = await client
+        .post(`/v1/${dbApp.id}`)
+        .send({
+          method: 'eth_call',
+          params: [{ to: '0x5d13399e7a59941734900157381e2d0b9d29c971', data: '0x0902f1ac' }, 'latest'],
+          id: 42,
+          jsonrpc: '2.0',
+        })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet')
+        .set('origin', 'localhost')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.property('error')
+      expect(response.body.error.message).to.startWith('Restricted endpoint: contract address not allowed')
+    })
+
+    it('invokes POST /v1/{appId} and successfully relays a request only through the altruist', async () => {
+      const pocket = pocketMock.object()
+      const logSpy = sinon.spy(logger, 'log')
+
+      ;({ app, client } = await setupApplication(pocket, { ALTRUIST_ONLY_CHAINS: '0041' }))
+
+      const response = await client
+        .post('/v1/sd9fj31d714kgos42e68f9gh')
+        .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
+        .set('Accept', 'application/json')
+        .set('host', 'eth-mainnet-x')
+        .expect(200)
+
+      expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
+      expect(response.body).to.have.properties('id', 'jsonrpc', 'result')
+      expect(parseInt(response.body.result, 16)).to.be.aboveOrEqual(0)
+
+      const expectedAltruistLog = logSpy.calledWith(
+        'info',
+        sinon.match((arg: string) => arg.startsWith('SUCCESS FALLBACK RELAYING 0041')),
+        sinon.match((log: object) => log['forcedFallback'] === true)
+      )
+
+      expect(expectedAltruistLog).to.be.true()
+
+      // No session is being dispatched, hence is only being called through the altruist
+      const notExpectedLog = logSpy.calledWith(
+        'info',
+        sinon.match((arg: string) => arg.startsWith('success dispatcher call to obtain session'))
+      )
+
+      expect(notExpectedLog).to.be.false()
     })
   })
 })

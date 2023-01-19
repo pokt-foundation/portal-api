@@ -36,4 +36,4 @@ RUN npm run build
 
 EXPOSE ${PORT}
 
-CMD ["npm", "run", "start:trace"]
+CMD ["npm", "run", "start"]

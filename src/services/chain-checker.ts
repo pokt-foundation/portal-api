@@ -328,6 +328,7 @@ export class ChainChecker {
           requestID: requestID,
           applicationID: applicationID,
           applicationPublicKey: applicationPublicKey,
+          blockchain: undefined,
           blockchainID,
           serviceNode: node.publicKey,
           relayStart,
@@ -338,7 +339,6 @@ export class ChainChecker {
           error: typeof relay.message === 'object' ? JSON.stringify(relay.message) : relay.message,
           code: undefined,
           origin: this.origin,
-          data: undefined,
           session,
         })
         .catch(function log(e) {
@@ -365,6 +365,7 @@ export class ChainChecker {
           requestID: requestID,
           applicationID: applicationID,
           applicationPublicKey: applicationPublicKey,
+          blockchain: undefined,
           blockchainID,
           serviceNode: node.publicKey,
           relayStart,
@@ -375,7 +376,6 @@ export class ChainChecker {
           error: JSON.stringify(relay),
           code: undefined,
           origin: this.origin,
-          data: undefined,
           session,
         })
         .catch(function log(e) {
