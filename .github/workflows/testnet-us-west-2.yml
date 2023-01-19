@@ -29,6 +29,7 @@ jobs:
         with:
           envkey_GATEWAY_CLIENT_PRIVATE_KEY: ${{ secrets.POCKET_NETWORK_TESTNET_CLIENT_PRIVATE_KEY }}
           envkey_GATEWAY_CLIENT_PASSPHRASE: ${{ secrets.POCKET_NETWORK_TESTNET_CLIENT_PASSPHRASE }}
+          envkey_REDIS_LOCAL_TTL_FACTOR: ${{ secrets.REDIS_LOCAL_TTL_FACTOR }}
           envkey_MONGO_ENDPOINT: ${{ secrets.MONGO_TESTNET_ENDPOINT }}
           envkey_BLOCKED_ADDRESSES_URL: ${{ secrets.BLOCKED_ADDRESSES_URL }}
           envkey_PHD_BASE_URL: ${{ secrets.PHD_BASE_URL }}
@@ -40,7 +41,6 @@ jobs:
           envkey_LOCAL_REDIS_ENDPOINT: 172.17.0.1:6379
           envkey_REMOTE_REDIS_ENDPOINT: gateway-new-testnet-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REDIS_PORT: 6379
-          envkey_POCKET_NETWORK_NODE_URL: ${{ secrets.POCKET_NETWORK_TESTNET_NODE_URL }}
           envkey_POCKET_SESSION_BLOCK_FREQUENCY: 4
           envkey_POCKET_BLOCK_TIME: 900000
           envkey_POCKET_RELAY_RETRIES: 5
@@ -48,9 +48,9 @@ jobs:
           envkey_DEFAULT_LOG_LIMIT_BLOCKS: 10000
           envkey_AAT_PLAN: premium
           envkey_NODE_ENV: production
-          envkey_INFLUX_URL: https://influx.portal.pokt.network:8086
-          envkey_INFLUX_ORG: pocket
-          envkey_INFLUX_TOKEN: ${{ secrets.INFLUX_TOKEN }}
+          envkey_INFLUX_URLS: ${{ secrets.INFLUX_URLS }}
+          envkey_INFLUX_TOKENS: ${{ secrets.INFLUX_TOKENS }}
+          envkey_INFLUX_ORGS: ${{ secrets.INFLUX_ORGS }}
           envkey_PSQL_CONNECTION: ${{ secrets.PSQL_CONNECTION }}
           envkey_PSQL_CERTIFICATE: https://s3.amazonaws.com/rds-downloads/rds-ca-2019-root.pem
           envkey_LOG_TO_CLOUDWATCH: false
@@ -58,8 +58,16 @@ jobs:
           envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           envkey_COMMIT_HASH: ${{ github.sha }}
           envkey_ARCHIVAL_CHAINS: '0002'
+          envkey_LOG_TO_LOKI: ${{ secrets.LOG_TO_LOKI }}
+          envkey_LOKI_BASIC_AUTH: ${{ secrets.LOKI_BASIC_AUTH }}
+          envkey_LOKI_HOST: ${{ secrets.LOKI_HOST }}
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: false
           envkey_SILENT_LOGGING: true
+          envkey_LOG_CHERRY_PICKER_STATS: ${{ secrets.LOG_CHERRY_PICKER_STATS }}
+          envkey_RATE_LIMITER_URL: ${{ secrets.RATE_LIMITER_URL }}
+          envkey_RATE_LIMITER_TOKEN: ${{ secrets.RATE_LIMITER_TOKEN }}
+          envkey_ALTRUIST_ONLY_CHAINS: ${{ secrets.ALTRUIST_ONLY_CHAINS }}
+          envkey_GATEWAY_HOST: ${{ secrets.GATEWAY_HOST }}
           envkey_REGION: 'us-west-2'
           envkey_REGION_NAME: 'testnet'
           file_name: .env
