@@ -56,11 +56,6 @@ jobs:
           envkey_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           envkey_COMMIT_HASH: ${{ github.sha }}
           envkey_ARCHIVAL_CHAINS: '0002'
-<<<<<<< HEAD
-          envkey_LOG_TO_DATADOG: false
-          envkey_DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
-=======
->>>>>>> master
           envkey_ALWAYS_REDIRECT_TO_ALTRUISTS: false
           envkey_SILENT_LOGGING: true
           envkey_REGION: 'us-west-2'
