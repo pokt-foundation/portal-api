@@ -72,6 +72,7 @@ jobs:
           envkey_REMOTE_REDIS_ENDPOINT: gateway-staging-redis.js6zbp.clustercfg.usw2.cache.amazonaws.com
           envkey_REGION: 'us-west-2'
           envkey_REGION_NAME: 'staging'
+          envkey_INFLUX_BUCKET_NAME: mainnetRelayStaging
           file_name: .env
 
       - name: Build, tag, and push image to Amazon ECR
