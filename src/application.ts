@@ -76,6 +76,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       GATEWAY_HOST,
       PHD_BASE_URL,
       PHD_API_KEY,
+      INFLUX_BUCKET_NAME,
     }: // eslint-disable-next-line @typescript-eslint/no-explicit-any
     any = await this.get('configuration.environment.values')
 
@@ -97,6 +98,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     const gatewayHost: string = GATEWAY_HOST || 'localhost'
     const phdBaseURL: string = PHD_BASE_URL || ''
     const phdAPIKey: string = PHD_API_KEY || ''
+    const influxBucketName: string = INFLUX_BUCKET_NAME || 'mainnetRelay'
 
     const influxURLs = (INFLUX_URLS || '').split(',')
     const influxTokens = (INFLUX_TOKENS || '').split(',')
@@ -188,7 +190,6 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
     this.bind('pgPool').to(pgPool)
 
     // Influx DB
-    const influxBucket = environment === 'production' ? 'mainnetRelay' : 'mainnetRelayStaging'
     const writeOptions = { ...DEFAULT_WriteOptions, batchSize: 4000 }
     const influxWriteAPIs: WriteApi[] = []
     // TODO: Remove once influx tests are over
@@ -196,7 +197,7 @@ export class PocketGatewayApplication extends BootMixin(ServiceMixin(RepositoryM
       influxWriteAPIs.push(
         new InfluxDB({ url: influxURLs[idx], token: influxTokens[idx] }).getWriteApi(
           influxOrgs[idx],
-          influxBucket,
+          influxBucketName,
           'ms',
           writeOptions
         )
