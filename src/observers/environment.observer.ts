@@ -50,6 +50,7 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'REDIS_LOCAL_TTL_FACTOR',
     'RATE_LIMITER_URL',
     'RATE_LIMITER_TOKEN',
+    'INFLUX_BUCKET_NAME',
   ]
 
   /*
