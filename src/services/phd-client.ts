@@ -72,7 +72,7 @@ class PHDClient {
       throw new Error(`cacheKey not set for path ${path}`)
     }
 
-    const url = `${this.baseUrl}/${path}`
+    const url = `${this.baseUrl}/v1/${path}`
     const modelFields = this.getRequiredModelFields(model)
     const modelsData: T[] = []
 
@@ -112,7 +112,7 @@ class PHDClient {
   }
 
   async findById<T extends Entity>({ path, id, model, cache, fallback }: FindOneParams<T>): Promise<T> {
-    const url = `${this.baseUrl}/${path}/${id}`
+    const url = `${this.baseUrl}/v1/${path}/${id}`
     const modelFields = this.getRequiredModelFields(model)
     let modelData: T
 
@@ -153,7 +153,7 @@ class PHDClient {
   }
 
   async count<T extends Entity>({ path, fallback }: CountParams<T>): Promise<Count> {
-    const url = `${this.baseUrl}/${path}`
+    const url = `${this.baseUrl}/v1/${path}`
 
     try {
       const { data: documents } = await axios.get(url, { headers: { authorization: this.apiKey } })
