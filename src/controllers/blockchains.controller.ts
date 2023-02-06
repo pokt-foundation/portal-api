@@ -1,5 +1,5 @@
 import { inject } from '@loopback/context'
-import { Count, CountSchema, Filter, Where } from '@loopback/repository'
+import { Count, CountSchema, Filter } from '@loopback/repository'
 import { param, get, getModelSchemaRef } from '@loopback/rest'
 import { Blockchains, BlockchainsResponse } from '../models'
 import { blockchainToBlockchainResponse } from '../models/blockchains.model'
@@ -16,7 +16,7 @@ export class BlockchainsController {
       },
     },
   })
-  async count(@param.where(Blockchains) where?: Where<Blockchains>): Promise<Count> {
+  async count(): Promise<Count> {
     return this.phdClient.count({
       path: PHDPaths.Blockchain,
       model: Blockchains,
