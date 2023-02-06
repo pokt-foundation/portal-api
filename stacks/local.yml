@@ -16,21 +16,8 @@ services:
       - '../src:/usr/src/gateway/src'
       - '../dist:/usr/src/gateway/dist'
     depends_on:
-      - db
       - cache
       - errorsdb
-    networks:
-      - pocket
-
-  db:
-    image: mongo:5.0.6
-    container_name: db
-    env_file:
-      - ../.tasks.env
-    volumes:
-      - ~/.pocket/mongodb:/data/db
-    ports:
-      - '27017:27017'
     networks:
       - pocket
 
