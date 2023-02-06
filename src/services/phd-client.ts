@@ -2,6 +2,7 @@ import axios from 'axios'
 import 'dotenv/config'
 import { Count, Entity } from '@loopback/repository'
 
+import { HttpErrors } from '@loopback/rest'
 import { Applications, LoadBalancers, PocketAccount } from '../models'
 import { Cache } from '../services/cache'
 
@@ -84,7 +85,7 @@ class PHDClient {
       })
     } catch (error) {
       logger.log('error', FAILURE_ERROR, { error })
-      throw error
+      throw newHttpError(error)
     }
 
     if (cache && cacheKey) {
@@ -116,7 +117,7 @@ class PHDClient {
       }
     } catch (error) {
       logger.log('error', FAILURE_ERROR, { error })
-      throw error
+      throw newHttpError(error)
     }
 
     if (cache) {
@@ -179,6 +180,13 @@ class PHDClient {
   private hasAllRequiredModelFields<T>(data: T, modelFields: string[]): boolean {
     return modelFields.every((key) => Object.keys(data).includes(key))
   }
+}
+
+function newHttpError(error): HttpErrors.HttpError {
+  if (!axios.isAxiosError(error)) {
+    return new HttpErrors.InternalServerError(error.message)
+  }
+  return new HttpErrors[error.response.status](error.message)
 }
 
 export { PHDClient }
