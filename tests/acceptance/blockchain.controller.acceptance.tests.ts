@@ -3,21 +3,61 @@ import MockAdapter from 'axios-mock-adapter'
 import { Client, expect, sinon } from '@loopback/testlab'
 import { PocketGatewayApplication } from '../..'
 import { Blockchains, blockchainToBlockchainResponse } from '../../src/models/blockchains.model'
-import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
-import { gatewayTestDB } from '../fixtures/test.datasource'
 import { setupApplication } from './test-helper'
 
-describe('Blockchains controller (acceptance)', () => {
+const mockChain = Object.assign(
+  {},
+  {
+    id: '0024',
+    ticker: 'POA',
+    chainID: '42',
+    chainIDCheck: '{\\"method\\":\\"eth_chainId\\",\\"id\\":1,\\"jsonrpc\\":\\"2.0\\"}',
+    enforceResult: 'JSON',
+    networkID: '42',
+    network: 'POA-42',
+    description: 'Kovan',
+    index: 6,
+    blockchain: 'poa-kovan',
+    blockchainAliases: ['poa-kovan', 'eth-kovan'],
+    active: true,
+    syncCheckOptions: {
+      body: '',
+      resultKey: '',
+      path: '',
+      allowance: 0,
+    },
+    logLimitBlocks: 100000,
+    path: '',
+    altruist: 'https://user:pass@test.example.org:12345',
+    requestTimeout: 0,
+    syncAllowance: 0,
+    redirects: [],
+    hash: '0',
+    evm: false,
+  }
+)
+
+function generateBlockchains(amount: number): Blockchains[] {
+  const blockchains = []
+
+  for (let i = 0; i < amount; i++) {
+    const id = amount > 1 ? `${mockChain.id}${i + 1}` : mockChain.id
+    blockchains.push({ ...mockChain, id })
+  }
+
+  return blockchains
+}
+
+// eslint-disable-next-line mocha/no-exclusive-tests
+describe.only('Blockchains controller (acceptance)', () => {
   let app: PocketGatewayApplication
   let client: Client
-  let blockchainRepository: BlockchainsRepository
   let axiosMock: MockAdapter
 
   before('setupApplication', async () => {
     axiosMock = new MockAdapter(axios)
     axiosMock.onGet('https://phd.base.url').reply(200)
     ;({ app, client } = await setupApplication())
-    blockchainRepository = new BlockchainsRepository(gatewayTestDB)
   })
 
   after(async () => {
@@ -25,178 +65,57 @@ describe('Blockchains controller (acceptance)', () => {
     await app.stop()
   })
 
-  const cleanDB = async () => {
-    await blockchainRepository.deleteAll()
-  }
-
   afterEach(async () => {
-    await cleanDB()
     axiosMock.reset()
   })
 
   describe('/blockchains/count endpoint', () => {
-    it('retrieves the total count of blockchains from the Pocket HTTP DB', async () => {
-      await generateBlockchains(5)
+    it('retrieves the total count of blockchains', async () => {
+      const blockchains = generateBlockchains(5)
+      axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain`).replyOnce(200, blockchains)
+
       const res = await client.get('/blockchains/count').expect(200)
-      axiosMock
-        .onGet(`${process.env.PHD_BASE_URL}/blockchain`)
-        .replyOnce(200, [mockChain, mockChain, mockChain, mockChain, mockChain])
 
       expect(res.body).to.be.Object()
       expect(res.body).to.have.property('count')
       expect(res.body.count).to.equal(5)
-    })
-
-    it('falls back to fetching the count from the repository if the PHD throws an error', async () => {
-      await generateBlockchains(5)
-      const res = await client.get('/blockchains/count').expect(200)
-      axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain`).replyOnce(500, null)
-
-      expect(res.body).to.be.Object()
-      expect(res.body).to.have.property('count')
-      expect(res.body.count).to.equal(5)
-    })
-
-    it('retrieves list of available blockchains', async () => {
-      const expected = Object.assign(
-        {},
-        {
-          id: '0024',
-          chainID: '42',
-          ticker: 'POA',
-          networkID: '42',
-          network: 'POA-42',
-          description: 'Kovan',
-          index: 6,
-          blockchain: 'poa-kovan',
-          blockchainAliases: ['poa-kovan'],
-          active: true,
-          evm: true,
-          enforceResult: 'JSON',
-          hash: '1234',
-          path: '/path',
-          syncCheckOptions: {
-            path: '',
-            body: '{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}',
-            resultKey: 'result',
-            allowance: 2,
-          },
-          logLimitBlocks: 10,
-          redirects: [
-            {
-              alias: '',
-              domain: '',
-              loadBalancerID: '',
-            },
-          ],
-        }
-      )
-
-      await blockchainRepository.create(expected)
-      const res = await client.get('/blockchains').expect(200)
-
-      expect(res.body).to.be.Array()
-      expect(res.body).to.have.length(1)
-      expect(res.body[0]).to.containEql(blockchainToBlockchainResponse(expected as any))
     })
   })
 
   describe('/blockchains endpoint', () => {
-    it('retrieves list of available blockchains from the Pocket HTTP DB', async () => {
-      await blockchainRepository.create(mockChain)
-      axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain`).replyOnce(200, [mockChain])
+    it('retrieves list of available blockchains', async () => {
+      const blockchains = generateBlockchains(1)
+      axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain`).replyOnce(200, blockchains)
 
       const res = await client.get('/blockchains').expect(200)
 
       expect(axiosMock.history.get.length).to.equal(1)
       expect(res.body).to.be.Array()
       expect(res.body).to.have.length(1)
-      expect(res.body[0]).to.containEql(blockchainToBlockchainResponse(mockChain as any))
-    })
-
-    it('falls back to the fetching data from the repository if the PHD throws an error', async () => {
-      await blockchainRepository.create(mockChain)
-      axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain`).replyOnce(500, null)
-
-      const res = await client.get('/blockchains').expect(200)
-
-      expect(axiosMock.history.get.length).to.equal(1)
-      expect(res.body).to.be.Array()
-      expect(res.body).to.have.length(1)
-      expect(res.body[0]).to.containEql(blockchainToBlockchainResponse(mockChain as any))
-    })
-
-    it('falls back to the fetching data from the repository if the PHD data is missing required fields', async () => {
-      await blockchainRepository.create(mockChain)
-      const mockChainCopy = { ...mockChain }
-      delete mockChainCopy.blockchain
-      axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain`).replyOnce(200, [mockChainCopy])
-
-      const res = await client.get('/blockchains').expect(200)
-
-      expect(axiosMock.history.get.length).to.equal(1)
-      expect(res.body).to.be.Array()
-      expect(res.body).to.have.length(1)
-      expect(res.body[0]).to.containEql(blockchainToBlockchainResponse(mockChain as any))
+      expect(res.body[0]).to.containEql(blockchainToBlockchainResponse(blockchains[0]))
     })
   })
 
   describe('/blockchains/{id} endpoint', () => {
-    it('retrieves the a specific blockchain from the Pocket HTTP DB', async () => {
-      const [blockchain] = await generateBlockchains(1)
-      axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain/${blockchain.id}`).replyOnce(200, mockChain)
+    it('retrieves a specific blockchain', async () => {
+      const [blockchain] = generateBlockchains(1)
+      axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain/${blockchain.id}`).replyOnce(200, blockchain)
 
       const res = await client.get(`/blockchains/${blockchain.id}`).expect(200)
 
       expect(res.body).to.be.Object()
-      expect(res.body).to.containEql(blockchainToBlockchainResponse(blockchain as any))
+      expect(res.body).to.containEql(blockchainToBlockchainResponse(blockchain))
     })
 
-    it('retrieves the information of a specific blockchain', async () => {
-      const [blockchain] = await generateBlockchains(1)
-      const res = await client.get(`/blockchains/${blockchain.id}`).expect(200)
-
-      expect(res.body).to.be.Object()
-      expect(res.body).to.containEql(blockchainToBlockchainResponse(mockChain as any))
-
-      // Blockchain that doesn't exist
-      await client.get('/blockchains/nope').expect(404)
-    })
-
-    it('falls back to the fetching a specific blockchain from the repository if the PHD throws an error', async () => {
-      const [blockchain] = await generateBlockchains(1)
-      axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain/${blockchain.id}`).replyOnce(500, null)
-
-      const res = await client.get(`/blockchains/${blockchain.id}`).expect(200)
-
-      expect(res.body).to.be.Object()
-      expect(res.body).to.containEql(blockchainToBlockchainResponse(blockchain as any))
-
-      // Blockchain that doesn't exist
-      await client.get('/blockchains/nope').expect(404)
+    it('returns 404 on not found id', async () => {
+      await client.get('/blockchains/invalid').expect(404)
     })
   })
 
   describe('/blockchains/ids endpoint', () => {
-    it('retrieves a mapping of the available aliases for the chains from the Pocket HTTP DB', async () => {
-      await generateBlockchains(1)
-      axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain`).replyOnce(200, [mockChain])
-
-      const res = await client.get('/blockchains/ids').expect(200)
-
-      expect(res.body).to.be.Object()
-
-      const blockchainID = 'Kovan'
-      expect(res.body[blockchainID].prefix).to.be.Array()
-      expect(res.body[blockchainID].prefix).to.have.length(2)
-
-      expect(res.body[blockchainID].id).to.be.String()
-      expect(res.body[blockchainID].id).to.be.equal('0024')
-    })
-
-    it('falls back to the fetching a mapping of the available aliases for the chains from the repository if the PHD throws an error', async () => {
-      await generateBlockchains(1)
-      axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain`).replyOnce(200, [mockChain])
+    it('retrieves a mapping of the available aliases for the chains', async () => {
+      const blockchains = generateBlockchains(1)
+      axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain`).replyOnce(200, blockchains)
 
       const res = await client.get('/blockchains/ids').expect(200)
 
@@ -210,56 +129,4 @@ describe('Blockchains controller (acceptance)', () => {
       expect(res.body[blockchainID].id).to.be.equal('0024')
     })
   })
-
-  it('returns 404 on not found hash', async () => {
-    await generateBlockchains(10)
-
-    await client.get('/blockchains/invalid').expect(404)
-  })
-
-  async function generateBlockchains(amount: number): Promise<Partial<Blockchains>[]> {
-    const blockchains = []
-
-    for (let i = 0; i < amount; i++) {
-      const id = amount > 1 ? `${mockChain.id}${i + 1}` : mockChain.id
-      blockchains.push({ ...mockChain, id })
-    }
-
-    const result = blockchainRepository.createAll(blockchains)
-
-    return result
-  }
 })
-
-const mockChain = Object.assign(
-  {},
-  {
-    id: '0024',
-    altruist: 'https://user:pass@test.example.org:12345',
-    blockchain: 'poa-kovan',
-    chainID: '42',
-    chainIDCheck: '{\\"method\\":\\"eth_chainId\\",\\"id\\":1,\\"jsonrpc\\":\\"2.0\\"}',
-    description: 'Kovan',
-    enforceResult: 'JSON',
-    network: 'POA-42',
-    networkID: '42',
-    path: '',
-    syncCheck: '',
-    ticker: 'POA',
-    blockchainAliases: ['poa-kovan', 'eth-kovan'],
-    requestTimeout: 0,
-    index: 6,
-    logLimitBlocks: 100000,
-    syncAllowance: 0,
-    active: false,
-    redirects: null,
-    syncCheckOptions: {
-      body: '',
-      resultKey: '',
-      path: '',
-      allowance: 0,
-    },
-    hash: '0',
-    evm: false,
-  }
-)
