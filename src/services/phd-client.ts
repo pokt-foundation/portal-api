@@ -1,40 +1,36 @@
 import axios from 'axios'
 import 'dotenv/config'
-import { Count, DefaultCrudRepository, Entity } from '@loopback/repository'
+import { Count, Entity } from '@loopback/repository'
 
 import { Applications, LoadBalancers, PocketAccount } from '../models'
 import { Cache } from '../services/cache'
 
 const logger = require('./logger')
 
-const FALLBACK_WARNING = 'Data from Pocket HTTP DB not fetched. Falling back to fetching from MongoDB.'
-const FAILURE_ERROR = 'Data from Pocket HTTP DB not fetched. No fallback set so data fetch failed.'
+const FAILURE_ERROR = 'Data fetching from Pocket HTTP DB failed'
 
 type ModelRef = new (...args: any[]) => any //eslint-disable-line
 interface ModelProps extends ModelRef {
   definition?: { properties: { [key: string]: { required?: boolean } } }
 }
 
-interface FindParams<T extends Entity> {
+interface FindParams {
   path: string
   model: ModelRef
-  fallback: DefaultCrudRepository<T, unknown>['find']
   cacheKey?: string
   cache?: Cache
 }
 
-interface FindOneParams<T extends Entity> {
+interface FindOneParams {
   path: string
   id: string
   model: ModelRef
-  fallback: DefaultCrudRepository<T, unknown>['findOne']
   cache?: Cache
 }
 
-interface CountParams<T extends Entity> {
+interface CountParams {
   path: string
   model: ModelRef
-  fallback: DefaultCrudRepository<T, unknown>['count']
 }
 
 interface PostgresGatewayAAT {
@@ -67,7 +63,7 @@ class PHDClient {
     this.apiKey = apiKey
   }
 
-  async find<T extends Entity>({ path, model, cache, cacheKey, fallback }: FindParams<T>): Promise<T[]> {
+  async find<T extends Entity>({ path, model, cache, cacheKey }: FindParams): Promise<T[]> {
     if (cache && !cacheKey) {
       throw new Error(`cacheKey not set for path ${path}`)
     }
@@ -76,32 +72,19 @@ class PHDClient {
     const modelFields = this.getRequiredModelFields(model)
     const modelsData: T[] = []
 
-    console.log({ url })
-
     try {
       const { data: documents } = await axios.get(url, { headers: { authorization: this.apiKey } })
 
       documents.forEach((document) => {
-        if (this.hasAllRequiredModelFields<T>(document, modelFields)) {
+        if (this.hasAllRequiredModelFields(document, modelFields)) {
           modelsData.push(new model(document))
         } else {
           throw new Error('data not instance of model')
         }
       })
     } catch (error) {
-      if (fallback) {
-        logger.log('warn', FALLBACK_WARNING, { error })
-
-        const documents = await fallback()
-
-        documents.forEach((document) => {
-          modelsData.push(new model(document))
-        })
-      } else {
-        logger.log('error', FAILURE_ERROR, { error })
-
-        throw error
-      }
+      logger.log('error', FAILURE_ERROR, { error })
+      throw error
     }
 
     if (cache && cacheKey) {
@@ -111,7 +94,7 @@ class PHDClient {
     return modelsData
   }
 
-  async findById<T extends Entity>({ path, id, model, cache, fallback }: FindOneParams<T>): Promise<T> {
+  async findById<T extends Entity>({ path, id, model, cache }: FindOneParams): Promise<T> {
     const url = `${this.baseUrl}/${path}/${id}`
     const modelFields = this.getRequiredModelFields(model)
     let modelData: T
@@ -125,7 +108,6 @@ class PHDClient {
       }[path]
 
       const processedDocument = processMethod?.() || document
-      console.log('ERROR', { processedDocument, modelFields })
 
       if (this.hasAllRequiredModelFields<T>(processedDocument, modelFields)) {
         modelData = new model(processedDocument)
@@ -133,16 +115,8 @@ class PHDClient {
         throw new Error('data not instance of model')
       }
     } catch (error) {
-      if (fallback) {
-        logger.log('warn', FALLBACK_WARNING, { error })
-
-        const document = await fallback()
-
-        modelData = new model(document)
-      } else {
-        logger.log('error', FAILURE_ERROR, { error })
-        throw error
-      }
+      logger.log('error', FAILURE_ERROR, { error })
+      throw error
     }
 
     if (cache) {
@@ -152,7 +126,7 @@ class PHDClient {
     return modelData
   }
 
-  async count<T extends Entity>({ path, fallback }: CountParams<T>): Promise<Count> {
+  async count({ path }: CountParams): Promise<Count> {
     const url = `${this.baseUrl}/${path}`
 
     try {
@@ -160,14 +134,8 @@ class PHDClient {
 
       return { count: documents.length }
     } catch (error) {
-      if (fallback) {
-        logger.log('warn', FALLBACK_WARNING, { error })
-
-        return fallback()
-      } else {
-        logger.log('error', FAILURE_ERROR, { error })
-        throw error
-      }
+      logger.log('error', FAILURE_ERROR, { error })
+      throw error
     }
   }
 
