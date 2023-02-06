@@ -17,7 +17,6 @@ export class EnvironmentObserver implements LifeCycleObserver {
     'NODE_ENV',
     'GATEWAY_CLIENT_PRIVATE_KEY',
     'GATEWAY_CLIENT_PASSPHRASE',
-    'MONGO_ENDPOINT',
     'DATABASE_ENCRYPTION_KEY',
     'REDIS_PORT',
     'REMOTE_REDIS_ENDPOINT',
