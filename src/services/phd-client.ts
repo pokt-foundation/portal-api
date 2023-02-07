@@ -69,7 +69,7 @@ class PHDClient {
       throw new Error(`cacheKey not set for path ${path}`)
     }
 
-    const url = `${this.baseUrl}/${path}`
+    const url = `${this.baseUrl}/v1/${path}`
     const modelFields = this.getRequiredModelFields(model)
     const modelsData: T[] = []
 
@@ -96,7 +96,7 @@ class PHDClient {
   }
 
   async findById<T extends Entity>({ path, id, model, cache }: FindOneParams): Promise<T> {
-    const url = `${this.baseUrl}/${path}/${id}`
+   const url = `${this.baseUrl}/v1/${path}/${id}`
     const modelFields = this.getRequiredModelFields(model)
     let modelData: T
 
@@ -128,7 +128,7 @@ class PHDClient {
   }
 
   async count({ path }: CountParams): Promise<Count> {
-    const url = `${this.baseUrl}/${path}`
+    const url = `${this.baseUrl}/v1/${path}`
 
     try {
       const { data: documents } = await axios.get(url, { headers: { authorization: this.apiKey } })
@@ -157,8 +157,8 @@ class PHDClient {
 
   // Necessary to recreate the `applicationIDs` array from the data provided by PHD
   processLoadBalancer(document): LoadBalancers {
-    document.applicationIDs = document.Applications.map(({ id: appID }) => appID)
-    delete document.Applications
+    document.applicationIDs = document.applications.map(({ id: appID }) => appID)
+    delete document.applications
 
     if (document.userID && !document.user) {
       document.user = document.userID
