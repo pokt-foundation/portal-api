@@ -48,8 +48,7 @@ function generateBlockchains(amount: number): Blockchains[] {
   return blockchains
 }
 
-// eslint-disable-next-line mocha/no-exclusive-tests
-describe.only('Blockchains controller (acceptance)', () => {
+describe('Blockchains controller (acceptance)', () => {
   let app: PocketGatewayApplication
   let client: Client
   let axiosMock: MockAdapter
