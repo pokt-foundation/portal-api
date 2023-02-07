@@ -76,8 +76,6 @@ class PHDClient {
     const modelFields = this.getRequiredModelFields(model)
     const modelsData: T[] = []
 
-    console.log({ url })
-
     try {
       const { data: documents } = await axios.get(url, { headers: { authorization: this.apiKey } })
 
@@ -125,7 +123,6 @@ class PHDClient {
       }[path]
 
       const processedDocument = processMethod?.() || document
-      console.log('ERROR', { processedDocument, modelFields })
 
       if (this.hasAllRequiredModelFields<T>(processedDocument, modelFields)) {
         modelData = new model(processedDocument)
@@ -188,7 +185,7 @@ class PHDClient {
 
   // Necessary to recreate the `applicationIDs` array from the data provided by PHD
   processLoadBalancer(document): LoadBalancers {
-    document.applicationIDs = document.Applications.map(({ id: appID }) => appID)
+    document.applicationIDs = document.applications?.map(({ id: appID }) => appID) || []
     delete document.Applications
 
     if (document.userID && !document.user) {
