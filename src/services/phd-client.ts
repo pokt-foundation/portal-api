@@ -96,7 +96,7 @@ class PHDClient {
   }
 
   async findById<T extends Entity>({ path, id, model, cache }: FindOneParams): Promise<T> {
-   const url = `${this.baseUrl}/v1/${path}/${id}`
+    const url = `${this.baseUrl}/v1/${path}/${id}`
     const modelFields = this.getRequiredModelFields(model)
     let modelData: T
 
