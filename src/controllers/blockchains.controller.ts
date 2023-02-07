@@ -1,17 +1,12 @@
 import { inject } from '@loopback/context'
-import { Count, CountSchema, Filter, FilterExcludingWhere, repository, Where } from '@loopback/repository'
+import { Count, CountSchema, Filter } from '@loopback/repository'
 import { param, get, getModelSchemaRef } from '@loopback/rest'
 import { Blockchains, BlockchainsResponse } from '../models'
 import { blockchainToBlockchainResponse } from '../models/blockchains.model'
-import { BlockchainsRepository } from '../repositories'
 import { PHDClient, PHDPaths } from '../services/phd-client'
 
 export class BlockchainsController {
-  constructor(
-    @inject('phdClient') private phdClient: PHDClient,
-    @repository(BlockchainsRepository)
-    public blockchainsRepository: BlockchainsRepository
-  ) {}
+  constructor(@inject('phdClient') private phdClient: PHDClient) {}
 
   @get('/blockchains/count', {
     responses: {
@@ -21,11 +16,10 @@ export class BlockchainsController {
       },
     },
   })
-  async count(@param.where(Blockchains) where?: Where<Blockchains>): Promise<Count> {
+  async count(): Promise<Count> {
     return this.phdClient.count({
       path: PHDPaths.Blockchain,
       model: Blockchains,
-      fallback: () => this.blockchainsRepository.count(where),
     })
   }
 
@@ -46,10 +40,9 @@ export class BlockchainsController {
   })
   async find(@param.filter(Blockchains) filter?: Filter<Blockchains>): Promise<BlockchainsResponse[]> {
     return (
-      await this.phdClient.find({
+      await this.phdClient.find<Blockchains>({
         path: PHDPaths.Blockchain,
         model: Blockchains,
-        fallback: () => this.blockchainsRepository.find(filter),
       })
     ).map((bl) => blockchainToBlockchainResponse(bl))
   }
@@ -66,17 +59,12 @@ export class BlockchainsController {
       },
     },
   })
-  async findById(
-    @param.path.string('id') id: string,
-    @param.filter(Blockchains, { exclude: 'where' })
-    filter?: FilterExcludingWhere<Blockchains>
-  ): Promise<BlockchainsResponse> {
+  async findById(@param.path.string('id') id: string): Promise<BlockchainsResponse> {
     return blockchainToBlockchainResponse(
       await this.phdClient.findById({
         path: PHDPaths.Blockchain,
         id,
         model: Blockchains,
-        fallback: () => this.blockchainsRepository.findById(id, filter),
       })
     )
   }
@@ -95,14 +83,12 @@ export class BlockchainsController {
     },
   })
   async idsMapping(@param.filter(Blockchains) filter?: Filter<Blockchains>): Promise<object> {
-    const blockchains = await this.phdClient.find({
+    const blockchains = await this.phdClient.find<Blockchains>({
       path: PHDPaths.Blockchain,
       model: Blockchains,
-      fallback: () => this.blockchainsRepository.find(filter),
     })
 
     const aliases = {}
-
     blockchains.forEach(({ id, blockchainAliases, description }) => {
       aliases[description] = {
         id,

@@ -3,13 +3,12 @@ import { HTTPMethod } from '@pokt-foundation/pocketjs-types'
 import jsonrpc, { ErrorObject, JsonRpcError } from 'jsonrpc-lite'
 import { Pool as PGPool } from 'pg'
 import { inject } from '@loopback/context'
-import { FilterExcludingWhere, repository } from '@loopback/repository'
+import { FilterExcludingWhere } from '@loopback/repository'
 import { get, param, post, requestBody, Request, RestBindings } from '@loopback/rest'
 import { WriteApi } from '@influxdata/influxdb-client'
 
 import { Applications, GatewaySettings, LoadBalancers } from '../models'
 import { StickinessOptions } from '../models/load-balancers.model'
-import { ApplicationsRepository, BlockchainsRepository, LoadBalancersRepository } from '../repositories'
 import { Cache } from '../services/cache'
 import { ChainChecker } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
@@ -53,7 +52,6 @@ export class V1Controller {
     @inject('host') private host: string,
     @inject('origin') private origin: string,
     @inject('userAgent') private userAgent: string,
-    @inject('contentType') private contentType: string,
     @inject('ipAddress') private ipAddress: string,
     @inject('httpMethod') private httpMethod: HTTPMethod,
     @inject('relayPath') private relayPath: string,
@@ -75,13 +73,7 @@ export class V1Controller {
     @inject('rateLimiterURL') private rateLimiterURL: string,
     @inject('rateLimiterToken') private rateLimiterToken: string,
     @inject('gatewayHost') private gatewayHost: string,
-    @inject('phdClient') private phdClient: PHDClient,
-    @repository(ApplicationsRepository)
-    public applicationsRepository: ApplicationsRepository,
-    @repository(BlockchainsRepository)
-    private blockchainsRepository: BlockchainsRepository,
-    @repository(LoadBalancersRepository)
-    private loadBalancersRepository: LoadBalancersRepository
+    @inject('phdClient') private phdClient: PHDClient
   ) {
     this.cherryPicker = new CherryPicker({
       redis: this.cache.remote,
@@ -113,7 +105,6 @@ export class V1Controller {
       databaseEncryptionKey: this.databaseEncryptionKey,
       secretKey: this.secretKey,
       relayRetries: this.relayRetries,
-      blockchainsRepository: this.blockchainsRepository,
       checkDebug: this.checkDebug(),
       aatPlan: this.aatPlan,
       defaultLogLimitBlocks: this.defaultLogLimitBlocks,
@@ -156,13 +147,7 @@ export class V1Controller {
       })
 
       // Since we only have non-gateway url, let's fetch a blockchain that contains this domain
-      const { blockchainAliases } = await getBlockchainAliasesByDomain(
-        this.host,
-        this.phdClient,
-        this.cache,
-        this.blockchainsRepository,
-        rpcID
-      )
+      const { blockchainAliases } = await getBlockchainAliasesByDomain(this.host, this.phdClient, this.cache, rpcID)
 
       // Any alias works to load a specific blockchain
       this.host = `${blockchainAliases[0]}.${this.gatewayHost}`
@@ -171,7 +156,6 @@ export class V1Controller {
         this.host,
         this.phdClient,
         this.cache,
-        this.blockchainsRepository,
         this.defaultLogLimitBlocks,
         rpcID
       )
@@ -275,7 +259,6 @@ export class V1Controller {
           this.host,
           this.phdClient,
           this.cache,
-          this.blockchainsRepository,
           this.defaultLogLimitBlocks,
           reqRPCID
         )
@@ -654,7 +637,6 @@ export class V1Controller {
         this.host,
         this.phdClient,
         this.cache,
-        this.blockchainsRepository,
         this.defaultLogLimitBlocks,
         rpcID
       ).catch((e) => {
@@ -692,7 +674,6 @@ export class V1Controller {
           id,
           model: LoadBalancers,
           cache: this.cache,
-          fallback: () => this.loadBalancersRepository.findById(id, filter),
         })
       } catch (e) {
         return undefined
@@ -712,7 +693,6 @@ export class V1Controller {
           id,
           model: Applications,
           cache: this.cache,
-          fallback: () => this.applicationsRepository.findById(id, filter),
         })
       } catch (e) {
         return undefined
@@ -778,7 +758,6 @@ export class V1Controller {
       this.host,
       this.phdClient,
       this.cache,
-      this.blockchainsRepository,
       this.defaultLogLimitBlocks,
       rpcID
     )
