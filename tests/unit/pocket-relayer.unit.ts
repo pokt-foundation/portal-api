@@ -8,7 +8,6 @@ import { Encryptor } from 'strong-cryptor'
 import { expect, sinon } from '@loopback/testlab'
 import AatPlans from '../../src/config/aat-plans.json'
 import { Applications } from '../../src/models/applications.model'
-import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
 import { Cache } from '../../src/services/cache'
 import { ChainChecker, ChainIDFilterOptions } from '../../src/services/chain-checker'
 import { CherryPicker } from '../../src/services/cherry-picker'
@@ -22,7 +21,6 @@ import { parseMethod } from '../../src/utils/parsing'
 import { loadBlockchain } from '../../src/utils/relayer'
 import { CheckResult } from '../../src/utils/types'
 import { DUMMY_ENV } from '../acceptance/test-helper'
-import { gatewayTestDB } from '../fixtures/test.datasource'
 import { metricsRecorderMock } from '../mocks/metrics-recorder'
 import { DEFAULT_NODES, PocketMock } from '../mocks/pocketjs'
 const Redis = require('ioredis-mock')
@@ -147,7 +145,6 @@ describe('Pocket relayer service (unit)', () => {
   let syncChecker: SyncChecker
   let mergeChecker: MergeChecker
   let metricsRecorder: MetricsRecorder
-  let blockchainRepository: BlockchainsRepository
   let cache: Cache
   let pocketMock: PocketMock
   let pocketRelayer: PocketRelayer
@@ -164,7 +161,6 @@ describe('Pocket relayer service (unit)', () => {
     chainChecker = new ChainChecker(cache, metricsRecorder, origin)
     syncChecker = new SyncChecker(cache, metricsRecorder, 5, origin)
     mergeChecker = new MergeChecker(cache, metricsRecorder, origin)
-    blockchainRepository = new BlockchainsRepository(gatewayTestDB)
     phdClient = new PHDClient(DUMMY_ENV.PHD_BASE_URL, DUMMY_ENV.PHD_API_KEY)
 
     pocketMock = new PocketMock()
@@ -186,7 +182,6 @@ describe('Pocket relayer service (unit)', () => {
       databaseEncryptionKey: DB_ENCRYPTION_KEY,
       secretKey: '',
       relayRetries: 0,
-      blockchainsRepository: blockchainRepository,
       checkDebug: true,
       aatPlan: AatPlans.FREEMIUM,
       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -202,10 +197,12 @@ describe('Pocket relayer service (unit)', () => {
 
   after(() => {
     sinon.restore()
+    axiosMock.restore()
   })
 
   beforeEach(async () => {
-    await blockchainRepository.deleteAll()
+    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/blockchain`).reply(200, BLOCKCHAINS)
+
     await cache.flushall()
     sinon.restore()
   })
@@ -232,11 +229,7 @@ describe('Pocket relayer service (unit)', () => {
   })
 
   it('loads all blockchains from db, caches them and returns config of requested blockchain', async () => {
-    const dbBlockchains = await blockchainRepository.createAll(BLOCKCHAINS)
-
-    expect(dbBlockchains).to.have.length(3)
-
-    const repositorySpy = sinon.spy(blockchainRepository, 'find')
+    const repositorySpy = sinon.spy(pocketRelayer.phdClient, 'find')
     const cacheGetSpy = sinon.spy(cache, 'get')
     const cacheSetSpy = sinon.spy(cache, 'set')
 
@@ -244,7 +237,6 @@ describe('Pocket relayer service (unit)', () => {
       pocketRelayer.host,
       pocketRelayer.phdClient,
       pocketRelayer.cache,
-      pocketRelayer.blockchainsRepository,
       pocketRelayer.defaultLogLimitBlocks,
       1
     )
@@ -261,7 +253,6 @@ describe('Pocket relayer service (unit)', () => {
       pocketRelayer.host,
       pocketRelayer.phdClient,
       pocketRelayer.cache,
-      pocketRelayer.blockchainsRepository,
       pocketRelayer.defaultLogLimitBlocks,
       1
     )
@@ -275,12 +266,13 @@ describe('Pocket relayer service (unit)', () => {
   })
 
   it('throws an error when loading an invalid blockchain', async () => {
+    axiosMock.reset()
+
     await expect(
       loadBlockchain(
         pocketRelayer.host,
         pocketRelayer.phdClient,
         pocketRelayer.cache,
-        pocketRelayer.blockchainsRepository,
         pocketRelayer.defaultLogLimitBlocks,
         1
       )
@@ -309,7 +301,6 @@ describe('Pocket relayer service (unit)', () => {
       databaseEncryptionKey: DB_ENCRYPTION_KEY,
       secretKey: key,
       relayRetries: 0,
-      blockchainsRepository: blockchainRepository,
       checkDebug: true,
       aatPlan: AatPlans.FREEMIUM,
       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -350,7 +341,6 @@ describe('Pocket relayer service (unit)', () => {
       databaseEncryptionKey: DB_ENCRYPTION_KEY,
       secretKey: 'invalid',
       relayRetries: 0,
-      blockchainsRepository: blockchainRepository,
       checkDebug: true,
       aatPlan: AatPlans.FREEMIUM,
       defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -394,12 +384,6 @@ describe('Pocket relayer service (unit)', () => {
 
   describe('sendRelay function (without altruists)', () => {
     let rawData: string
-
-    const createBlockchain = async () => {
-      const dbBlockchain = await blockchainRepository.createAll(BLOCKCHAINS)
-
-      expect(dbBlockchain).to.have.length(3)
-    }
 
     // Possible ammount of nodes that a session or blockchain check can return
     type SessionNodeAmount = 0 | 1 | 2 | 3 | 4 | 5
@@ -485,8 +469,6 @@ describe('Pocket relayer service (unit)', () => {
     beforeEach(async () => {
       // Default data of pocketJS mock
       rawData = Object.keys(pocketMock.relayResponse)[0]
-
-      await createBlockchain()
     })
 
     it('sends successful relay response as json', async () => {
@@ -515,7 +497,6 @@ describe('Pocket relayer service (unit)', () => {
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
-        blockchainsRepository: blockchainRepository,
         checkDebug: true,
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -574,7 +555,6 @@ describe('Pocket relayer service (unit)', () => {
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
-        blockchainsRepository: blockchainRepository,
         checkDebug: true,
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -630,7 +610,6 @@ describe('Pocket relayer service (unit)', () => {
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
-        blockchainsRepository: blockchainRepository,
         checkDebug: true,
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -683,7 +662,6 @@ describe('Pocket relayer service (unit)', () => {
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
-        blockchainsRepository: blockchainRepository,
         checkDebug: true,
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -736,7 +714,6 @@ describe('Pocket relayer service (unit)', () => {
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
-        blockchainsRepository: blockchainRepository,
         checkDebug: true,
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -801,7 +778,6 @@ describe('Pocket relayer service (unit)', () => {
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
-        blockchainsRepository: blockchainRepository,
         checkDebug: true,
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -901,7 +877,6 @@ describe('Pocket relayer service (unit)', () => {
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
-        blockchainsRepository: blockchainRepository,
         checkDebug: true,
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -997,7 +972,6 @@ describe('Pocket relayer service (unit)', () => {
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: 'invalid secret key',
         relayRetries: 0,
-        blockchainsRepository: blockchainRepository,
         checkDebug: true,
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -1055,7 +1029,6 @@ describe('Pocket relayer service (unit)', () => {
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: 'invalid secret key',
         relayRetries: 0,
-        blockchainsRepository: blockchainRepository,
         checkDebug: true,
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -1116,7 +1089,6 @@ describe('Pocket relayer service (unit)', () => {
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: 'invalid secret key',
         relayRetries: 0,
-        blockchainsRepository: blockchainRepository,
         checkDebug: true,
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -1172,7 +1144,6 @@ describe('Pocket relayer service (unit)', () => {
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
-        blockchainsRepository: blockchainRepository,
         checkDebug: true,
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -1234,7 +1205,6 @@ describe('Pocket relayer service (unit)', () => {
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
-        blockchainsRepository: blockchainRepository,
         checkDebug: true,
         aatPlan: AatPlans.FREEMIUM,
         defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -1302,7 +1272,6 @@ describe('Pocket relayer service (unit)', () => {
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
-        blockchainsRepository: blockchainRepository,
         checkDebug: false,
 
         aatPlan: AatPlans.FREEMIUM,
@@ -1389,7 +1358,6 @@ describe('Pocket relayer service (unit)', () => {
         databaseEncryptionKey: DB_ENCRYPTION_KEY,
         secretKey: '',
         relayRetries: 0,
-        blockchainsRepository: blockchainRepository,
         checkDebug: false,
 
         aatPlan: AatPlans.FREEMIUM,
@@ -1470,7 +1438,6 @@ describe('Pocket relayer service (unit)', () => {
           databaseEncryptionKey: DB_ENCRYPTION_KEY,
           secretKey: 'invalid secret key',
           relayRetries: 0,
-          blockchainsRepository: blockchainRepository,
           checkDebug: true,
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -1532,7 +1499,6 @@ describe('Pocket relayer service (unit)', () => {
           databaseEncryptionKey: DB_ENCRYPTION_KEY,
           secretKey: 'invalid secret key',
           relayRetries: 0,
-          blockchainsRepository: blockchainRepository,
           checkDebug: true,
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -1593,7 +1559,6 @@ describe('Pocket relayer service (unit)', () => {
           databaseEncryptionKey: DB_ENCRYPTION_KEY,
           secretKey: 'invalid secret key',
           relayRetries: 0,
-          blockchainsRepository: blockchainRepository,
           checkDebug: true,
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -1631,6 +1596,7 @@ describe('Pocket relayer service (unit)', () => {
       beforeEach(() => {
         axiosMock.reset()
 
+        axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/blockchain`).reply(200, BLOCKCHAINS)
         axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
           service_url: 'https://localhost:443',
         })
@@ -1664,7 +1630,6 @@ describe('Pocket relayer service (unit)', () => {
           databaseEncryptionKey: DB_ENCRYPTION_KEY,
           secretKey: 'invalid secret key',
           relayRetries: 0,
-          blockchainsRepository: blockchainRepository,
           checkDebug: true,
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -1892,7 +1857,6 @@ describe('Pocket relayer service (unit)', () => {
           databaseEncryptionKey: DB_ENCRYPTION_KEY,
           secretKey: '',
           relayRetries: 0,
-          blockchainsRepository: blockchainRepository,
           checkDebug: true,
           aatPlan: AatPlans.FREEMIUM,
           defaultLogLimitBlocks: 0,
@@ -1996,7 +1960,6 @@ describe('Pocket relayer service (unit)', () => {
             databaseEncryptionKey: DB_ENCRYPTION_KEY,
             secretKey: '',
             relayRetries: 0,
-            blockchainsRepository: blockchainRepository,
             checkDebug: true,
             aatPlan: AatPlans.FREEMIUM,
             defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -2066,7 +2029,6 @@ describe('Pocket relayer service (unit)', () => {
             databaseEncryptionKey: DB_ENCRYPTION_KEY,
             secretKey: '',
             relayRetries: 0,
-            blockchainsRepository: blockchainRepository,
             checkDebug: true,
             aatPlan: AatPlans.FREEMIUM,
             defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
@@ -2128,7 +2090,6 @@ describe('Pocket relayer service (unit)', () => {
             databaseEncryptionKey: DB_ENCRYPTION_KEY,
             secretKey: '',
             relayRetries: 0,
-            blockchainsRepository: blockchainRepository,
             checkDebug: true,
             aatPlan: AatPlans.FREEMIUM,
             defaultLogLimitBlocks: DEFAULT_LOG_LIMIT,
