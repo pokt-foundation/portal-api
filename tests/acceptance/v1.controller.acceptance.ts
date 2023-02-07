@@ -3,12 +3,8 @@ import MockAdapter from 'axios-mock-adapter'
 import { Encryptor } from 'strong-cryptor'
 import { Client, sinon, expect } from '@loopback/testlab'
 import { PocketGatewayApplication } from '../..'
-import { ApplicationsRepository } from '../../src/repositories/applications.repository'
-import { BlockchainsRepository } from '../../src/repositories/blockchains.repository'
-import { LoadBalancersRepository } from '../../src/repositories/load-balancers.repository'
-import { gatewayTestDB } from '../fixtures/test.datasource'
 import { MockRelayResponse, PocketMock } from '../mocks/pocketjs'
-import { setupApplication } from './test-helper'
+import { setupApplication, DUMMY_ENV } from './test-helper'
 
 const logger = require('../../src/services/logger')
 
@@ -185,20 +181,22 @@ const APPLICATIONS = [
   { ...APPLICATION, id: GIGASTAKE_FOLLOWER_IDS.app },
 ]
 
+const LOAD_BALANCER = {
+  id: 'gt4a1s9rfrebaf8g31bsdc04',
+  user: 'test@test.com',
+  name: 'test load balancer',
+  requestTimeout: '5000',
+  Applications: APPLICATIONS,
+}
+
 const LOAD_BALANCERS = [
-  {
-    id: 'gt4a1s9rfrebaf8g31bsdc04',
-    user: 'test@test.com',
-    name: 'test load balancer',
-    requestTimeout: '5000',
-    applicationIDs: APPLICATIONS.map((app) => app.id),
-  },
+  LOAD_BALANCER,
   {
     id: 'gt4a1s9rfrebaf8g31bsdc05',
     user: 'test@test.com',
     name: 'test load balancer sticky rpc',
     requestTimeout: '5000',
-    applicationIDs: APPLICATIONS.map((app) => app.id),
+    Applications: APPLICATIONS,
     logLimitBlocks: 25000,
     stickinessOptions: {
       stickiness: true,
@@ -213,7 +211,7 @@ const LOAD_BALANCERS = [
     user: 'test@test.com',
     name: 'test load balancer sticky prefix',
     requestTimeout: '5000',
-    applicationIDs: APPLICATIONS.map((app) => app.id),
+    Applications: APPLICATIONS,
     logLimitBlocks: 25000,
     stickinessOptions: {
       stickiness: true,
@@ -227,7 +225,7 @@ const LOAD_BALANCERS = [
     user: 'test@test.com',
     name: 'test load balancer sticky prefix with whitelist',
     requestTimeout: '5000',
-    applicationIDs: APPLICATIONS.map((app) => app.id),
+    Applications: APPLICATIONS,
     logLimitBlocks: 25000,
     stickinessOptions: {
       stickiness: true,
@@ -242,7 +240,7 @@ const LOAD_BALANCERS = [
     user: 'test@test.com',
     name: 'gigastaked lb - leader',
     requestTimeout: '5000',
-    applicationIDs: [GIGASTAKE_LEADER_IDS.app],
+    Applications: APPLICATIONS.filter(({ id }) => id === GIGASTAKE_LEADER_IDS.app),
     logLimitBlocks: 25000,
     stickinessOptions: {
       stickiness: true,
@@ -257,7 +255,7 @@ const LOAD_BALANCERS = [
     user: 'test@test.com',
     name: 'gigastaked lb - follower',
     requestTimeout: '5000',
-    applicationIDs: [GIGASTAKE_FOLLOWER_IDS.app],
+    Applications: APPLICATIONS.filter(({ id }) => id === GIGASTAKE_FOLLOWER_IDS.app),
     logLimitBlocks: 25000,
     gigastakeRedirect: true,
     stickinessOptions: {
@@ -273,7 +271,7 @@ const LOAD_BALANCERS = [
     user: 'test@test.com',
     name: 'gigastaked lb - follower',
     requestTimeout: '5000',
-    applicationIDs: [GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.app],
+    Applications: APPLICATIONS.filter(({ id }) => id === GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.app),
     logLimitBlocks: 25000,
     gigastakeRedirect: true,
     stickinessOptions: {
@@ -289,7 +287,7 @@ const LOAD_BALANCERS = [
     user: 'test@test.com',
     name: 'rate limited lb',
     requestTimeout: '5000',
-    applicationIDs: [RATE_LIMITED_LB_ID.app],
+    Applications: [RATE_LIMITED_APPLICATION],
     logLimitBlocks: 25000,
     gigastakeRedirect: false,
     stickinessOptions: {
@@ -305,18 +303,11 @@ const LOAD_BALANCERS = [
 describe('V1 controller (acceptance)', () => {
   let app: PocketGatewayApplication
   let client: Client
-  let blockchainsRepository: BlockchainsRepository
-  let applicationsRepository: ApplicationsRepository
-  let loadBalancersRepository: LoadBalancersRepository
   let pocketMock: PocketMock
   let relayResponses: Record<string, MockRelayResponse | MockRelayResponse[]>
   let axiosMock: MockAdapter
 
   before('setupApplication', async () => {
-    blockchainsRepository = new BlockchainsRepository(gatewayTestDB)
-    applicationsRepository = new ApplicationsRepository(gatewayTestDB)
-    loadBalancersRepository = new LoadBalancersRepository(gatewayTestDB)
-
     axiosMock = new MockAdapter(axios)
     axiosMock.onPost('https://user:pass@backups.example.org:18081/v1/query/node').reply(200, {
       service_url: 'https://localhost:443',
@@ -330,7 +321,7 @@ describe('V1 controller (acceptance)', () => {
       applicationIDs: ['rateLimitedApp123'],
     })
 
-    axiosMock.onGet(process.env.PHD_BASE_URL).reply(200)
+    axiosMock.onGet(DUMMY_ENV.PHD_BASE_URL).reply(200)
   })
 
   after(async () => {
@@ -354,21 +345,23 @@ describe('V1 controller (acceptance)', () => {
       .onPost(BLOCKCHAINS['0021']?.altruist, { method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .reply(200, relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'])
 
+    for (const dbApp of APPLICATIONS) {
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${dbApp.id}`).reply(200, dbApp)
+    }
+    axiosMock
+      .onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${RATE_LIMITED_APPLICATION.id}`)
+      .reply(200, RATE_LIMITED_APPLICATION)
+    for (const lb of LOAD_BALANCERS) {
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/load_balancer/${lb.id}`).reply(200, lb)
+    }
+    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/blockchain`).reply(200, BLOCKCHAINS)
+
     pocketMock = new PocketMock(undefined, undefined, undefined)
     pocketMock.relayResponse = relayResponses
-
-    await loadBalancersRepository.createAll(LOAD_BALANCERS)
-    await blockchainsRepository.createAll(BLOCKCHAINS)
-    await applicationsRepository.createAll(APPLICATIONS)
-    await applicationsRepository.create(RATE_LIMITED_APPLICATION)
   })
 
   afterEach(async () => {
     sinon.restore()
-
-    await loadBalancersRepository.deleteAll()
-    await blockchainsRepository.deleteAll()
-    await applicationsRepository.deleteAll()
   })
 
   after(async () => {
@@ -377,21 +370,10 @@ describe('V1 controller (acceptance)', () => {
 
   it('Fetches all data from Pocket HTTP DB, invokes GET /v1/{appId} and successfully relays a request', async () => {
     const pocket = pocketMock.object()
+    ;({ app, client } = await setupApplication(pocket))
 
     relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
       '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
-    ;({ app, client } = await setupApplication(pocket))
-
-    axiosMock.onGet(`${process.env.PHD_BASE_URL}/application/${APPLICATION.id}`).replyOnce(200, APPLICATION)
-    axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain`).replyOnce(200, BLOCKCHAINS)
-    axiosMock.onGet(`${process.env.PHD_BASE_URL}/load_balancer/${GIGASTAKE_LEADER_IDS.lb}`).replyOnce(
-      200,
-      LOAD_BALANCERS.find(({ id }) => id === GIGASTAKE_LEADER_IDS.lb)
-    )
-    axiosMock.onGet(`${process.env.PHD_BASE_URL}/application/${GIGASTAKE_LEADER_IDS.app}`).replyOnce(
-      200,
-      APPLICATIONS.find(({ id }) => id === GIGASTAKE_LEADER_IDS.app)
-    )
 
     const response = await client
       .post(`/v1/${APPLICATION.id}`)
@@ -407,13 +389,13 @@ describe('V1 controller (acceptance)', () => {
 
   it('invokes GET /v1/{appId} and successfully relays a request', async () => {
     const pocket = pocketMock.object()
+    ;({ app, client } = await setupApplication(pocket))
 
     relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
       '{"id":1,"jsonrpc":"2.0","result":"0x1083d57"}'
-    ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh')
+      .post(`/v1/${APPLICATION.id}`)
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet-x')
@@ -426,10 +408,9 @@ describe('V1 controller (acceptance)', () => {
 
   it('returns 404 when no app is found', async () => {
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
-    await applicationsRepository.deleteAll()
+    sinon.reset()
 
     const res = await client
       .post('/v1/notfoundapp')
@@ -444,13 +425,13 @@ describe('V1 controller (acceptance)', () => {
 
   it('returns 404 when the specified blockchain is not found', async () => {
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
-    await blockchainsRepository.deleteAll()
+    sinon.reset()
+    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${APPLICATION.id}`).reply(200, APPLICATION)
 
     const res = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh')
+      .post(`/v1/${APPLICATION.id}`)
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'invalid-blockchain')
@@ -498,14 +479,13 @@ describe('V1 controller (acceptance)', () => {
       whitelistMethods: [],
     }
 
-    const dbApp = await applicationsRepository.create(appWithSecurity)
+    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post(`/v1/${dbApp.id}`)
+      .post(`/v1/${appWithSecurity.id}`)
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
@@ -530,14 +510,13 @@ describe('V1 controller (acceptance)', () => {
       whitelistMethods: [],
     }
 
-    const dbApp = await applicationsRepository.create(appWithSecurity)
+    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post(`/v1/${dbApp.id}`)
+      .post(`/v1/${appWithSecurity.id}`)
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
@@ -562,10 +541,16 @@ describe('V1 controller (acceptance)', () => {
       whitelistMethods: [],
     }
 
-    await applicationsRepository.create(appWithSecurity)
+    const lbWithSecurityApp = {
+      ...LOAD_BALANCERS.find(({ id }) => id === GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb),
+      Applications: [appWithSecurity],
+    }
+    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+    axiosMock
+      .onGet(`${DUMMY_ENV.PHD_BASE_URL}/load_balancer/${GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb}`)
+      .reply(200, lbWithSecurityApp)
 
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
@@ -593,10 +578,16 @@ describe('V1 controller (acceptance)', () => {
       whitelistMethods: [],
     }
 
-    await applicationsRepository.create(appWithSecurity)
+    const lbWithSecurityApp = {
+      ...LOAD_BALANCERS.find(({ id }) => id === GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb),
+      Applications: [appWithSecurity],
+    }
+    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+    axiosMock
+      .onGet(`${DUMMY_ENV.PHD_BASE_URL}/load_balancer/${GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb}`)
+      .reply(200, lbWithSecurityApp)
 
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
@@ -625,10 +616,16 @@ describe('V1 controller (acceptance)', () => {
       whitelistMethods: [],
     }
 
-    await applicationsRepository.create(appWithSecurity)
+    const lbWithSecurityApp = {
+      ...LOAD_BALANCERS.find(({ id }) => id === GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb),
+      Applications: [appWithSecurity],
+    }
+    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+    axiosMock
+      .onGet(`${DUMMY_ENV.PHD_BASE_URL}/load_balancer/${GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb}`)
+      .reply(200, lbWithSecurityApp)
 
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
@@ -662,10 +659,9 @@ describe('V1 controller (acceptance)', () => {
       whitelistMethods: [],
     }
 
-    await applicationsRepository.create(appWithSecurity)
+    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
@@ -686,11 +682,10 @@ describe('V1 controller (acceptance)', () => {
   it('performs a failed request returning error', async () => {
     pocketMock.fail = true
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh')
+      .post(`/v1/${APPLICATION.id}`)
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet-string') // blockchain without altruist
@@ -706,11 +701,10 @@ describe('V1 controller (acceptance)', () => {
 
     pocketMock.relayResponse = relayResponses
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh')
+      .post(`/v1/${APPLICATION.id}`)
       .send({ method: 'eth_chainId', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet')
@@ -722,11 +716,10 @@ describe('V1 controller (acceptance)', () => {
 
   it('succesfully relays a loadbalancer application', async () => {
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc04')
+      .post(`/v1/lb/${LOAD_BALANCER.id}`)
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet-x')
@@ -739,11 +732,10 @@ describe('V1 controller (acceptance)', () => {
 
   it('succesfully relays a loadbalancer application with log limits', async () => {
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc05')
+      .post(`/v1/lb/${LOAD_BALANCER.id}`)
       .send({
         method: 'eth_getLogs',
         params: [
@@ -766,11 +758,10 @@ describe('V1 controller (acceptance)', () => {
 
   it('returns an error when load balancer relay body is not a JSON', async () => {
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc05')
+      .post(`/v1/lb/${LOAD_BALANCER.id}`)
       .send('{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6"')
       .set('Content-Type', 'application/json')
       .set('Accept', 'application/json')
@@ -783,11 +774,10 @@ describe('V1 controller (acceptance)', () => {
 
   it('returns an error when application relay body is not a JSON', async () => {
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/sd9fj31d714kgos42e68f9gh')
+      .post(`/v1/${LOAD_BALANCER.id}`)
       .send('{"method":"eth_getLogs","params":[{"fromBlock":"0x9c5bb6"')
       .set('Content-Type', 'application/json')
       .set('Accept', 'application/json')
@@ -800,7 +790,6 @@ describe('V1 controller (acceptance)', () => {
 
   it('returns error when no load balancer is found', async () => {
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
@@ -817,11 +806,10 @@ describe('V1 controller (acceptance)', () => {
   it('returns error on load balancer relay failure', async () => {
     pocketMock.fail = true
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
-      .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc04')
+      .post(`/v1/lb/${LOAD_BALANCER.id}`)
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet-string') // blockchain without altruist
@@ -834,7 +822,6 @@ describe('V1 controller (acceptance)', () => {
   it('returns error when altruist returns non-json string as response', async () => {
     pocketMock.fail = true
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
     axiosMock
@@ -842,7 +829,7 @@ describe('V1 controller (acceptance)', () => {
       .reply(200, '<html>503 Service Unavailable</html>')
 
     const response = await client
-      .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc04')
+      .post(`/v1/lb/${LOAD_BALANCER.id}`)
       .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
       .set('Accept', 'application/json')
       .set('host', 'eth-mainnet-x')
@@ -856,7 +843,6 @@ describe('V1 controller (acceptance)', () => {
     const gatewayHost = 'custom-host'
     const gatewayHostKey = 'gatewayHost'
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket, {
       GATEWAY_HOST: gatewayHost,
     }))
@@ -876,7 +862,6 @@ describe('V1 controller (acceptance)', () => {
 
   it('fails on invalid redirect load balancer', async () => {
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
@@ -913,12 +898,11 @@ describe('V1 controller (acceptance)', () => {
     }
 
     const pocketClass = mockPocket.object()
-
     ;({ app, client } = await setupApplication(pocketClass))
 
     for (let i = 1; i <= 5; i++) {
       const response = await client
-        .post('/v1/lb/gt4a1s9rfrebaf8g31bsdc05')
+        .post(`/v1/lb/${LOAD_BALANCERS[1].id}`)
         .send({ method: 'eth_chainId', id: i, jsonrpc: '2.0' })
         .set('Accept', 'application/json')
         .set('host', 'eth-mainnet-x')
@@ -967,12 +951,11 @@ describe('V1 controller (acceptance)', () => {
     mockPocket.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
 
     const pocketClass = mockPocket.object()
-
     ;({ app, client } = await setupApplication(pocketClass))
 
     for (let i = 1; i <= 5; i++) {
       const response = await client
-        .post('/v1/lb/df9gjsjg43db9fsajfjg93fk')
+        .post(`/v1/lb/${LOAD_BALANCERS[2].id}`)
         .send({ method: 'eth_chainId', id: 1, jsonrpc: '2.0' })
         .set('Accept', 'application/json')
         .set('host', 'eth-mainnet-x')
@@ -1021,12 +1004,11 @@ describe('V1 controller (acceptance)', () => {
     mockPocket.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
 
     const pocketClass = mockPocket.object()
-
     ;({ app, client } = await setupApplication(pocketClass))
 
     for (let i = 1; i <= 5; i++) {
       const response = await client
-        .post('/v1/lb/d8ejd7834ht9d9sj345gfsoa')
+        .post(`/v1/lb/${LOAD_BALANCERS[3].id}`)
         .send({ method: 'eth_chainId', id: 1, jsonrpc: '2.0' })
         .set('Accept', 'application/json')
         .set('host', 'eth-mainnet-x')
@@ -1074,12 +1056,11 @@ describe('V1 controller (acceptance)', () => {
     mockPocket.relayResponse[relayRequest] = '{"id":0,"jsonrpc":"2.0","result":"0x64"}'
 
     const pocketClass = mockPocket.object()
-
     ;({ app, client } = await setupApplication(pocketClass))
 
     for (let i = 1; i <= 5; i++) {
       const response = await client
-        .post('/v1/lb/d8ejd7834ht9d9sj345gfsoa')
+        .post(`/v1/lb/${LOAD_BALANCERS[3].id}`)
         .send({ method: 'eth_chainId', id: 1, jsonrpc: '2.0' })
         .set('Accept', 'application/json')
         .set('host', 'eth-mainnet-x')
@@ -1127,7 +1108,6 @@ describe('V1 controller (acceptance)', () => {
     const logSpy = sinon.spy(logger, 'log')
 
     const pocket = pocketMock.object()
-
     ;({ app, client } = await setupApplication(pocket))
 
     const response = await client
@@ -1161,9 +1141,8 @@ describe('V1 controller (acceptance)', () => {
   describe('Rate-limiting applications and loadbalancers', () => {
     it('logs an error on request with rate-limited app & relay throws error', async () => {
       const pocket = pocketMock.object()
-      const logSpy = sinon.spy(logger, 'log')
-
       ;({ app, client } = await setupApplication(pocket))
+      const logSpy = sinon.spy(logger, 'log')
 
       const response = await client
         .post(`/v1/${RATE_LIMITED_APPLICATION.id}`)
@@ -1185,9 +1164,8 @@ describe('V1 controller (acceptance)', () => {
 
     it('logs an error on lb relay request with rate-limited app & relay throws error', async () => {
       const pocket = pocketMock.object()
-      const logSpy = sinon.spy(logger, 'log')
-
       ;({ app, client } = await setupApplication(pocket))
+      const logSpy = sinon.spy(logger, 'log')
 
       const response = await client
         .post(`/v1/lb/${RATE_LIMITED_LB_ID.lb}`)
@@ -1244,7 +1222,6 @@ describe('V1 controller (acceptance)', () => {
 
       const pocket = pocketMock.object()
       const logSpy = sinon.spy(logger, 'log')
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
@@ -1284,14 +1261,13 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send({
           method: 'eth_call',
           params: [{ to: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f', data: '0x0902f1ac' }, 'latest'],
@@ -1302,8 +1278,6 @@ describe('V1 controller (acceptance)', () => {
         .set('host', 'eth-mainnet')
         .set('origin', 'localhost')
         .expect(200)
-
-      console.log('ERROR HERE', response.body.error.message)
 
       expect(response.headers).to.containDeep({ 'content-type': 'application/json' })
       expect(response.body).to.have.property('error')
@@ -1323,7 +1297,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1333,11 +1307,10 @@ describe('V1 controller (acceptance)', () => {
       pocketMock.relayResponse = relayResponses
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send({
           method: 'eth_call',
           params: [{ to: '0x75f89ffbe5c25161cbc7e97c988c9f391eaefaf9', data: '0x0902f1ac' }, 'latest'],
@@ -1367,14 +1340,13 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send({
           id: 6695493563292,
           jsonrpc: '2.0',
@@ -1406,7 +1378,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
@@ -1415,11 +1387,10 @@ describe('V1 controller (acceptance)', () => {
       pocketMock.relayResponse = relayResponses
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
         .set('Accept', 'application/json')
         .set('host', 'eth-mainnet')
@@ -1444,7 +1415,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1454,11 +1425,10 @@ describe('V1 controller (acceptance)', () => {
       pocketMock.relayResponse = relayResponses
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send({
           id: 6695493563292,
           jsonrpc: '2.0',
@@ -1490,14 +1460,13 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send({
           method: 'eth_getLogs',
           params: [
@@ -1529,7 +1498,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1537,11 +1506,10 @@ describe('V1 controller (acceptance)', () => {
       ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send({
           method: 'eth_getLogs',
           params: [
@@ -1574,14 +1542,13 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send({
           jsonrpc: '2.0',
           method: 'eth_getStorageAt',
@@ -1612,7 +1579,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1620,11 +1587,10 @@ describe('V1 controller (acceptance)', () => {
       ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send({
           jsonrpc: '2.0',
           method: 'eth_getStorageAt',
@@ -1654,14 +1620,13 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send([
           {
             jsonrpc: '2.0',
@@ -1702,7 +1667,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1710,11 +1675,10 @@ describe('V1 controller (acceptance)', () => {
       ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send([
           {
             jsonrpc: '2.0',
@@ -1754,14 +1718,13 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [{ blockchainID: '0021', methods: ['eth_getLogs'] }],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send({
           method: 'eth_call',
           params: [{ to: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f', data: '0x0902f1ac' }, 'latest'],
@@ -1791,7 +1754,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [{ blockchainID: '0021', methods: ['eth_getLogs'] }],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1799,11 +1762,10 @@ describe('V1 controller (acceptance)', () => {
       ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send({
           method: 'eth_getLogs',
           params: [
@@ -1835,7 +1797,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [{ blockchainID: '0021', methods: ['eth_getLogs'] }],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1843,11 +1805,10 @@ describe('V1 controller (acceptance)', () => {
       ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send({
           method: 'eth_getLogs',
           params: [
@@ -1879,7 +1840,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1887,11 +1848,10 @@ describe('V1 controller (acceptance)', () => {
       ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send({
           method: 'eth_getLogs',
           params: [
@@ -1923,14 +1883,13 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send({
           method: 'eth_call',
           params: [{ to: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f', data: '0x0902f1ac' }, 'latest'],
@@ -1960,7 +1919,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1968,11 +1927,10 @@ describe('V1 controller (acceptance)', () => {
       ] = '{"id":1,"jsonrpc":"2.0","result":"0x00"}'
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send({
           method: 'eth_getLogs',
           params: [
@@ -2004,14 +1962,13 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      const dbApp = await applicationsRepository.create(appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       const pocket = pocketMock.object()
-
       ;({ app, client } = await setupApplication(pocket))
 
       const response = await client
-        .post(`/v1/${dbApp.id}`)
+        .post(`/v1/${appWithSecurity.id}`)
         .send({
           method: 'eth_call',
           params: [{ to: '0x5d13399e7a59941734900157381e2d0b9d29c971', data: '0x0902f1ac' }, 'latest'],
@@ -2030,12 +1987,11 @@ describe('V1 controller (acceptance)', () => {
 
     it('invokes POST /v1/{appId} and successfully relays a request only through the altruist', async () => {
       const pocket = pocketMock.object()
+      ;({ app, client } = await setupApplication(pocket, { ALTRUIST_ONLY_CHAINS: '0041' }))
       const logSpy = sinon.spy(logger, 'log')
 
-      ;({ app, client } = await setupApplication(pocket, { ALTRUIST_ONLY_CHAINS: '0041' }))
-
       const response = await client
-        .post('/v1/sd9fj31d714kgos42e68f9gh')
+        .post(`/v1/${APPLICATION.id}`)
         .send({ method: 'eth_blockNumber', id: 1, jsonrpc: '2.0' })
         .set('Accept', 'application/json')
         .set('host', 'eth-mainnet-x')
