@@ -4,7 +4,6 @@ import rewiremock from 'rewiremock'
 import { createRestAppClient, givenHttpServerConfig, Client } from '@loopback/testlab'
 
 import { PocketGatewayApplication } from '../../src/application'
-import { gatewayTestDB } from '../fixtures/test.datasource'
 const Redis = require('ioredis-mock')
 
 export const DUMMY_ENV = {
@@ -63,8 +62,6 @@ export async function setupApplication(pocket?: Relayer, envs?: object): Promise
   })
 
   await app.boot()
-
-  app.dataSource(gatewayTestDB)
 
   await app.start()
   await app.loadPocket()
