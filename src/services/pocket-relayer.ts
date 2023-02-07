@@ -172,14 +172,15 @@ export class PocketRelayer {
       blockchainLogLimitBlocks,
       blockchainPath,
       blockchainAltruist,
-    } = await loadBlockchain(this.host, this.phdClient, this.cache, this.defaultLogLimitBlocks, rpcID).catch((e) => {
-      const errMsg = `Incorrect blockchain: ${this.host}`
-      logger.log('error', errMsg, {
-        applicationID,
-        error: e,
-      })
-      throw new ErrorObject(rpcID, new JsonRpcError(`Incorrect blockchain: ${this.host}`, -32052))
-    })
+    } = await loadBlockchain(this.host, this.phdClient, this.cache, this.defaultLogLimitBlocks, rpcID).catch(
+      (error) => {
+        logger.log('error', `Incorrect blockchain: ${this.host}`, {
+          applicationID,
+          error,
+        })
+        throw error
+      }
+    )
 
     relayPath = !relayPath && blockchainPath ? blockchainPath : relayPath
 

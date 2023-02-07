@@ -43,12 +43,16 @@ export async function loadBlockchain(
   let blockchains: Blockchains[]
 
   if (!cachedBlockchains) {
-    blockchains = await phdClient.find({
-      path: PHDPaths.Blockchain,
-      model: Blockchains,
-      cache,
-      cacheKey: 'blockchains',
-    })
+    try {
+      blockchains = await phdClient.find({
+        path: PHDPaths.Blockchain,
+        model: Blockchains,
+        cache,
+        cacheKey: 'blockchains',
+      })
+    } catch (e) {
+      throw new ErrorObject(rpcID, e)
+    }
   } else {
     blockchains = JSON.parse(cachedBlockchains)
   }
