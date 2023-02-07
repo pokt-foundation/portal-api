@@ -1,7 +1,7 @@
 import { EvidenceSealedError, Relayer } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT, HTTPMethod } from '@pokt-foundation/pocketjs-types'
 import axios, { AxiosRequestConfig, Method } from 'axios'
-import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
+import jsonrpc, { ErrorObject, IParsedObject, JsonRpcError } from 'jsonrpc-lite'
 import { Request } from '@loopback/rest'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
@@ -173,10 +173,12 @@ export class PocketRelayer {
       blockchainPath,
       blockchainAltruist,
     } = await loadBlockchain(this.host, this.phdClient, this.cache, this.defaultLogLimitBlocks, rpcID).catch((e) => {
-      logger.log('error', `Incorrect blockchain: ${this.host}`, {
+      const errMsg = `Incorrect blockchain: ${this.host}`
+      logger.log('error', errMsg, {
         applicationID,
+        error: e,
       })
-      throw e
+      throw new ErrorObject(rpcID, new JsonRpcError(`Incorrect blockchain: ${this.host}`, -32052))
     })
 
     relayPath = !relayPath && blockchainPath ? blockchainPath : relayPath
