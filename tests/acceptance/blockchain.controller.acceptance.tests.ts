@@ -71,7 +71,7 @@ describe('Blockchains controller (acceptance)', () => {
   describe('/blockchains/count endpoint', () => {
     it('retrieves the total count of blockchains', async () => {
       const blockchains = generateBlockchains(5)
-      axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain`).replyOnce(200, blockchains)
+      axiosMock.onGet(`${process.env.PHD_BASE_URL}/v1/blockchain`).replyOnce(200, blockchains)
 
       const res = await client.get('/blockchains/count').expect(200)
 
@@ -84,7 +84,7 @@ describe('Blockchains controller (acceptance)', () => {
   describe('/blockchains endpoint', () => {
     it('retrieves list of available blockchains', async () => {
       const blockchains = generateBlockchains(1)
-      axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain`).replyOnce(200, blockchains)
+      axiosMock.onGet(`${process.env.PHD_BASE_URL}/v1/blockchain`).replyOnce(200, blockchains)
 
       const res = await client.get('/blockchains').expect(200)
 
@@ -98,7 +98,7 @@ describe('Blockchains controller (acceptance)', () => {
   describe('/blockchains/{id} endpoint', () => {
     it('retrieves a specific blockchain', async () => {
       const [blockchain] = generateBlockchains(1)
-      axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain/${blockchain.id}`).replyOnce(200, blockchain)
+      axiosMock.onGet(`${process.env.PHD_BASE_URL}/v1/blockchain/${blockchain.id}`).replyOnce(200, blockchain)
 
       const res = await client.get(`/blockchains/${blockchain.id}`).expect(200)
 
@@ -114,7 +114,7 @@ describe('Blockchains controller (acceptance)', () => {
   describe('/blockchains/ids endpoint', () => {
     it('retrieves a mapping of the available aliases for the chains', async () => {
       const blockchains = generateBlockchains(1)
-      axiosMock.onGet(`${process.env.PHD_BASE_URL}/blockchain`).replyOnce(200, blockchains)
+      axiosMock.onGet(`${process.env.PHD_BASE_URL}/v1/blockchain`).replyOnce(200, blockchains)
 
       const res = await client.get('/blockchains/ids').expect(200)
 

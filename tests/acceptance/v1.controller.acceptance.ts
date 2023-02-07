@@ -186,7 +186,7 @@ const LOAD_BALANCER = {
   user: 'test@test.com',
   name: 'test load balancer',
   requestTimeout: '5000',
-  Applications: APPLICATIONS,
+  applications: APPLICATIONS,
 }
 
 const LOAD_BALANCERS = [
@@ -196,7 +196,7 @@ const LOAD_BALANCERS = [
     user: 'test@test.com',
     name: 'test load balancer sticky rpc',
     requestTimeout: '5000',
-    Applications: APPLICATIONS,
+    applications: APPLICATIONS,
     logLimitBlocks: 25000,
     stickinessOptions: {
       stickiness: true,
@@ -211,7 +211,7 @@ const LOAD_BALANCERS = [
     user: 'test@test.com',
     name: 'test load balancer sticky prefix',
     requestTimeout: '5000',
-    Applications: APPLICATIONS,
+    applications: APPLICATIONS,
     logLimitBlocks: 25000,
     stickinessOptions: {
       stickiness: true,
@@ -225,7 +225,7 @@ const LOAD_BALANCERS = [
     user: 'test@test.com',
     name: 'test load balancer sticky prefix with whitelist',
     requestTimeout: '5000',
-    Applications: APPLICATIONS,
+    applications: APPLICATIONS,
     logLimitBlocks: 25000,
     stickinessOptions: {
       stickiness: true,
@@ -240,7 +240,7 @@ const LOAD_BALANCERS = [
     user: 'test@test.com',
     name: 'gigastaked lb - leader',
     requestTimeout: '5000',
-    Applications: APPLICATIONS.filter(({ id }) => id === GIGASTAKE_LEADER_IDS.app),
+    applications: APPLICATIONS.filter(({ id }) => id === GIGASTAKE_LEADER_IDS.app),
     logLimitBlocks: 25000,
     stickinessOptions: {
       stickiness: true,
@@ -255,7 +255,7 @@ const LOAD_BALANCERS = [
     user: 'test@test.com',
     name: 'gigastaked lb - follower',
     requestTimeout: '5000',
-    Applications: APPLICATIONS.filter(({ id }) => id === GIGASTAKE_FOLLOWER_IDS.app),
+    applications: APPLICATIONS.filter(({ id }) => id === GIGASTAKE_FOLLOWER_IDS.app),
     logLimitBlocks: 25000,
     gigastakeRedirect: true,
     stickinessOptions: {
@@ -271,7 +271,7 @@ const LOAD_BALANCERS = [
     user: 'test@test.com',
     name: 'gigastaked lb - follower',
     requestTimeout: '5000',
-    Applications: APPLICATIONS.filter(({ id }) => id === GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.app),
+    applications: APPLICATIONS.filter(({ id }) => id === GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.app),
     logLimitBlocks: 25000,
     gigastakeRedirect: true,
     stickinessOptions: {
@@ -287,7 +287,7 @@ const LOAD_BALANCERS = [
     user: 'test@test.com',
     name: 'rate limited lb',
     requestTimeout: '5000',
-    Applications: [RATE_LIMITED_APPLICATION],
+    applications: [RATE_LIMITED_APPLICATION],
     logLimitBlocks: 25000,
     gigastakeRedirect: false,
     stickinessOptions: {
@@ -346,15 +346,15 @@ describe('V1 controller (acceptance)', () => {
       .reply(200, relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'])
 
     for (const dbApp of APPLICATIONS) {
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${dbApp.id}`).reply(200, dbApp)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${dbApp.id}`).reply(200, dbApp)
     }
     axiosMock
-      .onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${RATE_LIMITED_APPLICATION.id}`)
+      .onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${RATE_LIMITED_APPLICATION.id}`)
       .reply(200, RATE_LIMITED_APPLICATION)
     for (const lb of LOAD_BALANCERS) {
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/load_balancer/${lb.id}`).reply(200, lb)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/load_balancer/${lb.id}`).reply(200, lb)
     }
-    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/blockchain`).reply(200, BLOCKCHAINS)
+    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/blockchain`).reply(200, BLOCKCHAINS)
 
     pocketMock = new PocketMock(undefined, undefined, undefined)
     pocketMock.relayResponse = relayResponses
@@ -428,7 +428,7 @@ describe('V1 controller (acceptance)', () => {
     ;({ app, client } = await setupApplication(pocket))
 
     sinon.reset()
-    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${APPLICATION.id}`).reply(200, APPLICATION)
+    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${APPLICATION.id}`).reply(200, APPLICATION)
 
     const res = await client
       .post(`/v1/${APPLICATION.id}`)
@@ -479,7 +479,7 @@ describe('V1 controller (acceptance)', () => {
       whitelistMethods: [],
     }
 
-    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
     const pocket = pocketMock.object()
     ;({ app, client } = await setupApplication(pocket))
@@ -510,7 +510,7 @@ describe('V1 controller (acceptance)', () => {
       whitelistMethods: [],
     }
 
-    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
     const pocket = pocketMock.object()
     ;({ app, client } = await setupApplication(pocket))
@@ -543,11 +543,11 @@ describe('V1 controller (acceptance)', () => {
 
     const lbWithSecurityApp = {
       ...LOAD_BALANCERS.find(({ id }) => id === GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb),
-      Applications: [appWithSecurity],
+      applications: [appWithSecurity],
     }
-    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
     axiosMock
-      .onGet(`${DUMMY_ENV.PHD_BASE_URL}/load_balancer/${GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb}`)
+      .onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/load_balancer/${GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb}`)
       .reply(200, lbWithSecurityApp)
 
     const pocket = pocketMock.object()
@@ -580,11 +580,11 @@ describe('V1 controller (acceptance)', () => {
 
     const lbWithSecurityApp = {
       ...LOAD_BALANCERS.find(({ id }) => id === GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb),
-      Applications: [appWithSecurity],
+      applications: [appWithSecurity],
     }
-    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
     axiosMock
-      .onGet(`${DUMMY_ENV.PHD_BASE_URL}/load_balancer/${GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb}`)
+      .onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/load_balancer/${GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb}`)
       .reply(200, lbWithSecurityApp)
 
     const pocket = pocketMock.object()
@@ -618,11 +618,11 @@ describe('V1 controller (acceptance)', () => {
 
     const lbWithSecurityApp = {
       ...LOAD_BALANCERS.find(({ id }) => id === GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb),
-      Applications: [appWithSecurity],
+      applications: [appWithSecurity],
     }
-    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
     axiosMock
-      .onGet(`${DUMMY_ENV.PHD_BASE_URL}/load_balancer/${GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb}`)
+      .onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/load_balancer/${GIGASTAKE_FOLLOWER_IDS_WITH_RESTRICTIONS.lb}`)
       .reply(200, lbWithSecurityApp)
 
     const pocket = pocketMock.object()
@@ -659,7 +659,7 @@ describe('V1 controller (acceptance)', () => {
       whitelistMethods: [],
     }
 
-    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+    axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
     const pocket = pocketMock.object()
     ;({ app, client } = await setupApplication(pocket))
@@ -1261,7 +1261,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       const pocket = pocketMock.object()
       ;({ app, client } = await setupApplication(pocket))
@@ -1297,7 +1297,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1340,7 +1340,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       const pocket = pocketMock.object()
       ;({ app, client } = await setupApplication(pocket))
@@ -1378,7 +1378,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses['{"method":"eth_blockNumber","id":1,"jsonrpc":"2.0"}'] =
@@ -1415,7 +1415,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1460,7 +1460,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       const pocket = pocketMock.object()
       ;({ app, client } = await setupApplication(pocket))
@@ -1498,7 +1498,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1542,7 +1542,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       const pocket = pocketMock.object()
       ;({ app, client } = await setupApplication(pocket))
@@ -1579,7 +1579,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1620,7 +1620,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       const pocket = pocketMock.object()
       ;({ app, client } = await setupApplication(pocket))
@@ -1667,7 +1667,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1718,7 +1718,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [{ blockchainID: '0021', methods: ['eth_getLogs'] }],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       const pocket = pocketMock.object()
       ;({ app, client } = await setupApplication(pocket))
@@ -1754,7 +1754,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [{ blockchainID: '0021', methods: ['eth_getLogs'] }],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1797,7 +1797,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [{ blockchainID: '0021', methods: ['eth_getLogs'] }],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1840,7 +1840,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1883,7 +1883,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       const pocket = pocketMock.object()
       ;({ app, client } = await setupApplication(pocket))
@@ -1919,7 +1919,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       relayResponses['{"method":"eth_chainId","id":1,"jsonrpc":"2.0"}'] = '{"id":1,"jsonrpc":"2.0","result":"0x64"}'
       relayResponses[
@@ -1962,7 +1962,7 @@ describe('V1 controller (acceptance)', () => {
         whitelistMethods: [],
       }
 
-      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
+      axiosMock.onGet(`${DUMMY_ENV.PHD_BASE_URL}/v1/application/${appWithSecurity.id}`).reply(200, appWithSecurity)
 
       const pocket = pocketMock.object()
       ;({ app, client } = await setupApplication(pocket))
