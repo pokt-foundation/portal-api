@@ -186,7 +186,7 @@ class PHDClient {
   // Necessary to recreate the `applicationIDs` array from the data provided by PHD
   processLoadBalancer(document): LoadBalancers {
     document.applicationIDs = document.applications?.map(({ id: appID }) => appID) || []
-    delete document.Applications
+    delete document.applications
 
     if (document.userID && !document.user) {
       document.user = document.userID
