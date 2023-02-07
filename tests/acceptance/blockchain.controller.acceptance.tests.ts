@@ -3,7 +3,7 @@ import MockAdapter from 'axios-mock-adapter'
 import { Client, expect, sinon } from '@loopback/testlab'
 import { PocketGatewayApplication } from '../..'
 import { Blockchains, blockchainToBlockchainResponse } from '../../src/models/blockchains.model'
-import { setupApplication } from './test-helper'
+import { DUMMY_ENV, setupApplication } from './test-helper'
 
 const mockChain = Object.assign(
   {},
@@ -55,7 +55,7 @@ describe('Blockchains controller (acceptance)', () => {
 
   before('setupApplication', async () => {
     axiosMock = new MockAdapter(axios)
-    axiosMock.onGet('https://phd.base.url').reply(200)
+    axiosMock.onGet(DUMMY_ENV.PHD_BASE_URL).reply(200)
     ;({ app, client } = await setupApplication())
   })
 
