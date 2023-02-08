@@ -36,7 +36,6 @@ integrationDescribe('Pocket HTTP DB Client', () => {
   })
 
   after('cleanup', async () => {
-    process.env.MONGO_ENDPOINT = 'test'
     process.env.INTEGRATION_TEST = 'false'
   })
 
@@ -54,19 +53,6 @@ integrationDescribe('Pocket HTTP DB Client', () => {
         })
 
         expect(logSpy.calledOnceWith('warn')).to.be.false()
-        expect(blockchains.length).to.be.above(1)
-        blockchains.forEach((chain) => {
-          expect(chain).to.have.properties(blockchainRequiredFields)
-        })
-      })
-
-      it('fetches blockchains from MongoDB if PHD fetch fails', async () => {
-        const blockchains = await phdClient.find<Blockchains>({
-          path: 'not_blockchain',
-          model: Blockchains,
-        })
-
-        expect(logSpy.calledOnceWith('warn')).to.be.true()
         expect(blockchains.length).to.be.above(1)
         blockchains.forEach((chain) => {
           expect(chain).to.have.properties(blockchainRequiredFields)
