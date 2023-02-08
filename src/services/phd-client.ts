@@ -53,8 +53,7 @@ export enum PHDCacheKeys {
   Blockchain = 'blockchains',
 }
 
-/** The PHDClient fetches data from the Pocket HTTP DB, and falls back to fetching from the Loopback repositorites
- * (which connect to MongoDB) if the fetch fails or the returned data is missing required fields. */
+/** The PHDClient fetches data from the Pocket HTTP DB. */
 class PHDClient {
   private apiKey: string
   private baseUrl: string
