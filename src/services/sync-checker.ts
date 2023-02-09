@@ -45,7 +45,7 @@ export class SyncChecker {
     pocketAAT,
     session,
   }: ConsensusFilterOptions): Promise<CheckResult> {
-    // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field in MongoDB
+    // Blockchain records passed in with 0 sync allowance are missing the 'syncAllowance' field
     const syncAllowance = syncCheckOptions.allowance > 0 ? syncCheckOptions.allowance : this.defaultSyncAllowance
 
     const { key: sessionKey } = session
