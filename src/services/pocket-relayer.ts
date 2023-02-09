@@ -1,12 +1,11 @@
 import { EvidenceSealedError, Relayer } from '@pokt-foundation/pocketjs-relayer'
 import { Session, Node, PocketAAT, HTTPMethod } from '@pokt-foundation/pocketjs-types'
 import axios, { AxiosRequestConfig, Method } from 'axios'
-import jsonrpc, { ErrorObject, IParsedObject } from 'jsonrpc-lite'
+import jsonrpc, { ErrorObject, IParsedObject, JsonRpcError } from 'jsonrpc-lite'
 import { Request } from '@loopback/rest'
 import AatPlans from '../config/aat-plans.json'
 import { RelayError } from '../errors/types'
 import { Applications } from '../models'
-import { BlockchainsRepository } from '../repositories'
 import { ChainChecker, ChainIDFilterOptions } from '../services/chain-checker'
 import { CherryPicker } from '../services/cherry-picker'
 import { MergeFilterOptions, MergeChecker } from '../services/merge-checker'
@@ -48,7 +47,6 @@ export class PocketRelayer {
   databaseEncryptionKey: string
   secretKey: string
   relayRetries: number
-  blockchainsRepository: BlockchainsRepository
   checkDebug: boolean
   aatPlan: string
   defaultLogLimitBlocks: number
@@ -74,7 +72,6 @@ export class PocketRelayer {
     databaseEncryptionKey,
     secretKey,
     relayRetries,
-    blockchainsRepository,
     checkDebug,
     aatPlan,
     defaultLogLimitBlocks,
@@ -98,7 +95,6 @@ export class PocketRelayer {
     databaseEncryptionKey: string
     secretKey: string
     relayRetries: number
-    blockchainsRepository: BlockchainsRepository
     checkDebug: boolean
     aatPlan: string
     defaultLogLimitBlocks: number
@@ -122,7 +118,6 @@ export class PocketRelayer {
     this.databaseEncryptionKey = databaseEncryptionKey
     this.secretKey = secretKey
     this.relayRetries = relayRetries
-    this.blockchainsRepository = blockchainsRepository
     this.checkDebug = checkDebug
     this.aatPlan = aatPlan
     this.defaultLogLimitBlocks = defaultLogLimitBlocks
@@ -177,19 +172,15 @@ export class PocketRelayer {
       blockchainLogLimitBlocks,
       blockchainPath,
       blockchainAltruist,
-    } = await loadBlockchain(
-      this.host,
-      this.phdClient,
-      this.cache,
-      this.blockchainsRepository,
-      this.defaultLogLimitBlocks,
-      rpcID
-    ).catch((e) => {
-      logger.log('error', `Incorrect blockchain: ${this.host}`, {
-        applicationID,
-      })
-      throw e
-    })
+    } = await loadBlockchain(this.host, this.phdClient, this.cache, this.defaultLogLimitBlocks, rpcID).catch(
+      (error) => {
+        logger.log('error', `Incorrect blockchain: ${this.host}`, {
+          applicationID,
+          error,
+        })
+        throw error
+      }
+    )
 
     relayPath = !relayPath && blockchainPath ? blockchainPath : relayPath
 

@@ -3,7 +3,6 @@ import { Redis } from 'ioredis'
 import jsonrpc, { ErrorObject } from 'jsonrpc-lite'
 
 import { Blockchains } from '../models'
-import { BlockchainsRepository } from '../repositories'
 import { Cache } from '../services/cache'
 import { PHDClient, PHDPaths, PHDCacheKeys } from '../services/phd-client'
 import { SyncCheckOptions } from '../services/sync-checker'
@@ -36,7 +35,6 @@ export async function loadBlockchain(
   host: string,
   phdClient: PHDClient,
   cache: Cache,
-  blockchainsRepository: BlockchainsRepository,
   defaultLogLimitBlocks: number,
   rpcID: number
 ): Promise<BlockchainDetails> {
@@ -45,13 +43,16 @@ export async function loadBlockchain(
   let blockchains: Blockchains[]
 
   if (!cachedBlockchains) {
-    blockchains = await phdClient.find({
-      path: PHDPaths.Blockchain,
-      model: Blockchains,
-      cache,
-      cacheKey: 'blockchains',
-      fallback: () => blockchainsRepository.find(),
-    })
+    try {
+      blockchains = await phdClient.find({
+        path: PHDPaths.Blockchain,
+        model: Blockchains,
+        cache,
+        cacheKey: 'blockchains',
+      })
+    } catch (e) {
+      throw new ErrorObject(rpcID, e)
+    }
   } else {
     blockchains = JSON.parse(cachedBlockchains)
   }
@@ -146,7 +147,6 @@ export async function getBlockchainAliasesByDomain(
   host: string,
   phdClient: PHDClient,
   redis: Cache,
-  blockchainsRepository: BlockchainsRepository,
   rpcID: number
 ): Promise<{ blockchainAliases: string[] }> {
   // Load the requested blockchain
@@ -159,7 +159,6 @@ export async function getBlockchainAliasesByDomain(
       model: Blockchains,
       cache: redis,
       cacheKey: PHDCacheKeys.Blockchain,
-      fallback: () => blockchainsRepository.find(),
     })
   } else {
     blockchains = JSON.parse(cachedBlockchains)

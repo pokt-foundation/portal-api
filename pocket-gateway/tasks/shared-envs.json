@@ -13,10 +13,6 @@
       "value": "${{ secrets.REDIS_LOCAL_TTL_FACTOR }}"
     },
     {
-      "key": "MONGO_ENDPOINT",
-      "value": "${{ secrets.MONGO_PRODUCTION_ENDPOINT }}"
-    },
-    {
       "key": "BLOCKED_ADDRESSES_URL",
       "value": "${{ secrets.BLOCKED_ADDRESSES_URL }}"
     },
