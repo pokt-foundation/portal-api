@@ -46,6 +46,10 @@ describe('Node sticker service (unit)', () => {
     )
   })
 
+  after(() => {
+    sinon.restore()
+  })
+
   beforeEach(async () => {
     await redis.flushall()
   })

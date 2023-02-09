@@ -121,11 +121,6 @@ describe('Sync checker service (unit)', () => {
     axiosMock = new MockAdapter(axios)
   })
 
-  afterEach(() => {
-    sinon.restore()
-    axiosMock.reset()
-  })
-
   beforeEach(async () => {
     logSpy = sinon.spy(logger, 'log')
 
@@ -159,8 +154,14 @@ describe('Sync checker service (unit)', () => {
     await cache.flushall()
   })
 
+  afterEach(() => {
+    sinon.restore()
+    axiosMock.reset()
+  })
+
   after(() => {
     axiosMock.restore()
+    sinon.restore()
   })
 
   it('should be defined', async () => {

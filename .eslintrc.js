@@ -4,7 +4,6 @@ module.exports = {
     es6: true,
     mocha: true,
     node: true,
-    mongo: true,
   },
   parser: '@typescript-eslint/parser',
   parserOptions: {
