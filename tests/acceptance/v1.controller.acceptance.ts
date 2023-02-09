@@ -1201,7 +1201,7 @@ describe('V1 controller (acceptance)', () => {
       expect(response.body.error.message).to.startWith('Rate limit exceeded. Please upgrade your plan.')
 
       const rateLimitWarningLogged = logSpy.calledWith(
-        'info',
+        'warn',
         sinon.match((arg: string) =>
           arg.startsWith('relay count on application associated with the endpoint has exceeded the rate limit')
         )
