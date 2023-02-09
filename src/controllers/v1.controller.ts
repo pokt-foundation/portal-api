@@ -332,7 +332,7 @@ export class V1Controller {
 
       if (shouldLimit) {
         logger.log(
-          'error',
+          'warn',
           'relay count on application associated with the endpoint has exceeded the rate limit ' + rateLimitTargetApp,
           {
             requestID: this.requestID,
