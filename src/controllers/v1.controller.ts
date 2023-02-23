@@ -669,12 +669,7 @@ export class V1Controller {
 
     if (!cachedLoadBalancer) {
       try {
-        return await this.phdClient.findById({
-          path: PHDPaths.LoadBalancer,
-          id,
-          model: LoadBalancers,
-          cache: this.cache,
-        })
+        return await this.phdClient.findById({ path: PHDPaths.LoadBalancer, id, cache: this.cache })
       } catch (e) {
         return undefined
       }
@@ -688,12 +683,7 @@ export class V1Controller {
 
     if (!cachedApplication) {
       try {
-        return await this.phdClient.findById({
-          path: PHDPaths.Application,
-          id,
-          model: Applications,
-          cache: this.cache,
-        })
+        return await this.phdClient.findById({ path: PHDPaths.Application, id, cache: this.cache })
       } catch (e) {
         return undefined
       }

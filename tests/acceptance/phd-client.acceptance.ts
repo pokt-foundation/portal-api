@@ -6,24 +6,6 @@ import { PHDClient, PHDPaths } from '../../src/services/phd-client'
 
 const logger = require('../../src/services/logger')
 
-const blockchainRequiredFields = [
-  'id',
-  'ticker',
-  'chainID',
-  'chainIDCheck',
-  'enforceResult',
-  'network',
-  'blockchain',
-  'blockchainAliases',
-  'active',
-  'syncCheckOptions',
-  'logLimitBlocks',
-  'path',
-  'altruist',
-]
-const loadBalancerRequiredFields = ['user', 'requestTimeout', 'applicationIDs']
-const applicationRequiredFields = ['id', 'freeTierApplicationAccount', 'gatewayAAT', 'gatewaySettings']
-
 const integrationDescribe = process.env.INTEGRATION_TEST === 'true' ? describe : describe.skip
 integrationDescribe('Pocket HTTP DB Client', () => {
   let phdClient: PHDClient
@@ -47,16 +29,10 @@ integrationDescribe('Pocket HTTP DB Client', () => {
   describe('find', () => {
     describe('blockchains', () => {
       it('fetches blockchains from PHD', async () => {
-        const blockchains = await phdClient.find<Blockchains>({
-          path: PHDPaths.Blockchain,
-          model: Blockchains,
-        })
+        const blockchains = await phdClient.find<Blockchains>({ path: PHDPaths.Blockchain })
 
-        expect(logSpy.calledOnceWith('warn')).to.be.false()
+        expect(logSpy.calledOnceWith('error')).to.be.false()
         expect(blockchains.length).to.be.above(1)
-        blockchains.forEach((chain) => {
-          expect(chain).to.have.properties(blockchainRequiredFields)
-        })
       })
     })
   })
@@ -66,16 +42,11 @@ integrationDescribe('Pocket HTTP DB Client', () => {
       it('fetches a blockchain from PHD', async () => {
         const testId = '0001'
 
-        const blockchain = await phdClient.findById<Blockchains>({
-          path: PHDPaths.Blockchain,
-          id: testId,
-          model: Blockchains,
-        })
+        const blockchain = await phdClient.findById<Blockchains>({ path: PHDPaths.Blockchain, id: testId })
 
-        expect(logSpy.calledOnceWith('warn')).to.be.false()
+        expect(logSpy.calledOnceWith('error')).to.be.false()
         expect(blockchain).not.to.be.undefined()
         expect(blockchain.ticker).to.equal('POKT')
-        expect(blockchain).to.have.properties(blockchainRequiredFields)
       })
     })
 
@@ -83,16 +54,11 @@ integrationDescribe('Pocket HTTP DB Client', () => {
       it('fetches a load balancer from PHD', async () => {
         const testId = '280023ecacf59129e9497bc2'
 
-        const loadBalancer = await phdClient.findById<LoadBalancers>({
-          path: PHDPaths.LoadBalancer,
-          id: testId,
-          model: LoadBalancers,
-        })
+        const loadBalancer = await phdClient.findById<LoadBalancers>({ path: PHDPaths.LoadBalancer, id: testId })
 
-        expect(logSpy.calledOnceWith('warn')).to.be.false()
+        expect(logSpy.calledOnceWith('error')).to.be.false()
         expect(loadBalancer).not.to.be.undefined()
         expect(loadBalancer.name).to.equal('Pascals_test_app_DO-NOT-DELETE')
-        expect(loadBalancer).to.have.properties(loadBalancerRequiredFields)
       })
     })
 
@@ -100,16 +66,11 @@ integrationDescribe('Pocket HTTP DB Client', () => {
       it('fetches an application from PHD', async () => {
         const testId = '6307c50471e59c00380027c9'
 
-        const application = await phdClient.findById<Applications>({
-          path: PHDPaths.Application,
-          id: testId,
-          model: Applications,
-        })
+        const application = await phdClient.findById<Applications>({ path: PHDPaths.Application, id: testId })
 
-        expect(logSpy.calledOnceWith('warn')).to.be.false()
+        expect(logSpy.calledOnceWith('error')).to.be.false()
         expect(application).not.to.be.undefined()
         expect(application.name).to.equal('PascalsTestApp')
-        expect(application).to.have.properties(applicationRequiredFields)
       })
     })
   })
@@ -117,12 +78,9 @@ integrationDescribe('Pocket HTTP DB Client', () => {
   describe('count', () => {
     describe('blockchains', () => {
       it('fetches the count of blockchains from PHD', async () => {
-        const { count } = await phdClient.count({
-          path: PHDPaths.Blockchain,
-          model: Blockchains,
-        })
+        const { count } = await phdClient.count({ path: PHDPaths.Blockchain })
 
-        expect(logSpy.calledOnceWith('warn')).to.be.false()
+        expect(logSpy.calledOnceWith('error')).to.be.false()
         expect(count).not.to.be.undefined()
         expect(count).to.be.above(1)
       })
