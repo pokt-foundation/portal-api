@@ -34,7 +34,7 @@ jobs:
           envkey_REDIS_LOCAL_TTL_FACTOR: ${{ secrets.REDIS_LOCAL_TTL_FACTOR }}
           envkey_BLOCKED_ADDRESSES_URL: ${{ secrets.BLOCKED_ADDRESSES_URL }}
           envkey_PHD_BASE_URL: ${{ secrets.PHD_BASE_URL }}
-          envkey_PHD_API_KEY_SERVICE_PRODUCTION: ${{ secrets.PHD_API_KEY }}
+          envkey_PHD_API_KEY_SERVICE_PRODUCTION: ${{ secrets.PHD_API_KEY_SERVICE_PRODUCTION }}
           envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_PRODUCTION_ENCRYPTION_KEY }}
           envkey_DISPATCH_URL: ${{ secrets.DISPATCH_URL }}
           envkey_ALTRUISTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_ALTRUISTS }}
@@ -91,6 +91,7 @@ jobs:
           task-definition: pocket-gateway/tasks/production/ecs-task-definition.json
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
+
 
       - name: Deploy / eu-south-1
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
