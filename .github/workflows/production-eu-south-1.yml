@@ -92,7 +92,6 @@ jobs:
           container-name: gateway
           image: ${{ steps.build-image.outputs.image }}
 
-
       - name: Deploy / eu-south-1
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
