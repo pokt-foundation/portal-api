@@ -44,12 +44,7 @@ export async function loadBlockchain(
 
   if (!cachedBlockchains) {
     try {
-      blockchains = await phdClient.find({
-        path: PHDPaths.Blockchain,
-        model: Blockchains,
-        cache,
-        cacheKey: 'blockchains',
-      })
+      blockchains = await phdClient.find({ path: PHDPaths.Blockchain, cache, cacheKey: 'blockchains' })
     } catch (e) {
       throw new ErrorObject(rpcID, e)
     }
@@ -154,12 +149,7 @@ export async function getBlockchainAliasesByDomain(
   let blockchains: Blockchains[]
 
   if (!cachedBlockchains) {
-    blockchains = await phdClient.find({
-      path: PHDPaths.Blockchain,
-      model: Blockchains,
-      cache: redis,
-      cacheKey: PHDCacheKeys.Blockchain,
-    })
+    blockchains = await phdClient.find({ path: PHDPaths.Blockchain, cache: redis, cacheKey: PHDCacheKeys.Blockchain })
   } else {
     blockchains = JSON.parse(cachedBlockchains)
   }
