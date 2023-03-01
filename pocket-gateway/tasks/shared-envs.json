@@ -21,7 +21,7 @@
       "value": "${{ secrets.PHD_BASE_URL }}"
     },
     {
-      "key": "PHD_API_KEY_SERVICE_PRODUCTION",
+      "key": "PHD_API_KEY",
       "value": "${{ secrets.PHD_API_KEY_SERVICE_PRODUCTION }}"
     },
     {
