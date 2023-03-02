@@ -2,15 +2,19 @@ name: docker
 
 on:
   push:
-    branches:
-      - 'develop'
-      - 'feat/arm-support'
-    tags:
-      - 'v*'
-  pull_request:
-    branches:
-      - 'develop'
-      - 'master'
+    branches: ['never']
+# TODO reenable if needed (currently not used)
+# on:
+#   push:
+#     branches:
+#       - 'develop'
+#       - 'feat/arm-support'
+#     tags:
+#       - 'v*'
+#   pull_request:
+#     branches:
+#       - 'develop'
+#       - 'master'
 
 jobs:
   docker:

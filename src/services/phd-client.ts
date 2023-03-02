@@ -10,14 +10,8 @@ const logger = require('./logger')
 
 const FAILURE_ERROR = 'Data fetching from Pocket HTTP DB failed'
 
-type ModelRef = new (...args: any[]) => any //eslint-disable-line
-interface ModelProps extends ModelRef {
-  definition?: { properties: { [key: string]: { required?: boolean } } }
-}
-
 interface FindParams {
   path: string
-  model: ModelRef
   cacheKey?: string
   cache?: Cache
 }
@@ -25,13 +19,11 @@ interface FindParams {
 interface FindOneParams {
   path: string
   id: string
-  model: ModelRef
   cache?: Cache
 }
 
 interface CountParams {
   path: string
-  model: ModelRef
 }
 
 interface PostgresGatewayAAT {
@@ -63,41 +55,29 @@ class PHDClient {
     this.apiKey = apiKey
   }
 
-  async find<T extends Entity>({ path, model, cache, cacheKey }: FindParams): Promise<T[]> {
+  async find<T extends Entity>({ path, cache, cacheKey }: FindParams): Promise<T[]> {
     if (cache && !cacheKey) {
       throw new Error(`cacheKey not set for path ${path}`)
     }
 
     const url = `${this.baseUrl}/v1/${path}`
-    const modelFields = this.getRequiredModelFields(model)
-    const modelsData: T[] = []
 
     try {
-      const { data: documents } = await axios.get(url, { headers: { authorization: this.apiKey } })
+      const { data: documents } = await axios.get<T[]>(url, { headers: { authorization: this.apiKey } })
 
-      documents.forEach((document) => {
-        if (this.hasAllRequiredModelFields(document, modelFields)) {
-          modelsData.push(new model(document))
-        } else {
-          throw new Error('data not instance of model')
-        }
-      })
+      if (cache && cacheKey) {
+        await cache.set(cacheKey, JSON.stringify(documents), 'EX', 60)
+      }
+
+      return documents
     } catch (error) {
       logger.log('error', FAILURE_ERROR, { error })
       throw newHttpError(error)
     }
-
-    if (cache && cacheKey) {
-      await cache.set(cacheKey, JSON.stringify(modelsData), 'EX', 60)
-    }
-
-    return modelsData
   }
 
-  async findById<T extends Entity>({ path, id, model, cache }: FindOneParams): Promise<T> {
+  async findById<T extends Entity>({ path, id, cache }: FindOneParams): Promise<T> {
     const url = `${this.baseUrl}/v1/${path}/${id}`
-    const modelFields = this.getRequiredModelFields(model)
-    let modelData: T
 
     try {
       const { data: document } = await axios.get(url, { headers: { authorization: this.apiKey } })
@@ -109,21 +89,15 @@ class PHDClient {
 
       const processedDocument = processMethod?.() || document
 
-      if (this.hasAllRequiredModelFields<T>(processedDocument, modelFields)) {
-        modelData = new model(processedDocument)
-      } else {
-        throw new Error('data not instance of model')
+      if (cache) {
+        await cache.set(id, JSON.stringify(processedDocument), 'EX', 60)
       }
+
+      return processedDocument
     } catch (error) {
       logger.log('error', FAILURE_ERROR, { error })
       throw newHttpError(error)
     }
-
-    if (cache) {
-      await cache.set(id, JSON.stringify(modelData), 'EX', 60)
-    }
-
-    return modelData
   }
 
   async count({ path }: CountParams): Promise<Count> {
@@ -165,19 +139,6 @@ class PHDClient {
     }
 
     return document
-  }
-
-  /** Gets a string array of all the fields marked as required by the Loopback model */
-  private getRequiredModelFields(model: ModelProps): string[] {
-    return Object.entries(model.definition.properties)
-      .filter(([_, { required }]) => required)
-      .map(([key]) => key)
-  }
-
-  /** Checks that the data returned from the PHD has all required fields used by the
-      Portal API code, meaning all required fields declared by the Loopbak model. */
-  private hasAllRequiredModelFields<T>(data: T, modelFields: string[]): boolean {
-    return modelFields.every((key) => Object.keys(data).includes(key))
   }
 }
 
