@@ -182,7 +182,9 @@ export class PocketRelayer {
       }
     )
 
-    relayPath = !relayPath && blockchainPath ? blockchainPath : relayPath
+    if (blockchainPath) {
+      relayPath = blockchainPath
+    }
 
     // Add relay path to URL
     const altruistURL = !relayPath ? blockchainAltruist : `${blockchainAltruist}${relayPath}`
