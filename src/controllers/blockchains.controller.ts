@@ -17,10 +17,7 @@ export class BlockchainsController {
     },
   })
   async count(): Promise<Count> {
-    return this.phdClient.count({
-      path: PHDPaths.Blockchain,
-      model: Blockchains,
-    })
+    return this.phdClient.count({ path: PHDPaths.Blockchain })
   }
 
   @get('/blockchains', {
@@ -39,12 +36,7 @@ export class BlockchainsController {
     },
   })
   async find(@param.filter(Blockchains) filter?: Filter<Blockchains>): Promise<BlockchainsResponse[]> {
-    return (
-      await this.phdClient.find<Blockchains>({
-        path: PHDPaths.Blockchain,
-        model: Blockchains,
-      })
-    ).map((bl) => blockchainToBlockchainResponse(bl))
+    return (await this.phdClient.find<Blockchains>({ path: PHDPaths.Blockchain })).map(blockchainToBlockchainResponse)
   }
 
   @get('/blockchains/{id}', {
@@ -60,13 +52,7 @@ export class BlockchainsController {
     },
   })
   async findById(@param.path.string('id') id: string): Promise<BlockchainsResponse> {
-    return blockchainToBlockchainResponse(
-      await this.phdClient.findById({
-        path: PHDPaths.Blockchain,
-        id,
-        model: Blockchains,
-      })
-    )
+    return blockchainToBlockchainResponse(await this.phdClient.findById({ path: PHDPaths.Blockchain, id }))
   }
   @get('/blockchains/ids', {
     responses: {
@@ -85,7 +71,6 @@ export class BlockchainsController {
   async idsMapping(@param.filter(Blockchains) filter?: Filter<Blockchains>): Promise<object> {
     const blockchains = await this.phdClient.find<Blockchains>({
       path: PHDPaths.Blockchain,
-      model: Blockchains,
     })
 
     const aliases = {}
