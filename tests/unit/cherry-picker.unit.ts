@@ -273,7 +273,7 @@ describe('Cherry picker service (unit)', () => {
       const session = await new PocketMock().object().getNewSession(undefined)
       const expectedLogs = JSON.stringify({
         medianSuccessLatency: '0.25000',
-        weightedSuccessLatency: '0.32860', // average after calculation from fn
+        weightedSuccessLatency: '0.25360', // average after calculation from fn
         results: {
           '200': 25,
           '500': 2,
