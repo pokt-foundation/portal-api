@@ -219,10 +219,10 @@ export class SyncChecker {
 
         // Since we don't trust altruist, let's use highest node in session as reference
         referenceBlockHeight = highestNodeBlockHeight
+      } else {
+        // Altruist is trustworthy, so we use it as reference
+        referenceBlockHeight = altruistBlockHeight
       }
-
-      // Altruist is trustworthy, so we use it as reference
-      referenceBlockHeight = altruistBlockHeight
     }
 
     // Go through nodes and add all nodes that are current or within allowance -- this allows for block processing times
@@ -237,11 +237,9 @@ export class SyncChecker {
       const correctedNodeBlockHeight = blockHeight + syncAllowance
 
       // This allows for nodes to be slightly ahead but within allowance
-      const maximumBlockHeight = isAltruistTrustworthy
-        ? altruistBlockHeight + syncAllowance
-        : highestNodeBlockHeight + syncAllowance
+      const maximumBlockHeight = referenceBlockHeight + syncAllowance
 
-      if (correctedNodeBlockHeight >= referenceBlockHeight && nodeSyncLog.blockHeight <= maximumBlockHeight) {
+      if (correctedNodeBlockHeight >= referenceBlockHeight && blockHeight <= maximumBlockHeight) {
         logger.log('info', 'SYNC CHECK IN-SYNC: ' + node.publicKey + ' height: ' + blockHeight, {
           requestID: requestID,
           blockchainID,
