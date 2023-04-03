@@ -35,7 +35,7 @@ jobs:
           envkey_PHD_BASE_URL: ${{ secrets.PHD_BASE_URL }}
           envkey_PHD_API_KEY: ${{ secrets.PHD_API_KEY }}
           envkey_DATABASE_ENCRYPTION_KEY: ${{ secrets.DATABASE_TESTNET_ENCRYPTION_KEY }}
-          envkey_DISPATCH_URL: https://testnet-1.nodes.pokt.network:4201,https://testnet-2.nodes.pokt.network:4202,https://testnet-3.nodes.pokt.network:4203
+          envkey_DISPATCH_URL: https://node1.testnet.pokt.network,https://node2.testnet.pokt.network,https://node3.testnet.pokt.network,https://node4.testnet.pokt.network,https://node5.testnet.pokt.network,https://node6.testnet.pokt.network
           envkey_ALTRUISTS: ${{ secrets.ALTRUISTS_TESTNET }}
           envkey_REDIRECTS: ${{ secrets.POCKET_NETWORK_PRODUCTION_REDIRECTS }}
           envkey_LOCAL_REDIS_ENDPOINT: 172.17.0.1:6379
